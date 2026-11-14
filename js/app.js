@@ -7,6 +7,7 @@ import { renderPlay } from './ui/play.js';
 import { renderKaidex } from './ui/kaidex.js';
 import { renderGrownups } from './ui/grownups.js';
 import { VERSION } from './data/changelog.js';
+import { startAutoSync } from './core/sync.js';
 
 const SCREENS = {
   welcome: renderWelcome,
@@ -35,7 +36,8 @@ function go(name, params = {}) {
   window.scrollTo(0, 0);
 }
 
-go(active() ? 'home' : 'welcome');
+go(active() ? (active().starter ? 'home' : 'meetPartner') : 'welcome');
+startAutoSync();
 
 // Offline support and update prompt.
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {

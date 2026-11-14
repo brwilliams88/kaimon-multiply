@@ -3,13 +3,21 @@
 Times tables flashcard game for Kai (8, Blair's son), shared with his friends. Installed as a PWA on iPad, iPhones and a Chromebook. Hosted on GitHub Pages from this public repo (brwilliams88/kaimon-multiply).
 
 ## Product rules
-- The point is multiplication practice. About 90% of time should be answering cards. Every reward comes from answering. No creature battles, trading, maps or leaderboards.
+- The point is multiplication practice. About 90% of time should be answering cards. Every reward comes from answering. Battles exist only as flashcard battles (every move is an answer). No trading, maps or leaderboards.
 - Original creatures only. Never use Pokémon names, designs, the Poké Ball look, or the word Pokémon anywhere in the app, repo or share text.
 - Kaimon "core" (creatures, balls, Kaidex, trainers) is reusable for future games (Kaimon Divide). Subject logic lives in `js/core/facts.js`.
-- Kai is the hero trainer. Kai's mythic is Kaidex #052 (highest number), seen in cameos all game and caught last, after beating Champion Papa.
+- Kai is the hero trainer. Kai's mythic is always the highest Kaidex number (now #059), seen in cameos all game and caught last, after beating Boss Papa. Its hidden future form can appear after 6 months and evolves on its own after a year.
+- Starters: Kaimo (flagship, Dragon), Kaiko (Fire), Kipbun (Leaf). Villains: Boss Papa (trench coat, black flat-brim trucker hat with red P) and Team Papa (white jackets, red P, train at Papa's Gym), with Papazilla as his Kaimon. They always tell kid-friendly dad jokes (js/data/dadjokes.js).
+- Sprout Leader Nozomi runs the 1s. Professor Keith only if Miss Keith agrees.
+- Kaidex data is keyed by species id, never by number.
+- The grown-ups area is behind a parent PIN. The Good Work Stamp lives there.
 - Long-term play: fact levels need correct, fast answers on separate days (Bronze 2, Silver 5, Gold 10, Star 20).
-- Friends play as local guests. Family sync (planned) uses Supabase with a family allowlist; guest data never leaves the device.
+- Friends play as local guests. Family sync uses Supabase project `kaimon` (qabevoqmalqjvesqzuse) with a family email allowlist (table family_members) and RLS; guest data never leaves the device. Progress changes are events (js/core/actions.js) synced as an append-only log (js/core/sync.js).
 - Running cost must stay $0. Image generation happens offline at build time only.
+
+## Art direction (locked)
+- Friendly anime: soft rounded vinyl-toy shapes, anime cel shading (one hard shadow tone plus a glossy highlight), big sparkly anime eyes, heroic not scary. Clean navy line art. Trainers in the same anime style, made from family photos. Never copy an existing franchise character.
+- UI polish bar is high: crisp typography, a deliberate palette, consistent spacing, real motion design. Every screen should look professionally designed.
 
 ## Style
 - Chunky sticker look: navy ink outlines (#14213D), press-down buttons, Fredoka font (self-hosted), sky field (#CFE8FF). Type colors per region in `js/data/creatures.js`.

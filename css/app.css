@@ -190,8 +190,8 @@ button { font: inherit; color: inherit; cursor: pointer; touch-action: manipulat
   box-shadow: 0 8px 0 var(--ink), inset 0 0 0 12px var(--rc);
   padding: 24px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; gap: 8px; overflow: hidden;
 }
-.back { transform: rotateY(180deg); }
-.wrong .back { box-shadow: 0 8px 0 var(--ink), inset 0 0 0 12px var(--coral); }
+.face.back { transform: rotateY(180deg); }
+.wrong .face.back { box-shadow: 0 8px 0 var(--ink), inset 0 0 0 12px var(--coral); }
 .card-head { align-self: stretch; display: flex; justify-content: space-between; align-items: center; gap: 8px; font-weight: 600; font-size: 18px; color: var(--ri); padding: 4px 6px 0; }
 .card-type { background: var(--rl); border: 2px solid var(--ink); color: var(--ink); border-radius: 99px; padding: 2px 12px; font-size: 15px; }
 .card-type.fast { background: var(--sun); }
@@ -376,3 +376,45 @@ button { font: inherit; color: inherit; cursor: pointer; touch-action: manipulat
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .05s !important; }
 }
+
+/* Starter choice */
+.starters { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; width: 100%; }
+.starter { display: flex; flex-direction: column; align-items: center; gap: 6px; background: var(--paper); border: 3px solid var(--ink); border-radius: 22px; padding: 12px 10px 14px; box-shadow: var(--press); text-align: center; }
+.starter.on { background: var(--rl); outline: 4px solid var(--coral); outline-offset: 2px; }
+.starter-art { width: min(26vw, 130px); aspect-ratio: 1; display: block; }
+.starter-name { font-size: 22px; font-weight: 700; }
+.starter-note { font-size: 14px; color: var(--ink-2); line-height: 1.3; }
+.btn-chunky[disabled] { opacity: .5; }
+.stars { color: #C99400; font-size: 16px; }
+@media (max-width: 480px) { .starter-note { display: none; } }
+
+/* Parent PIN */
+.pinscreen { align-items: center; text-align: center; max-width: 520px; }
+.pin-sub { margin: 0; color: var(--ink-2); font-size: 18px; max-width: 32ch; }
+.pin-dots { display: flex; gap: 16px; margin: 8px 0; }
+.pin-dots span { width: 22px; height: 22px; border-radius: 50%; border: 3px solid var(--ink); background: var(--paper); }
+.pin-dots span.on { background: var(--ink); }
+.pin-pad { width: min(100%, 340px); }
+.link-btn { background: none; border: 0; color: var(--ink-2); text-decoration: underline; font-size: 17px; padding: 8px; }
+.btn-sm { min-height: 40px; padding: 6px 12px; font-size: 16px; border-radius: 14px; box-shadow: 0 3px 0 var(--ink); }
+
+/* Trainers and sync */
+.trainer-rows { display: flex; flex-direction: column; gap: 8px; }
+.trow { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 8px 0; border-top: 2px solid #EEF2F8; }
+.trow-name { font-weight: 700; font-size: 19px; }
+.trow-tag { font-size: 14px; color: var(--ink-2); background: #EEF2F8; border-radius: 99px; padding: 2px 10px; }
+.trow-tag.fam { background: #DDF3E0; color: #1E5E28; }
+.trow .btn-chunky { margin-left: auto; }
+.panel input[type=file] { font-size: 16px; }
+
+/* Trophies and celebration */
+.trophies { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
+.trophy { margin: 0; background: #FFF6D6; border: 2.5px solid var(--ink); border-radius: 16px; padding: 6px; display: flex; flex-direction: column; gap: 4px; }
+.trophy img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 10px; }
+.trophy-star { font-size: 48px; color: #F2B705; text-align: center; }
+.trophy figcaption { font-size: 14px; font-weight: 600; display: flex; flex-direction: column; }
+.trophy small { color: var(--ink-2); font-weight: 500; }
+.celebrate { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.celebrate-star { font-size: 84px; line-height: 1; color: #F2B705; margin: 0; -webkit-text-stroke: 3px var(--ink); animation: pulse 1.2s ease-in-out infinite; }
+.celebrate-row { display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; font-weight: 600; }
+.celebrate-row span { display: inline-flex; align-items: center; gap: 6px; }

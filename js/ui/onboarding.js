@@ -1,5 +1,5 @@
-import { allProfiles, addProfile, newProfile, switchProfile } from '../core/store.js';
-import { byNum } from '../data/creatures.js';
+import { allProfiles, addProfile, newProfile, switchProfile, active, touch } from '../core/store.js';
+import { byId, TYPES } from '../data/creatures.js';
 import { creatureArt } from '../core/art.js';
 import { avatarSVG, AVATAR_COUNT } from './avatars.js';
 import { esc, on, $ } from './dom.js';
@@ -11,7 +11,7 @@ export function renderWelcome(root, go) {
     <section class="screen welcome">
       <div class="welcome-hero">
         <div class="logo" aria-label="Kaimon Multiply"><span class="logo-kai">Kai</span><span class="logo-mon">mon</span><span class="logo-sub">Multiply</span></div>
-        <div class="welcome-art">${creatureArt(byNum(1))}</div>
+        <div class="welcome-art">${creatureArt(byId('kaimo'))}</div>
       </div>
       ${profiles.length ? `
         <h2 class="welcome-q">Who's playing?</h2>
@@ -57,16 +57,35 @@ export function renderNewTrainer(root, go) {
   setTimeout(() => $('#tname', root)?.focus(), 50);
 }
 
+const STARTER_INFO = {
+  kaimo: 'A round baby dragon with a gold gem. Brave and loyal.',
+  kaiko: 'A fluffy baby firebird. Full of energy and sparks.',
+  kipbun: 'A soft little bunny with glowing ear gems. Quick and clever.',
+};
+
 export function renderMeetPartner(root, go) {
-  root.innerHTML = `
+  const p = active();
+  let pick = null;
+  const draw = () => {
+    root.innerHTML = `
     <section class="screen meet">
       <div class="speech">
         <p class="speech-who">The Professor</p>
-        <p>Welcome, trainer! This is <strong>Kaimo</strong>, your partner. Every time you answer a times table right, you throw a Capture Ball at a wild Kaimon.</p>
-        <p>Answer fast and on lots of different days, and Kaimo will grow stronger. Ready?</p>
+        <p>Welcome, ${esc(p.name)}! Every trainer starts with a partner. Pick one. Your partner grows stronger as you master your times tables.</p>
       </div>
-      <div class="meet-art">${creatureArt(byNum(1))}</div>
-      <button class="btn-chunky btn-primary btn-xl" data-go>Let's go</button>
+      <div class="starters" role="radiogroup" aria-label="Choose your partner">
+        ${['kaimo', 'kaiko', 'kipbun'].map((id) => { const s = byId(id); const t = TYPES[s.type]; return `
+          <button class="starter${pick === id ? ' on' : ''}" role="radio" aria-checked="${pick === id}" data-pick="${id}" style="--rc:${t.color};--rl:${t.light}">
+            <span class="starter-art">${creatureArt(s)}</span>
+            <span class="starter-name">${s.name}</span>
+            <span class="type-tag" style="--rc:${t.color}">${t.name}</span>
+            <span class="starter-note">${STARTER_INFO[id]}</span>
+          </button>`; }).join('')}
+      </div>
+      <button class="btn-chunky btn-primary btn-xl" data-go ${pick ? '' : 'disabled'}>${pick ? 'Choose ' + byId(pick).name : 'Pick a partner'}</button>
     </section>`;
-  on(root, 'click', '[data-go]', () => { sfx.levelUp(); go('home'); });
+  };
+  draw();
+  on(root, 'click', '[data-pick]', (e, el) => { pick = el.dataset.pick; sfx.tap(); draw(); });
+  on(root, 'click', '[data-go]', () => { if (!pick) return; p.starter = pick; touch(p); sfx.levelUp(); go('home'); });
 }

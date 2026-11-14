@@ -1,5 +1,5 @@
 // Kaimon core rules: encounters, Capture Balls, catching, partner evolution, mythic cameos.
-import { SPECIES, byNum, MYTHIC_NUM } from '../data/creatures.js';
+import { SPECIES, MYTHIC_ID } from '../data/creatures.js';
 import { tableTier, levelRank, countAtLeast } from './facts.js';
 
 export const BALLS = {
@@ -9,7 +9,7 @@ export const BALLS = {
   legend:  { name: 'Legend Ball', power: 99 },
 };
 
-const BASE_CATCH = { common: 0.85, uncommon: 0.65, rare: 0.4, legendary: 0.25, mythic: 0.1 };
+const BASE_CATCH = { common: 0.62, uncommon: 0.45, rare: 0.28, legendary: 0.12, mythic: 0.05 };
 
 // Which wild Kaimon shows up for a fact. Higher stages appear once the
 // region's table reaches Bronze (stage 2) and Silver (stage 3).
@@ -37,51 +37,46 @@ export function ballForStreak(profile, streak) {
   return 'capture';
 }
 
+// Catch roll. Rarer Kaimon are harder; better balls and fast answers help.
+// shakes (0 to 3) shows how close it was: 3 = caught, 2 = so close, 0 = popped right out.
+export function catchChance(species, ball, fast) {
+  return Math.min(BASE_CATCH[species.rarity] * BALLS[ball].power + (fast ? 0.06 : 0), 0.97);
+}
+
 export function rollCatch(species, ball, fast) {
-  let p = BASE_CATCH[species.rarity] * BALLS[ball].power + (fast ? 0.08 : 0);
-  return Math.random() < Math.min(p, 0.97);
+  const p = catchChance(species, ball, fast);
+  const r = Math.random();
+  if (r < p) return { caught: true, shakes: 3 };
+  const miss = (r - p) / (1 - p); // 0 = barely missed, 1 = not close
+  return { caught: false, shakes: miss < 0.35 ? 2 : miss < 0.7 ? 1 : 0 };
 }
 
-export function markSeen(profile, num) {
-  const e = profile.dex[num] || (profile.dex[num] = { seen: 0, caught: 0, shiny: 0 });
-  e.seen++;
-  return e;
-}
-
-export function markCaught(profile, num) {
-  const e = profile.dex[num] || (profile.dex[num] = { seen: 1, caught: 0, shiny: 0 });
-  const isNew = !e.caught;
-  e.caught++;
-  const shiny = Math.random() < 1 / 32;
-  if (shiny) e.shiny++;
-  profile.stats.catches++;
-  return { isNew, shiny };
-}
-
-export const dexState = (profile, num) => {
-  const e = profile.dex[num];
+export const dexState = (profile, id) => {
+  const e = profile.dex[id];
   if (e?.caught) return 'caught';
   if (e?.seen) return 'seen';
-  if (num === MYTHIC_NUM && profile.mythic.sightings > 0) return 'seen';
+  if (id === MYTHIC_ID && profile.mythic.sightings > 0) return 'seen';
   return 'unknown';
 };
 
 export function dexCounts(profile) {
   let seen = 0, caught = 0;
   for (const s of SPECIES) {
-    const st = dexState(profile, s.num);
+    const st = dexState(profile, s.id);
     if (st !== 'unknown') seen++;
     if (st === 'caught') caught++;
   }
   return { seen, caught, total: SPECIES.length };
 }
 
-// Partner Kaimo evolves with total mastery (facts at Silver or higher).
+// The partner (chosen starter) evolves with total mastery (facts at Silver or higher).
 export function partnerOf(profile) {
   const silver = countAtLeast(profile, 'silver');
   const stage = silver >= 100 ? 3 : silver >= 30 ? 2 : 1;
   const next = stage === 1 ? 30 : stage === 2 ? 100 : null;
-  return { species: byNum(stage), silver, next };
+  const line = profile.starter || 'kaimo';
+  const species = SPECIES.find((s) => s.line === line && s.stage === stage);
+  return { species, silver, next };
 }
 
 // Mythic cameo chance per card. Rare at first, more often with badges.

@@ -50,11 +50,11 @@ export function countAtLeast(profile, level) {
   return n;
 }
 
-// Record one answer. Returns { before, after } levels.
-export function recordAnswer(profile, id, correct, ms, via) {
+// Apply one answer to the fact record. t = when it happened (ms), so answers
+// synced from another device count on the right day.
+export function applyAnswer(profile, id, correct, ms, t) {
   const rec = profile.facts[id] || (profile.facts[id] = { a: 0, c: 0, ms: 0, days: [], fastDays: [], lastMiss: 0 });
-  const before = levelOf(rec);
-  const d = today();
+  const d = today(t);
   rec.a++;
   if (correct) {
     rec.c++;
@@ -62,11 +62,9 @@ export function recordAnswer(profile, id, correct, ms, via) {
     if (!rec.days.includes(d)) rec.days.push(d);
     if (ms <= profile.settings.fastMs && !rec.fastDays.includes(d)) rec.fastDays.push(d);
   } else {
-    rec.lastMiss = Date.now();
+    rec.lastMiss = Math.max(rec.lastMiss || 0, t);
   }
-  rec.last = Date.now();
-  profile.events.push({ t: Date.now(), f: id, ok: correct ? 1 : 0, ms: Math.round(ms), via });
-  return { before, after: levelOf(rec) };
+  rec.last = Math.max(rec.last || 0, t);
 }
 
 const WEIGHT = { new: 3, learning: 4, bronze: 2.4, silver: 1.5, gold: 0.8, star: 0.35 };

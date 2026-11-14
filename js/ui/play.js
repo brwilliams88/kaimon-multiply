@@ -1,8 +1,10 @@
 import { active, save } from '../core/store.js';
-import { regionOf, TYPES, byNum, MYTHIC_NUM } from '../data/creatures.js';
+import { regionOf, TYPES, byId, MYTHIC_ID } from '../data/creatures.js';
 import { creatureArt } from '../core/art.js';
-import { factsForTables, pickNext, recordAnswer, answerOf, parseFact, hintLadder, levelRank, LEVEL_LABEL, tableTier } from '../core/facts.js';
-import { pickEncounter, ballForStreak, rollCatch, markSeen, markCaught, mythicCameo, BALLS, dexState } from '../core/game.js';
+import { factsForTables, pickNext, answerOf, parseFact, hintLadder, levelRank, LEVEL_LABEL, tableTier } from '../core/facts.js';
+import { answer, seen, caught as catchIt, ball as giveBall, sighting, session } from '../core/actions.js';
+import { syncNow } from '../core/sync.js';
+import { pickEncounter, ballForStreak, rollCatch, mythicCameo, BALLS, dexState } from '../core/game.js';
 import { voiceSupported, listen, stop as stopVoice } from '../core/voice.js';
 import { sfx, setSound } from '../core/sound.js';
 import { ballIcon, medal } from './home.js';
@@ -30,7 +32,7 @@ export function renderPlay(root, go, { table }) {
       </header>
       <div class="play-body">
         <div class="stage">
-          <div class="mythic-fly" aria-hidden="true">${creatureArt(byNum(MYTHIC_NUM), { mode: 'seen' })}</div>
+          <div class="mythic-fly" aria-hidden="true">${creatureArt(byId(MYTHIC_ID), { mode: 'seen' })}</div>
           <div class="card3d"><div class="card-inner">
             <div class="face front"></div>
             <div class="face back"></div>
@@ -73,10 +75,12 @@ export function renderPlay(root, go, { table }) {
     S.recent.push(id); if (S.recent.length > 3) S.recent.shift();
     S.fact = id;
     const [a, b] = parseFact(id);
-    const species = pickEncounter(p, a);
+    const lingering = S.linger;
+    S.linger = null;
+    const species = lingering || pickEncounter(p, a);
     S.species = species;
-    const known = dexState(p, species.num) === 'caught';
-    markSeen(p, species.num);
+    const known = dexState(p, species.id) === 'caught';
+    if (!lingering) seen(p, species.id);
     const region = regionOf(a);
     const t = TYPES[region.type];
     root.style.setProperty('--rc', t.color);
@@ -85,7 +89,7 @@ export function renderPlay(root, go, { table }) {
     el.front.innerHTML = `
       <div class="card-head"><span>${region.name}</span><span class="card-type">${t.name}</span></div>
       <div class="card-q"><span>${a}</span><span class="times">×</span><span>${b}</span></div>
-      <div class="card-wild">${creatureArt(species, { mode: 'seen' })}<p>A wild ${known ? esc(species.name) : '???'} appeared</p></div>`;
+      <div class="card-wild">${creatureArt(species, { mode: 'seen' })}<p>${lingering ? `${known ? esc(species.name) : 'The wild Kaimon'} is still here! Answer to throw again.` : `A wild ${known ? esc(species.name) : '???'} appeared`}</p></div>`;
     el.back.innerHTML = '';
     el.inner.classList.remove('flipped', 'wrong');
     setInput('');
@@ -101,8 +105,7 @@ export function renderPlay(root, go, { table }) {
     if (!mythicCameo(p)) return;
     await wait(900);
     if (S.phase !== 'ask') return;
-    p.mythic.sightings++;
-    p.mythic.lastSeen = Date.now();
+    sighting(p);
     save();
     el.fly.classList.remove('go'); void el.fly.offsetWidth; el.fly.classList.add('go');
     sfx.mythic();
@@ -118,27 +121,26 @@ export function renderPlay(root, go, { table }) {
     const ans = answerOf(S.fact);
     const ok = parseInt(S.input, 10) === ans;
     const [a, b] = parseFact(S.fact);
-    const lv = recordAnswer(p, S.fact, ok, ms, via);
-    p.stats.answers++;
+    const lv = answer(p, S.fact, ok, ms, via);
     S.answered++;
     S.results = S.results || [];
     S.results[S.n] = ok;
     if (levelRank(lv.after) > levelRank(lv.before) && levelRank(lv.after) >= 2) S.levelUps.push({ id: S.fact, level: lv.after });
 
     if (ok) {
-      p.stats.correct++;
       S.correct++;
       S.streak++;
       S.best = Math.max(S.best, S.streak);
-      p.stats.bestStreak = Math.max(p.stats.bestStreak, S.streak);
       sfx.correct();
       let ball = ballForStreak(p, S.streak);
-      if ((S.species.rarity === 'rare') && p.balls.legend > 0) { ball = 'legend'; p.balls.legend--; }
+      if ((S.species.rarity === 'rare') && p.balls.legend > 0) { ball = 'legend'; giveBall(p, 'legend', -1); }
       const fast = ms <= p.settings.fastMs;
-      const caught = rollCatch(S.species, ball, fast);
+      const roll = rollCatch(S.species, ball, fast);
+      const caught = roll.caught;
       let result = null;
-      if (caught) result = markCaught(p, S.species.num);
-      if (caught) S.catches.push({ num: S.species.num, isNew: result.isNew, shiny: result.shiny });
+      if (caught) result = catchIt(p, S.species.id);
+      if (caught) S.catches.push({ id: S.species.id, isNew: result.isNew, shiny: result.shiny });
+      else if (Math.random() < 0.5) S.linger = S.species;
       save();
       updateStreak();
       el.back.innerHTML = `
@@ -149,7 +151,7 @@ export function renderPlay(root, go, { table }) {
         </div>
         <p class="catch-msg" aria-live="polite">${BALLS[ball].name}!</p>`;
       el.inner.classList.add('flipped');
-      await animateCatch(caught, result);
+      await animateCatch(roll, result);
       if (S.levelUps.length && S.levelUps[S.levelUps.length - 1].id === S.fact) {
         const l = S.levelUps[S.levelUps.length - 1];
         sfx.levelUp();
@@ -169,7 +171,7 @@ export function renderPlay(root, go, { table }) {
         <div class="card-head"><span>Not quite</span></div>
         <div class="card-q answer-reveal"><span>${a}</span><span class="times">×</span><span>${b}</span><span class="eq">=</span><span class="ans">${ans}</span></div>
         <div class="hint-scroll"><p>Count by ${a}s</p><div class="ladder">${hintLadder(S.fact).map((v, i, arr) => `<span class="${i === arr.length - 1 ? 'last' : ''}">${v}</span>`).join('')}</div></div>
-        <p class="catch-msg">${S.species.name === '???' ? 'It' : esc(dexState(p, S.species.num) === 'caught' ? S.species.name : 'The wild Kaimon')} ran off. Type ${ans} to keep going.</p>`;
+        <p class="catch-msg">${esc(dexState(p, S.species.id) === 'caught' ? S.species.name : 'The wild Kaimon')} ran off. Type ${ans} to keep going.</p>`;
       el.inner.classList.add('flipped', 'wrong');
       S.phase = 'learn';
       S.mustType = ans;
@@ -183,7 +185,8 @@ export function renderPlay(root, go, { table }) {
     else { setInput(''); el.hint.textContent = `Type ${S.mustType}`; sfx.wrong(); }
   }
 
-  async function animateCatch(caught, result) {
+  async function animateCatch(roll, result) {
+    const caught = roll.caught;
     const zone = $('.catch-zone', el.back);
     const msg = $('.catch-msg', el.back);
     await wait(380);
@@ -191,8 +194,8 @@ export function renderPlay(root, go, { table }) {
     zone.classList.add('thrown');
     await wait(520);
     zone.classList.add('absorbed');
-    for (let i = 0; i < 3; i++) { await wait(330); sfx.wobble(); zone.classList.toggle('wob'); }
-    await wait(300);
+    for (let i = 0; i < roll.shakes; i++) { await wait(380); sfx.wobble(); zone.classList.toggle('wob'); }
+    await wait(roll.shakes ? 360 : 200);
     if (caught) {
       zone.classList.add('caught');
       sfx.caught();
@@ -201,7 +204,7 @@ export function renderPlay(root, go, { table }) {
     } else {
       zone.classList.add('escaped');
       sfx.escape();
-      msg.textContent = `It broke free! The answer still counts.`;
+      msg.textContent = roll.shakes === 2 ? 'Argh! So close! The answer still counts.' : roll.shakes === 1 ? 'It broke free! The answer still counts.' : 'It popped right out! The answer still counts.';
     }
   }
 
@@ -214,16 +217,16 @@ export function renderPlay(root, go, { table }) {
 
   function finish() {
     stopVoice();
-    p.stats.sessions++;
-    p.stats.msPlayed += Date.now() - S.startedAt;
+    session(p, Date.now() - S.startedAt, S.best);
     const newBadges = [];
     for (let t = 1; t <= 10; t++) {
       const now = tableTier(p, t);
-      if (now && levelRank(now) > levelRank(tierBefore[t] || 'learning')) { newBadges.push({ t, tier: now }); p.balls.legend++; }
+      if (now && levelRank(now) > levelRank(tierBefore[t] || 'learning')) { newBadges.push({ t, tier: now }); giveBall(p, 'legend', 1); }
     }
     save();
+    syncNow();
     const uniq = [];
-    for (const c of S.catches) if (!uniq.find((u) => u.num === c.num)) uniq.push(c);
+    for (const c of S.catches) if (!uniq.find((u) => u.id === c.id)) uniq.push(c);
     root.innerHTML = `
       <section class="screen summary">
         <h1 class="screen-title">Nice work, ${esc(p.name)}!</h1>
@@ -233,7 +236,7 @@ export function renderPlay(root, go, { table }) {
           <div><strong>${S.catches.length}</strong><span>caught</span></div>
         </div>
         ${newBadges.length ? `<div class="sum-badges">${newBadges.map((b) => `<p>${medal(b.tier)} ${regionOf(b.t).badge}: ${LEVEL_LABEL[b.tier]}! You got a Legend Ball.</p>`).join('')}</div>` : ''}
-        ${uniq.length ? `<h2 class="section-title">Caught this time</h2><div class="sum-catches">${uniq.map((c) => { const s = byNum(c.num); return `<div class="sum-catch">${creatureArt(s, { shiny: c.shiny })}<span>${esc(s.name)}</span>${c.isNew ? '<span class="new-tag">New</span>' : ''}</div>`; }).join('')}</div>` : ''}
+        ${uniq.length ? `<h2 class="section-title">Caught this time</h2><div class="sum-catches">${uniq.map((c) => { const s = byId(c.id); return `<div class="sum-catch">${creatureArt(s, { shiny: c.shiny })}<span>${esc(s.name)}</span>${c.isNew ? '<span class="new-tag">New</span>' : ''}</div>`; }).join('')}</div>` : ''}
         ${S.levelUps.length ? `<h2 class="section-title">Facts that leveled up</h2><div class="sum-levels">${S.levelUps.map((l) => { const [a, b] = parseFact(l.id); return `<span class="lvl lvl-${l.level}">${a} × ${b} · ${LEVEL_LABEL[l.level]}</span>`; }).join('')}</div>` : ''}
         <div class="sum-actions">
           <button class="btn-chunky btn-primary btn-xl" data-again>Practice again</button>
@@ -258,7 +261,7 @@ export function renderPlay(root, go, { table }) {
   on(root, 'click', '.card3d', () => { if (S.phase === 'done') advance(); });
   on(root, 'click', '[data-exit]', () => {
     const sh = sheet(`<h2>Stop practicing?</h2><p>Your catches and progress are saved.</p><div class="sheet-actions"><button class="btn-chunky btn-primary" data-stop>Stop</button><button class="btn-chunky" data-close>Keep going</button></div>`);
-    sh.el.querySelector('[data-stop]').addEventListener('click', () => { sh.close(); stopVoice(); p.stats.msPlayed += Date.now() - S.startedAt; save(); go('home'); });
+    sh.el.querySelector('[data-stop]').addEventListener('click', () => { sh.close(); stopVoice(); session(p, Date.now() - S.startedAt, S.best); save(); syncNow(); go('home'); });
   });
   if (el.mic) {
     el.mic.addEventListener('click', () => {

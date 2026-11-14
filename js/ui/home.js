@@ -4,14 +4,14 @@ import { creatureArt } from '../core/art.js';
 import { tableTier, tableProgress, LEVEL_LABEL } from '../core/facts.js';
 import { partnerOf, dexCounts, trainerTitle } from '../core/game.js';
 import { avatarSVG } from './avatars.js';
-import { esc, on, $, holdButton } from './dom.js';
+import { esc, on, $, holdButton, sheet } from './dom.js';
 import { sfx, unlock } from '../core/sound.js';
 
 export const medal = (tier) => tier
   ? `<span class="medal medal-${tier}" title="${LEVEL_LABEL[tier]} badge"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="currentColor" stroke="#14213D" stroke-width="2.5"/><path d="M12 7 L13.6 10.5 L17.3 10.8 L14.5 13.2 L15.4 16.8 L12 14.9 L8.6 16.8 L9.5 13.2 L6.7 10.8 L10.4 10.5 Z" fill="#FFFFFF" stroke="#14213D" stroke-width="1.2" stroke-linejoin="round"/></svg><span class="sr">${LEVEL_LABEL[tier]} badge</span></span>`
   : '';
 
-export function renderHome(root, go) {
+export function renderHome(root, go, params = {}) {
   const p = active();
   const partner = partnerOf(p);
   const dex = dexCounts(p);
@@ -21,7 +21,7 @@ export function renderHome(root, go) {
       <header class="topbar">
         <button class="trainer-chip" data-switch aria-label="Switch trainer">
           <span class="trainer-av">${avatarSVG(p.avatar)}</span>
-          <span class="trainer-text"><strong>${esc(p.name)}</strong><small>${trainerTitle(p)}</small></span>
+          <span class="trainer-text"><strong>${esc(p.name)}${p.stats.stars ? ` <span class="stars" title="Good Work Stamps">★${p.stats.stars}</span>` : ''}</strong><small>${trainerTitle(p)}</small></span>
         </button>
         <div class="topbar-right">
           <button class="pill" data-dex aria-label="Open Kaidex"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="3" fill="#FF6B4A" stroke="currentColor" stroke-width="2.5"/><circle cx="12" cy="10" r="3.5" fill="#FFFFFF" stroke="currentColor" stroke-width="2"/><path d="M8 16 H16" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>${dex.caught}/${dex.total}</button>
@@ -42,6 +42,7 @@ export function renderHome(root, go) {
               <span class="ball-count" title="Super Balls">${ballIcon('super')}${p.balls.super}</span>
               <span class="ball-count" title="Mega Balls">${ballIcon('mega')}${p.balls.mega}</span>
               <span class="ball-count" title="Legend Balls">${ballIcon('legend')}${p.balls.legend}</span>
+              ${p.items.snack ? `<span class="ball-count" title="Power Snacks">${snackIcon()}${p.items.snack}</span>` : ''}
             </div>
           </div>
           <button class="btn-chunky btn-primary btn-xl play-btn" data-play="mix">Practice</button>
@@ -73,10 +74,29 @@ export function renderHome(root, go) {
   on(root, 'click', '[data-dex]', () => { sfx.tap(); go('kaidex'); });
   on(root, 'click', '[data-switch]', () => { sfx.tap(); go('welcome'); });
   holdButton($('[data-grownups]', root), 1200, () => go('grownups'));
+
+  if (params.celebrate === 'stamp') {
+    sfx.levelUp();
+    sheet(`<div class="celebrate">
+      <p class="celebrate-star" aria-hidden="true">★</p>
+      <h2>Good Work Stamp!</h2>
+      <p>${esc(p.name)}, your grown-up says you did great on real math work. Here's a reward:</p>
+      <div class="celebrate-row"><span>${ballIcon('mega')} Mega Ball</span><span>${snackIcon()} 3 Power Snacks</span><span class="stars">★ Gold star</span></div>
+      <button class="btn-chunky btn-primary" data-close>Awesome!</button></div>`);
+  }
 }
 
 export function ballIcon(kind) {
-  const c = { capture: ['#2D9CDB', ''], super: ['#8E5CF0', '<path d="M0 30 L100 0 L100 14 L0 44 Z M0 76 L100 46 L100 58 L0 88 Z" fill="#C9B2FF"/>'], mega: ['#F2B705', '<circle cx="30" cy="72" r="5" fill="#FFF6C9"/><circle cx="70" cy="36" r="5" fill="#FFF6C9"/><circle cx="72" cy="76" r="4" fill="#FFF6C9"/>'], legend: ['#F0552B', '<rect x="0" y="40" width="100" height="16" fill="#F2B705"/><rect x="0" y="56" width="100" height="16" fill="#3FA34D"/><rect x="0" y="72" width="100" height="30" fill="#2D7FF9"/>'] }[kind];
+  const c = {
+    capture: ['#2D9CDB', '#1F78AD', ''],
+    super: ['#8E5CF0', '#6B3FCC', '<path d="M0 30 L100 0 L100 12 L0 42 Z" fill="#C9B2FF" opacity=".8"/>'],
+    mega: ['#F2B705', '#C99400', '<circle cx="28" cy="34" r="4" fill="#FFF6C9"/><circle cx="72" cy="30" r="4" fill="#FFF6C9"/>'],
+    legend: ['#F0552B', '#2D7FF9', '<rect x="0" y="30" width="100" height="10" fill="#F2B705"/>'],
+  }[kind];
   const id = 'bc' + kind + Math.random().toString(36).slice(2, 6);
-  return `<svg class="ball-svg" viewBox="0 0 100 100" aria-hidden="true"><defs><clipPath id="${id}"><circle cx="50" cy="56" r="38"/></clipPath></defs><circle cx="50" cy="56" r="38" fill="${c[0]}"/><g clip-path="url(#${id})">${c[1]}<path d="M8 60 C 26 38, 42 80, 60 56 S 84 46, 94 56" fill="none" stroke="#14213D" stroke-width="6" stroke-linecap="round"/><ellipse cx="36" cy="38" rx="9" ry="5" fill="#FFFFFF" opacity="0.55"/></g><circle cx="50" cy="56" r="38" fill="none" stroke="#14213D" stroke-width="6"/><path d="M50 6 L54.5 15 L64 16.5 L57 23 L58.8 32.5 L50 28 L41.2 32.5 L43 23 L36 16.5 L45.5 15 Z" fill="#FFD23F" stroke="#14213D" stroke-width="4" stroke-linejoin="round"/></svg>`;
+  return `<svg class="ball-svg" viewBox="0 0 100 100" aria-hidden="true"><defs><clipPath id="${id}"><circle cx="50" cy="52" r="40"/></clipPath></defs><circle cx="50" cy="52" r="40" fill="${c[0]}"/><g clip-path="url(#${id})">${c[2]}<path d="M10 58 C 28 38, 42 80, 60 54 S 82 46, 90 56 L90 100 L10 100 Z" fill="${c[1]}"/><ellipse cx="34" cy="32" rx="10" ry="5" fill="#FFFFFF" opacity="0.55"/><path d="M10 58 C 28 38, 42 80, 60 54 S 82 46, 90 56" fill="none" stroke="#14213D" stroke-width="6" stroke-linecap="round"/></g><circle cx="50" cy="52" r="40" fill="none" stroke="#14213D" stroke-width="6"/><path d="M50 43 L60 49 L60 61 L50 67 L40 61 L40 49 Z" fill="#FFFFFF" stroke="#14213D" stroke-width="5" stroke-linejoin="round"/><path d="M50 49 L55 52 L55 58 L50 61 L45 58 L45 52 Z" fill="${c[0]}"/></svg>`;
+}
+
+export function snackIcon() {
+  return `<svg class="ball-svg" viewBox="0 0 72 72" aria-hidden="true"><g transform="rotate(45 36 36)"><rect x="28" y="8" width="16" height="56" rx="8" fill="#FF7AA8" stroke="#14213D" stroke-width="5"/><rect x="8" y="28" width="56" height="16" rx="8" fill="#FF7AA8" stroke="#14213D" stroke-width="5"/></g></svg>`;
 }
