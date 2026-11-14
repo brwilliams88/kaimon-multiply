@@ -37,14 +37,15 @@ export function ballForStreak(profile, streak) {
   return 'capture';
 }
 
-// Catch roll. Rarer Kaimon are harder; better balls and fast answers help.
+// Catch roll. Rarer Kaimon are harder; better balls and a stronger throw help.
+// power (0.15 to 1) comes from the power meter: faster answers throw harder.
 // shakes (0 to 3) shows how close it was: 3 = caught, 2 = so close, 0 = popped right out.
-export function catchChance(species, ball, fast) {
-  return Math.min(BASE_CATCH[species.rarity] * BALLS[ball].power + (fast ? 0.06 : 0), 0.97);
+export function catchChance(species, ball, power) {
+  return Math.min(BASE_CATCH[species.rarity] * BALLS[ball].power + 0.09 * power, 0.97);
 }
 
-export function rollCatch(species, ball, fast) {
-  const p = catchChance(species, ball, fast);
+export function rollCatch(species, ball, power) {
+  const p = catchChance(species, ball, power);
   const r = Math.random();
   if (r < p) return { caught: true, shakes: 3 };
   const miss = (r - p) / (1 - p); // 0 = barely missed, 1 = not close

@@ -10,6 +10,7 @@ const defaultSettings = () => ({
   fastMs: 5000,
   sound: true,
   voice: true,
+  dailyLimit: 0,
 });
 
 export function newProfile(name, avatar, id) {
@@ -29,10 +30,14 @@ export function newProfile(name, avatar, id) {
     items: { snack: 0 },
     stats: { answers: 0, correct: 0, sessions: 0, msPlayed: 0, bestStreak: 0, catches: 0, stars: 0 },
     mythic: { sightings: 0, lastSeen: 0 },
+    battles: newBattles(),
+    play: {},
     trophies: [],
     outbox: [],
   };
 }
+
+export const newBattles = () => ({ played: 0, wins: 0, grunts: 0, boss: 0, champs: {} });
 
 function blank() {
   return { v: 2, activeId: null, profiles: {}, device: null, pinHash: null, sync: null };
@@ -46,6 +51,8 @@ function migrate(p) {
   p.items = { snack: 0, ...(p.items || {}) };
   p.stats = { stars: 0, ...(p.stats || {}) };
   p.mythic = p.mythic || { sightings: 0, lastSeen: 0 };
+  p.battles = { ...newBattles(), ...(p.battles || {}) };
+  p.play = p.play || {};
   p.trophies = p.trophies || [];
   p.outbox = p.outbox || [];
   p.updatedAt = p.updatedAt || p.createdAt || Date.now();

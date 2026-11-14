@@ -5,6 +5,10 @@ import { factsForTables, pickNext, answerOf, parseFact, hintLadder, levelRank, L
 import { answer, seen, caught as catchIt, ball as giveBall, sighting, session } from '../core/actions.js';
 import { syncNow } from '../core/sync.js';
 import { pickEncounter, ballForStreak, rollCatch, mythicCameo, BALLS, dexState } from '../core/game.js';
+import { powerFor, powerLabel } from '../core/battle.js';
+import { dadJoke } from '../data/dadjokes.js';
+import { trainerArt } from './trainerArt.js';
+import { limitReached } from '../core/playtime.js';
 import { voiceSupported, listen, stop as stopVoice } from '../core/voice.js';
 import { sfx, setSound } from '../core/sound.js';
 import { ballIcon, medal } from './home.js';
@@ -18,7 +22,7 @@ export function renderPlay(root, go, { table }) {
   const S = {
     n: 0, length: p.settings.sessionLength, streak: 0, best: 0, correct: 0, answered: 0,
     recent: [], requeue: [], catches: [], levelUps: [], misses: [], startedAt: Date.now(),
-    fact: null, species: null, shownAt: 0, input: '', phase: 'ask', mustType: null, listening: false,
+    fact: null, species: null, shownAt: 0, input: '', phase: 'ask', mustType: null, listening: false, raf: 0,
   };
   const useVoice = p.settings.voice && voiceSupported();
   const tierBefore = Object.fromEntries([1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((t) => [t, tableTier(p, t)]));
@@ -89,7 +93,8 @@ export function renderPlay(root, go, { table }) {
     el.front.innerHTML = `
       <div class="card-head"><span>${region.name}</span><span class="card-type">${t.name}</span></div>
       <div class="card-q"><span>${a}</span><span class="times">×</span><span>${b}</span></div>
-      <div class="card-wild">${creatureArt(species, { mode: 'seen' })}<p>${lingering ? `${known ? esc(species.name) : 'The wild Kaimon'} is still here! Answer to throw again.` : `A wild ${known ? esc(species.name) : '???'} appeared`}</p></div>`;
+      <div class="card-wild">${creatureArt(species, { mode: 'seen' })}<p>${lingering ? `${known ? esc(species.name) : 'The wild Kaimon'} is still here! Answer to throw again.` : `A wild ${known ? esc(species.name) : '???'} appeared`}</p></div>
+      <div class="power" aria-hidden="true"><span class="power-fill"></span><span class="power-label">Throw power</span></div>`;
     el.back.innerHTML = '';
     el.inner.classList.remove('flipped', 'wrong');
     setInput('');
@@ -97,8 +102,23 @@ export function renderPlay(root, go, { table }) {
     S.phase = 'ask';
     S.mustType = null;
     S.shownAt = performance.now();
+    runPower();
     el.pips.forEach((pip, i) => pip.className = i < S.n ? (S.results?.[i] ? 'done ok' : 'done') : i === S.n ? 'now' : '');
     maybeMythic();
+  }
+
+  // Power meter: full for a quick answer, drains slowly, never runs out.
+  function runPower() {
+    cancelAnimationFrame(S.raf);
+    const fill = $('.power-fill', el.front);
+    const tick = () => {
+      if (S.phase !== 'ask' || !fill.isConnected) return;
+      const pw = powerFor(performance.now() - S.shownAt);
+      fill.style.width = (pw * 100) + '%';
+      fill.className = 'power-fill' + (pw >= 0.9 ? ' max' : pw >= 0.6 ? ' hi' : '');
+      S.raf = requestAnimationFrame(tick);
+    };
+    tick();
   }
 
   async function maybeMythic() {
@@ -135,7 +155,9 @@ export function renderPlay(root, go, { table }) {
       let ball = ballForStreak(p, S.streak);
       if ((S.species.rarity === 'rare') && p.balls.legend > 0) { ball = 'legend'; giveBall(p, 'legend', -1); }
       const fast = ms <= p.settings.fastMs;
-      const roll = rollCatch(S.species, ball, fast);
+      const pw = powerFor(ms);
+      cancelAnimationFrame(S.raf);
+      const roll = rollCatch(S.species, ball, pw);
       const caught = roll.caught;
       let result = null;
       if (caught) result = catchIt(p, S.species.id);
@@ -149,9 +171,9 @@ export function renderPlay(root, go, { table }) {
           <div class="catch-art">${creatureArt(S.species, { shiny: result?.shiny })}</div>
           <div class="throw-ball">${ballIcon(ball)}</div>
         </div>
-        <p class="catch-msg" aria-live="polite">${BALLS[ball].name}!</p>`;
+        <p class="catch-msg" aria-live="polite">${powerLabel(pw)} throw! ${BALLS[ball].name}!</p>`;
       el.inner.classList.add('flipped');
-      await animateCatch(roll, result);
+      await animateCatch(roll, result, pw);
       if (S.levelUps.length && S.levelUps[S.levelUps.length - 1].id === S.fact) {
         const l = S.levelUps[S.levelUps.length - 1];
         sfx.levelUp();
@@ -185,12 +207,13 @@ export function renderPlay(root, go, { table }) {
     else { setInput(''); el.hint.textContent = `Type ${S.mustType}`; sfx.wrong(); }
   }
 
-  async function animateCatch(roll, result) {
+  async function animateCatch(roll, result, pw = 0.5) {
     const caught = roll.caught;
     const zone = $('.catch-zone', el.back);
     const msg = $('.catch-msg', el.back);
     await wait(380);
     sfx.throw();
+    zone.style.setProperty('--spin', '-' + (360 + Math.round(pw * 540)) + 'deg');
     zone.classList.add('thrown');
     await wait(520);
     zone.classList.add('absorbed');
@@ -225,6 +248,8 @@ export function renderPlay(root, go, { table }) {
     }
     save();
     syncNow();
+    // Team Papa sometimes jumps out at the end of a practice.
+    const ambush = S.answered >= 8 && Math.random() < 0.3 && !limitReached(p);
     const uniq = [];
     for (const c of S.catches) if (!uniq.find((u) => u.id === c.id)) uniq.push(c);
     root.innerHTML = `
@@ -238,13 +263,19 @@ export function renderPlay(root, go, { table }) {
         ${newBadges.length ? `<div class="sum-badges">${newBadges.map((b) => `<p>${medal(b.tier)} ${regionOf(b.t).badge}: ${LEVEL_LABEL[b.tier]}! You got a Legend Ball.</p>`).join('')}</div>` : ''}
         ${uniq.length ? `<h2 class="section-title">Caught this time</h2><div class="sum-catches">${uniq.map((c) => { const s = byId(c.id); return `<div class="sum-catch">${creatureArt(s, { shiny: c.shiny })}<span>${esc(s.name)}</span>${c.isNew ? '<span class="new-tag">New</span>' : ''}</div>`; }).join('')}</div>` : ''}
         ${S.levelUps.length ? `<h2 class="section-title">Facts that leveled up</h2><div class="sum-levels">${S.levelUps.map((l) => { const [a, b] = parseFact(l.id); return `<span class="lvl lvl-${l.level}">${a} × ${b} · ${LEVEL_LABEL[l.level]}</span>`; }).join('')}</div>` : ''}
+        ${ambush ? `<div class="ambush">
+          <span class="ambush-av">${trainerArt({ kind: 'grunt' })}</span>
+          <div class="ambush-text"><strong>A Team Papa grunt jumps out!</strong><p>${esc(dadJoke('appear'))}</p></div>
+          <button class="btn-chunky btn-primary" data-ambush>Battle!</button>
+        </div>` : ''}
         <div class="sum-actions">
           <button class="btn-chunky btn-primary btn-xl" data-again>Practice again</button>
           <button class="btn-chunky btn-xl" data-home>Home</button>
         </div>
       </section>`;
-    on(root, 'click', '[data-again]', () => go('play', { table }));
+    on(root, 'click', '[data-again]', () => go(limitReached(p) ? 'home' : 'play', { table }));
     on(root, 'click', '[data-home]', () => go('home'));
+    on(root, 'click', '[data-ambush]', () => go('battle', { kind: 'grunt' }));
   }
 
   // Input handlers

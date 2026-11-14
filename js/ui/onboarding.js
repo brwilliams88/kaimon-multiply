@@ -1,4 +1,6 @@
 import { allProfiles, addProfile, newProfile, switchProfile, active, touch } from '../core/store.js';
+import { dexCounts } from '../core/game.js';
+import { status as syncStatus, onSyncChange } from '../core/sync.js';
 import { byId, TYPES } from '../data/creatures.js';
 import { creatureArt } from '../core/art.js';
 import { avatarSVG, AVATAR_COUNT } from './avatars.js';
@@ -7,22 +9,31 @@ import { sfx, unlock } from '../core/sound.js';
 
 export function renderWelcome(root, go) {
   const profiles = allProfiles();
+  const st = syncStatus();
+  const hasFamily = profiles.some((p) => p.family);
+  const famLine = st.signedIn ? `<p class="fam-status">${cloudIcon()}<span>Family sync is on for <strong>${esc(st.email)}</strong>${st.busy ? '. Looking for family trainers...' : ''}</span></p>
+    ${!hasFamily && !st.busy ? `<p class="fam-help">No family trainers yet. On the device where your child plays, open Grown-ups and turn on <strong>Sync with family</strong> for their trainer. It will show up here by itself.</p>` : ''}` : '';
   root.innerHTML = `
     <section class="screen welcome">
       <div class="welcome-hero">
         <div class="logo" aria-label="Kaimon Multiply"><span class="logo-kai">Kai</span><span class="logo-mon">mon</span><span class="logo-sub">Multiply</span></div>
         <div class="welcome-art">${creatureArt(byId('kaimo'))}</div>
       </div>
+      ${famLine}
       ${profiles.length ? `
         <h2 class="welcome-q">Who's playing?</h2>
         <div class="who-list">
-          ${profiles.map((p) => `<button class="who btn-chunky" data-id="${p.id}"><span class="who-av">${avatarSVG(p.avatar)}</span><span>${esc(p.name)}</span></button>`).join('')}
+          ${profiles.map((p) => `<button class="who btn-chunky${p.id === active()?.id ? ' last' : ''}" data-id="${p.id}"><span class="who-av">${avatarSVG(p.avatar)}</span><span class="who-text"><span class="who-name">${esc(p.name)}</span><span class="who-meta"><span class="who-where ${p.family ? 'fam' : ''}">${p.family ? cloudIcon() + 'Family' : 'This device'}</span><span>${dexCounts(p).caught} caught</span></span></span></button>`).join('')}
           <button class="who who-new btn-chunky" data-new><span class="who-av who-plus" aria-hidden="true">+</span><span>New trainer</span></button>
         </div>` : `
         <p class="welcome-line">Answer times tables. Catch Kaimon. Fill your Kaidex.</p>
         <button class="btn-chunky btn-primary btn-xl" data-new>Start</button>`}
     </section>`;
-  on(root, 'click', '[data-id]', (e, el) => { unlock(); sfx.tap(); switchProfile(el.dataset.id); go('home'); });
+  // Family trainers can arrive from sync while this screen is open.
+  const sig = () => JSON.stringify([allProfiles().map((p) => p.id + p.family), syncStatus().signedIn, syncStatus().busy]);
+  const before = sig();
+  const off = onSyncChange(() => { if (!root.isConnected || root.dataset.screen !== 'welcome') return off(); if (sig() !== before) { off(); renderWelcome(root, go); } });
+  on(root, 'click', '[data-id]', (e, el) => { unlock(); sfx.tap(); switchProfile(el.dataset.id); go(active().starter ? 'home' : 'meetPartner'); });
   on(root, 'click', '[data-new]', () => { unlock(); sfx.tap(); go('newTrainer'); });
 }
 
@@ -89,3 +100,5 @@ export function renderMeetPartner(root, go) {
   on(root, 'click', '[data-pick]', (e, el) => { pick = el.dataset.pick; sfx.tap(); draw(); });
   on(root, 'click', '[data-go]', () => { if (!pick) return; p.starter = pick; touch(p); sfx.levelUp(); go('home'); });
 }
+
+export const cloudIcon = () => `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 18 H17.5 a4 4 0 0 0 0.4 -8 a6 6 0 0 0 -11.6 1.2 A3.5 3.5 0 0 0 7 18 Z" fill="currentColor"/></svg>`;

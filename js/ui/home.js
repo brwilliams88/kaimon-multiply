@@ -3,6 +3,9 @@ import { REGIONS, TYPES } from '../data/creatures.js';
 import { creatureArt } from '../core/art.js';
 import { tableTier, tableProgress, LEVEL_LABEL } from '../core/facts.js';
 import { partnerOf, dexCounts, trainerTitle } from '../core/game.js';
+import { bossUnlocked } from '../core/battle.js';
+import { limitReached } from '../core/playtime.js';
+import { trainerArt } from './trainerArt.js';
 import { avatarSVG } from './avatars.js';
 import { esc, on, $, holdButton, sheet } from './dom.js';
 import { sfx, unlock } from '../core/sound.js';
@@ -21,6 +24,7 @@ export function renderHome(root, go, params = {}) {
       <header class="topbar">
         <button class="trainer-chip" data-switch aria-label="Switch trainer">
           <span class="trainer-av">${avatarSVG(p.avatar)}</span>
+          <span class="trainer-swap" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 4 L3 8 L7 12 M3 8 H17 M17 12 L21 16 L17 20 M21 16 H7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
           <span class="trainer-text"><strong>${esc(p.name)}${p.stats.stars ? ` <span class="stars" title="Good Work Stamps">★${p.stats.stars}</span>` : ''}</strong><small>${trainerTitle(p)}</small></span>
         </button>
         <div class="topbar-right">
@@ -62,14 +66,58 @@ export function renderHome(root, go, params = {}) {
             </button>`;
           }).join('')}
         </div>
+
+        <h2 class="section-title">Battles</h2>
+        <div class="battles">
+          <div class="champs">
+            ${REGIONS.filter((r) => p.settings.tables.includes(r.table)).map((r) => {
+              const t = TYPES[r.type];
+              const won = p.battles.champs[r.table];
+              return `<button class="champ${won ? ' won' : ''}" data-champ="${r.table}" style="--rc:${t.color};--rl:${t.light}" aria-label="Battle ${esc(r.champion)}, ${r.table}s Champion${won ? ', beaten' : ''}">
+                <span class="champ-av">${trainerArt({ kind: 'champ', table: r.table })}</span>
+                <span class="champ-name">${esc(r.champion.replace('Little Leader ', ''))}</span>
+                <span class="champ-tag">${r.table}s${won ? ' ' + ribbon() : ''}</span>
+              </button>`;
+            }).join('')}
+          </div>
+          ${(() => {
+            const total = p.settings.tables.length || 10;
+            const beaten = p.settings.tables.filter((t) => p.battles.champs[t]).length;
+            const open = bossUnlocked(p);
+            return `<button class="tower${open ? ' open' : ''}" data-boss ${open ? '' : 'aria-disabled="true"'}>
+              <span class="tower-av">${trainerArt({ kind: 'boss' })}</span>
+              <span class="tower-text"><strong>Hundred Tower</strong>
+                <small>${open ? (p.battles.boss ? 'Boss Papa wants a rematch.' : 'Boss Papa is waiting at the top.') : `Beat every Champion to climb. ${beaten} of ${total} done.`}</small>
+                ${open ? '' : `<span class="bar mini"><span style="width:${Math.round((beaten / total) * 100)}%"></span></span>`}
+              </span>
+            </button>`;
+          })()}
+        </div>
       </div>
     </section>`;
 
+  const timesUp = () => {
+    if (!limitReached(p)) return false;
+    sheet(`<div class="celebrate"><div class="partner-art rest">${creatureArt(partner.species)}</div>
+      <h2>That's today's Kaimon time!</h2>
+      <p>${esc(partner.species.name)} is taking a nap to get stronger. Come back tomorrow for more catching and battles.</p>
+      <p class="note">Grown-ups can add more time in Grown-ups.</p>
+      <button class="btn-chunky btn-primary" data-close>Okay</button></div>`);
+    return true;
+  };
   on(root, 'click', '[data-play]', (e, el) => {
     unlock(); sfx.tap();
+    if (timesUp()) return;
     const v = el.dataset.play;
     if (v !== 'mix' && !p.settings.tables.includes(+v)) return;
     go('play', { table: v === 'mix' ? null : +v });
+  });
+  on(root, 'click', '[data-champ]', (e, el) => { unlock(); sfx.tap(); if (timesUp()) return; go('battle', { kind: 'champ', table: +el.dataset.champ }); });
+  on(root, 'click', '[data-boss]', () => {
+    unlock(); sfx.tap();
+    if (timesUp()) return;
+    if (bossUnlocked(p)) go('battle', { kind: 'boss' });
+    else sheet(`<h2>The Hundred Tower</h2><p>Boss Papa is at the top. Beat every Champion first, then come back.</p><div class="sheet-actions"><button class="btn-chunky btn-primary" data-close>Okay</button></div>`);
   });
   on(root, 'click', '[data-dex]', () => { sfx.tap(); go('kaidex'); });
   on(root, 'click', '[data-switch]', () => { sfx.tap(); go('welcome'); });
@@ -100,3 +148,5 @@ export function ballIcon(kind) {
 export function snackIcon() {
   return `<svg class="ball-svg" viewBox="0 0 72 72" aria-hidden="true"><g transform="rotate(45 36 36)"><rect x="28" y="8" width="16" height="56" rx="8" fill="#FF7AA8" stroke="#14213D" stroke-width="5"/><rect x="8" y="28" width="56" height="16" rx="8" fill="#FF7AA8" stroke="#14213D" stroke-width="5"/></g></svg>`;
 }
+
+export const ribbon = () => `<svg class="ribbon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 13 L5 22 L9 20 L11 23 L12 15 Z M16 13 L19 22 L15 20 L13 23 L12 15 Z" fill="#E8492A" stroke="#14213D" stroke-width="1.6" stroke-linejoin="round"/><circle cx="12" cy="9" r="7" fill="#F2B705" stroke="#14213D" stroke-width="2"/></svg>`;

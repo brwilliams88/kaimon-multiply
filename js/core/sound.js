@@ -37,5 +37,11 @@ export const sfx = {
   caught: () => play(() => { [523, 659, 784, 1047].forEach((f, i) => tone(f, i * 0.09, 0.22, 'triangle', 0.16)); }),
   escape: () => play(() => { tone(500, 0, 0.1, 'sine', 0.1); tone(350, 0.08, 0.16, 'sine', 0.1); }),
   levelUp: () => play(() => { [784, 988, 1175, 1568].forEach((f, i) => tone(f, i * 0.07, 0.25, 'sine', 0.14)); }),
+  hit: () => play(() => { tone(180, 0, 0.12, 'square', 0.09); tone(120, 0.05, 0.14, 'sawtooth', 0.06); }),
+  crit: () => play(() => { tone(880, 0, 0.08, 'square', 0.08); tone(220, 0.06, 0.18, 'sawtooth', 0.08); tone(1320, 0.1, 0.12, 'triangle', 0.1); }),
+  ouch: () => play(() => { tone(300, 0, 0.1, 'triangle', 0.1); tone(200, 0.08, 0.16, 'triangle', 0.09); }),
+  faint: () => play(() => { [500, 400, 300, 200].forEach((f, i) => tone(f, i * 0.08, 0.14, 'triangle', 0.09)); }),
+  win: () => play(() => { [523, 659, 784, 659, 784, 1047].forEach((f, i) => tone(f, i * 0.11, 0.24, 'triangle', 0.14)); }),
+  lose: () => play(() => { [392, 349, 330, 262].forEach((f, i) => tone(f, i * 0.16, 0.3, 'sine', 0.1)); }),
   mythic: () => play(() => { [1318, 1568, 1760, 2093, 1760].forEach((f, i) => tone(f, i * 0.12, 0.4, 'sine', 0.07)); }),
 };

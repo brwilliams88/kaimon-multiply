@@ -3,6 +3,8 @@
 // devices are applied the same way when they arrive, so devices merge cleanly.
 import { save, deviceId } from './store.js';
 import { applyAnswer, levelOf } from './facts.js';
+import { dayRec } from './playtime.js';
+import { today } from './store.js';
 
 let counter = 0;
 const newId = () => deviceId() + '-' + Date.now().toString(36) + '-' + (counter++).toString(36) + Math.random().toString(36).slice(2, 5);
@@ -18,6 +20,7 @@ export function apply(p, ev) {
       applyAnswer(p, d.f, !!d.ok, d.ms || 0, ev.t);
       p.stats.answers++;
       if (d.ok) p.stats.correct++;
+      { const r = dayRec(p, today(ev.t)); r.a++; if (d.ok) r.c++; }
       break;
     case 'seen':
       dexEntry(p, d.n).seen++;
@@ -44,10 +47,28 @@ export function apply(p, ev) {
       p.stats.sessions++;
       p.stats.msPlayed += d.ms || 0;
       p.stats.bestStreak = Math.max(p.stats.bestStreak, d.best || 0);
+      { const start = ev.t - (d.ms || 0); const r = dayRec(p, today(start)); r.ms += d.ms || 0; r.n++; const h = new Date(start).getHours(); r.h[h] = (r.h[h] || 0) + (d.ms || 0); }
+      break;
+    case 'open':
+      dayRec(p, today(ev.t)).open += d.ms || 0;
+      break;
+    case 'bonus':
+      dayRec(p, today(ev.t)).bonus += d.m || 0;
       break;
     case 'stamp':
       p.stats.stars = (p.stats.stars || 0) + 1;
       break;
+    case 'battle': {
+      const b = p.battles;
+      b.played++;
+      if (d.w) {
+        b.wins++;
+        if (d.o === 'champ') b.champs[d.tb] = (b.champs[d.tb] || 0) + 1;
+        if (d.o === 'boss') b.boss++;
+        if (d.o === 'grunt') b.grunts++;
+      }
+      break;
+    }
   }
 }
 
@@ -79,6 +100,9 @@ export const ball = (p, kind, n) => emit(p, 'ball', { b: kind, n });
 export const item = (p, kind, n) => emit(p, 'item', { i: kind, n });
 export const sighting = (p) => emit(p, 'sight', {});
 export const session = (p, ms, best) => emit(p, 'sess', { ms: Math.round(ms), best });
+export const openTime = (p, ms) => emit(p, 'open', { ms: Math.round(ms) });
+export const bonusTime = (p, m) => emit(p, 'bonus', { m });
+export const battle = (p, kind, table, won) => emit(p, 'battle', { o: kind, tb: table, w: won ? 1 : 0 });
 
 export function goodWorkStamp(p) {
   emit(p, 'stamp', {});

@@ -2,6 +2,20 @@
 
 All notable changes. The in-app version history (Grown-ups > What's new) reads from `js/data/changelog.js`; keep both in sync. Each release is tagged in git as `vX.Y.Z`.
 
+## v0.3.0 (2026-11-14) Flashcard battles
+
+- Flashcard battles against the 10 Table Champions. Right answers attack; wrong answers let the other side hit back, then the player learns the fact with the skip-count hint before moving on. Battle facts count as practice.
+- Power meter: power is 1.0 at 1.5 seconds or faster, about 0.5 at 5 seconds, and never below 0.15. It never times out. In battles it scales damage (Perfect = critical hit); in practice it adds up to +9% to the catch chance and spins the throw harder.
+- Special move every third right answer in a row, named by the Kaimon's type.
+- Battle team: partner plus the two strongest caught Kaimon from different lines.
+- Team Papa ambush at the end of about 30% of practice sessions (8+ answers), with dad jokes from `js/data/dadjokes.js`.
+- Hundred Tower: Boss Papa unlocks once every enabled table's Champion is beaten. The first win brings Kai's mythic down for a catch with a Legend Ball.
+- Rewards: first Champion win Mega Ball, rematch Super Ball, grunt Super Ball, Boss Papa Legend Ball (rematch Mega Ball). Battles are synced as `battle` events.
+- "Who's playing?" opens the app when a device has more than one trainer, with Family or This device tags and Kaidex counts. Swap icon on the trainer chip. Grown-ups shows "Unlocked for 10 min" and a Lock now button.
+- Family sync panel rebuilt as two steps (sign in this device by code, then per-trainer sync switches). "Who's playing?" shows the family sign-in state, guidance when no family trainers exist yet, and refreshes when synced trainers arrive. Email link sign-in lands on "Who's playing?".
+- Play time: per-day `play` log built from `a`, `sess`, and new `open` (time on screen, flushed each minute) and `bonus` events, so time from every family device adds up. Grown-ups panel with today, week, 14-day chart, part of day, and an optional daily limit (checked before starting a round; never interrupts one).
+- Settings changes now bump the trainer's updated time so they sync. Home-screen title is "Kaimon Multiply".
+
 ## v0.2.0 (2026-11-14) Family sync, starters and the parent PIN
 
 - Family sync through Supabase: family emails sign in with a 6-digit code; every answer, catch and reward is an event in an append-only log, so devices merge cleanly. Friends play as guests and nothing of theirs is uploaded.

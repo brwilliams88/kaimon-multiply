@@ -1,7 +1,25 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.2.0';
+export const VERSION = '0.3.0';
 
 export const CHANGELOG = [
+  {
+    version: '0.3.0',
+    date: '2026-11-14',
+    title: 'Flashcard battles',
+    items: [
+      'Battle the 10 Table Champions, from Little Leader Nozomi to Commander Nova. Every move is an answer: get it right to attack, and a wrong answer lets them hit back.',
+      'Answer fast for more power. A Perfect answer is a critical hit, and every third right answer in a row uses a special move.',
+      'Your team is your partner plus your two strongest Kaimon.',
+      'Team Papa grunts sometimes jump out after practice, with terrible dad jokes.',
+      'Beat every Champion to climb the Hundred Tower and battle Boss Papa and Papazilla. Something special happens the first time you win.',
+      'New power meter: a faster answer throws a stronger ball, so it is easier to catch. It never runs out, so there is no rush.',
+      'Who\u2019s playing? now opens the app when more than one trainer uses a device, and shows which trainers sync with family.',
+      'Tap the swap button on your name to change trainers. Grown-ups has a clearer Lock now button.',
+      'Family sync sign-in is now two clear steps: sign in this device with an emailed code, then switch on the trainers who sync. Synced trainers appear on other signed-in devices by themselves.',
+      'New Play time panel for grown-ups: minutes per day, time spent answering, which part of the day, and an optional daily limit that lets the current round finish first.',
+      'Adding to the home screen now suggests the name Kaimon Multiply.',
+    ],
+  },
   {
     version: '0.2.0',
     date: '2026-11-14',

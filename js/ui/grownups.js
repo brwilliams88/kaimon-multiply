@@ -1,3 +1,6 @@
+import { touch } from '../core/store.js';
+import { lastDays, partsOfDay, usedToday } from '../core/playtime.js';
+import { bonusTime } from '../core/actions.js';
 import { active, save, exportBackup, importBackup, deleteProfile, allProfiles, hasPin, setPin, checkPin, clearPin } from '../core/store.js';
 import { status as syncStatus, requestCode, verifyCode, signOut, syncNow, joinFamily, leaveFamily, onSyncChange } from '../core/sync.js';
 import { goodWorkStamp } from '../core/actions.js';
@@ -115,7 +118,7 @@ function renderMain(root, go) {
       <header class="topbar">
         <button class="icon-btn" data-back aria-label="Back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 L8 12 L15 19" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
         <h1 class="screen-title">Grown-ups</h1>
-        <button class="btn-chunky btn-sm" data-lock>Lock</button>
+        ${hasPin() ? '<span class="unlock-note">Unlocked for 10 min</span><button class="btn-chunky btn-sm" data-lock>Lock now</button>' : ''}
         <span class="ver">v${VERSION}</span>
       </header>
 
@@ -155,12 +158,60 @@ function renderMain(root, go) {
           ${p.trophies.length ? `<div class="trophies">${p.trophies.slice().reverse().map((t) => `<figure class="trophy">${t.img ? `<img src="${t.img}" alt="">` : '<span class="trophy-star">★</span>'}<figcaption>${esc(t.note || 'Good work')}<small>${new Date(t.t).toLocaleDateString()}</small></figcaption></figure>`).join('')}</div>` : ''}
         </div>
 
+        <div class="panel playtime">
+          ${(() => {
+            const days = lastDays(p, 14);
+            const week = days.slice(-7);
+            const m = (ms) => Math.round(ms / 60000);
+            const todayD = days.at(-1);
+            const played = week.filter((d) => d.open > 0);
+            const avg = played.length ? m(played.reduce((t, d) => t + d.open, 0) / played.length) : 0;
+            const lim0 = p.settings.dailyLimit || 0;
+            const max = Math.max(15 * 60000, lim0 * 60000 * 1.25, ...days.map((d) => d.open * 1.15));
+            const parts = partsOfDay(p);
+            const pmax = Math.max(1, ...parts.map((x) => x.ms));
+            const lim = p.settings.dailyLimit || 0;
+            const W = 560, H = 150, bw = W / days.length;
+            const limY = lim ? H - (lim * 60000 / max) * (H - 4) : null;
+            return `
+            <h2>Play time</h2>
+            <div class="gu-stats">
+              <div><strong>${m(todayD.open)}</strong><span>min today</span></div>
+              <div><strong>${m(week.reduce((t, d) => t + d.open, 0))}</strong><span>min this week</span></div>
+              <div><strong>${avg}</strong><span>min a day when played</span></div>
+              <div><strong>${todayD.a}</strong><span>answers today</span></div>
+            </div>
+            <figure class="pt-chart">
+              <svg viewBox="0 0 ${W} ${H + 34}" role="img" aria-label="Minutes played each day for the last 14 days">
+                ${days.map((d, i) => {
+                  const hOpen = (d.open / max) * (H - 4), hAns = (Math.min(d.ms, d.open || d.ms) / max) * (H - 4);
+                  const x = i * bw + bw * 0.18, w = bw * 0.64;
+                  const isToday = i === days.length - 1;
+                  return `<g><title>${d.date.toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' })}: ${m(d.open)} min in the app, ${m(d.ms)} min answering, ${d.a} answers</title>
+                    ${d.open ? `<rect x="${x}" y="${H - hOpen}" width="${w}" height="${hOpen}" rx="5" fill="#B6DBFF" stroke="#14213D" stroke-width="2"/>` : `<rect x="${x}" y="${H - 3}" width="${w}" height="3" rx="1.5" fill="#D8DEE8"/>`}
+                    ${d.ms ? `<rect x="${x}" y="${H - hAns}" width="${w}" height="${hAns}" rx="5" fill="#3FA34D" stroke="#14213D" stroke-width="2"/>` : ''}
+                    ${d.open >= 60000 ? `<text x="${x + w / 2}" y="${H - hOpen - 6}" text-anchor="middle" font-size="13" font-weight="600" fill="#14213D">${m(d.open)}</text>` : ''}
+                    <text x="${x + w / 2}" y="${H + 18}" text-anchor="middle" font-size="13" font-weight="${isToday ? 700 : 500}" fill="${isToday ? '#14213D' : '#4A5675'}">${isToday ? 'Today' : d.date.toLocaleDateString([], { weekday: 'narrow' })}</text>
+                    <text x="${x + w / 2}" y="${H + 32}" text-anchor="middle" font-size="11" fill="#4A5675">${isToday ? '' : d.date.getDate()}</text></g>`;
+                }).join('')}
+                ${limY !== null && limY > 8 ? `<line x1="0" x2="${W}" y1="${limY}" y2="${limY}" stroke="#E8492A" stroke-width="2" stroke-dasharray="6 5"/><text x="${W - 4}" y="${limY - 5}" text-anchor="end" font-size="12" font-weight="600" fill="#B83A1D">${lim} min limit</text>` : ''}
+              </svg>
+              <figcaption class="pt-key"><span><i class="k-ans"></i>Answering cards</span><span><i class="k-open"></i>In the app</span></figcaption>
+            </figure>
+            <p class="step-title">When they play <span class="note">(last 30 days)</span></p>
+            <div class="pt-parts">${parts.map((x) => `<div class="pt-part"><span>${x.name}</span><span class="bar mini"><span style="width:${Math.round(x.ms / pmax * 100)}%"></span></span><span>${m(x.ms)} min</span></div>`).join('')}</div>
+            <label class="row"><span>Daily limit</span><select data-limit>${[0, 15, 20, 30, 45, 60].map((n) => `<option value="${n}" ${lim === n ? 'selected' : ''}>${n ? n + ' minutes' : 'Off'}</option>`).join('')}</select></label>
+            ${lim ? `<div class="row"><span class="note">${Math.min(m(usedToday(p) * 60000), 999)} of ${lim + (p.play[todayD.key]?.bonus || 0)} minutes used today. The current round always finishes first.</span><button class="btn-chunky btn-sm" data-bonus>Add 15 min today</button></div>` : '<p class="note">With a limit, the current round finishes, then they see a friendly "come back tomorrow" screen.</p>'}
+            `;
+          })()}
+        </div>
+
         <div class="panel" data-syncpanel></div>
 
         <div class="panel">
           <h2>Trainers on this device</h2>
-          <div class="trainer-rows">${allProfiles().map((x) => `<div class="trow"><span class="trow-name">${esc(x.name)}</span><span class="trow-tag ${x.family ? 'fam' : ''}">${x.family ? 'Family, synced' : 'Guest, this device only'}</span>${syncStatus().signedIn ? `<button class="btn-chunky btn-sm" data-fam="${x.id}">${x.family ? 'Make guest' : 'Sync with family'}</button>` : ''}</div>`).join('')}</div>
-          <p class="note">Friends always play as guests. Their progress stays on their own device and is never uploaded.</p>
+          <div class="trainer-rows">${allProfiles().map((x) => `<div class="trow"><span class="trow-name">${esc(x.name)}</span><span class="trow-tag ${x.family ? 'fam' : ''}">${x.family ? 'Synced with family' : 'This device only'}</span></div>`).join('')}</div>
+          <p class="note">Friends play as guests. Their progress stays on this device and is never uploaded. Backup codes are a safety net for guests; family trainers are already saved by sync.</p>
           <div class="btn-row">
             <button class="btn-chunky" data-backup>Copy backup code</button>
             <button class="btn-chunky" data-restore>Restore from code</button>
@@ -183,43 +234,70 @@ function renderMain(root, go) {
   on(root, 'click', '[data-back]', () => go('home'));
 
   const syncPanel = root.querySelector('[data-syncpanel]');
+  let pendingEmail = '';
   const drawSync = () => {
     const st = syncStatus();
-    syncPanel.innerHTML = st.signedIn ? `
-      <h2>Family sync</h2>
-      <p class="note">Signed in as <strong>${esc(st.email)}</strong>. Family trainers sync across your devices.</p>
-      <p class="note">${st.busy ? 'Syncing now...' : st.lastSync ? 'Last synced ' + new Date(st.lastSync).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) + '.' : 'Not synced yet.'}${st.error ? ' Last problem: ' + esc(st.error) : ''}</p>
-      <div class="btn-row"><button class="btn-chunky" data-syncnow>Sync now</button><button class="btn-chunky" data-signout>Sign out on this device</button></div>`
+    const check = (done) => `<span class="step-check ${done ? 'done' : ''}" aria-hidden="true">${done ? '✓' : ''}</span>`;
+    const step1 = st.signedIn ? `
+      <div class="step done">${check(true)}<div class="step-body">
+        <p class="step-title">1. This device is signed in</p>
+        <p class="note">As <strong>${esc(st.email)}</strong>. ${st.busy ? 'Syncing now...' : st.lastSync ? 'Last synced ' + new Date(st.lastSync).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) + '.' : 'Not synced yet.'}${st.error ? ' Last problem: ' + esc(st.error) : ''}</p>
+        <div class="btn-row"><button class="btn-chunky btn-sm" data-syncnow>Sync now</button><button class="btn-chunky btn-sm" data-signout>Sign out on this device</button></div>
+      </div></div>`
+    : pendingEmail ? `
+      <div class="step">${check(false)}<div class="step-body">
+        <p class="step-title">1. Type the code from the email</p>
+        <p class="note">We sent a 6-digit code to <strong>${esc(pendingEmail)}</strong>. Not there? Check Spam, or wait a minute.</p>
+        <input class="field code-field" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="000000" data-code>
+        <div class="btn-row"><button class="btn-chunky btn-primary" data-verify>Sign in</button><button class="btn-chunky btn-sm" data-resend>Send a new code</button><button class="link-btn" data-change>Use a different email</button></div>
+      </div></div>`
     : `
-      <h2>Family sync</h2>
-      <p class="note">Sign in with a family email to keep progress the same on every family device. We'll send a sign-in email: type its 6-digit code below, or open its link on this device.</p>
-      <input class="field" type="email" autocomplete="email" placeholder="Family email" data-email>
-      <button class="btn-chunky" data-send>Send sign-in email</button>
-      <input class="field" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="6-digit code" data-code>
-      <button class="btn-chunky btn-primary" data-verify>Sign in</button>`;
+      <div class="step">${check(false)}<div class="step-body">
+        <p class="step-title">1. Sign in this device</p>
+        <p class="note">Use a family email. We'll email you a 6-digit code to type here.</p>
+        <input class="field" type="email" autocomplete="email" placeholder="Family email" data-email>
+        <button class="btn-chunky btn-primary" data-send>Email me a code</button>
+      </div></div>`;
+    const people = allProfiles();
+    const step2 = `
+      <div class="step ${st.signedIn ? '' : 'off'}">${check(st.signedIn && people.some((x) => x.family))}<div class="step-body">
+        <p class="step-title">2. Choose who syncs</p>
+        <p class="note">${st.signedIn ? 'Synced trainers show up on every signed-in family device, with the same progress.' : 'After signing in, pick the family trainers to sync.'}</p>
+        ${st.signedIn ? `<div class="trainer-rows">${people.map((x) => `<label class="trow sync-row"><span class="trow-name">${esc(x.name)}</span><span class="trow-tag ${x.family ? 'fam' : ''}">${x.family ? 'Synced' : 'This device only'}</span><input type="checkbox" class="switch" data-fam="${x.id}" ${x.family ? 'checked' : ''} aria-label="Sync ${esc(x.name)} with family"></label>`).join('')}</div>` : ''}
+      </div></div>`;
+    syncPanel.innerHTML = `<h2>Family sync</h2>${step1}${step2}`;
   };
   drawSync();
-  const off = onSyncChange(() => { if (document.body.contains(syncPanel)) drawSync(); else off(); });
-  on(root, 'click', '[data-send]', async () => {
+  const off = onSyncChange(() => { if (document.body.contains(syncPanel)) { if (!syncPanel.contains(document.activeElement)) drawSync(); } else off(); });
+  const send = async (email) => {
+    try { await requestCode(email); pendingEmail = email.trim().toLowerCase(); drawSync(); syncPanel.querySelector('[data-code]')?.focus(); }
+    catch (e) { toast(/rate|seconds/i.test(e.message) ? 'Please wait a minute before asking for another code.' : e.message); }
+  };
+  on(root, 'click', '[data-send]', () => {
     const email = root.querySelector('[data-email]').value;
-    if (!email) { toast('Type a family email first.'); return; }
-    try { await requestCode(email); toast('Sign-in email sent. Check that inbox.'); } catch (e) { toast(e.message); }
+    if (!/^\S+@\S+\.\S+$/.test(email)) { toast('Type a family email first.'); return; }
+    send(email);
   });
+  on(root, 'click', '[data-resend]', () => send(pendingEmail));
+  on(root, 'click', '[data-change]', () => { pendingEmail = ''; drawSync(); });
   on(root, 'click', '[data-verify]', async () => {
+    const code = (root.querySelector('[data-code]').value || '').replace(/\D/g, '');
+    if (code.length !== 6) { toast('The code has 6 numbers.'); return; }
     try {
-      await verifyCode(root.querySelector('[data-email]').value, root.querySelector('[data-code]').value);
-      toast('Signed in. Syncing...');
+      await verifyCode(pendingEmail, code);
+      pendingEmail = '';
+      toast('Signed in. Looking for family trainers...');
       await syncNow();
       renderMain(root, go);
-    } catch (e) { toast(e.message); }
+    } catch (e) { toast(/expired|invalid/i.test(e.message) ? 'That code didn’t work. It may have expired. Send a new one.' : e.message); }
   });
   on(root, 'click', '[data-syncnow]', async () => { const ok = await syncNow(); toast(ok ? 'Synced' : 'Couldn\u2019t sync right now. Check the internet.'); });
   on(root, 'click', '[data-signout]', () => { signOut(); renderMain(root, go); });
-  on(root, 'click', '[data-fam]', (e, el) => {
+  on(root, 'change', '[data-fam]', (e, el) => {
     const x = allProfiles().find((y) => y.id === el.dataset.fam);
     if (!x) return;
-    if (x.family) { leaveFamily(x); toast(`${x.name} is now a guest on this device.`); }
-    else { joinFamily(x); toast(`${x.name} will sync with the family.`); }
+    if (el.checked && !x.family) { joinFamily(x); toast(`${x.name} now syncs with the family.`); }
+    else if (!el.checked && x.family) { leaveFamily(x); toast(`${x.name} now stays on this device only.`); }
     renderMain(root, go);
   });
   on(root, 'click', '[data-stamp]', () => {
@@ -249,8 +327,10 @@ function renderMain(root, go) {
   root.querySelectorAll('[data-set]').forEach((inp) => inp.addEventListener('change', () => {
     const k = inp.dataset.set;
     s[k] = inp.type === 'checkbox' ? inp.checked : +inp.value;
-    save(); toast('Saved');
+    touch(p); toast('Saved');
   }));
+  on(root, 'change', '[data-limit]', (e, el) => { s.dailyLimit = +el.value; touch(p); toast(s.dailyLimit ? `Daily limit: ${s.dailyLimit} minutes` : 'Daily limit off'); renderMain(root, go); });
+  on(root, 'click', '[data-bonus]', () => { bonusTime(p, 15); save(); toast('Added 15 minutes for today'); renderMain(root, go); });
   on(root, 'click', '[data-fact]', (e, el) => {
     const rec = p.facts[el.dataset.fact];
     const [a, b] = el.dataset.fact.split('x');

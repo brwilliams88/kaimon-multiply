@@ -94,7 +94,7 @@ export function joinFamily(p) {
   p.family = true;
   p.updatedAt = Date.now();
   p.outbox = [];
-  emit(p, 'snap', { facts: p.facts, dex: p.dex, balls: p.balls, items: p.items, stats: p.stats, mythic: p.mythic });
+  emit(p, 'snap', { facts: p.facts, dex: p.dex, balls: p.balls, items: p.items, stats: p.stats, mythic: p.mythic, battles: p.battles, play: p.play });
   save();
   syncNow();
 }
@@ -126,6 +126,16 @@ export function applySnapshot(p, d) {
   p.stats.bestStreak = Math.max(p.stats.bestStreak || 0, st.bestStreak || 0);
   p.mythic.sightings += d.mythic?.sightings || 0;
   p.mythic.lastSeen = Math.max(p.mythic.lastSeen || 0, d.mythic?.lastSeen || 0);
+  const b = d.battles;
+  if (b) {
+    for (const k of ['played', 'wins', 'grunts', 'boss']) p.battles[k] = (p.battles[k] || 0) + (b[k] || 0);
+    for (const [t, n] of Object.entries(b.champs || {})) p.battles.champs[t] = (p.battles.champs[t] || 0) + n;
+  }
+  for (const [day, r] of Object.entries(d.play || {})) {
+    const cur = p.play[day] || (p.play[day] = { open: 0, ms: 0, a: 0, c: 0, n: 0, h: {}, bonus: 0 });
+    for (const k of ['open', 'ms', 'a', 'c', 'n', 'bonus']) cur[k] += r[k] || 0;
+    for (const [h, ms] of Object.entries(r.h || {})) cur.h[h] = (cur.h[h] || 0) + ms;
+  }
 }
 
 function applyRemote(p, ev) {
