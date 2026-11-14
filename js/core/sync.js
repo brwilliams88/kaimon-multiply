@@ -34,7 +34,8 @@ async function api(path, { method = 'GET', body, token, headers = {} } = {}) {
 
 // Step 1: email a 6-digit code.
 export async function requestCode(email) {
-  await api('/auth/v1/otp', { method: 'POST', body: { email: email.trim().toLowerCase(), create_user: true } });
+  const back = encodeURIComponent(location.origin + location.pathname);
+  await api('/auth/v1/otp?redirect_to=' + back, { method: 'POST', body: { email: email.trim().toLowerCase(), create_user: true } });
 }
 
 // Step 2: check the code, then make sure this email is on the family list.
@@ -47,6 +48,23 @@ export async function verifyCode(email, code) {
   }
   setSyncState({ email: e, access: r.access_token, refresh: r.refresh_token, exp: Date.now() + (r.expires_in || 3600) * 1000, family, lastSeq: 0, lastSync: 0 });
   notify();
+}
+
+// Sign-in by email link: the link lands back on the game with tokens in the URL.
+export async function completeLinkSignIn() {
+  if (!location.hash.includes('access_token=')) return null;
+  const q = new URLSearchParams(location.hash.slice(1));
+  history.replaceState(null, '', location.pathname + location.search);
+  const access = q.get('access_token'), refresh = q.get('refresh_token');
+  if (!access || !refresh) return null;
+  let email = '';
+  try { email = JSON.parse(atob(access.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))).email || ''; } catch {}
+  const family = await api('/rest/v1/rpc/my_family', { method: 'POST', body: {}, token: access });
+  if (!family) throw new Error('That email isn\u2019t on the family list.');
+  setSyncState({ email, access, refresh, exp: Date.now() + (+q.get('expires_in') || 3600) * 1000, family, lastSeq: 0, lastSync: 0 });
+  notify();
+  syncNow();
+  return email;
 }
 
 export function signOut() {

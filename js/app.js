@@ -7,7 +7,8 @@ import { renderPlay } from './ui/play.js';
 import { renderKaidex } from './ui/kaidex.js';
 import { renderGrownups } from './ui/grownups.js';
 import { VERSION } from './data/changelog.js';
-import { startAutoSync } from './core/sync.js';
+import { startAutoSync, completeLinkSignIn } from './core/sync.js';
+import { toast } from './ui/dom.js';
 
 const SCREENS = {
   welcome: renderWelcome,
@@ -37,6 +38,7 @@ function go(name, params = {}) {
 }
 
 go(active() ? (active().starter ? 'home' : 'meetPartner') : 'welcome');
+completeLinkSignIn().then((email) => { if (email) toast('Signed in for family sync as ' + email); }).catch((e) => toast(e.message));
 startAutoSync();
 
 // Offline support and update prompt.

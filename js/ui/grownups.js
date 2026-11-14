@@ -192,9 +192,9 @@ function renderMain(root, go) {
       <div class="btn-row"><button class="btn-chunky" data-syncnow>Sync now</button><button class="btn-chunky" data-signout>Sign out on this device</button></div>`
     : `
       <h2>Family sync</h2>
-      <p class="note">Sign in with a family email to keep progress the same on every family device. We'll email a 6-digit code.</p>
+      <p class="note">Sign in with a family email to keep progress the same on every family device. We'll send a sign-in email: type its 6-digit code below, or open its link on this device.</p>
       <input class="field" type="email" autocomplete="email" placeholder="Family email" data-email>
-      <button class="btn-chunky" data-send>Send code</button>
+      <button class="btn-chunky" data-send>Send sign-in email</button>
       <input class="field" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="6-digit code" data-code>
       <button class="btn-chunky btn-primary" data-verify>Sign in</button>`;
   };
@@ -203,7 +203,7 @@ function renderMain(root, go) {
   on(root, 'click', '[data-send]', async () => {
     const email = root.querySelector('[data-email]').value;
     if (!email) { toast('Type a family email first.'); return; }
-    try { await requestCode(email); toast('Code sent. Check that inbox.'); } catch (e) { toast(e.message); }
+    try { await requestCode(email); toast('Sign-in email sent. Check that inbox.'); } catch (e) { toast(e.message); }
   });
   on(root, 'click', '[data-verify]', async () => {
     try {
