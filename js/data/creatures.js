@@ -20,7 +20,7 @@ export const TYPES = {
 
 // One region per times table. Champions and badges are used from v0.2.
 export const REGIONS = [
-  { table: 1,  name: 'Mossy Meadow',    type: 'leaf',   badge: 'Sprout Badge', champion: 'Sprout Leader Nozomi' },
+  { table: 1,  name: 'Mossy Meadow',    type: 'leaf',   badge: 'Sprout Badge', champion: 'Little Leader Nozomi' },
   { table: 2,  name: 'Tidepool Bay',    type: 'water',  badge: 'Wave Badge',   champion: 'Captain Tide' },
   { table: 3,  name: 'Ember Canyon',    type: 'fire',   badge: 'Ember Badge',  champion: 'Blaze' },
   { table: 4,  name: 'Skyhigh Cliffs',  type: 'wind',   badge: 'Gust Badge',   champion: 'Skye' },
