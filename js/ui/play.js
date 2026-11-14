@@ -1,0 +1,289 @@
+import { active, save } from '../core/store.js';
+import { regionOf, TYPES, byNum, MYTHIC_NUM } from '../data/creatures.js';
+import { creatureArt } from '../core/art.js';
+import { factsForTables, pickNext, recordAnswer, answerOf, parseFact, hintLadder, levelRank, LEVEL_LABEL, tableTier } from '../core/facts.js';
+import { pickEncounter, ballForStreak, rollCatch, markSeen, markCaught, mythicCameo, BALLS, dexState } from '../core/game.js';
+import { voiceSupported, listen, stop as stopVoice } from '../core/voice.js';
+import { sfx, setSound } from '../core/sound.js';
+import { ballIcon, medal } from './home.js';
+import { $, on, esc, sheet, wait, toast } from './dom.js';
+
+export function renderPlay(root, go, { table }) {
+  const p = active();
+  setSound(p.settings.sound);
+  const tables = table ? [table] : p.settings.tables;
+  const pool = factsForTables(tables);
+  const S = {
+    n: 0, length: p.settings.sessionLength, streak: 0, best: 0, correct: 0, answered: 0,
+    recent: [], requeue: [], catches: [], levelUps: [], misses: [], startedAt: Date.now(),
+    fact: null, species: null, shownAt: 0, input: '', phase: 'ask', mustType: null, listening: false,
+  };
+  const useVoice = p.settings.voice && voiceSupported();
+  const tierBefore = Object.fromEntries([1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((t) => [t, tableTier(p, t)]));
+
+  root.innerHTML = `
+    <section class="screen play">
+      <header class="play-top">
+        <button class="icon-btn" data-exit aria-label="Stop practicing"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6 L18 18 M18 6 L6 18" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg></button>
+        <div class="pips" aria-hidden="true">${Array.from({ length: S.length }, () => '<span></span>').join('')}</div>
+        <div class="streak" aria-live="polite"><span class="streak-ball"></span><span class="streak-num">0</span></div>
+      </header>
+      <div class="play-body">
+        <div class="stage">
+          <div class="mythic-fly" aria-hidden="true">${creatureArt(byNum(MYTHIC_NUM), { mode: 'seen' })}</div>
+          <div class="card3d"><div class="card-inner">
+            <div class="face front"></div>
+            <div class="face back"></div>
+          </div></div>
+        </div>
+        <div class="pad-wrap">
+          <div class="answer" aria-live="polite"><span class="answer-val"></span><span class="answer-hint"></span></div>
+          <div class="pad" role="group" aria-label="Number pad">
+            ${[1, 2, 3, 4, 5, 6, 7, 8, 9].map((d) => `<button class="key" data-k="${d}">${d}</button>`).join('')}
+            <button class="key key-del" data-k="del" aria-label="Delete"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5 H20 V19 H9 L3 12 Z M12 9 L17 15 M17 9 L12 15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/></svg></button>
+            <button class="key" data-k="0">0</button>
+            <button class="key key-go" data-k="go" aria-label="Check answer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5 L10 17.5 L19 7" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          </div>
+          ${useVoice ? `<button class="mic btn-chunky" data-mic><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3" fill="currentColor"/><path d="M5.5 11 a6.5 6.5 0 0 0 13 0 M12 17.5 V21" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg><span>Say it</span></button>` : ''}
+        </div>
+      </div>
+    </section>`;
+
+  const el = {
+    inner: $('.card-inner', root), front: $('.front', root), back: $('.back', root),
+    val: $('.answer-val', root), hint: $('.answer-hint', root), pips: [...root.querySelectorAll('.pips span')],
+    streak: $('.streak-num', root), streakBall: $('.streak-ball', root), stage: $('.stage', root), mic: $('[data-mic]', root),
+    fly: $('.mythic-fly', root),
+  };
+
+  function setInput(v) {
+    S.input = v;
+    el.val.textContent = v || '';
+    el.val.classList.toggle('empty', !v);
+  }
+
+  function updateStreak() {
+    el.streak.textContent = S.streak;
+    el.streakBall.innerHTML = ballIcon(ballForStreak(p, S.streak));
+  }
+
+  function next() {
+    if (S.n >= S.length) return finish();
+    const id = pickNext(p, pool, S.recent, S.requeue, S.n);
+    S.recent.push(id); if (S.recent.length > 3) S.recent.shift();
+    S.fact = id;
+    const [a, b] = parseFact(id);
+    const species = pickEncounter(p, a);
+    S.species = species;
+    const known = dexState(p, species.num) === 'caught';
+    markSeen(p, species.num);
+    const region = regionOf(a);
+    const t = TYPES[region.type];
+    root.style.setProperty('--rc', t.color);
+    root.style.setProperty('--rl', t.light);
+    root.style.setProperty('--ri', t.ink);
+    el.front.innerHTML = `
+      <div class="card-head"><span>${region.name}</span><span class="card-type">${t.name}</span></div>
+      <div class="card-q"><span>${a}</span><span class="times">×</span><span>${b}</span></div>
+      <div class="card-wild">${creatureArt(species, { mode: 'seen' })}<p>A wild ${known ? esc(species.name) : '???'} appeared</p></div>`;
+    el.back.innerHTML = '';
+    el.inner.classList.remove('flipped', 'wrong');
+    setInput('');
+    el.hint.textContent = '';
+    S.phase = 'ask';
+    S.mustType = null;
+    S.shownAt = performance.now();
+    el.pips.forEach((pip, i) => pip.className = i < S.n ? (S.results?.[i] ? 'done ok' : 'done') : i === S.n ? 'now' : '');
+    maybeMythic();
+  }
+
+  async function maybeMythic() {
+    if (!mythicCameo(p)) return;
+    await wait(900);
+    if (S.phase !== 'ask') return;
+    p.mythic.sightings++;
+    p.mythic.lastSeen = Date.now();
+    save();
+    el.fly.classList.remove('go'); void el.fly.offsetWidth; el.fly.classList.add('go');
+    sfx.mythic();
+    if (p.mythic.sightings === 1) setTimeout(() => toast('Something flew past! Check the last page of your Kaidex.', 3800), 1400);
+  }
+
+  async function submit(via = 'pad') {
+    if (S.phase === 'learn') return checkRetype();
+    if (S.phase !== 'ask' || !S.input) return;
+    stopVoice();
+    S.phase = 'result';
+    const ms = performance.now() - S.shownAt;
+    const ans = answerOf(S.fact);
+    const ok = parseInt(S.input, 10) === ans;
+    const [a, b] = parseFact(S.fact);
+    const lv = recordAnswer(p, S.fact, ok, ms, via);
+    p.stats.answers++;
+    S.answered++;
+    S.results = S.results || [];
+    S.results[S.n] = ok;
+    if (levelRank(lv.after) > levelRank(lv.before) && levelRank(lv.after) >= 2) S.levelUps.push({ id: S.fact, level: lv.after });
+
+    if (ok) {
+      p.stats.correct++;
+      S.correct++;
+      S.streak++;
+      S.best = Math.max(S.best, S.streak);
+      p.stats.bestStreak = Math.max(p.stats.bestStreak, S.streak);
+      sfx.correct();
+      let ball = ballForStreak(p, S.streak);
+      if ((S.species.rarity === 'rare') && p.balls.legend > 0) { ball = 'legend'; p.balls.legend--; }
+      const fast = ms <= p.settings.fastMs;
+      const caught = rollCatch(S.species, ball, fast);
+      let result = null;
+      if (caught) result = markCaught(p, S.species.num);
+      if (caught) S.catches.push({ num: S.species.num, isNew: result.isNew, shiny: result.shiny });
+      save();
+      updateStreak();
+      el.back.innerHTML = `
+        <div class="card-head"><span>${a} × ${b} = ${ans}</span>${fast ? '<span class="card-type fast">Fast</span>' : ''}</div>
+        <div class="catch-zone">
+          <div class="catch-art">${creatureArt(S.species, { shiny: result?.shiny })}</div>
+          <div class="throw-ball">${ballIcon(ball)}</div>
+        </div>
+        <p class="catch-msg" aria-live="polite">${BALLS[ball].name}!</p>`;
+      el.inner.classList.add('flipped');
+      await animateCatch(caught, result);
+      if (S.levelUps.length && S.levelUps[S.levelUps.length - 1].id === S.fact) {
+        const l = S.levelUps[S.levelUps.length - 1];
+        sfx.levelUp();
+        toast(`${a} × ${b} reached ${LEVEL_LABEL[l.level]}!`);
+      }
+      S.phase = 'done';
+      await wait(caught ? 1100 : 800);
+      if (S.phase === 'done') advance();
+    } else {
+      S.streak = 0;
+      updateStreak();
+      S.misses.push(S.fact);
+      S.requeue.push({ id: S.fact, at: S.n + 3 });
+      sfx.wrong();
+      save();
+      el.back.innerHTML = `
+        <div class="card-head"><span>Not quite</span></div>
+        <div class="card-q answer-reveal"><span>${a}</span><span class="times">×</span><span>${b}</span><span class="eq">=</span><span class="ans">${ans}</span></div>
+        <div class="hint-scroll"><p>Count by ${a}s</p><div class="ladder">${hintLadder(S.fact).map((v, i, arr) => `<span class="${i === arr.length - 1 ? 'last' : ''}">${v}</span>`).join('')}</div></div>
+        <p class="catch-msg">${S.species.name === '???' ? 'It' : esc(dexState(p, S.species.num) === 'caught' ? S.species.name : 'The wild Kaimon')} ran off. Type ${ans} to keep going.</p>`;
+      el.inner.classList.add('flipped', 'wrong');
+      S.phase = 'learn';
+      S.mustType = ans;
+      setInput('');
+      el.hint.textContent = `Type ${ans}`;
+    }
+  }
+
+  function checkRetype() {
+    if (parseInt(S.input, 10) === S.mustType) { sfx.tap(); S.phase = 'done'; advance(); }
+    else { setInput(''); el.hint.textContent = `Type ${S.mustType}`; sfx.wrong(); }
+  }
+
+  async function animateCatch(caught, result) {
+    const zone = $('.catch-zone', el.back);
+    const msg = $('.catch-msg', el.back);
+    await wait(380);
+    sfx.throw();
+    zone.classList.add('thrown');
+    await wait(520);
+    zone.classList.add('absorbed');
+    for (let i = 0; i < 3; i++) { await wait(330); sfx.wobble(); zone.classList.toggle('wob'); }
+    await wait(300);
+    if (caught) {
+      zone.classList.add('caught');
+      sfx.caught();
+      const s = S.species;
+      msg.innerHTML = `Caught ${esc(s.name)}!${result.isNew ? ' <span class="new-tag">New</span>' : ''}${result.shiny ? ' <span class="new-tag shiny-tag">Shiny</span>' : ''}`;
+    } else {
+      zone.classList.add('escaped');
+      sfx.escape();
+      msg.textContent = `It broke free! The answer still counts.`;
+    }
+  }
+
+  function advance() {
+    if (S.phase !== 'done') return;
+    S.phase = 'moving';
+    S.n++;
+    next();
+  }
+
+  function finish() {
+    stopVoice();
+    p.stats.sessions++;
+    p.stats.msPlayed += Date.now() - S.startedAt;
+    const newBadges = [];
+    for (let t = 1; t <= 10; t++) {
+      const now = tableTier(p, t);
+      if (now && levelRank(now) > levelRank(tierBefore[t] || 'learning')) { newBadges.push({ t, tier: now }); p.balls.legend++; }
+    }
+    save();
+    const uniq = [];
+    for (const c of S.catches) if (!uniq.find((u) => u.num === c.num)) uniq.push(c);
+    root.innerHTML = `
+      <section class="screen summary">
+        <h1 class="screen-title">Nice work, ${esc(p.name)}!</h1>
+        <div class="sum-stats">
+          <div><strong>${S.correct}/${S.answered}</strong><span>right</span></div>
+          <div><strong>${S.best}</strong><span>best streak</span></div>
+          <div><strong>${S.catches.length}</strong><span>caught</span></div>
+        </div>
+        ${newBadges.length ? `<div class="sum-badges">${newBadges.map((b) => `<p>${medal(b.tier)} ${regionOf(b.t).badge}: ${LEVEL_LABEL[b.tier]}! You got a Legend Ball.</p>`).join('')}</div>` : ''}
+        ${uniq.length ? `<h2 class="section-title">Caught this time</h2><div class="sum-catches">${uniq.map((c) => { const s = byNum(c.num); return `<div class="sum-catch">${creatureArt(s, { shiny: c.shiny })}<span>${esc(s.name)}</span>${c.isNew ? '<span class="new-tag">New</span>' : ''}</div>`; }).join('')}</div>` : ''}
+        ${S.levelUps.length ? `<h2 class="section-title">Facts that leveled up</h2><div class="sum-levels">${S.levelUps.map((l) => { const [a, b] = parseFact(l.id); return `<span class="lvl lvl-${l.level}">${a} × ${b} · ${LEVEL_LABEL[l.level]}</span>`; }).join('')}</div>` : ''}
+        <div class="sum-actions">
+          <button class="btn-chunky btn-primary btn-xl" data-again>Practice again</button>
+          <button class="btn-chunky btn-xl" data-home>Home</button>
+        </div>
+      </section>`;
+    on(root, 'click', '[data-again]', () => go('play', { table }));
+    on(root, 'click', '[data-home]', () => go('home'));
+  }
+
+  // Input handlers
+  on(root, 'click', '[data-k]', (e, k) => {
+    const v = k.dataset.k;
+    if (S.phase === 'done') { advance(); return; }
+    if (v === 'go') return submit('pad');
+    if (S.phase !== 'ask' && S.phase !== 'learn') return;
+    sfx.tap();
+    if (v === 'del') setInput(S.input.slice(0, -1));
+    else if (S.input.length < 3) setInput(S.input + v);
+    if (S.phase === 'learn' && S.input.length >= String(S.mustType).length) checkRetype();
+  });
+  on(root, 'click', '.card3d', () => { if (S.phase === 'done') advance(); });
+  on(root, 'click', '[data-exit]', () => {
+    const sh = sheet(`<h2>Stop practicing?</h2><p>Your catches and progress are saved.</p><div class="sheet-actions"><button class="btn-chunky btn-primary" data-stop>Stop</button><button class="btn-chunky" data-close>Keep going</button></div>`);
+    sh.el.querySelector('[data-stop]').addEventListener('click', () => { sh.close(); stopVoice(); p.stats.msPlayed += Date.now() - S.startedAt; save(); go('home'); });
+  });
+  if (el.mic) {
+    el.mic.addEventListener('click', () => {
+      if (S.phase === 'done') return advance();
+      if (S.listening) { stopVoice(); return; }
+      S.listening = true;
+      el.mic.classList.add('on');
+      el.hint.textContent = 'Listening...';
+      listen({
+        onPartial: (n) => setInput(String(n)),
+        onResult: (n) => { setInput(String(n)); el.hint.textContent = ''; if (S.phase === 'learn') checkRetype(); else submit('voice'); },
+        onError: (msg) => { el.hint.textContent = msg; },
+        onEnd: () => { S.listening = false; el.mic.classList.remove('on'); if (el.hint.textContent === 'Listening...') el.hint.textContent = ''; },
+      });
+    });
+  }
+  const onKey = (e) => {
+    if (!document.body.contains(root.querySelector('.play'))) { document.removeEventListener('keydown', onKey); return; }
+    if (document.querySelector('.sheet-wrap')) return;
+    if (/^[0-9]$/.test(e.key)) $(`[data-k="${e.key}"]`, root)?.click();
+    else if (e.key === 'Backspace') $('[data-k="del"]', root)?.click();
+    else if (e.key === 'Enter') { e.preventDefault(); if (S.phase === 'done') advance(); else submit('keyboard'); }
+  };
+  document.addEventListener('keydown', onKey);
+
+  updateStreak();
+  next();
+}
