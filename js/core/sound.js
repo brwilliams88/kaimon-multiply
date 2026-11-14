@@ -3,8 +3,18 @@ let ctx = null;
 let enabled = true;
 
 export function setSound(on) { enabled = on; }
+export const soundOn = () => enabled;
+
+// iPhone: 'ambient' means game sounds follow the silent switch and mix with music.
+// The microphone switches the phone to a recording mode that ignores the switch,
+// so we set it back to ambient whenever listening ends.
+export function ambient() {
+  try { if (navigator.audioSession) navigator.audioSession.type = 'ambient'; } catch {}
+}
+ambient();
 
 export function unlock() {
+  ambient();
   try {
     if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
     if (ctx.state === 'suspended') ctx.resume();

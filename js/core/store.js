@@ -40,7 +40,7 @@ export function newProfile(name, avatar, id) {
 export const newBattles = () => ({ played: 0, wins: 0, grunts: 0, boss: 0, champs: {} });
 
 function blank() {
-  return { v: 2, activeId: null, profiles: {}, device: null, pinHash: null, sync: null };
+  return { v: 2, activeId: null, profiles: {}, device: null, pinHash: null, sync: null, hidden: {} };
 }
 
 let state = load();
@@ -123,6 +123,23 @@ export function deleteProfile(id) {
   if (state.activeId === id) state.activeId = Object.keys(state.profiles)[0] || null;
   save();
 }
+
+export function renameProfile(id, name) {
+  const p = state.profiles[id];
+  if (!p) return;
+  p.name = name.trim().slice(0, 16) || p.name;
+  touch(p);
+}
+
+// Family trainers removed from this device only. Sync won't bring them back
+// unless a grown-up adds them back. { id: name }
+export const hiddenProfiles = () => state.hidden || (state.hidden = {});
+export function hideProfile(id) {
+  const p = state.profiles[id];
+  if (p) hiddenProfiles()[id] = p.name;
+  deleteProfile(id);
+}
+export function unhideProfile(id) { delete hiddenProfiles()[id]; save(); }
 
 // Family sync session (tokens) for this device.
 export const syncState = () => state.sync;

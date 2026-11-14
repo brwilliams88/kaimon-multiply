@@ -1,5 +1,5 @@
 import { active, allProfiles } from './core/store.js';
-import { setSound } from './core/sound.js';
+import { setSound, sfx, unlock } from './core/sound.js';
 import { stop as stopVoice } from './core/voice.js';
 import { renderWelcome, renderNewTrainer, renderMeetPartner } from './ui/onboarding.js';
 import { renderHome } from './ui/home.js';
@@ -9,9 +9,10 @@ import { renderGrownups } from './ui/grownups.js';
 import { renderBattle } from './ui/battle.js';
 import { VERSION } from './data/changelog.js';
 import { startAutoSync, completeLinkSignIn } from './core/sync.js';
-import { toast } from './ui/dom.js';
+import { toast, soundIcon } from './ui/dom.js';
 import { openTime } from './core/actions.js';
-import { save } from './core/store.js';
+import { save, touch } from './core/store.js';
+import { startUpdates, justUpdated } from './core/update.js';
 
 const SCREENS = {
   welcome: renderWelcome,
@@ -46,26 +47,38 @@ go(!active() || allProfiles().length > 1 ? 'welcome' : (active().starter ? 'home
 completeLinkSignIn().then((email) => { if (email) { toast('This device is signed in for family sync'); if (!active() || allProfiles().length > 1) go('welcome'); } }).catch((e) => toast(e.message));
 startAutoSync();
 
-// Offline support and update prompt.
-if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('./sw.js').then((reg) => {
-    const prompt = (w) => {
-      const bar = document.createElement('div');
-      bar.className = 'update-bar';
-      bar.innerHTML = '<span>A new version of Kaimon is ready.</span><button class="btn-chunky btn-primary">Update</button>';
-      bar.querySelector('button').addEventListener('click', () => w.postMessage('skipWaiting'));
-      document.body.appendChild(bar);
-    };
-    if (reg.waiting && navigator.serviceWorker.controller) prompt(reg.waiting);
-    reg.addEventListener('updatefound', () => {
-      const w = reg.installing;
-      w?.addEventListener('statechange', () => { if (w.state === 'installed' && navigator.serviceWorker.controller) prompt(w); });
-    });
-    setInterval(() => reg.update().catch(() => {}), 30 * 60 * 1000);
-  }).catch((e) => console.warn('Service worker not registered', e));
-  let reloaded = false;
-  navigator.serviceWorker.addEventListener('controllerchange', () => { if (!reloaded) { reloaded = true; location.reload(); } });
-}
+// Sound button in the top bars (home, practice, battles).
+document.addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-sound]');
+  const p = active();
+  if (!btn || !p) return;
+  p.settings.sound = !p.settings.sound;
+  touch(p);
+  setSound(p.settings.sound);
+  unlock();
+  btn.classList.toggle('off', !p.settings.sound);
+  btn.setAttribute('aria-pressed', p.settings.sound);
+  btn.setAttribute('aria-label', 'Sound ' + (p.settings.sound ? 'on' : 'off'));
+  btn.innerHTML = soundIcon(p.settings.sound);
+  if (p.settings.sound) sfx.correct();
+  toast(p.settings.sound ? 'Sound on' : 'Sound off', 1400);
+});
+
+// Offline support and updates. Updates install by themselves between rounds;
+// during a round, a bar offers to update.
+startUpdates({
+  isBusy: () => ['play', 'battle'].includes(document.getElementById('app')?.dataset.screen),
+  showBar: (apply) => {
+    if (document.querySelector('.update-bar')) return;
+    const bar = document.createElement('div');
+    bar.className = 'update-bar';
+    bar.innerHTML = '<span>A new version of Kaimon is ready.</span><button class="btn-chunky btn-primary">Update</button>';
+    bar.querySelector('button').addEventListener('click', apply);
+    document.body.appendChild(bar);
+  },
+});
+const prevVersion = justUpdated();
+if (prevVersion) setTimeout(() => toast('Updated to v' + VERSION + '. See What\u2019s new in Grown-ups.', 3600), 600);
 
 // Time in the app for the grown-ups' Play time panel. Counted only while the app
 // is on screen and a trainer is active. Flushed about once a minute.

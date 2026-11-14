@@ -108,7 +108,7 @@ button { font: inherit; color: inherit; cursor: pointer; touch-action: manipulat
 .who-plus { display: grid; place-items: center; border-radius: 50%; background: var(--sky); font-size: 32px; font-weight: 700; border: 3px solid var(--ink); }
 
 .newtrainer { max-width: 620px; }
-.back { align-self: flex-start; }
+.icon-btn.back { align-self: flex-start; }
 .nt-form { display: flex; flex-direction: column; gap: 12px; }
 .field-label { margin: 8px 0 0; font-weight: 600; font-size: 18px; }
 .field { border: 3px solid var(--ink); border-radius: var(--r-md); padding: 14px 16px; font-size: 24px; background: var(--paper); width: 100%; }
@@ -179,7 +179,7 @@ button { font: inherit; color: inherit; cursor: pointer; touch-action: manipulat
 .streak { display: flex; align-items: center; gap: 4px; font-weight: 700; font-size: 24px; min-width: 70px; justify-content: flex-end; }
 .streak-ball .ball-svg { width: 36px; height: 36px; }
 
-.play-body { flex: 1; min-height: 0; display: grid; grid-template-rows: minmax(0, 1fr) auto; gap: 14px; }
+.play-body { flex: 1; min-height: 0; display: grid; grid-template-rows: minmax(0, 1fr) auto; gap: 20px; }
 .stage { position: relative; display: grid; place-items: center; min-height: 0; perspective: 1400px; }
 .card3d { width: min(100%, 620px); height: 100%; max-height: 600px; min-height: 300px; position: relative; cursor: default; }
 .card-inner { position: absolute; inset: 0; transform-style: preserve-3d; transition: transform .5s cubic-bezier(.3, 1.3, .5, 1); }
@@ -641,3 +641,101 @@ button { font: inherit; color: inherit; cursor: pointer; touch-action: manipulat
   .card-q { font-size: clamp(54px, 13vw, 96px); }
 }
 .pt-part .bar { width: 100%; max-width: none; }
+.fam-signin { align-self: center; margin-top: 8px; }
+.ver-foot { margin: 14px 0 0; text-align: center; font-size: 13px; color: var(--ink-2); opacity: .8; }
+
+/* Trainer manager */
+.tm-list { display: grid; gap: 8px; }
+.tm { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; border: 2.5px solid var(--ink); border-radius: 18px; padding: 8px 10px; background: var(--paper); }
+.tm.on { background: var(--sky); }
+.tm-main { flex: 1 1 260px; display: flex; align-items: center; gap: 10px; background: none; border: 0; padding: 0; text-align: left; min-width: 0; }
+.tm-av { width: 48px; height: 48px; flex-shrink: 0; }
+.tm-av svg { width: 100%; height: 100%; display: block; }
+.tm-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.tm-text strong { font-size: 19px; }
+.tm-text small { font-size: 14px; color: var(--ink-2); display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.tm-viewing { margin-left: auto; font-size: 13px; font-weight: 700; background: var(--ink); color: #fff; border-radius: 99px; padding: 2px 10px; }
+.tm-actions { display: flex; gap: 8px; }
+.btn-danger-soft { background: #FFE1D8; color: #7A1E0C; }
+.del-choice { display: grid; gap: 10px; margin-top: 8px; }
+.del-choice > button { display: flex; flex-direction: column; align-items: flex-start; text-align: left; gap: 4px; padding: 12px 14px; height: auto; }
+.del-choice small { font-weight: 500; font-size: 15px; line-height: 1.3; }
+.tm-hidden { border-top: 2px solid #EEF2F8; padding-top: 6px; }
+
+/* v0.3.3 card cleanup: power meter lives in the answer box; hints live in the box */
+.answer { overflow: hidden; }
+.answer-val.empty::before { content: attr(data-ph); color: rgba(20, 33, 61, .3); }
+.answer-val.empty[data-ph^="Type"]::before { color: var(--coral-ink); font-size: 30px; letter-spacing: 0; }
+.answer-hint { position: absolute; top: 50%; right: 14px; bottom: auto; left: auto; transform: translateY(-50%); font-size: 13px; text-align: right; }
+.power-strip { position: absolute; left: 0; right: 0; bottom: 0; height: 9px; background: rgba(20, 33, 61, .08); border-top: 2px solid rgba(20, 33, 61, .18); }
+.power-strip .power-fill { position: absolute; inset: 0 auto 0 0; width: 100%; border-right: 0; background: #9FB1CC; transition: background-color .2s; }
+.power-strip .power-fill.hi { background: var(--grass); }
+.power-strip .power-fill.max { background: var(--sun); }
+.power-strip.locked { animation: none; }
+.face { padding-bottom: 24px; }
+.catch-msg .tags { display: flex; justify-content: center; gap: 6px; margin-top: 6px; }
+.catch-msg .new-tag { margin: 0; }
+.card-wild p { font-weight: 600; }
+.answer-reveal { margin-top: 4px; }
+/* Short phones: the card shrinks to fit instead of running into the keypad */
+@media (max-height: 760px) and (orientation: portrait) {
+  .card3d { min-height: 0; }
+  .face { padding: 14px 16px 16px; gap: 6px; }
+  .card-head { font-size: 16px; padding-top: 0; }
+  .card-q { font-size: clamp(48px, 10vh, 84px); }
+  .answer-reveal { font-size: clamp(38px, 7.5vh, 64px); }
+  .catch-zone { min-height: 0; }
+  .catch-art { width: clamp(80px, 15vh, 130px); height: clamp(80px, 15vh, 130px); }
+  .throw-ball { width: 58px; height: 58px; }
+  .catch-msg { font-size: 18px; }
+  .hint-scroll { padding: 6px 10px; }
+  .hint-scroll p { margin-bottom: 4px; font-size: 14px; }
+  .ladder span { font-size: 15px; padding: 0 7px; }
+}
+/* Big screens: let the card breathe and read from across the room */
+@media (orientation: landscape) and (min-width: 900px) {
+  .card-head { font-size: 21px; }
+  .card-wild .kart { width: clamp(120px, 26vh, 210px); height: clamp(120px, 26vh, 210px); }
+  .card-wild p { font-size: 19px; }
+  .catch-msg { font-size: 26px; }
+  .catch-art { width: clamp(150px, 32vh, 240px); height: clamp(150px, 32vh, 240px); }
+  .answer, .mic { height: 76px; }
+}
+/* Ball lands on the Kaimon at any card width */
+.throw-ball { left: 50%; top: 50%; right: auto; bottom: auto; margin: -37px 0 0 -37px; transform: translate(min(32vw, 230px), 110px) rotate(0deg); }
+.catch-zone.thrown .throw-ball { transform: translate(0, -6px) rotate(var(--spin, -360deg)); }
+.catch-zone.absorbed.wob .throw-ball { transform: translate(0, -6px) rotate(-16deg); }
+.catch-zone.absorbed:not(.wob) .throw-ball { transform: translate(0, -6px) rotate(14deg); }
+.catch-zone.caught .throw-ball { transform: translate(0, -6px) scale(1.15); }
+/* Tablets and laptops: bigger type so the card reads at arm's length */
+@media (min-width: 700px) and (min-height: 760px) {
+  .card-head { font-size: 21px; }
+  .card-type { font-size: 17px; padding: 3px 14px; }
+  .card-q { font-size: clamp(96px, 14vh, 150px); }
+  .card-wild .kart { width: clamp(130px, 18vh, 210px); height: clamp(130px, 18vh, 210px); }
+  .card-wild p { font-size: 19px; }
+  .catch-art { width: clamp(160px, 24vh, 250px); height: clamp(160px, 24vh, 250px); }
+  .throw-ball { width: 90px; height: 90px; margin: -45px 0 0 -45px; }
+  .catch-msg { font-size: 26px; }
+  .answer-reveal { font-size: clamp(72px, 10vh, 110px); }
+  .hint-scroll { padding: 14px 18px; }
+  .hint-scroll p { font-size: 19px; margin-bottom: 8px; }
+  .ladder { gap: 8px; }
+  .ladder span { font-size: 24px; padding: 2px 12px; border-width: 2.5px; border-radius: 12px; }
+  .answer-val.empty[data-ph^="Type"]::before { font-size: 36px; }
+}
+
+.sound-btn { width: 44px; height: 44px; border-radius: 14px; flex-shrink: 0; }
+.sound-btn svg { width: 24px; height: 24px; }
+.sound-btn.off { background: #EEF2F8; color: var(--ink-2); }
+.play-top .sound-btn { box-shadow: 0 3px 0 var(--ink); }
+.home .topbar { gap: 10px; }
+.trainer-chip { flex: 1 1 auto; min-width: 0; }
+.trainer-text { min-width: 0; }
+.trainer-text strong { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.trainer-swap { left: 34px; top: 34px; width: 24px; height: 24px; }
+.topbar-right { flex-shrink: 0; }
+@media (max-width: 420px) { .home .pill { padding: 0 12px; font-size: 16px; } .trainer-av { width: 48px; height: 48px; } .trainer-swap { left: 28px; top: 28px; } }
+.row-note { display: block; font-size: 14px; color: var(--ink-2); font-weight: 500; }
+.trainer-av { flex-shrink: 0; }
+@media (max-width: 480px) { .home .sound-btn { display: none; } }

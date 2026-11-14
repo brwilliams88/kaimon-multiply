@@ -1,7 +1,44 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.3.0';
+export const VERSION = '0.3.3';
 
 export const CHANGELOG = [
+  {
+    version: '0.3.3',
+    date: '2026-11-14',
+    title: 'Cleaner cards and a sound button',
+    items: [
+      'The power meter is now a strip along the bottom of the answer box, so the card stays clear.',
+      'After a wrong answer, "Type 7" shows right in the answer box instead of under it.',
+      'Cards fit small phones without running into the keypad, and use bigger text on iPads.',
+      'The ball now lands on the Kaimon on every screen size.',
+      'New speaker button in practice and battles (and on the home screen on bigger screens) turns sound on or off.',
+      'Fixed: using the microphone on iPhone used to switch on sound even with the silent switch on.',
+      'Fixed: the back of a card could be shorter than the front.',
+    ],
+  },
+  {
+    version: '0.3.2',
+    date: '2026-11-14',
+    title: 'Manage trainers',
+    items: [
+      'Grown-ups lists every trainer on the device. Tap one to see their progress, or rename or delete them.',
+      'For a family trainer, choose Remove from this device (they stay on other family devices and can be added back) or Delete everywhere.',
+      'Fixed: some Grown-ups buttons could react twice after the screen refreshed.',
+    ],
+  },
+  {
+    version: '0.3.1',
+    date: '2026-11-14',
+    title: 'Easier updates and family sign-in',
+    items: [
+      'The version number now shows at the bottom of the start and home screens.',
+      'Updates install by themselves when the app opens or comes back to the front. During a round, a bar asks first.',
+      'Grown-ups has a Check for updates button.',
+      'Fixed: an update could sometimes keep old files on a phone for a few minutes.',
+      'A new family device can sign in from the start screen, without making a trainer first.',
+      'Sign-in codes can be pasted with spaces.',
+    ],
+  },
   {
     version: '0.3.0',
     date: '2026-11-14',
@@ -19,6 +56,18 @@ export const CHANGELOG = [
       'New Play time panel for grown-ups: minutes per day, time spent answering, which part of the day, and an optional daily limit that lets the current round finish first.',
       'Adding to the home screen now suggests the name Kaimon Multiply.',
     ],
+  },
+  {
+    version: '0.2.2',
+    date: '2026-11-14',
+    title: 'Little Leader Nozomi',
+    items: ['The 1s Champion is now called Little Leader Nozomi.'],
+  },
+  {
+    version: '0.2.1',
+    date: '2026-11-14',
+    title: 'Sign in from the email link',
+    items: ['Family sign-in also works by tapping the link in the sign-in email, on the same device.'],
   },
   {
     version: '0.2.0',

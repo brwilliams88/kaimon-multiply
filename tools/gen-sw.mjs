@@ -26,7 +26,8 @@ const CACHE = 'kaimon-${version}-${build}';
 const ASSETS = ${JSON.stringify(['./', ...files], null, 2)};
 
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS)));
+  // cache: 'reload' skips the browser's HTTP cache, so a new version never stores old files.
+  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS.map((u) => new Request(u, { cache: 'reload' })))));
 });
 
 self.addEventListener('activate', (e) => {
@@ -46,4 +47,6 @@ self.addEventListener('fetch', (e) => {
 });
 `;
 writeFileSync(join(root, 'sw.js'), sw);
+// version.json is never cached, so the app can always ask what the newest version is.
+writeFileSync(join(root, 'version.json'), JSON.stringify({ version, build }) + '\n');
 console.log(`sw.js: ${files.length} files, cache ${version}-${build}`);

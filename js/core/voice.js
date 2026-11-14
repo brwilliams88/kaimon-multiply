@@ -1,3 +1,4 @@
+import { ambient } from './sound.js';
 // Voice answers using the browser's built-in speech recognition (free, no API key).
 // iPad/iPhone Safari and Chrome support it; some installed home-screen apps do not.
 // If it is missing, the mic button is hidden and the number pad is used.
@@ -61,7 +62,7 @@ export function listen(cb) {
       : 'Voice didn’t work this time. Use the keypad.';
     cb.onError?.(msg, e.error);
   };
-  r.onend = () => { if (current === r) current = null; cb.onEnd?.(); };
+  r.onend = () => { if (current === r) current = null; ambient(); cb.onEnd?.(); };
   try { r.start(); } catch (err) { cb.onError?.('Voice didn’t start. Use the keypad.'); cb.onEnd?.(); }
 }
 

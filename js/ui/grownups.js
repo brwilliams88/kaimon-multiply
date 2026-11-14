@@ -1,4 +1,8 @@
-import { touch } from '../core/store.js';
+import { touch, switchProfile, renameProfile, hideProfile, hiddenProfiles } from '../core/store.js';
+import { deleteEverywhere, addBackFromFamily } from '../core/sync.js';
+import { avatarSVG } from './avatars.js';
+import { dexCounts } from '../core/game.js';
+import { checkNow } from '../core/update.js';
 import { lastDays, partsOfDay, usedToday } from '../core/playtime.js';
 import { bonusTime } from '../core/actions.js';
 import { active, save, exportBackup, importBackup, deleteProfile, allProfiles, hasPin, setPin, checkPin, clearPin } from '../core/store.js';
@@ -104,6 +108,10 @@ function resizePhoto(file) {
 }
 
 function renderMain(root, go) {
+  // Fresh element on every redraw so button handlers never stack up.
+  const fresh = root.cloneNode(false);
+  root.replaceWith(fresh);
+  root = fresh;
   const p = active();
   const s = p.settings;
   const acc = p.stats.answers ? Math.round((p.stats.correct / p.stats.answers) * 100) : 0;
@@ -146,8 +154,8 @@ function renderMain(root, go) {
           <div class="table-toggles">${[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((t) => `<button class="tt${s.tables.includes(t) ? ' on' : ''}" data-t="${t}" aria-pressed="${s.tables.includes(t)}">${t}s</button>`).join('')}</div>
           <label class="row"><span>Cards per session</span><select data-set="sessionLength">${[10, 15, 20, 30].map((n) => `<option ${s.sessionLength === n ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
           <label class="row"><span>Counts as fast</span><select data-set="fastMs">${[3000, 4000, 5000, 6000, 8000].map((n) => `<option value="${n}" ${s.fastMs === n ? 'selected' : ''}>${n / 1000} seconds</option>`).join('')}</select></label>
-          <label class="row"><span>Sound</span><input type="checkbox" data-set="sound" ${s.sound ? 'checked' : ''}></label>
-          <label class="row"><span>Voice answers</span><input type="checkbox" data-set="voice" ${s.voice ? 'checked' : ''}></label>
+          <label class="row"><span>Sound<small class="row-note">Also on the speaker button in the game. On iPhone, the silent switch mutes it.</small></span><input type="checkbox" data-set="sound" ${s.sound ? 'checked' : ''}></label>
+          <label class="row"><span>Voice answers<small class="row-note">The phone asks to use the microphone the first time each day it's used.</small></span><input type="checkbox" data-set="voice" ${s.voice ? 'checked' : ''}></label>
           <p class="note">${voiceSupported() ? 'Voice works on this device. Kids tap Say it, then say the number.' : 'Voice isn’t available here. On iPad and iPhone it may work in Safari but not from the home screen icon; the number pad always works.'}</p>
         </div>
 
@@ -208,15 +216,28 @@ function renderMain(root, go) {
 
         <div class="panel" data-syncpanel></div>
 
-        <div class="panel">
+        <div class="panel trainers-panel">
           <h2>Trainers on this device</h2>
-          <div class="trainer-rows">${allProfiles().map((x) => `<div class="trow"><span class="trow-name">${esc(x.name)}</span><span class="trow-tag ${x.family ? 'fam' : ''}">${x.family ? 'Synced with family' : 'This device only'}</span></div>`).join('')}</div>
-          <p class="note">Friends play as guests. Their progress stays on this device and is never uploaded. Backup codes are a safety net for guests; family trainers are already saved by sync.</p>
+          <p class="note">Tap a trainer to see their progress here.</p>
+          <div class="tm-list">${allProfiles().map((x) => `
+            <div class="tm${x.id === p.id ? ' on' : ''}">
+              <button class="tm-main" data-tm-switch="${x.id}" aria-label="Show ${esc(x.name)}">
+                <span class="tm-av">${avatarSVG(x.avatar)}</span>
+                <span class="tm-text"><strong>${esc(x.name)}</strong><small><span class="trow-tag ${x.family ? 'fam' : ''}">${x.family ? 'Synced with family' : 'This device only'}</span> ${dexCounts(x).caught} caught · ${x.stats.answers} answers</small></span>
+                ${x.id === p.id ? '<span class="tm-viewing">Viewing</span>' : ''}
+              </button>
+              <div class="tm-actions">
+                <button class="btn-chunky btn-sm" data-tm-rename="${x.id}">Rename</button>
+                <button class="btn-chunky btn-sm btn-danger-soft" data-tm-delete="${x.id}">Delete</button>
+              </div>
+            </div>`).join('')}
+          </div>
+          ${Object.keys(hiddenProfiles()).length && syncStatus().signedIn ? `<div class="tm-hidden"><p class="step-title">Family trainers removed from this device</p>${Object.entries(hiddenProfiles()).map(([id, name]) => `<div class="row"><span>${esc(name)}</span><button class="btn-chunky btn-sm" data-tm-addback="${id}">Add back</button></div>`).join('')}</div>` : ''}
+          <p class="note">Friends play as guests. Their progress stays on this device and is never uploaded. A backup code is a safety net for a guest trainer.</p>
           <div class="btn-row">
-            <button class="btn-chunky" data-backup>Copy backup code</button>
+            <button class="btn-chunky" data-backup>Copy ${esc(p.name)}'s backup code</button>
             <button class="btn-chunky" data-restore>Restore from code</button>
           </div>
-          <button class="btn-chunky btn-danger" data-delete>Delete ${esc(p.name)} from this device</button>
         </div>
 
         <div class="panel">
@@ -226,12 +247,20 @@ function renderMain(root, go) {
 
         <div class="panel whatsnew">
           <h2>What's new</h2>
+          <div class="row"><span class="note" data-upd-msg>This device has v${VERSION}.</span><button class="btn-chunky btn-sm" data-update>Check for updates</button></div>
           ${CHANGELOG.map((c) => `<div class="cl"><p class="cl-head"><strong>v${c.version}</strong> ${esc(c.title)}<span>${c.date}</span></p><ul>${c.items.map((i) => `<li>${esc(i)}</li>`).join('')}</ul></div>`).join('')}
         </div>
       </div>
     </section>`;
 
   on(root, 'click', '[data-back]', () => go('home'));
+  on(root, 'click', '[data-update]', async (e, btn) => {
+    const msg = root.querySelector('[data-upd-msg]');
+    btn.disabled = true; msg.textContent = 'Checking...';
+    const r = await checkNow((m) => { msg.textContent = m; });
+    msg.textContent = r.msg;
+    if (!r.updating) btn.disabled = false;
+  });
 
   const syncPanel = root.querySelector('[data-syncpanel]');
   let pendingEmail = '';
@@ -248,7 +277,7 @@ function renderMain(root, go) {
       <div class="step">${check(false)}<div class="step-body">
         <p class="step-title">1. Type the code from the email</p>
         <p class="note">We sent a 6-digit code to <strong>${esc(pendingEmail)}</strong>. Not there? Check Spam, or wait a minute.</p>
-        <input class="field code-field" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="000000" data-code>
+        <input class="field code-field" inputmode="numeric" autocomplete="one-time-code" maxlength="9" placeholder="000000" data-code>
         <div class="btn-row"><button class="btn-chunky btn-primary" data-verify>Sign in</button><button class="btn-chunky btn-sm" data-resend>Send a new code</button><button class="link-btn" data-change>Use a different email</button></div>
       </div></div>`
     : `
@@ -351,9 +380,42 @@ function renderMain(root, go) {
       catch (err) { toast(err.message || 'That backup code is not valid.'); }
     });
   });
-  on(root, 'click', '[data-delete]', () => {
-    const sh = sheet(`<h2>Delete ${esc(p.name)}?</h2><p>This removes ${esc(p.name)}'s Kaidex and fact progress from this device. It can't be undone unless you have a backup code.</p><div class="sheet-actions"><button class="btn-chunky btn-danger" data-do>Delete</button><button class="btn-chunky" data-close>Cancel</button></div>`);
-    sh.el.querySelector('[data-do]').addEventListener('click', () => { deleteProfile(p.id); sh.close(); go('welcome'); });
+  const after = () => (allProfiles().length ? renderMain(root, go) : go('welcome'));
+  on(root, 'click', '[data-tm-switch]', (e, el) => { switchProfile(el.dataset.tmSwitch); renderMain(root, go); window.scrollTo(0, 0); });
+  on(root, 'click', '[data-tm-rename]', (e, el) => {
+    const x = allProfiles().find((y) => y.id === el.dataset.tmRename);
+    const sh = sheet(`<h2>Rename ${esc(x.name)}</h2><input class="field" maxlength="16" value="${esc(x.name)}" data-newname><p class="note">${x.family ? 'The new name shows on every family device.' : 'Only on this device.'}</p><div class="sheet-actions"><button class="btn-chunky btn-primary" data-do>Save</button><button class="btn-chunky" data-close>Cancel</button></div>`);
+    const inp = sh.el.querySelector('[data-newname]'); inp.focus(); inp.select();
+    const doIt = () => { const v = inp.value.trim(); if (!v) return toast('Type a name.'); renameProfile(x.id, v); if (x.family) syncNow(); sh.close(); toast(`Renamed to ${v}`); renderMain(root, go); };
+    sh.el.querySelector('[data-do]').addEventListener('click', doIt);
+    inp.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') doIt(); });
+  });
+  on(root, 'click', '[data-tm-delete]', (e, el) => {
+    const x = allProfiles().find((y) => y.id === el.dataset.tmDelete);
+    if (!x.family) {
+      const sh = sheet(`<h2>Delete ${esc(x.name)}?</h2><p>This removes ${esc(x.name)}'s Kaimon and progress from this device. It can't be undone without a backup code.</p><div class="sheet-actions"><button class="btn-chunky" data-copy>Copy backup code first</button><button class="btn-chunky btn-danger" data-do>Delete</button><button class="btn-chunky" data-close>Cancel</button></div>`);
+      sh.el.querySelector('[data-copy]').addEventListener('click', async () => { const prev = active().id; switchProfile(x.id); const code = exportBackup(); switchProfile(prev); try { await navigator.clipboard.writeText(code); toast('Backup code copied. Paste it somewhere safe.'); } catch { toast('Couldn’t copy. Try again.'); } });
+      sh.el.querySelector('[data-do]').addEventListener('click', () => { deleteProfile(x.id); sh.close(); toast(`${x.name} deleted`); after(); });
+      return;
+    }
+    const sh = sheet(`<h2>${esc(x.name)} syncs with your family</h2>
+      <div class="del-choice"><button class="btn-chunky" data-hide><strong>Remove from this device</strong><small>${esc(x.name)} stays on your other family devices. You can add them back here later.</small></button>
+      <button class="btn-chunky btn-danger-soft" data-everywhere><strong>Delete everywhere</strong><small>Removes ${esc(x.name)} and all their progress from every family device. Can't be undone.</small></button></div>
+      <div class="sheet-actions"><button class="btn-chunky" data-close>Cancel</button></div>`);
+    sh.el.querySelector('[data-hide]').addEventListener('click', () => { hideProfile(x.id); sh.close(); toast(`${x.name} removed from this device`); after(); });
+    sh.el.querySelector('[data-everywhere]').addEventListener('click', () => {
+      sh.el.querySelector('.del-choice').innerHTML = `<p>Type <strong>${esc(x.name)}</strong> to delete them from every device.</p><input class="field" data-confirm autocomplete="off"><button class="btn-chunky btn-danger" data-final>Delete everywhere</button>`;
+      sh.el.querySelector('[data-final]').addEventListener('click', async () => {
+        if (sh.el.querySelector('[data-confirm]').value.trim().toLowerCase() !== x.name.toLowerCase()) return toast('The name doesn’t match.');
+        try { await deleteEverywhere(x); sh.close(); toast(`${x.name} deleted from every family device`); after(); }
+        catch (err) { toast('Couldn’t reach the family server. Check the internet and try again.'); }
+      });
+    });
+  });
+  on(root, 'click', '[data-tm-addback]', async (e, el) => {
+    el.disabled = true;
+    try { const x = await addBackFromFamily(el.dataset.tmAddback); toast(`${x.name} is back on this device`); renderMain(root, go); }
+    catch (err) { toast(err.message); renderMain(root, go); }
   });
   on(root, 'click', '[data-lock]', () => { unlockedUntil = 0; go('home');
   });

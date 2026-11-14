@@ -1,6 +1,6 @@
 // Family sync with Supabase, using plain fetch (no library, works offline-first).
 // Only emails on the family list can read or write; everything else stays on the device.
-import { allProfiles, profileById, putProfile, newProfile, save, deviceId, syncState, setSyncState } from './store.js';
+import { allProfiles, profileById, putProfile, newProfile, save, deviceId, syncState, setSyncState, deleteProfile, hiddenProfiles, unhideProfile } from './store.js';
 import { apply, emit } from './actions.js';
 
 const URL = 'https://qabevoqmalqjvesqzuse.supabase.co';
@@ -84,8 +84,47 @@ async function token() {
 const profileRow = (p) => ({
   id: p.id, name: p.name, avatar: p.avatar,
   settings: { ...p.settings, starter: p.starter },
-  created_at: p.createdAt, updated_at: p.updatedAt,
+  created_at: p.createdAt, updated_at: p.updatedAt, deleted: false,
 });
+
+function profileFromRow(r) {
+  const p = newProfile(r.name, r.avatar, r.id);
+  p.family = true;
+  p.createdAt = r.created_at;
+  p.updatedAt = r.updated_at;
+  const { starter, ...rest } = r.settings || {};
+  p.settings = { ...p.settings, ...rest };
+  p.starter = starter || 'kaimo';
+  return p;
+}
+
+// Delete a family trainer on every family device. Cannot be undone.
+export async function deleteEverywhere(p) {
+  const t = await token();
+  await api('/rest/v1/profiles', { method: 'POST', token: t, headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
+    body: [{ ...profileRow(p), updated_at: Date.now(), deleted: true }] });
+  deleteProfile(p.id);
+  delete hiddenProfiles()[p.id];
+  save();
+}
+
+// Put a family trainer back on this device: its full history comes down from the family log.
+export async function addBackFromFamily(id) {
+  const t = await token();
+  const rows = await api(`/rest/v1/profiles?select=*&id=eq.${encodeURIComponent(id)}`, { token: t });
+  const r = rows && rows[0];
+  unhideProfile(id);
+  if (!r || r.deleted) throw new Error('That trainer was deleted from the family.');
+  const p = profileFromRow(r);
+  let after = 0;
+  for (;;) {
+    const evs = await api(`/rest/v1/events?select=id,seq,profile_id,device,t,k,d&profile_id=eq.${encodeURIComponent(id)}&seq=gt.${after}&order=seq.asc&limit=1000`, { token: t });
+    for (const ev of evs) { after = ev.seq; applyRemote(p, ev); }
+    if (evs.length < 1000) break;
+  }
+  putProfile(p);
+  return p;
+}
 
 // Turn on family sync for a trainer on this device. Their progress so far
 // goes up as one snapshot; everything after that goes as events.
@@ -154,8 +193,10 @@ export function syncNow() {
       const me = deviceId();
 
       // 1. Profiles: newest edit wins.
-      const remote = await api('/rest/v1/profiles?select=*&deleted=eq.false', { token: t });
+      const remote = await api('/rest/v1/profiles?select=*', { token: t });
       const remoteById = Object.fromEntries(remote.map((r) => [r.id, r]));
+      // Trainers deleted everywhere disappear from this device too.
+      for (const r of remote) if (r.deleted && profileById(r.id)?.family) deleteProfile(r.id);
       const toUpsert = [];
       for (const p of allProfiles().filter((x) => x.family)) {
         const r = remoteById[p.id];
@@ -165,16 +206,10 @@ export function syncNow() {
         await api('/rest/v1/profiles', { method: 'POST', body: toUpsert, token: t, headers: { Prefer: 'resolution=merge-duplicates,return=minimal' } });
       }
       for (const r of remote) {
+        if (r.deleted || hiddenProfiles()[r.id]) continue;
         let p = profileById(r.id);
         if (!p) {
-          p = newProfile(r.name, r.avatar, r.id);
-          p.family = true;
-          p.createdAt = r.created_at;
-          p.updatedAt = r.updated_at;
-          p.settings = { ...p.settings, ...r.settings };
-          p.starter = r.settings?.starter || 'kaimo';
-          delete p.settings.starter;
-          putProfile(p);
+          putProfile(profileFromRow(r));
         } else if (p.family && r.updated_at > p.updatedAt) {
           p.name = r.name; p.avatar = r.avatar; p.updatedAt = r.updated_at;
           const { starter, ...rest } = r.settings || {};

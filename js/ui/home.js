@@ -5,9 +5,10 @@ import { tableTier, tableProgress, LEVEL_LABEL } from '../core/facts.js';
 import { partnerOf, dexCounts, trainerTitle } from '../core/game.js';
 import { bossUnlocked } from '../core/battle.js';
 import { limitReached } from '../core/playtime.js';
+import { VERSION } from '../data/changelog.js';
 import { trainerArt } from './trainerArt.js';
 import { avatarSVG } from './avatars.js';
-import { esc, on, $, holdButton, sheet } from './dom.js';
+import { esc, on, $, holdButton, sheet, soundButton } from './dom.js';
 import { sfx, unlock } from '../core/sound.js';
 
 export const medal = (tier) => tier
@@ -28,6 +29,7 @@ export function renderHome(root, go, params = {}) {
           <span class="trainer-text"><strong>${esc(p.name)}${p.stats.stars ? ` <span class="stars" title="Good Work Stamps">★${p.stats.stars}</span>` : ''}</strong><small>${trainerTitle(p)}</small></span>
         </button>
         <div class="topbar-right">
+          ${soundButton(p.settings.sound)}
           <button class="pill" data-dex aria-label="Open Kaidex"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="3" fill="#FF6B4A" stroke="currentColor" stroke-width="2.5"/><circle cx="12" cy="10" r="3.5" fill="#FFFFFF" stroke="currentColor" stroke-width="2"/><path d="M8 16 H16" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>${dex.caught}/${dex.total}</button>
           <button class="icon-btn hold" data-grownups aria-label="Grown-ups: press and hold"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8.5a3.5 3.5 0 1 0 0 7a3.5 3.5 0 0 0 0-7Z M19.4 13a7.6 7.6 0 0 0 0-2l2-1.6-2-3.4-2.4 1a7.4 7.4 0 0 0-1.7-1L15 3.5h-4L10.7 6a7.4 7.4 0 0 0-1.7 1l-2.4-1-2 3.4 2 1.6a7.6 7.6 0 0 0 0 2l-2 1.6 2 3.4 2.4-1a7.4 7.4 0 0 0 1.7 1l.3 2.5h4l.3-2.5a7.4 7.4 0 0 0 1.7-1l2.4 1 2-3.4Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg><span class="hold-ring" aria-hidden="true"></span></button>
         </div>
@@ -93,6 +95,7 @@ export function renderHome(root, go, params = {}) {
             </button>`;
           })()}
         </div>
+        <p class="ver-foot">Kaimon Multiply v${VERSION}</p>
       </div>
     </section>`;
 

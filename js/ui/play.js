@@ -12,7 +12,7 @@ import { limitReached } from '../core/playtime.js';
 import { voiceSupported, listen, stop as stopVoice } from '../core/voice.js';
 import { sfx, setSound } from '../core/sound.js';
 import { ballIcon, medal } from './home.js';
-import { $, on, esc, sheet, wait, toast } from './dom.js';
+import { $, on, esc, sheet, wait, toast, soundButton } from './dom.js';
 
 export function renderPlay(root, go, { table }) {
   const p = active();
@@ -32,6 +32,7 @@ export function renderPlay(root, go, { table }) {
       <header class="play-top">
         <button class="icon-btn" data-exit aria-label="Stop practicing"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6 L18 18 M18 6 L6 18" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg></button>
         <div class="pips" aria-hidden="true">${Array.from({ length: S.length }, () => '<span></span>').join('')}</div>
+        ${soundButton(p.settings.sound)}
         <div class="streak" aria-live="polite"><span class="streak-ball"></span><span class="streak-num">0</span></div>
       </header>
       <div class="play-body">
@@ -43,7 +44,7 @@ export function renderPlay(root, go, { table }) {
           </div></div>
         </div>
         <div class="pad-wrap">
-          <div class="answer" aria-live="polite"><span class="answer-val"></span><span class="answer-hint"></span></div>
+          <div class="answer" aria-live="polite"><span class="answer-val empty" data-ph="?"></span><span class="answer-hint"></span><span class="power-strip" aria-hidden="true"><span class="power-fill"></span></span></div>
           <div class="pad" role="group" aria-label="Number pad">
             ${[1, 2, 3, 4, 5, 6, 7, 8, 9].map((d) => `<button class="key" data-k="${d}">${d}</button>`).join('')}
             <button class="key key-del" data-k="del" aria-label="Delete"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5 H20 V19 H9 L3 12 Z M12 9 L17 15 M17 9 L12 15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/></svg></button>
@@ -93,12 +94,12 @@ export function renderPlay(root, go, { table }) {
     el.front.innerHTML = `
       <div class="card-head"><span>${region.name}</span><span class="card-type">${t.name}</span></div>
       <div class="card-q"><span>${a}</span><span class="times">×</span><span>${b}</span></div>
-      <div class="card-wild">${creatureArt(species, { mode: 'seen' })}<p>${lingering ? `${known ? esc(species.name) : 'The wild Kaimon'} is still here! Answer to throw again.` : `A wild ${known ? esc(species.name) : '???'} appeared`}</p></div>
-      <div class="power" aria-hidden="true"><span class="power-fill"></span><span class="power-label">Throw power</span></div>`;
+      <div class="card-wild">${creatureArt(species, { mode: 'seen' })}<p>${lingering ? `${known ? esc(species.name) : 'The wild Kaimon'} is still here! Answer to throw again.` : `A wild ${known ? esc(species.name) : '???'} appeared`}</p></div>`;
     el.back.innerHTML = '';
     el.inner.classList.remove('flipped', 'wrong');
     setInput('');
     el.hint.textContent = '';
+    el.val.dataset.ph = '?';
     S.phase = 'ask';
     S.mustType = null;
     S.shownAt = performance.now();
@@ -110,7 +111,7 @@ export function renderPlay(root, go, { table }) {
   // Power meter: full for a quick answer, drains slowly, never runs out.
   function runPower() {
     cancelAnimationFrame(S.raf);
-    const fill = $('.power-fill', el.front);
+    const fill = $('.answer .power-fill', root);
     const tick = () => {
       if (S.phase !== 'ask' || !fill.isConnected) return;
       const pw = powerFor(performance.now() - S.shownAt);
@@ -193,18 +194,18 @@ export function renderPlay(root, go, { table }) {
         <div class="card-head"><span>Not quite</span></div>
         <div class="card-q answer-reveal"><span>${a}</span><span class="times">×</span><span>${b}</span><span class="eq">=</span><span class="ans">${ans}</span></div>
         <div class="hint-scroll"><p>Count by ${a}s</p><div class="ladder">${hintLadder(S.fact).map((v, i, arr) => `<span class="${i === arr.length - 1 ? 'last' : ''}">${v}</span>`).join('')}</div></div>
-        <p class="catch-msg">${esc(dexState(p, S.species.id) === 'caught' ? S.species.name : 'The wild Kaimon')} ran off. Type ${ans} to keep going.</p>`;
+        <p class="catch-msg">${esc(dexState(p, S.species.id) === 'caught' ? S.species.name : 'The wild Kaimon')} ran off.</p>`;
       el.inner.classList.add('flipped', 'wrong');
       S.phase = 'learn';
       S.mustType = ans;
       setInput('');
-      el.hint.textContent = `Type ${ans}`;
+      el.val.dataset.ph = `Type ${ans}`;
     }
   }
 
   function checkRetype() {
     if (parseInt(S.input, 10) === S.mustType) { sfx.tap(); S.phase = 'done'; advance(); }
-    else { setInput(''); el.hint.textContent = `Type ${S.mustType}`; sfx.wrong(); }
+    else { setInput(''); sfx.wrong(); }
   }
 
   async function animateCatch(roll, result, pw = 0.5) {
@@ -223,7 +224,7 @@ export function renderPlay(root, go, { table }) {
       zone.classList.add('caught');
       sfx.caught();
       const s = S.species;
-      msg.innerHTML = `Caught ${esc(s.name)}!${result.isNew ? ' <span class="new-tag">New</span>' : ''}${result.shiny ? ' <span class="new-tag shiny-tag">Shiny</span>' : ''}`;
+      msg.innerHTML = `Caught ${esc(s.name)}!${result.isNew || result.shiny ? `<span class="tags">${result.isNew ? '<span class="new-tag">New</span>' : ''}${result.shiny ? '<span class="new-tag shiny-tag">Shiny</span>' : ''}</span>` : ''}`;
     } else {
       zone.classList.add('escaped');
       sfx.escape();

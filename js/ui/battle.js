@@ -14,7 +14,7 @@ import { sfx, setSound, unlock } from '../core/sound.js';
 import { ballIcon } from './home.js';
 import { trainerArt, CHAMP_LINES } from './trainerArt.js';
 import { limitReached } from '../core/playtime.js';
-import { $, on, esc, sheet, wait, reducedMotion } from './dom.js';
+import { $, on, esc, sheet, wait, reducedMotion, soundButton } from './dom.js';
 
 const hpBar = (who) => `<div class="hp hp-${who}"><div class="hp-top"><span class="hp-name"></span><span class="hp-dots"></span></div><div class="hp-bar"><span></span></div><span class="hp-num"></span></div>`;
 
@@ -43,6 +43,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1 } = {}) {
       <header class="play-top">
         <button class="icon-btn" data-exit aria-label="Leave battle"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6 L18 18 M18 6 L6 18" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg></button>
         <div class="vs-chip"><span class="vs-av">${trainerArt(opp)}</span><span><strong>${esc(opp.name)}</strong><small>${esc(opp.title)}</small></span></div>
+        ${soundButton(p.settings.sound)}
         <div class="streak" aria-live="polite"><span class="streak-ball">${ballIcon('capture')}</span><span class="streak-num">0</span></div>
       </header>
       <div class="play-body">
@@ -50,7 +51,6 @@ export function renderBattle(root, go, { kind = 'champ', table = 1 } = {}) {
           <div class="side foe">${hpBar('foe')}<div class="mon foe-mon"></div></div>
           <div class="center">
             <div class="q-card"><div class="q"></div></div>
-            <div class="power" aria-hidden="true"><span class="power-fill"></span><span class="power-label">Power</span></div>
             <p class="b-msg" aria-live="polite"></p>
           </div>
           <div class="side me"><div class="mon me-mon"></div>${hpBar('me')}</div>
@@ -71,7 +71,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1 } = {}) {
           </div>
         </div>
         <div class="pad-wrap">
-          <div class="answer" aria-live="polite"><span class="answer-val empty"></span><span class="answer-hint"></span></div>
+          <div class="answer" aria-live="polite"><span class="answer-val empty" data-ph="?"></span><span class="answer-hint"></span><span class="power-strip" aria-hidden="true"><span class="power-fill"></span></span></div>
           <div class="pad" role="group" aria-label="Number pad">
             ${[1, 2, 3, 4, 5, 6, 7, 8, 9].map((d) => `<button class="key" data-k="${d}">${d}</button>`).join('')}
             <button class="key key-del" data-k="del" aria-label="Delete"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5 H20 V19 H9 L3 12 Z M12 9 L17 15 M17 9 L12 15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/></svg></button>
@@ -86,7 +86,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1 } = {}) {
   const el = {
     arena: $('.arena', root), q: $('.q', root), qcard: $('.q-card', root), msg: $('.b-msg', root),
     foeMon: $('.foe-mon', root), meMon: $('.me-mon', root), foeHp: $('.hp-foe', root), meHp: $('.hp-me', root),
-    power: $('.power', root), powerFill: $('.power-fill', root), powerLabel: $('.power-label', root), fx: $('.fx', root),
+    power: $('.answer .power-strip', root), powerFill: $('.answer .power-fill', root), fx: $('.fx', root),
     val: $('.answer-val', root), hint: $('.answer-hint', root), streak: $('.streak-num', root), streakBall: $('.streak-ball', root),
     mic: $('[data-mic]', root), intro: $('.intro', root),
   };
@@ -137,14 +137,12 @@ export function renderBattle(root, go, { kind = 'champ', table = 1 } = {}) {
       el.powerFill.className = 'power-fill' + (pw >= 0.9 ? ' max' : pw >= 0.6 ? ' hi' : '');
       S.raf = requestAnimationFrame(tick);
     };
-    el.powerLabel.textContent = 'Power';
     tick();
   }
   function lockPower(pw) {
     cancelAnimationFrame(S.raf);
     el.powerFill.style.width = (pw * 100) + '%';
     el.power.classList.add('locked');
-    el.powerLabel.textContent = powerLabel(pw) + '!';
   }
 
   // ---------- flow ----------
@@ -158,6 +156,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1 } = {}) {
     el.msg.textContent = S.n === 0 ? 'Answer to attack!' : '';
     setInput('');
     el.hint.textContent = '';
+    el.val.dataset.ph = '?';
     S.phase = 'ask';
     S.mustType = null;
     S.shownAt = performance.now();
@@ -187,7 +186,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1 } = {}) {
       el.q.innerHTML = `<span>${a}</span><span class="times">×</span><span>${b}</span><span class="eq">=</span><span class="ans">${ans}</span>`;
       const me = mine[S.me], foe = opp.team[S.foe];
       const hit = attack(me, pw, S.streak);
-      el.msg.textContent = hit.special ? `${me.species.name} used ${moveName(me.species)}!` : `${me.species.name} attacks!`;
+      el.msg.textContent = hit.special ? `${powerLabel(pw)}! ${me.species.name} used ${moveName(me.species)}!` : `${powerLabel(pw)}! ${me.species.name} attacks!`;
       await anim(el.meMon, 'lunge', 320);
       hit.crit ? sfx.crit() : sfx.hit();
       foe.hp -= hit.dmg;
@@ -240,7 +239,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1 } = {}) {
       S.phase = 'learn';
       S.mustType = ans;
       setInput('');
-      el.hint.textContent = `Type ${ans} to keep going`;
+      el.val.dataset.ph = `Type ${ans}`;
     }
   }
 
@@ -251,7 +250,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1 } = {}) {
       if (S.lost) return finish(false);
       S.n++;
       next();
-    } else { setInput(''); el.hint.textContent = `Type ${S.mustType} to keep going`; sfx.wrong(); }
+    } else { setInput(''); sfx.wrong(); }
   }
 
   async function finish(won) {

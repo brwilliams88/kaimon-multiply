@@ -1,6 +1,8 @@
 import { allProfiles, addProfile, newProfile, switchProfile, active, touch } from '../core/store.js';
 import { dexCounts } from '../core/game.js';
 import { status as syncStatus, onSyncChange } from '../core/sync.js';
+import { familySignInSheet } from './familySignIn.js';
+import { VERSION } from '../data/changelog.js';
 import { byId, TYPES } from '../data/creatures.js';
 import { creatureArt } from '../core/art.js';
 import { avatarSVG, AVATAR_COUNT } from './avatars.js';
@@ -28,12 +30,15 @@ export function renderWelcome(root, go) {
         </div>` : `
         <p class="welcome-line">Answer times tables. Catch Kaimon. Fill your Kaidex.</p>
         <button class="btn-chunky btn-primary btn-xl" data-new>Start</button>`}
+      ${st.signedIn ? '' : '<button class="link-btn fam-signin" data-famsignin>Family device? Sign in for family sync</button>'}
+      <p class="ver-foot">Kaimon Multiply v${VERSION}</p>
     </section>`;
   // Family trainers can arrive from sync while this screen is open.
   const sig = () => JSON.stringify([allProfiles().map((p) => p.id + p.family), syncStatus().signedIn, syncStatus().busy]);
   const before = sig();
-  const off = onSyncChange(() => { if (!root.isConnected || root.dataset.screen !== 'welcome') return off(); if (sig() !== before) { off(); renderWelcome(root, go); } });
+  const off = onSyncChange(() => { if (!root.isConnected || root.dataset.screen !== 'welcome') return off(); if (sig() !== before) { off(); go('welcome'); } });
   on(root, 'click', '[data-id]', (e, el) => { unlock(); sfx.tap(); switchProfile(el.dataset.id); go(active().starter ? 'home' : 'meetPartner'); });
+  on(root, 'click', '[data-famsignin]', () => { unlock(); sfx.tap(); familySignInSheet(() => go('welcome')); });
   on(root, 'click', '[data-new]', () => { unlock(); sfx.tap(); go('newTrainer'); });
 }
 

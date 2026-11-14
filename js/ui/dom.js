@@ -50,3 +50,10 @@ export function holdButton(el, ms, fn) {
 
 export const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 export const wait = (ms) => new Promise((r) => setTimeout(r, reducedMotion() ? Math.min(ms, 150) : ms));
+
+// Sound on/off button for the top bars. Saves to the trainer's settings.
+const SPK = '<path d="M4 9.5 H8 L13 5 V19 L8 14.5 H4 Z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>';
+export const soundIcon = (on) => `<svg viewBox="0 0 24 24" aria-hidden="true">${SPK}${on
+  ? '<path d="M16 9 Q18.5 12 16 15 M18.5 6.5 Q23 12 18.5 17.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>'
+  : '<path d="M16.5 9.5 L21.5 14.5 M21.5 9.5 L16.5 14.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>'}</svg>`;
+export const soundButton = (on) => `<button class="icon-btn sound-btn${on ? '' : ' off'}" data-sound aria-pressed="${on}" aria-label="Sound ${on ? 'on' : 'off'}">${soundIcon(on)}</button>`;
