@@ -965,3 +965,9 @@ button.balls-row:hover { background: #EDF2F9; }
   .partner { grid-template-columns: 170px minmax(0, 1fr) 220px; }
   button.balls-row { grid-auto-columns: 1fr; gap: 4px; padding: 8px 10px; align-self: start; max-width: 380px; }
 }
+
+/* v0.3.24 no ghosting on the flip: the face turning away is hidden once the card is edge-on.
+   (Animated children get their own layers, which can ignore backface-visibility.) */
+.card-inner .face { transition: visibility 0s linear 0s; }
+.card-inner.flipped .face.front { visibility: hidden; transition-delay: .16s; }
+.card-inner:not(.flipped) .face.back { visibility: hidden; transition-delay: .16s; }

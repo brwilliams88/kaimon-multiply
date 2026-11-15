@@ -1,7 +1,15 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.3.23';
+export const VERSION = '0.3.24';
 
 export const CHANGELOG = [
+  {
+    version: '0.3.24',
+    date: '2026-11-14',
+    title: 'Clean card flips',
+    items: [
+      'Fixed a flicker where bits of the front of the card showed backwards for a moment as the card flipped.',
+    ],
+  },
   {
     version: '0.3.23',
     date: '2026-11-14',
