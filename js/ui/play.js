@@ -2,7 +2,7 @@ import { active, save } from '../core/store.js';
 import { regionOf, TYPES, byId, MYTHIC_ID } from '../data/creatures.js';
 import { creatureArt } from '../core/art.js';
 import { factsForTables, pickNext, answerOf, parseFact, hintLadder, levelRank, LEVEL_LABEL, tableTier } from '../core/facts.js';
-import { answer, seen, caught as catchIt, ball as giveBall, sighting, session } from '../core/actions.js';
+import { answer, seen, caught as catchIt, escaped, ball as giveBall, sighting, session } from '../core/actions.js';
 import { syncNow } from '../core/sync.js';
 import { pickEncounter, ballForStreak, rollCatch, mythicCameo, BALLS, dexState } from '../core/game.js';
 import { powerFor, powerLabel } from '../core/battle.js';
@@ -163,7 +163,7 @@ export function renderPlay(root, go, { table }) {
       let result = null;
       if (caught) result = catchIt(p, S.species.id);
       if (caught) S.catches.push({ id: S.species.id, isNew: result.isNew, shiny: result.shiny });
-      else if (Math.random() < 0.5) S.linger = S.species;
+      else { escaped(p, S.species.id); if (Math.random() < 0.5) S.linger = S.species; }
       save();
       updateStreak();
       el.back.innerHTML = `
@@ -181,7 +181,8 @@ export function renderPlay(root, go, { table }) {
         toast(`${a} × ${b} reached ${LEVEL_LABEL[l.level]}!`);
       }
       S.phase = 'done';
-      await wait(caught ? 1100 : 800);
+      // Give a new Kaimon its moment; repeats stay quick but visible.
+      await wait(caught ? (result.isNew ? 2600 : 1500) : 900);
       if (S.phase === 'done') advance();
     } else {
       S.streak = 0;
@@ -222,9 +223,16 @@ export function renderPlay(root, go, { table }) {
     await wait(roll.shakes ? 360 : 200);
     if (caught) {
       zone.classList.add('caught');
-      sfx.caught();
       const s = S.species;
-      msg.innerHTML = `Caught ${esc(s.name)}!${result.isNew || result.shiny ? `<span class="tags">${result.isNew ? '<span class="new-tag">New</span>' : ''}${result.shiny ? '<span class="new-tag shiny-tag">Shiny</span>' : ''}</span>` : ''}`;
+      if (result.isNew) {
+        sfx.newCatch();
+        const hard = s.rarity === 'rare' || s.rarity === 'legendary';
+        zone.insertAdjacentHTML('beforeend', `<div class="new-banner" aria-hidden="true"><span class="nb-rays"></span><strong>New Kaimon!</strong><small>${hard ? 'A rare find! ' : ''}#${String(s.num).padStart(3, '0')} added to your Kaidex</small></div>`);
+        msg.innerHTML = `You caught ${esc(s.name)}!${result.shiny ? '<span class="tags"><span class="new-tag shiny-tag">Shiny</span></span>' : ''}`;
+      } else {
+        sfx.caught();
+        msg.innerHTML = `Caught ${esc(s.name)}!${result.shiny ? '<span class="tags"><span class="new-tag shiny-tag">Shiny</span></span>' : ''}`;
+      }
     } else {
       zone.classList.add('escaped');
       sfx.escape();

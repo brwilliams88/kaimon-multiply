@@ -758,3 +758,22 @@ button { font: inherit; color: inherit; cursor: pointer; touch-action: manipulat
 .hint-scroll { padding: clamp(6px, 2cqh, 14px) clamp(10px, 3cqw, 18px); }
 .hint-scroll p { font-size: clamp(13px, 3.8cqh, 19px); margin-bottom: clamp(3px, 1cqh, 8px); }
 .ladder span { font-size: clamp(13px, 4.4cqh, 24px); padding: 0 clamp(5px, 1.6cqw, 12px); }
+
+/* v0.3.5 New Kaimon banner */
+.new-banner { position: absolute; left: 50%; top: 4%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 16px 7px; background: var(--sun); border: 3px solid var(--ink); border-radius: 16px; box-shadow: 0 4px 0 var(--ink); white-space: nowrap; z-index: 3; animation: nbPop .6s cubic-bezier(.3, 1.6, .5, 1) .45s both; }
+.new-banner strong { font-size: clamp(16px, 5.5cqh, 28px); line-height: 1.05; }
+.new-banner small { font-size: clamp(11px, 3.2cqh, 15px); font-weight: 600; }
+.nb-rays { position: absolute; inset: -40px; z-index: -1; background: repeating-conic-gradient(from 0deg, rgba(255, 210, 63, .55) 0 12deg, transparent 12deg 30deg); border-radius: 50%; animation: nbSpin 6s linear infinite; mask: radial-gradient(circle, #000 30%, transparent 70%); -webkit-mask: radial-gradient(circle, #000 30%, transparent 70%); }
+@keyframes nbPop { from { transform: translateX(-50%) scale(.2); opacity: 0; } }
+@keyframes nbSpin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .nb-rays { animation: none; } }
+/* Kaidex facts */
+.entry-facts { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; margin: 10px 0 4px; text-align: left; width: 100%; max-width: 360px; align-self: center; font-size: 17px; }
+.entry-facts dt { color: var(--ink-2); font-weight: 600; }
+.entry-facts dd { margin: 0; }
+.rar-dots { display: inline-flex; gap: 3px; vertical-align: middle; margin-right: 4px; }
+.rar-dots i { width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--ink); background: var(--paper); }
+.rar-dots i.on { background: var(--rc, var(--sun)); }
+.shiny-word { color: #7A4FD0; font-weight: 700; }
+.entry-hint { margin: 2px 0 8px; font-size: 15px; color: var(--ink-2); }
+.dex-count .dc-main { color: var(--ink); font-size: 18px; }

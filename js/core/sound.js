@@ -46,6 +46,7 @@ export const sfx = {
   wobble: () => play(() => tone(300, 0, 0.08, 'triangle', 0.1)),
   caught: () => play(() => { [523, 659, 784, 1047].forEach((f, i) => tone(f, i * 0.09, 0.22, 'triangle', 0.16)); }),
   escape: () => play(() => { tone(500, 0, 0.1, 'sine', 0.1); tone(350, 0.08, 0.16, 'sine', 0.1); }),
+  newCatch: () => play(() => { [523, 659, 784, 1047, 784, 1047, 1319].forEach((f, i) => tone(f, i * 0.1, i === 6 ? 0.5 : 0.2, 'triangle', 0.16)); tone(262, 0, 0.7, 'sine', 0.08); }),
   levelUp: () => play(() => { [784, 988, 1175, 1568].forEach((f, i) => tone(f, i * 0.07, 0.25, 'sine', 0.14)); }),
   hit: () => play(() => { tone(180, 0, 0.12, 'square', 0.09); tone(120, 0.05, 0.14, 'sawtooth', 0.06); }),
   crit: () => play(() => { tone(880, 0, 0.08, 'square', 0.08); tone(220, 0.06, 0.18, 'sawtooth', 0.08); tone(1320, 0.1, 0.12, 'triangle', 0.1); }),

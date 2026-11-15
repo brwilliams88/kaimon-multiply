@@ -22,13 +22,21 @@ export function apply(p, ev) {
       if (d.ok) p.stats.correct++;
       { const r = dayRec(p, today(ev.t)); r.a++; if (d.ok) r.c++; }
       break;
-    case 'seen':
-      dexEntry(p, d.n).seen++;
+    case 'seen': {
+      const e = dexEntry(p, d.n);
+      e.seen++;
+      if (!e.firstSeen) e.firstSeen = ev.t;
+      break;
+    }
+    case 'esc':
+      dexEntry(p, d.n).esc = (dexEntry(p, d.n).esc || 0) + 1;
       break;
     case 'catch': {
       const e = dexEntry(p, d.n);
       if (!e.seen) e.seen = 1;
       e.caught++;
+      if (!e.first) e.first = ev.t;
+      e.last = ev.t;
       if (d.s) e.shiny++;
       p.stats.catches++;
       break;
@@ -96,6 +104,7 @@ export function caught(p, speciesId) {
   return { isNew, shiny };
 }
 
+export const escaped = (p, speciesId) => emit(p, 'esc', { n: speciesId });
 export const ball = (p, kind, n) => emit(p, 'ball', { b: kind, n });
 export const item = (p, kind, n) => emit(p, 'item', { i: kind, n });
 export const sighting = (p) => emit(p, 'sight', {});

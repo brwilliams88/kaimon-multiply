@@ -6,6 +6,25 @@ import { esc, on, sheet } from './dom.js';
 import { sfx } from '../core/sound.js';
 
 const num3 = (n) => '#' + String(n).padStart(3, '0');
+const day = (t) => new Date(t).toLocaleDateString([], { month: 'short', day: 'numeric', year: new Date(t).getFullYear() === new Date().getFullYear() ? undefined : 'numeric' });
+function ago(t) {
+  const d = Math.floor((Date.now() - t) / 86400000);
+  return d <= 0 ? 'today' : d === 1 ? 'yesterday' : d < 30 ? `${d} days ago` : day(t);
+}
+const RARITY = {
+  common: ['Common', 'Easy to catch', 1],
+  uncommon: ['Uncommon', 'A little tricky to catch', 2],
+  rare: ['Rare', 'Hard to catch. Fast answers and better balls help.', 3],
+  legendary: ['Legendary', 'Very hard to catch', 4],
+  mythic: ['Mythic', 'Only one trainer will ever catch it', 5],
+};
+function foundIn(s) {
+  if (s.region === 0) return 'Your partner from the start';
+  if (typeof s.region === 'number') return `Shows up while practicing the ${s.region}s`;
+  if (s.region === 'legend') return 'Appears for trainers who master many tables';
+  if (s.region === 'papa') return 'Boss Papa’s own Kaimon';
+  return 'Nobody knows';
+}
 
 function regionLabel(s) {
   if (s.region === 0) return 'Starter';
@@ -26,7 +45,7 @@ export function renderKaidex(root, go) {
         <header class="topbar">
           <button class="icon-btn" data-back aria-label="Back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 L8 12 L15 19" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
           <h1 class="screen-title">Kaidex</h1>
-          <p class="dex-count"><strong>${c.caught}</strong> of ${c.total} caught<span>${c.seen} seen</span></p>
+          <p class="dex-count"><span class="dc-main"><strong>${c.caught}</strong> of ${c.total} caught</span><span>${c.seen} seen · ${p.stats.catches} catches${Object.values(p.dex).reduce((t, x) => t + (x.shiny || 0), 0) ? ` · ${Object.values(p.dex).reduce((t, x) => t + (x.shiny || 0), 0)} shiny` : ''}</span></p>
         </header>
         <div class="chips" role="tablist" aria-label="Filter">
           <button class="chip${filter === 'all' ? ' on' : ''}" data-f="all">All</button>
@@ -71,7 +90,22 @@ function showEntry(p, s) {
     body = `
       <p class="entry-meta"><span class="type-tag" style="--rc:${t.color}">${t.name}</span><span>${esc(regionLabel(s))}</span>${s.stages > 1 ? `<span>Stage ${s.stage} of ${s.stages}</span>` : ''}</p>
       <p class="entry-desc">${st === 'caught' ? esc(s.desc) : 'You’ve seen it, but not caught it yet.'}</p>
-      ${st === 'caught' ? `<p class="entry-stats">Caught ${e.caught} time${e.caught === 1 ? '' : 's'}${e.shiny ? ` · ${e.shiny} shiny` : ''}</p>` : ''}
+      ${(() => {
+        const r = RARITY[s.rarity] || RARITY.common;
+        const rows = [
+          ['Rarity', `<span class="rar-dots" aria-label="${r[2]} of 5">${'<i class="on"></i>'.repeat(r[2])}${'<i></i>'.repeat(5 - r[2])}</span> ${r[0]}`],
+          ['Found', esc(foundIn(s))],
+        ];
+        if (st === 'caught') {
+          rows.push(['Caught', `<strong>${e.caught}</strong> time${e.caught === 1 ? '' : 's'}${e.shiny ? ` · <span class="shiny-word">${e.shiny} shiny</span>` : ''}`]);
+          rows.push(['First caught', e.first ? day(e.first) : 'Before Nov 14, 2026']);
+          if (e.last && e.caught > 1) rows.push(['Last caught', ago(e.last)]);
+        } else {
+          rows.push(['Seen', `${e.seen || 1} time${(e.seen || 1) === 1 ? '' : 's'}`]);
+        }
+        if (e.esc) rows.push(['Got away', `${e.esc} time${e.esc === 1 ? '' : 's'}`]);
+        return `<dl class="entry-facts">${rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl><p class="entry-hint">${esc(r[1])}</p>`;
+      })()}
       ${line.length > 1 ? `<div class="entry-line">${line.map((x) => { const xs = dexState(p, x.id); return `<div class="line-step${x.num === s.num ? ' cur' : ''}">${creatureArt(x, { mode: xs === 'caught' ? 'full' : xs })}<span>${xs === 'unknown' ? '???' : esc(x.name)}</span></div>`; }).join('<span class="line-arrow" aria-hidden="true">›</span>')}</div>` : ''}
       ${s.mega && st === 'caught' ? `<p class="entry-mega">Has a rare Mega form. Mega Crystals arrive with Champion rematches.</p>` : ''}`;
   }

@@ -1,7 +1,17 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.3.4';
+export const VERSION = '0.3.5';
 
 export const CHANGELOG = [
+  {
+    version: '0.3.5',
+    date: '2026-11-14',
+    title: 'New catches and a better Kaidex',
+    items: [
+      'Catching a Kaimon for the first time now gets a New Kaimon! banner and its own sound, and stays on screen longer.',
+      'Repeat catches stay quick, but the Kaimon now shows long enough to see.',
+      'Tap a Kaimon in the Kaidex to see how rare it is, where it shows up, how many times you caught it, when you first caught it, and how many got away.',
+    ],
+  },
   {
     version: '0.3.4',
     date: '2026-11-14',

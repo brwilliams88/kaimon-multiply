@@ -2,6 +2,12 @@
 
 All notable changes. Versioning: `0.MINOR.0` marks a roadmap phase, `0.x.PATCH` is any shipped change a player or parent can notice, and `1.0.0` is the public launch. See "Versioning" in CLAUDE.md. The in-app version history (Grown-ups > What's new) reads from `js/data/changelog.js`; keep both in sync. Each release is tagged in git as `vX.Y.Z`.
 
+## v0.3.5 (2026-11-14) New catches and a better Kaidex
+
+- New `esc` event per failed throw; `catch` now records `first` and `last` times, `seen` records `firstSeen`. Catches before this version show "Before Nov 14, 2026".
+- First-time catches: banner with rays, `sfx.newCatch`, 2.6 s hold. Repeat catches hold 1.5 s (was about 0.6 s of visible Kaimon).
+- Kaidex entry: rarity dots, where it's found (times table), catch count and shinies, first and last caught, got away count. Header shows total catches and shinies.
+
 ## v0.3.4 (2026-11-14) Cards fit every phone
 
 - Removed the card's 300px minimum height; on an installed iPhone app (notch and home bar take ~80px) with the Say it button showing, the card overflowed under the answer row.
