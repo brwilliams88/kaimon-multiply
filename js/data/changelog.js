@@ -1,7 +1,16 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.3.36';
+export const VERSION = '0.3.37';
 
 export const CHANGELOG = [
+  {
+    version: '0.3.37',
+    date: '2026-11-15',
+    title: 'Your trainer in the game',
+    items: [
+      'When you answer right, your trainer stands in the corner of the card and winds up the throw. They cheer when you catch one.',
+      'In Gym battles, your trainer stands behind your Kaimon and cheers on every hit.',
+    ],
+  },
   {
     version: '0.3.36',
     date: '2026-11-15',

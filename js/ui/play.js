@@ -13,6 +13,7 @@ import { partnerOf } from '../core/game.js';
 import { voiceSupported, listen, stop as stopVoice } from '../core/voice.js';
 import { sfx, setSound } from '../core/sound.js';
 import { ballIcon, medal } from './home.js';
+import { avatarSVG, trainerLook } from './avatars.js';
 import { $, on, esc, sheet, wait, toast, soundButton } from './dom.js';
 
 export function renderPlay(root, go, { table }) {
@@ -207,6 +208,7 @@ export function renderPlay(root, go, { table }) {
         <div class="card-head"><span>${a} × ${b} = ${ans}</span><span class="head-tags">${fast ? '<span class="card-type fast">Fast</span>' : ''}<span class="xp-chip">+${gained} XP</span></span></div>
         <div class="catch-zone">
           <div class="catch-art">${creatureArt(S.species, { shiny: result?.shiny })}</div>
+          <div class="catch-trainer" aria-hidden="true">${avatarSVG(trainerLook(p))}</div>
           <div class="throw-ball">${ballIcon(ball)}</div>
         </div>
         <p class="catch-msg" aria-live="polite">${powerLabel(pw)} throw! ${BALLS[ball].name}!</p>`;

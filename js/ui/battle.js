@@ -13,6 +13,7 @@ import { voiceSupported, listen, stop as stopVoice } from '../core/voice.js';
 import { sfx, setSound, unlock } from '../core/sound.js';
 import { ballIcon } from './home.js';
 import { teamSheet } from './teamPicker.js';
+import { avatarSVG, trainerLook } from './avatars.js';
 import { trainerArt, CHAMP_LINES } from './trainerArt.js';
 import { limitReached } from '../core/playtime.js';
 import { startMusic, stopMusic, setPinch } from '../core/music.js';
@@ -55,7 +56,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1 } = {}) {
             <div class="q-card"><div class="q"></div></div>
             <p class="b-msg" aria-live="polite"></p>
           </div>
-          <div class="side me"><div class="mon me-mon"></div>${hpBar('me')}</div>
+          <div class="side me"><div class="me-wrap"><div class="me-trainer" aria-hidden="true">${avatarSVG(trainerLook(p))}</div><div class="mon me-mon"></div></div>${hpBar('me')}</div>
           <div class="fx" aria-hidden="true"></div>
           <div class="overlay intro">
             <div class="intro-card">
@@ -65,6 +66,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1 } = {}) {
               <h2>${esc(opp.name)}</h2>
               <p class="speech intro-speech">${esc(introLine)}</p>
               <div class="intro-teams">
+                <span class="intro-me" aria-hidden="true">${avatarSVG(trainerLook(p))}</span>
                 <button class="team-row team-change" data-team aria-label="Your team. Tap to change it.">${mine.map((m) => `<span class="mini">${creatureArt(m.species)}</span>`).join('')}<span class="tc-label">Change team</span></button>
                 <span class="vs">VS</span>
                 <span class="team-row">${opp.team.map((m) => `<span class="mini">${creatureArt(m.species, { mode: 'seen' })}</span>`).join('')}</span>
@@ -92,7 +94,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1 } = {}) {
     foeMon: $('.foe-mon', root), meMon: $('.me-mon', root), foeHp: $('.hp-foe', root), meHp: $('.hp-me', root),
     power: $('.answer .power-strip', root), powerFill: $('.answer .power-fill', root), fx: $('.fx', root),
     val: $('.answer-val', root), hint: $('.answer-hint', root), streak: $('.streak-num', root), streakBall: $('.streak-ball', root),
-    mic: $('[data-mic]', root), intro: $('.intro', root),
+    mic: $('[data-mic]', root), intro: $('.intro', root), meTrainer: $('.me-trainer', root),
   };
 
   // ---------- drawing ----------
@@ -191,6 +193,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1 } = {}) {
       const me = mine[S.me], foe = opp.team[S.foe];
       const hit = attack(me, pw, S.streak);
       el.msg.textContent = hit.special ? `${powerLabel(pw)}! ${me.species.name} used ${moveName(me.species)}!` : `${powerLabel(pw)}! ${me.species.name} attacks!`;
+      anim(el.meTrainer, 'cheer', 520);
       await anim(el.meMon, 'lunge', 320);
       hit.crit ? sfx.crit() : sfx.hit();
       foe.hp -= hit.dmg;
