@@ -53,7 +53,7 @@ export function renderWelcome(root, go) {
 }
 
 export function renderNewTrainer(root, go) {
-  let look = { ...PRESETS[0].look };
+  let look = { char: 'kai', color: 'green' };
   root.innerHTML = `
     <section class="screen newtrainer">
       <button class="icon-btn back" data-back aria-label="Back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 L8 12 L15 19" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>

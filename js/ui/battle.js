@@ -14,7 +14,7 @@ import { sfx, setSound, unlock } from '../core/sound.js';
 import { ballIcon } from './home.js';
 import { teamSheet } from './teamPicker.js';
 import { avatarSVG, trainerLook } from './avatars.js';
-import { trainerArt, trainerFull, CHAMP_LINES } from './trainerArt.js';
+import { trainerArt, trainerFull, playerArt, CHAMP_LINES } from './trainerArt.js';
 import { sceneSrc, cssUrl, sceneKey, fxSrc, typeIcon } from '../core/assets.js';
 import { quick } from '../core/prefs.js';
 import { limitReached } from '../core/playtime.js';
@@ -49,7 +49,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt } = {}
   const introLine = kind === 'champ' ? CHAMP_LINES[opp.table] : kind === 'boss' ? dadJoke('boss') : dadJoke('appear');
 
   root.innerHTML = `
-    <section class="screen play battle battle-${kind}">
+    <section class="screen play battle v2 battle-${kind}">
       <header class="play-top">
         <button class="icon-btn" data-exit aria-label="Leave battle"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6 L18 18 M18 6 L6 18" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg></button>
         <div class="vs-chip"><span class="vs-av">${trainerArt(opp)}</span><span><strong>${esc(opp.name)}</strong><small>${esc(opp.kind === 'champ' ? `${opp.table}s Gym Leader` : opp.kind === 'boss' ? 'The final gym' : 'Team Papa')}</small></span></div>
@@ -60,7 +60,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt } = {}
         <div class="arena">
           <div class="side foe">${hpBar('foe')}<div class="mon foe-mon"></div></div>
           <div class="center">
-            <div class="q-card"><div class="q"></div></div>
+            <div class="q-card"><div class="q"></div><span class="power-strip" aria-hidden="true"><span class="power-fill"></span></span></div>
             <p class="b-msg" aria-live="polite"></p>
           </div>
           <div class="side me"><div class="mon me-mon"></div>${hpBar('me')}</div>
@@ -96,16 +96,17 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt } = {}
       </div>
     </section>`;
 
+  { const mic = root.querySelector('[data-mic]'); const snd = root.querySelector('.play-top .sound-btn'); if (mic && snd) snd.before(mic); }
   const el = {
     arena: $('.arena', root), q: $('.q', root), qcard: $('.q-card', root), msg: $('.b-msg', root),
     foeMon: $('.foe-mon', root), meMon: $('.me-mon', root), foeHp: $('.hp-foe', root), meHp: $('.hp-me', root),
-    power: $('.answer .power-strip', root), powerFill: $('.answer .power-fill', root), fx: $('.fx', root),
+    power: $('.q-card .power-strip', root), powerFill: $('.q-card .power-fill', root), fx: $('.fx', root),
     val: $('.answer-val', root), hint: $('.answer-hint', root), streak: $('.streak-num', root), streakBall: $('.streak-ball', root),
     mic: $('[data-mic]', root), intro: $('.intro', root),
   };
 
   // ---------- drawing ----------
-  function setInput(v) { S.input = v; el.val.textContent = v || ''; el.val.classList.toggle('empty', !v); }
+  function setInput(v) { S.input = v; root.querySelectorAll('.answer-val').forEach((x) => { x.textContent = v || ''; x.classList.toggle('empty', !v); }); }
 
   function drawHp(box, team, idx, known) {
     const m = team[idx];
@@ -183,7 +184,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt } = {}
     S.recent.push(id); if (S.recent.length > 3) S.recent.shift();
     S.fact = id;
     const [a, b] = parseFact(id);
-    el.q.innerHTML = `<span>${a}</span><span class="times">×</span><span>${b}</span>`;
+    el.q.innerHTML = `<span>${a}</span><span class="times">×</span><span>${b}</span><span class="eq">=</span><span class="answer-val empty" data-ph="?"></span>`;
     el.qcard.className = 'q-card';
     el.msg.textContent = S.n === 0 ? 'Answer to attack!' : '';
     setInput('');
@@ -274,7 +275,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt } = {}
         else { S.me++; drawMons(); await anim(el.meMon, 'enter', 500); }
       }
       // Learn the fact before moving on.
-      el.msg.innerHTML = `<span class="ladder-inline">${hintLadder(S.fact).map((v, i, arr) => `<span class="${i === arr.length - 1 ? 'last' : ''}">${v}</span>`).join('')}</span>`;
+      el.msg.innerHTML = `<span class="ladder-inline">${hintLadder(S.fact).map((v, i, arr) => `<span class="${i === arr.length - 1 ? 'last' : ''}">${v}</span>`).join('')}</span><span class="retype">Type it <span class="answer-val empty" data-ph="${ans}"></span></span>`;
       S.phase = 'learn';
       S.mustType = ans;
       setInput('');
@@ -315,8 +316,12 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt } = {}
     ov.className = 'overlay result ' + (won ? 'won' : 'lost');
     ov.innerHTML = `
       <div class="intro-card">
-        <div class="intro-body">${trainerFull(opp, won ? 'lost' : 'won')}</div>
-        <h2>${won ? 'You won!' : (kind === 'champ' ? 'So close!' : kind === 'boss' ? 'Boss Papa got you this time' : 'Team Papa got you this time')}</h2>
+        <div class="duel">
+          <figure class="duel-me${won ? ' win' : ''}"><span class="duel-pic">${playerArt(p, won ? 'won' : 'lost')}</span><figcaption>${esc(p.name)}${won ? '<span class="duel-tag">Winner!</span>' : ''}</figcaption></figure>
+          <span class="duel-vs" aria-hidden="true">VS</span>
+          <figure class="duel-them${won ? '' : ' win'}"><span class="duel-pic">${trainerFull(opp, won ? 'lost' : 'won')}</span><figcaption>${esc(opp.name)}${won ? '' : '<span class="duel-tag">Winner</span>'}</figcaption></figure>
+        </div>
+        <h2>${won ? `${esc(p.name)} beat ${esc(opp.name)}!` : `${esc(opp.name)} won this time`}</h2>
         <p class="speech intro-speech">${esc(line)}</p>
         <p class="result-stats"><strong>${S.correct}/${S.answered}</strong> right · best streak <strong>${S.best}</strong>${bonusXP ? ` · <strong>+${bonusXP} XP</strong> win bonus` : ''}</p>
         ${reward ? `<p class="result-reward">${ballIcon(reward.ball)} You got a ${BALLS[reward.ball].name}!</p>` : ''}

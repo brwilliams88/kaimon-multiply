@@ -2,9 +2,12 @@
 // trainerArt() is the round face crop used in chips and lists; trainerFull() is the
 // full-body pose for intros and results.
 import { trainerKey, trainerFace, trainerBody } from '../core/assets.js';
+import { trainerImg, trainerLook } from './avatars.js';
 
 export const trainerArt = (opp) => trainerFace(trainerKey(opp));
 export const trainerFull = (opp, pose = 'base') => trainerBody(trainerKey(opp), pose);
+// The player's own trainer in a result: their look, cheering or a little down.
+export const playerArt = (p, pose = 'base') => trainerImg(trainerLook(p), pose, 'player-body');
 
 // Short intro lines for the Gym Leaders. Team Papa and Boss Papa use dad jokes.
 export const CHAMP_LINES = {

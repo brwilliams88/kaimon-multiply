@@ -21,8 +21,8 @@ export const fxSrc = (name) => `assets/fx/${name}.webp`;
 
 // Trainers. Gym Leaders by table; six Team Papa grunts; Boss Papa.
 const LEADERS = { 1: 'nozomi', 2: 'captain-tide', 3: 'blaze', 4: 'skye', 5: 'volt', 6: 'professor-quartz', 7: 'coach-glacier', 8: 'gizmo', 9: 'nyx', 10: 'commander-nova' };
-// Only Kai, Nozomi and Boss Papa have won and lost poses. Everyone has base and talking.
-const FULL_POSES = new Set(['kai', 'nozomi', 'boss-papa']);
+// Every trainer has base, talking, won and lost poses (v0.5.2 added the rest).
+const FULL_POSES = { has: () => true };
 export function trainerKey(opp) {
   if (opp.kind === 'boss') return 'boss-papa';
   if (opp.kind === 'grunt') return 'grunt-' + (opp.grunt || 1);

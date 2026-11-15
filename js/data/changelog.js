@@ -1,7 +1,22 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.5.1';
+export const VERSION = '0.5.2';
 
 export const CHANGELOG = [
+  {
+    version: '0.5.2',
+    date: '2026-11-15',
+    title: "Bigger scenes and your own trainer",
+    items: [
+      "Practice cards are now a window into the region: the place fills the whole card, the wild Kaimon is much bigger, and the question sits on top as 3 × 5 = ?, with your answer typed right where the ? is.",
+      "Picking a ball is clearer: a Throw tray at the bottom of the card shows which ball a right answer throws, with how many you have.",
+      "A slimmer number pad gives the card more room. Say it moved to a mic button in the top bar.",
+      "Battles happen across the whole scene with both Kaimon several times bigger, and the answer goes into the question.",
+      "When a battle ends, your trainer and theirs appear side by side, so it's clear who won: Kai beat Blaze!",
+      "Every Gym Leader and Team Papa grunt now has a winning and a losing pose.",
+      "New trainer creator: choose from 15 anime trainers, boys and girls with different skin tones, hairstyles, a hijab and a wheelchair, then pick a jacket color. Kai is the default.",
+      "Your trainer's face shows everywhere: the title screen, Home, the trainer page, battles and catches.",
+    ],
+  },
   {
     version: '0.5.1',
     date: '2026-11-15',

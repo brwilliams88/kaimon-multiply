@@ -2,6 +2,17 @@
 
 All notable changes. Versioning: `0.MINOR.0` marks a roadmap phase, `0.x.PATCH` is any shipped change a player or parent can notice, and `1.0.0` is the public launch. See "Versioning" in CLAUDE.md. The in-app version history (Grown-ups > What's new) reads from `js/data/changelog.js`; keep both in sync. Each release is tagged in git as `vX.Y.Z`.
 
+## v0.5.2 (2026-11-15) Bigger scenes and your own trainer
+
+- Practice cards are now a window into the region: the place fills the whole card, the wild Kaimon is much bigger, and the question sits on top as 3 × 5 = ?, with your answer typed right where the ? is.
+- Picking a ball is clearer: a Throw tray at the bottom of the card shows which ball a right answer throws, with how many you have.
+- A slimmer number pad gives the card more room. Say it moved to a mic button in the top bar.
+- Battles happen across the whole scene with both Kaimon several times bigger, and the answer goes into the question.
+- When a battle ends, your trainer and theirs appear side by side, so it's clear who won: Kai beat Blaze!
+- Every Gym Leader and Team Papa grunt now has a winning and a losing pose.
+- New trainer creator: choose from 15 anime trainers, boys and girls with different skin tones, hairstyles, a hijab and a wheelchair, then pick a jacket color. Kai is the default.
+- Your trainer's face shows everywhere: the title screen, Home, the trainer page, battles and catches.
+
 ## v0.5.1 (2026-11-15) Fixed title screen and sound
 
 - The title screen is now one fixed screen. It no longer slides up and down on iPhone, the sky fills in behind the Dynamic Island, and the logo always fits above Kai on every phone and iPad.

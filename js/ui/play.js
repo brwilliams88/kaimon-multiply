@@ -14,7 +14,7 @@ import { voiceSupported, listen, stop as stopVoice } from '../core/voice.js';
 import { sfx, setSound } from '../core/sound.js';
 import { ballIcon, medal } from './home.js';
 import { avatarSVG, trainerLook } from './avatars.js';
-import { ballSrc, sceneSrc, cssUrl, sceneKey, uiImg, itemImg, fxSrc, CARD_BACK } from '../core/assets.js';
+import { ballSrc, sceneSrc, cssUrl, sceneKey, uiImg, itemImg, fxSrc, typeIcon, CARD_BACK } from '../core/assets.js';
 import { quick } from '../core/prefs.js';
 import { $, on, esc, sheet, wait, toast, soundButton } from './dom.js';
 
@@ -32,7 +32,7 @@ export function renderPlay(root, go, { table }) {
   const tierBefore = Object.fromEntries([1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((t) => [t, tableTier(p, t)]));
 
   root.innerHTML = `
-    <section class="screen play">
+    <section class="screen play v2">
       <header class="play-top">
         <button class="icon-btn" data-exit aria-label="Stop practicing"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6 L18 18 M18 6 L6 18" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg></button>
         <div class="pips" aria-hidden="true">${Array.from({ length: S.length }, () => '<span></span>').join('')}</div>
@@ -61,6 +61,8 @@ export function renderPlay(root, go, { table }) {
       </div>
     </section>`;
 
+  // Say it: a small mic button in the top bar, so the card gets the room.
+  { const mic = root.querySelector('[data-mic]'); const snd = root.querySelector('.play-top .sound-btn'); if (mic && snd) snd.before(mic); }
   const el = {
     inner: $('.card-inner', root), front: $('.front', root), back: $('.back', root),
     val: $('.answer-val', root), hint: $('.answer-hint', root), pips: [...root.querySelectorAll('.pips span')],
@@ -79,10 +81,11 @@ export function renderPlay(root, go, { table }) {
     flipTimer = setTimeout(() => el.inner.classList.toggle('back-up', toBack), 60);
   }
 
+  // The answer shows in the card itself ("3 × 5 = ?"), and in the small field
+  // under it for screen readers. Every slot shows the same input.
   function setInput(v) {
     S.input = v;
-    el.val.textContent = v || '';
-    el.val.classList.toggle('empty', !v);
+    root.querySelectorAll('.answer-val').forEach((x) => { x.textContent = v || ''; x.classList.toggle('empty', !v); });
   }
 
   function updateStreak() {
@@ -125,8 +128,8 @@ export function renderPlay(root, go, { table }) {
     root.style.setProperty('--ri', t.ink);
     root.style.setProperty('--scene', cssUrl(sceneSrc(sceneKey({ table: a }))));
     el.front.innerHTML = `
-      <div class="card-head"><span>${region.name}</span><span class="card-type">${t.name}</span></div>
-      <div class="card-q"><span>${a}</span><span class="times">×</span><span>${b}</span></div>
+      <div class="card-head"><span class="chip">${region.name}</span><span class="chip card-type">${typeIcon(region.type)}${t.name}</span></div>
+      <div class="qplate"><span>${a}</span><span class="times">×</span><span>${b}</span><span class="eq">=</span><span class="answer-val empty" data-ph="?"></span><span class="power-strip" aria-hidden="true"><span class="power-fill"></span></span></div>
       <div class="card-wild${lingering ? ' stay' : ''}"><div class="wild-art">${creatureArt(species)}</div><p>${lingering ? `<strong>${esc(species.name)}</strong> is still here!` : `A wild <strong>${esc(species.name)}</strong> appeared!${known ? '' : ' <span class="wild-new">New!</span>'}`}</p></div>
       ${beltHTML(species)}`;
     el.front.classList.toggle('has-belt', !!el.front.querySelector('.belt'));
@@ -165,7 +168,7 @@ export function renderPlay(root, go, { table }) {
   // Power meter: full for a quick answer, drains slowly, never runs out.
   function runPower() {
     cancelAnimationFrame(S.raf);
-    const fill = $('.answer .power-fill', root);
+    const fill = $('.front .power-fill', root);
     const tick = () => {
       if (S.phase !== 'ask' || !fill.isConnected) return;
       const pw = powerFor(performance.now() - S.shownAt);
@@ -201,6 +204,7 @@ export function renderPlay(root, go, { table }) {
     const ans = answerOf(S.fact);
     const ok = parseInt(S.input, 10) === ans;
     const [a, b] = parseFact(S.fact);
+    const region = regionOf(a);
     const xp0 = p.xp || 0, pl0 = partnerOf(p);
     const lv = answer(p, S.fact, ok, ms, via);
     const gained = (p.xp || 0) - xp0;
@@ -233,7 +237,8 @@ export function renderPlay(root, go, { table }) {
       save();
       updateStreak();
       el.back.innerHTML = `
-        <div class="card-head"><span>${a} × ${b} = ${ans}</span><span class="head-tags">${fast ? '<span class="card-type fast">Fast</span>' : ''}<span class="xp-chip">${itemImg('xp-star')}+${gained} XP</span></span></div>
+        <div class="card-head"><span class="chip">${region.name}</span><span class="head-tags">${fast ? '<span class="chip card-type fast">Fast</span>' : ''}<span class="chip xp-chip">${itemImg('xp-star')}+${gained} XP</span></span></div>
+        <div class="qplate done"><span>${a}</span><span class="times">×</span><span>${b}</span><span class="eq">=</span><span class="ans">${ans}</span></div>
         <div class="catch-zone">
           <div class="catch-art">${creatureArt(S.species, { shiny: result?.shiny })}</div>
           <div class="catch-trainer" aria-hidden="true">${avatarSVG(trainerLook(p))}</div>
@@ -275,15 +280,16 @@ export function renderPlay(root, go, { table }) {
         await wait(1150);
       }
       el.back.innerHTML = `
-        <div class="card-head"><span>Not quite</span></div>
+        <div class="card-head"><span class="chip">Not quite</span></div>
         <div class="card-q answer-reveal"><span>${a}</span><span class="times">×</span><span>${b}</span><span class="eq">=</span><span class="ans">${ans}</span></div>
         <div class="hint-scroll"><p>Count by ${a}s</p><div class="ladder">${hintLadder(S.fact).map((v, i, arr) => `<span class="${i === arr.length - 1 ? 'last' : ''}">${v}</span>`).join('')}</div><p class="trick"><span class="trick-tag">${itemImg('hint-lamp')}Trick</span> ${esc(trickFor(S.fact))}</p></div>
-        <p class="catch-msg learn-msg">${uiImg('kaizo-hint', 'learn-buddy')}<span>Learn it, and the next one won't get away!</span></p>`;
+        <div class="retype">${uiImg('kaizo-hint', 'learn-buddy')}<span class="retype-label">Type it to keep going</span><span class="answer-val empty" data-ph="${ans}"></span></div>`;
       flip(true, 'wrong');
       S.phase = 'learn';
       S.mustType = ans;
       setInput('');
       el.val.dataset.ph = `Type ${ans}`;
+      setInput('');
     }
   }
 

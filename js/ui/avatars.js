@@ -31,7 +31,8 @@ export function lookOf(x) {
 }
 
 // What a trainer looks like: their saved look, or the old numbered avatar.
-export const trainerLook = (p) => lookOf(p?.look || p?.avatar);
+// A trainer's saved look, or null for "not picked yet" (shows as Kai, the default).
+export const trainerLook = (p) => (p?.look && typeof p.look === 'object' ? p.look : null);
 
 const back = {
   long: (c) => `<path d="M23 46 Q20 82 30 88 L70 88 Q80 82 77 46 Z" fill="${c}" stroke="${INK}" stroke-width="3.5" stroke-linejoin="round"/>`,
@@ -54,7 +55,7 @@ const hats = {
   none: () => '',
 };
 
-export function avatarSVG(x) {
+function oldAvatarSVG(x) {
   const L = lookOf(x);
   const skin = SKINS[L.skin] || SKINS[1];
   const hc = HAIR_COLORS[L.hairColor] || HAIR_COLORS[0];
@@ -76,6 +77,97 @@ export function avatarSVG(x) {
     <path d="M43 62 Q50 67 57 62" fill="none" stroke="${INK}" stroke-width="3.2" stroke-linecap="round"/>
   </svg>`;
 }
+
+
+// ---------------------------------------------------------------------------
+// Anime trainers (v0.5.2). A look is { char, color }: one of the drawn trainers
+// (Kai, the hero, is the default) and a jacket color. The drawn trainers wear a
+// key-green jacket; the browser repaints it in the chosen color, so 15 trainers x
+// 9 colors needs no extra art. Kai keeps his red jacket.
+export const CHARS = ['kai', 'p01', 'p02', 'p03', 'p04', 'p05', 'p06', 'p07', 'p08', 'p09', 'p10', 'p11', 'p12', 'p13', 'p14'];
+export const JACKETS = { green: '#22C55E', teal: '#14B8A6', sky: '#38BDF8', blue: '#2563EB', purple: '#8B5CF6', pink: '#EC4899', red: '#EF4444', orange: '#F97316', gold: '#EAB308' };
+const HUE = { green: null, teal: 172, sky: 199, blue: 222, purple: 262, pink: 330, red: 0, orange: 24, gold: 46 };
+const KEY_HUE = 142;
+
+// Old looks (the drawn-in-code portraits) become the closest anime trainer.
+function migrateLook(L) {
+  if (L.char && (CHARS.includes(L.char))) return { char: L.char, color: JACKETS[L.color] ? L.color : 'green' };
+  const color = ['red', 'blue', 'green', 'purple', 'gold', 'teal', 'pink', 'blue'][L.outfit] || 'green';
+  const dark = L.skin >= 4, mid = L.skin >= 2;
+  let char = 'kai';
+  if (!(L.hair === 'spiky' && L.hat === 'cap' && L.outfit === 0)) {
+    char = { ponytail: 'p10', buns: 'p08', long: dark ? 'p13' : 'p09', curly: dark ? 'p02' : 'p11', spiky: 'p01' }[L.hair]
+      || (L.hat === 'beanie' ? 'p05' : dark ? 'p06' : mid ? 'p04' : 'p01');
+  }
+  return { char, color };
+}
+// Trainers who never picked a look (only an old number) start as Kai, the default.
+export const charLook = (x) => (x && typeof x === 'object' ? migrateLook(lookOf(x)) : { char: 'kai', color: 'green' });
+
+const src = (char, pose) => `assets/trainers/${char}/${pose}.webp`;
+const painted = new Map();   // "char|pose|color" -> data URL
+const waiting = new Map();
+function paint(char, pose, color) {
+  const key = `${char}|${pose}|${color}`;
+  if (painted.has(key)) return Promise.resolve(painted.get(key));
+  if (waiting.has(key)) return waiting.get(key);
+  const job = new Promise((resolve) => {
+    const im = new Image();
+    im.onload = () => {
+      try {
+        const c = document.createElement('canvas');
+        c.width = im.naturalWidth; c.height = im.naturalHeight;
+        const g = c.getContext('2d', { willReadFrequently: true });
+        g.drawImage(im, 0, 0);
+        const d = g.getImageData(0, 0, c.width, c.height), px = d.data, target = HUE[color];
+        for (let i = 0; i < px.length; i += 4) {
+          if (px[i + 3] < 8) continue;
+          const r = px[i] / 255, gg = px[i + 1] / 255, b = px[i + 2] / 255;
+          const mx = Math.max(r, gg, b), mn = Math.min(r, gg, b), dl = mx - mn;
+          if (dl < 0.12 || mx < 0.12) continue;
+          let h = mx === r ? ((gg - b) / dl) % 6 : mx === gg ? (b - r) / dl + 2 : (r - gg) / dl + 4;
+          h = (h * 60 + 360) % 360;
+          if (h < 95 || h > 170 || dl / mx < 0.28) continue;
+          // Same shading, new hue. Warm colors read a touch lighter, like real dye.
+          const nh = ((target + (h - KEY_HUE)) % 360 + 360) % 360, sat = dl / mx;
+          const v = Math.min(1, mx * (color === 'gold' ? 1.08 : 1)), cC = v * sat, x = cC * (1 - Math.abs(((nh / 60) % 2) - 1)), m = v - cC;
+          const [R, G, B] = nh < 60 ? [cC, x, 0] : nh < 120 ? [x, cC, 0] : nh < 180 ? [0, cC, x] : nh < 240 ? [0, x, cC] : nh < 300 ? [x, 0, cC] : [cC, 0, x];
+          px[i] = (R + m) * 255; px[i + 1] = (G + m) * 255; px[i + 2] = (B + m) * 255;
+        }
+        g.putImageData(d, 0, 0);
+        const url = c.toDataURL('image/webp', 0.9);
+        painted.set(key, url);
+        resolve(url);
+      } catch { resolve(im.src); }
+    };
+    im.onerror = () => resolve(src(char, pose));
+    im.src = src(char, pose);
+  });
+  waiting.set(key, job);
+  return job;
+}
+const BLANK = 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
+// An <img> for a trainer. Repainted jackets fill in a moment later (see watcher below).
+export function trainerImg(x, pose = 'face', cls = '') {
+  const { char, color } = charLook(x);
+  const p = char === 'kai' ? pose : pose;
+  if (char === 'kai' || color === 'green') return `<img class="pl-img ${cls}" src="${src(char, p)}" alt="" draggable="false" decoding="async">`;
+  const key = `${char}|${p}|${color}`;
+  return `<img class="pl-img ${cls}" src="${painted.get(key) || BLANK}" data-paint="${key}" alt="" draggable="false">`;
+}
+function fill(img) {
+  const [char, pose, color] = img.dataset.paint.split('|');
+  delete img.dataset.paint;
+  paint(char, pose, color).then((u) => { img.src = u; });
+}
+if (typeof MutationObserver !== 'undefined' && typeof document !== 'undefined') {
+  const scan = (root) => root.querySelectorAll?.('img[data-paint]').forEach(fill);
+  new MutationObserver((list) => { for (const m of list) for (const n of m.addedNodes) { if (n.nodeType !== 1) continue; if (n.matches?.('img[data-paint]')) fill(n); scan(n); } })
+    .observe(document.documentElement, { childList: true, subtree: true });
+}
+
+// Every place that shows a player's face uses this (the name is from the old portraits).
+export const avatarSVG = (x) => trainerImg(x, 'face');
 
 // Back-compat for code that used a count of numbered looks.
 export const AVATAR_COUNT = PRESETS.length;

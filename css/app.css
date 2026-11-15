@@ -1501,3 +1501,155 @@ img.ball-svg, img.ball-img { object-fit: contain; }
 .hp-dots i { width: 16px; height: 16px; border: 0; border-radius: 0; background: url(../assets/balls/capture-closed.webp) center / contain no-repeat; }
 .hp-dots i.on { background-color: transparent; filter: drop-shadow(0 0 3px rgba(255, 210, 63, .9)); }
 .hp-dots i.out { background-color: transparent; filter: grayscale(1); opacity: .35; }
+
+/* ==========================================================================
+   v0.5.2 Practice and battle, redesigned around the art.
+   The place fills the whole card, the Kaimon is big, and the question sits on the
+   scene as "3 × 5 = ?" with your answer typed where the ? is.
+   ========================================================================== */
+.play.v2 { gap: 10px; }
+.play.v2 .play-body { gap: 12px; grid-template-rows: minmax(0, 1fr) auto; }
+.play.v2 .pad-wrap { grid-template-columns: 1fr; grid-template-areas: 'ans' 'pad'; gap: 0; }
+.play.v2 .pad-wrap > .answer { height: auto; min-height: 0; border: 0; background: none; overflow: visible; }
+.play.v2 .pad-wrap > .answer .answer-val, .play.v2 .pad-wrap > .answer .power-strip { display: none; }
+.play.v2 .pad-wrap > .answer .answer-hint { position: static; transform: none; text-align: center; font-size: 14px; }
+.play.v2 .pad-wrap > .answer:has(.answer-hint:empty) { display: none; }
+.play.v2 .pad { margin-top: 0; gap: 8px; }
+.play.v2 .key { height: clamp(48px, 7.2vh, 66px); font-size: 30px; border-radius: 16px; }
+.play-top .mic { height: 44px; width: 44px; padding: 0; border-radius: 14px; display: grid; place-items: center; box-shadow: 0 3px 0 var(--ink); border: 3px solid var(--ink); }
+.play-top .mic span { display: none; }
+.play-top .mic svg { width: 24px; height: 24px; }
+
+/* The card: a window into the region */
+.play.v2 .face { padding: 0; gap: 0; justify-content: flex-start; background: var(--rl) var(--scene) center 66% / cover no-repeat; box-shadow: 0 8px 0 var(--ink), inset 0 0 0 5px var(--rc); }
+.play.v2 .face::after { content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; box-shadow: inset 0 0 0 5px var(--rc); }
+.play.v2 .face.back.cover { background: #2E4FA8; }
+.play.v2 .wrong .face.back { background: var(--paper); }
+.play.v2 .card-head { position: relative; z-index: 2; padding: clamp(8px, 2.4cqh, 14px) clamp(10px, 3cqw, 16px) 0; color: var(--ink); }
+.chip { display: inline-flex; align-items: center; gap: 4px; background: rgba(255, 255, 255, .94); border: 2px solid var(--ink); border-radius: 99px; padding: 2px 11px; font-weight: 700; font-size: clamp(12px, 3.4cqh, 16px); line-height: 1.25; white-space: nowrap; box-shadow: 0 2px 0 rgba(20, 33, 61, .35); }
+.play.v2 .card-type { background: rgba(255, 255, 255, .94); }
+.play.v2 .card-type.fast { background: var(--sun); }
+.play.v2 .chip .type-ic { margin: -3px 2px -3px -6px; width: 1.35em; height: 1.35em; }
+
+/* Question plate */
+.qplate { position: relative; z-index: 2; align-self: center; margin-top: clamp(4px, 1.6cqh, 12px); display: flex; align-items: center; gap: .14em; padding: .06em .38em .1em; font-size: clamp(40px, 15cqh, 104px); font-weight: 700; line-height: 1; letter-spacing: -.01em; background: rgba(255, 255, 255, .95); border: 4px solid var(--ink); border-radius: 22px; box-shadow: 0 5px 0 var(--ink); }
+.qplate .times { color: var(--rc); -webkit-text-stroke: 2px var(--ink); paint-order: stroke fill; font-size: .78em; }
+.qplate .eq { color: var(--ink-2); font-size: .85em; }
+.qplate .answer-val { min-width: 1.25em; padding: 0 .08em; text-align: center; font-size: 1em; letter-spacing: .02em; border-radius: 12px; background: #EEF5FF; box-shadow: inset 0 0 0 3px #BFD7F5; color: var(--ink); }
+.qplate .answer-val.empty::before { content: attr(data-ph); color: rgba(20, 33, 61, .28); }
+.qplate .answer-val:not(.empty) { background: #FFF3C4; box-shadow: inset 0 0 0 3px #F2B705; }
+.qplate .ans { color: var(--grass); -webkit-text-stroke: 3px var(--ink); paint-order: stroke fill; }
+.qplate .power-strip { position: absolute; left: 14px; right: 14px; bottom: -4px; height: 6px; border-radius: 99px; background: rgba(20, 33, 61, .12); overflow: hidden; border: 0; }
+.qplate .power-fill { display: block; height: 100%; border-radius: 99px; }
+
+/* The wild Kaimon stands in the scene, big */
+.play.v2 .card-wild { position: absolute; inset: 0; z-index: 1; border: 0; border-radius: 0; background: none; padding: 0 8px clamp(58px, 15cqh, 84px); justify-content: flex-end; }
+.play.v2 .card-wild::before { background: linear-gradient(180deg, rgba(255, 255, 255, 0) 60%, rgba(255, 255, 255, .5) 100%); }
+.play.v2 .card-wild .kart { width: clamp(110px, 46cqh, 330px); height: clamp(110px, 46cqh, 330px); }
+.play.v2 .card-wild p { font-size: clamp(13px, 3.6cqh, 18px); margin-top: -4px; }
+.play.v2 .has-belt .card-wild { padding-bottom: clamp(86px, 23cqh, 120px); }
+.play.v2 .card-wild:not(:has(+ .belt)) { padding-bottom: clamp(16px, 4cqh, 28px); }
+
+/* Ball picker: a labeled tray at the bottom of the card */
+.play.v2 .belt { position: absolute; z-index: 3; left: 50%; bottom: clamp(10px, 2.8cqh, 16px); transform: translateX(-50%); display: flex; align-items: center; gap: 10px; padding: 6px 10px 6px 14px; background: rgba(255, 255, 255, .95); border: 2.5px solid var(--ink); border-radius: 99px; box-shadow: 0 3px 0 var(--ink); }
+.play.v2 .belt-name { min-width: 0; text-align: left; font-size: clamp(12px, 3.4cqh, 15px); line-height: 1.05; }
+.play.v2 .belt-name::before { content: 'Throw'; display: block; font-size: .78em; font-weight: 600; color: var(--ink-2); }
+.play.v2 .belt .belt-balls { padding: 0; gap: 8px; }
+.play.v2 .belt .belt-ball { width: clamp(36px, 10cqh, 46px); height: clamp(36px, 10cqh, 46px); }
+.play.v2 .belt .belt-ball[data-count]::after { content: attr(data-count); position: absolute; right: -6px; bottom: -6px; min-width: 18px; height: 18px; padding: 0 4px; border-radius: 99px; background: var(--ink); color: #fff; font-size: 11px; font-weight: 700; line-height: 18px; text-align: center; }
+
+/* Result face: the catch happens in the scene */
+.play.v2 .qplate.done { font-size: clamp(30px, 10cqh, 72px); }
+.play.v2 .catch-zone { position: absolute; inset: 0; z-index: 1; border: 0; border-radius: 0; background: none; }
+.play.v2 .catch-art { width: clamp(110px, 46cqh, 330px); height: clamp(110px, 46cqh, 330px); margin-top: 16cqh; }
+.play.v2 .catch-trainer { width: clamp(52px, 17cqh, 104px); right: 12px; bottom: 56px; }
+.play.v2 .catch-msg { position: absolute; z-index: 3; left: 50%; bottom: clamp(10px, 2.8cqh, 16px); transform: translateX(-50%); width: max-content; max-width: calc(100% - 24px); background: rgba(255, 255, 255, .95); border: 2.5px solid var(--ink); border-radius: 16px; padding: 4px 14px; box-shadow: 0 3px 0 var(--ink); font-size: clamp(14px, 4cqh, 22px); }
+.play.v2 .catch-msg .tags { display: block; }
+.play.v2 .new-banner { top: auto; bottom: clamp(58px, 15cqh, 90px); }
+
+/* Lesson face (a wrong answer): plain paper so the counting is easy to read */
+.play.v2 .wrong .face.back { padding: clamp(10px, 3cqh, 22px) clamp(12px, 4cqw, 22px); gap: clamp(6px, 2cqh, 14px); justify-content: space-between; }
+.play.v2 .wrong .card-head { padding: 0; }
+.play.v2 .retype { display: flex; align-items: center; justify-content: center; gap: 10px; font-weight: 700; font-size: clamp(14px, 4cqh, 20px); }
+.play.v2 .retype .learn-buddy { width: clamp(40px, 13cqh, 70px); height: clamp(40px, 13cqh, 70px); flex: none; }
+.play.v2 .retype .answer-val { min-width: 2.2em; padding: 0 .3em; font-size: clamp(30px, 11cqh, 60px); line-height: 1.1; text-align: center; border-radius: 12px; background: #FFF1EC; box-shadow: inset 0 0 0 3px var(--coral); }
+.play.v2 .retype .answer-val.empty::before { content: attr(data-ph); color: rgba(184, 58, 29, .35); }
+@container (max-height: 360px) { .play.v2 .retype .retype-label { display: none; } }
+
+@media (orientation: landscape) and (min-width: 900px) {
+  .play.v2 .play-body { grid-template-columns: minmax(0, 1fr) minmax(300px, 360px); }
+  .play.v2 .card3d, .play.v2 .deck { width: min(100%, 760px); height: min(100%, 680px); max-height: 680px; }
+  .play.v2 .key { height: clamp(56px, 10vh, 78px); }
+}
+
+/* Battle v2: the arena is the place; both Kaimon big; HP tags small */
+.battle.v2 .arena { container-type: size; display: block; padding: 0; }
+.battle.v2 .arena::before { background: radial-gradient(ellipse at 50% 50%, rgba(255, 255, 255, .45) 0 18%, rgba(255, 255, 255, 0) 46%); }
+.battle.v2 .side { position: absolute; left: 10px; right: 10px; display: flex; gap: 6px; }
+.battle.v2 .side.foe { top: 10px; align-items: flex-start; }
+.battle.v2 .side.me { bottom: 10px; align-items: flex-end; }
+.battle.v2 .mon { width: min(50cqw, 40cqh, 340px); flex-shrink: 0; }
+.battle.v2 .side.foe .mon { margin-left: auto; }
+.battle.v2 .side.me .hp { margin-left: auto; }
+.battle.v2 .hp { flex: 0 1 auto; width: min(46cqw, 260px); padding: 6px 10px 5px; border-radius: 14px; background: rgba(255, 255, 255, .95); box-shadow: 0 3px 0 var(--ink); }
+.battle.v2 .hp-name { font-size: clamp(14px, 4cqw, 18px); }
+.battle.v2 .hp-bar { height: 11px; margin-top: 3px; }
+.battle.v2 .hp-num { font-size: 11px; margin-top: 1px; }
+.battle.v2 .center { position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%); z-index: 3; gap: 8px; padding: 0 10px; pointer-events: none; }
+.battle.v2 .q-card { position: relative; padding: 4px 18px 8px; border-radius: 20px; box-shadow: 0 5px 0 var(--ink), inset 0 0 0 6px var(--rc); }
+.battle.v2 .q-card.right { box-shadow: 0 5px 0 var(--ink), inset 0 0 0 6px var(--grass); }
+.battle.v2 .q-card.wrong { box-shadow: 0 5px 0 var(--ink), inset 0 0 0 6px var(--coral); }
+.battle.v2 .q { font-size: clamp(36px, min(12cqh, 13cqw), 84px); gap: .12em; }
+.battle.v2 .q .answer-val { min-width: 1.25em; padding: 0 .08em; text-align: center; border-radius: 12px; background: #EEF5FF; box-shadow: inset 0 0 0 3px #BFD7F5; letter-spacing: .02em; }
+.battle.v2 .q .answer-val.empty::before { content: attr(data-ph); color: rgba(20, 33, 61, .28); }
+.battle.v2 .q .answer-val:not(.empty) { background: #FFF3C4; box-shadow: inset 0 0 0 3px #F2B705; }
+.battle.v2 .q-card .power-strip { position: absolute; left: 16px; right: 16px; bottom: 4px; height: 5px; border-radius: 99px; background: rgba(20, 33, 61, .1); overflow: hidden; border: 0; }
+.battle.v2 .q-card .power-fill { display: block; height: 100%; border-radius: 99px; }
+.battle.v2 .b-msg { font-size: clamp(13px, 3.6cqw, 18px); max-width: 100%; }
+.battle.v2 .b-msg .retype { display: inline-flex; align-items: center; gap: 6px; margin-left: 8px; font-weight: 700; }
+.battle.v2 .b-msg .answer-val { min-width: 2em; padding: 0 .3em; text-align: center; font-size: 1.4em; border-radius: 10px; background: #FFF1EC; box-shadow: inset 0 0 0 2.5px var(--coral); }
+.battle.v2 .b-msg .answer-val.empty::before { content: attr(data-ph); color: rgba(184, 58, 29, .4); }
+.battle.v2 .ladder-inline { display: inline-flex; }
+/* Battle result: your trainer beside theirs, so it's clear who won */
+.duel { display: flex; align-items: flex-end; justify-content: center; gap: 6px; width: 100%; margin-top: -4px; }
+.duel figure { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1 1 0; min-width: 0; }
+.duel-pic { position: relative; width: clamp(110px, 22vh, 170px); aspect-ratio: 1; display: grid; place-items: end center; }
+.duel-pic::before { content: ''; position: absolute; inset: 14% 6% 0; border-radius: 50%; background: radial-gradient(circle at 50% 55%, #E6EEF8 0 55%, rgba(255, 255, 255, 0) 72%); }
+.duel .win .duel-pic::before { background: radial-gradient(circle at 50% 55%, #FFF0B8 0 55%, rgba(255, 255, 255, 0) 72%); }
+.duel-pic > img { position: relative; width: 100%; height: 100%; object-fit: contain; }
+.player-av { position: relative; width: 74%; aspect-ratio: 1; border-radius: 50%; border: 4px solid var(--ink); overflow: hidden; background: var(--paper); margin-bottom: 8%; }
+.player-av svg { width: 100%; height: 100%; display: block; }
+.duel .win .player-av { animation: cheer .7s ease-out 2; box-shadow: 0 0 0 5px #FFD23F; }
+.player-av.pose-lost { filter: saturate(.7); }
+.duel figcaption { font-family: Fredoka, sans-serif; font-weight: 700; font-size: 15px; text-align: center; line-height: 1.15; display: flex; flex-direction: column; align-items: center; gap: 2px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+.duel-tag { font-size: 12px; background: var(--sun); border: 2px solid var(--ink); border-radius: 99px; padding: 0 8px; }
+.duel-vs { align-self: center; font-weight: 700; font-size: 22px; color: var(--coral); -webkit-text-stroke: 1.5px var(--ink); paint-order: stroke fill; }
+@media (prefers-reduced-motion: reduce) { .duel .win .player-av { animation: none; } }
+.duel-pic { width: 100%; max-width: 170px; }
+.duel figure { flex: 1 1 0; }
+.result .intro-card { overflow: hidden; }
+@media (max-height: 760px) { .duel-pic { max-width: 130px; } }
+
+/* Anime trainer faces in every avatar spot */
+.trainer-av, .tr-av, .who-av, .intro-me, .catch-trainer, .tm-av, .ambush-av { background: #FFF3D6; }
+.trainer-av .pl-img, .tr-av .pl-img, .who-av .pl-img, .intro-me .pl-img, .catch-trainer .pl-img, .tm-av .pl-img { width: 100%; height: 100%; display: block; object-fit: cover; border-radius: 50%; }
+.who-av { border-radius: 50%; overflow: hidden; border: 2.5px solid var(--ink); }
+.duel-pic > .pl-img { position: relative; width: 100%; height: 100%; object-fit: contain; }
+.duel .win .duel-pic > .pl-img { animation: cheer .7s ease-out 2; }
+
+/* Trainer creator */
+.tc { display: grid; grid-template-columns: 1fr; gap: 10px; }
+.tc-stage { display: grid; place-items: center; background: radial-gradient(circle at 50% 62%, #FFF3D6 0 42%, rgba(255, 243, 214, 0) 68%), linear-gradient(180deg, #DCEBFF, #F4F9FF); border: 2.5px solid var(--ink); border-radius: 20px; height: 210px; overflow: hidden; }
+.tc-preview { height: 100%; aspect-ratio: 1; }
+.tc-preview .pl-img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.tc-chars { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+.tc-char { position: relative; aspect-ratio: 1; padding: 0; border: 2.5px solid var(--ink); border-radius: 50%; background: #FFF3D6; overflow: visible; }
+.tc-char .pl-img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; display: block; }
+.tc-char.on { box-shadow: 0 0 0 3px #FFD23F, 0 0 0 5px var(--ink); }
+.tc-kai { position: absolute; left: 50%; bottom: -8px; transform: translateX(-50%); font-size: 11px; font-weight: 700; background: var(--sun); border: 2px solid var(--ink); border-radius: 99px; padding: 0 6px; line-height: 1.3; }
+.tc-colors { display: flex; flex-wrap: wrap; gap: 9px; }
+.tc-colors.off { opacity: .4; }
+.tc-color { width: 36px; height: 36px; border-radius: 50%; border: 2.5px solid var(--ink); background: var(--c); padding: 0; }
+.tc-color.on { box-shadow: 0 0 0 3px #FFD23F, 0 0 0 5px var(--ink); }
+.lp-label small { font-weight: 500; color: var(--ink-2); margin-left: 6px; }
+@media (min-width: 640px) { .tc { grid-template-columns: 230px 1fr; align-items: start; } .tc-stage { height: 280px; } }
