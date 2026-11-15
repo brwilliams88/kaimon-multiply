@@ -22,9 +22,8 @@ export function renderHome(root, go, params = {}) {
   root.innerHTML = `
     <section class="screen home">
       <header class="topbar">
-        <button class="trainer-chip" data-switch aria-label="Switch trainer">
+        <button class="trainer-chip" data-trainer aria-label="Your trainer page">
           <span class="trainer-av">${avatarSVG(trainerLook(p))}</span>
-          <span class="trainer-swap" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 4 L3 8 L7 12 M3 8 H17 M17 12 L21 16 L17 20 M21 16 H7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
           <span class="trainer-text"><strong>${esc(p.name)}${p.stats.stars ? ` <span class="stars" title="Good Work Stamps">★${p.stats.stars}</span>` : ''}</strong><small>${trainerTitle(p)}</small></span>
         </button>
         <button class="icon-btn menu-btn" data-menu aria-label="Menu"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7 H19 M5 12 H19 M5 17 H19" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"/></svg></button>
@@ -137,7 +136,7 @@ export function renderHome(root, go, params = {}) {
     localStorage.setItem(key, partner.stage);
   } catch {}
   on(root, 'click', '[data-dex]', () => { sfx.tap(); go('kaidex'); });
-  on(root, 'click', '[data-switch]', () => { sfx.tap(); go('welcome'); });
+  on(root, 'click', '[data-trainer]', () => { sfx.tap(); go('trainer'); });
 
   if (params.celebrate === 'stamp') {
     sfx.levelUp();

@@ -1,7 +1,16 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.3.34';
+export const VERSION = '0.3.35';
 
 export const CHANGELOG = [
+  {
+    version: '0.3.35',
+    date: '2026-11-15',
+    title: 'Your trainer page',
+    items: [
+      'Tap your trainer at the top of the home screen to see your trainer page: your look, your Buddy, Gym badges, medals for each times table, and stats like Kaimon caught, best streak and time played.',
+      'Change look lives there too. Switching trainers is in the Menu.',
+    ],
+  },
   {
     version: '0.3.34',
     date: '2026-11-15',

@@ -7,6 +7,7 @@ import { renderPlay } from './ui/play.js';
 import { renderKaidex } from './ui/kaidex.js';
 import { renderGrownups } from './ui/grownups.js';
 import { renderBattle } from './ui/battle.js';
+import { renderTrainer } from './ui/trainer.js';
 import { VERSION } from './data/changelog.js';
 import { startAutoSync, completeLinkSignIn } from './core/sync.js';
 import { toast, soundIcon } from './ui/dom.js';
@@ -25,9 +26,10 @@ const SCREENS = {
   kaidex: renderKaidex,
   grownups: renderGrownups,
   battle: renderBattle,
+  trainer: renderTrainer,
 };
 
-const NEEDS_PROFILE = new Set(['home', 'play', 'kaidex', 'grownups', 'meetPartner', 'battle']);
+const NEEDS_PROFILE = new Set(['home', 'play', 'kaidex', 'grownups', 'meetPartner', 'battle', 'trainer']);
 
 function go(name, params = {}) {
   stopVoice();

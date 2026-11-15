@@ -1116,3 +1116,41 @@ button.balls-row:hover { background: #EDF2F9; }
 .lp-mini { width: 30px; height: 30px; border-radius: 50%; overflow: hidden; display: block; }
 .lp-mini svg { width: 100%; height: 100%; display: block; }
 .nt-look { margin-bottom: 14px; }
+
+/* v0.3.35 trainer page */
+.trainer { gap: 10px; }
+.tr-card { display: grid; grid-template-columns: auto 1fr; grid-template-areas: 'av who' 'buddy buddy'; gap: 12px 16px; align-items: center; background: var(--paper); border: 3px solid var(--ink); border-radius: var(--r-lg, 26px); box-shadow: 0 6px 0 var(--ink); padding: 18px; }
+.tr-av { grid-area: av; width: 112px; height: 112px; border-radius: 50%; border: 3px solid var(--ink); overflow: hidden; background: var(--sky); }
+.tr-av svg { width: 100%; height: 100%; display: block; }
+.tr-who { grid-area: who; min-width: 0; }
+.tr-who h2 { margin: 0; font-size: 28px; line-height: 1.1; overflow-wrap: anywhere; }
+.tr-title { margin: 2px 0 10px; color: var(--ink-2); font-weight: 600; }
+.tr-look { padding: 8px 16px; font-size: 16px; }
+.tr-buddy { grid-area: buddy; display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: #F4F7FB; border-radius: 16px; font-weight: 700; }
+.tr-buddy-art { width: 46px; height: 46px; }
+.tr-count { font-size: 16px; color: var(--ink-2); font-weight: 600; margin-left: 6px; }
+.tr-badges { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; background: var(--paper); border: 3px solid var(--ink); border-radius: 22px; padding: 14px 10px; box-shadow: 0 5px 0 var(--ink); }
+.tr-badge { display: flex; flex-direction: column; align-items: center; gap: 2px; font-weight: 700; font-size: 14px; color: var(--ink-2); }
+.gym-badge { width: 100%; max-width: 58px; height: auto; }
+.gym-badge.won { filter: drop-shadow(0 2px 0 rgba(20, 33, 61, .3)); }
+.tr-medals { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+.tr-medal { display: flex; flex-direction: column; align-items: center; gap: 4px; background: var(--paper); border: 2.5px solid var(--ink); border-radius: 16px; padding: 8px 4px; }
+.tr-medal.none { border-style: dashed; border-color: #B9C3D3; background: rgba(255, 255, 255, .6); }
+.tr-m-num { font-weight: 700; font-size: 16px; }
+.tr-medal .medal svg { width: 30px; height: 30px; }
+.tr-m-empty { width: 30px; height: 30px; border-radius: 50%; border: 2.5px dashed #B9C3D3; }
+.tr-m-label { font-size: 13px; color: var(--ink-2); font-weight: 600; }
+.tr-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 0; }
+.tr-stats div { background: var(--paper); border: 2.5px solid var(--ink); border-radius: 16px; padding: 10px 12px; }
+.tr-stats dt { font-size: 13px; color: var(--ink-2); font-weight: 600; }
+.tr-stats dd { margin: 2px 0 0; font-size: 22px; font-weight: 700; }
+.trainer-chip { cursor: pointer; }
+@media (min-width: 760px) {
+  .tr-card { grid-template-columns: auto 1fr auto; grid-template-areas: 'av who buddy'; }
+  .tr-buddy { flex-direction: column; padding: 12px 16px; }
+  .tr-buddy-art { width: 72px; height: 72px; }
+  .tr-medals { grid-template-columns: repeat(10, minmax(0, 1fr)); }
+  .tr-badges { grid-template-columns: repeat(10, minmax(0, 1fr)); }
+}
+@media (max-width: 380px) { .tr-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.tr-badge span { font-size: 12px; text-align: center; line-height: 1.1; overflow-wrap: anywhere; }
