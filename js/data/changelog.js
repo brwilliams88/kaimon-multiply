@@ -1,7 +1,15 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.3.19';
+export const VERSION = '0.3.20';
 
 export const CHANGELOG = [
+  {
+    version: '0.3.20',
+    date: '2026-11-14',
+    title: 'Wild Kaimon run away',
+    items: [
+      'A wrong answer spooks the wild Kaimon. It jumps with a !, then dashes off the card in a puff of dust before the card flips to show the answer.',
+    ],
+  },
   {
     version: '0.3.19',
     date: '2026-11-14',

@@ -217,11 +217,22 @@ export function renderPlay(root, go, { table }) {
       S.requeue.push({ id: S.fact, at: S.n + 3 });
       sfx.wrong();
       save();
+      cancelAnimationFrame(S.raf);
+      // The wild Kaimon gets spooked and dashes off before the card flips to the lesson.
+      const wild = el.front.querySelector('.card-wild');
+      if (wild) {
+        wild.classList.add('flee');
+        wild.querySelector('.wild-art')?.insertAdjacentHTML('beforeend', '<span class="flee-bang" aria-hidden="true">!</span><span class="flee-dust" aria-hidden="true"><i></i><i></i><i></i></span>');
+        const line = wild.querySelector('p');
+        if (line) line.innerHTML = `Oh no! <strong>${esc(S.species.name)}</strong> ran away!`;
+        setTimeout(() => sfx.escape(), 380);
+        await wait(1150);
+      }
       el.back.innerHTML = `
         <div class="card-head"><span>Not quite</span></div>
         <div class="card-q answer-reveal"><span>${a}</span><span class="times">×</span><span>${b}</span><span class="eq">=</span><span class="ans">${ans}</span></div>
         <div class="hint-scroll"><p>Count by ${a}s</p><div class="ladder">${hintLadder(S.fact).map((v, i, arr) => `<span class="${i === arr.length - 1 ? 'last' : ''}">${v}</span>`).join('')}</div></div>
-        <p class="catch-msg">${esc(dexState(p, S.species.id) === 'caught' ? S.species.name : 'The wild Kaimon')} ran off.</p>`;
+        <p class="catch-msg">Learn it, and the next one won't get away!</p>`;
       el.inner.classList.add('flipped', 'wrong');
       S.phase = 'learn';
       S.mustType = ans;

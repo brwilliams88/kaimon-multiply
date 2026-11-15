@@ -2,6 +2,10 @@
 
 All notable changes. Versioning: `0.MINOR.0` marks a roadmap phase, `0.x.PATCH` is any shipped change a player or parent can notice, and `1.0.0` is the public launch. See "Versioning" in CLAUDE.md. The in-app version history (Grown-ups > What's new) reads from `js/data/changelog.js`; keep both in sync. Each release is tagged in git as `vX.Y.Z`.
 
+## v0.3.20 (2026-11-14) Wild Kaimon run away
+
+- A wrong answer spooks the wild Kaimon. It jumps with a !, then dashes off the card in a puff of dust before the card flips to show the answer.
+
 ## v0.3.19 (2026-11-14) Wild Kaimon jump out in color
 
 - Wild Kaimon now jump onto the card in full color: A wild Voltfoal appeared! A New! tag means you haven't caught it yet.
