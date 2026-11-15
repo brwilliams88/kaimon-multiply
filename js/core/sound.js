@@ -2,40 +2,80 @@
 let ctx = null;
 let enabled = true;
 
-export function setSound(on) { enabled = on; }
+export function setSound(on) {
+  enabled = on;
+  if (!on && keepAlive) { try { keepAlive.pause(); } catch {} }
+}
 export const soundOn = () => enabled;
 
 // iPhone notes:
-// - Game sounds use the 'ambient' audio mode, so they follow the silent switch and
-//   mix with music. The microphone switches the phone into a recording mode; after
-//   listening ends we set 'ambient' again and rebuild the audio engine, because an
-//   engine made in one mode can stay silent in the other.
+// - The in-app Sound switch is the on/off for the game. So game sounds use the
+//   'playback' audio mode, which plays even when the iPhone is in Silent Mode
+//   (the 'ambient' mode we used before stayed quiet in Silent Mode, even with the
+//   volume up, which looked like sound was broken).
+// - Older iPhones without navigator.audioSession get the same effect from a silent
+//   looping <audio> element started during a tap.
+// - The microphone switches the phone into a recording mode; after listening ends we
+//   set 'playback' again and rebuild the audio engine, because an engine made in one
+//   mode can stay silent in the other.
 // - iPhone can leave the engine 'interrupted' (not just 'suspended') after the mic,
-//   a phone call or the app going to the background, so we wake it from any state.
-export function ambient() {
-  try { if (navigator.audioSession && navigator.audioSession.type !== 'ambient') navigator.audioSession.type = 'ambient'; } catch {}
+//   a phone call or the app going to the background, so we wake it from any state,
+//   and rebuild it if waking doesn't work.
+const SILENT = 'data:audio/wav;base64,UklGRvQHAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YdAHAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgA==';
+let keepAlive = null;
+export function playbackMode() {
+  try {
+    if (navigator.audioSession) {
+      if (navigator.audioSession.type !== 'playback') navigator.audioSession.type = 'playback';
+      return;
+    }
+  } catch {}
+  // Fallback for older iPhones: a silent media element puts the page in playback mode.
+  if (!enabled) return;
+  try {
+    if (!/iPhone|iPad|iPod/.test(navigator.userAgent) && !(navigator.maxTouchPoints > 1 && /Macintosh/.test(navigator.userAgent))) return;
+    if (!keepAlive) {
+      keepAlive = new Audio(SILENT);
+      keepAlive.loop = true;
+      keepAlive.setAttribute('playsinline', '');
+      keepAlive.setAttribute('x-webkit-airplay', 'deny');
+      keepAlive.preload = 'auto';
+    }
+    if (keepAlive.paused) keepAlive.play().catch(() => {});
+  } catch {}
 }
+export const ambient = playbackMode; // old name
 
+// After the mic: switch back to playback now, and rebuild the engine on the next tap
+// (iPhone only lets a fresh engine start during a tap, and rebuilding right away
+// would cut off the "correct!" sound that plays as the answer comes in).
+let rebuild = false;
 export function resetAudio() {
-  ambient();
-  try { ctx?.close(); } catch {}
-  ctx = null;
+  playbackMode();
+  setTimeout(playbackMode, 400);
+  rebuild = true;
 }
 
 function wake() {
-  if (ctx.state !== 'running') ctx.resume().catch(() => {});
+  if (ctx.state === 'running') return;
+  const c = ctx;
+  c.resume().catch(() => {});
+  // If iPhone refuses to wake it, build a fresh engine on the next tap.
+  setTimeout(() => { if (ctx === c && c.state !== 'running' && enabled) { try { c.close(); } catch {} ctx = null; } }, 600);
 }
 
 export function unlock() {
   try {
+    if (rebuild && ctx) { rebuild = false; try { ctx.close(); } catch {} ctx = null; }
     if (!ctx || ctx.state === 'closed') {
-      ambient();
+      playbackMode();
       ctx = new (window.AudioContext || window.webkitAudioContext)();
       // Classic iPhone unlock: a one-sample silent sound during a tap.
       const b = ctx.createBuffer(1, 1, 22050);
       const src = ctx.createBufferSource();
       src.buffer = b; src.connect(ctx.destination); src.start(0);
     }
+    playbackMode();
     wake();
   } catch {}
 }

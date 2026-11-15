@@ -971,3 +971,4 @@ button.balls-row:hover { background: #EDF2F9; }
 .card-inner .face { transition: visibility 0s linear 0s; }
 .card-inner.flipped .face.front { visibility: hidden; transition-delay: .16s; }
 .card-inner:not(.flipped) .face.back { visibility: hidden; transition-delay: .16s; }
+.beta-tag { display: inline-block; font-size: 12px; font-weight: 700; color: #7A4FD0; background: #F1EAFF; border-radius: 99px; padding: 1px 8px; vertical-align: 2px; }

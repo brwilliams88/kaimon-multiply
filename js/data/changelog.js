@@ -1,7 +1,17 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.3.24';
+export const VERSION = '0.3.25';
 
 export const CHANGELOG = [
+  {
+    version: '0.3.25',
+    date: '2026-11-14',
+    title: 'Sound plays on silent iPhones',
+    items: [
+      'Sound now plays whenever Sound is on in the game, even when the iPhone is on silent. Before, Silent Mode kept the game quiet even with the volume up.',
+      'After using Say it, sound comes back to full volume on the next tap, and the right-answer sound no longer gets cut off.',
+      'Voice answers are marked Beta in Grown-ups, with a note that iPhone plays game sounds quieter while the mic listens.',
+    ],
+  },
   {
     version: '0.3.24',
     date: '2026-11-14',
