@@ -827,3 +827,15 @@ button { font: inherit; color: inherit; cursor: pointer; touch-action: manipulat
 @keyframes spin { to { transform: rotate(360deg); } }
 button[aria-busy="true"] { opacity: .85; cursor: progress; }
 .sent-ok { color: #1E5E28; }
+
+/* v0.3.13 Kaidex tile */
+.kdx-ic { width: 26px; height: 26px; display: block; }
+.pill .kdx-ic { width: 26px; height: 26px; }
+.kdx-tile { display: flex; align-items: center; gap: 14px; width: 100%; text-align: left; background: var(--paper); border: 3px solid var(--ink); border-radius: 22px; padding: 12px 16px; box-shadow: 0 5px 0 var(--ink); margin: 4px 0 8px; }
+.kdx-tile:active { transform: translateY(4px); box-shadow: 0 1px 0 var(--ink); }
+.kdx-art { width: 58px; height: 58px; flex-shrink: 0; background: #DDF6F2; border: 2.5px solid var(--ink); border-radius: 16px; display: grid; place-items: center; }
+.kdx-art .kdx-ic { width: 44px; height: 44px; }
+.kdx-text { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.kdx-text strong { font-size: 22px; }
+.kdx-text small { font-size: 15px; color: var(--ink-2); }
+.kdx-go { font-size: 34px; font-weight: 700; color: var(--ink-2); line-height: 1; }

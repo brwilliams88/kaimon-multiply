@@ -38,6 +38,8 @@ export function renderKaidex(root, go) {
   const p = active();
   let filter = 'all';
   const draw = () => {
+    // Keep the filter row where the player left it.
+    const keep = root.querySelector('.chips')?.scrollLeft || 0;
     const c = dexCounts(p);
     const list = SPECIES.filter((s) => filter === 'all' || (filter === 'special' ? typeof s.region !== 'number' : filter === 'starters' ? s.region === 0 : s.region === +filter));
     root.innerHTML = `
@@ -68,6 +70,10 @@ export function renderKaidex(root, go) {
           }).join('')}
         </div>
       </section>`;
+    const chips = root.querySelector('.chips');
+    chips.scrollLeft = keep;
+    const cur = chips.querySelector('.chip.on');
+    if (cur && (cur.offsetLeft < chips.scrollLeft || cur.offsetLeft + cur.offsetWidth > chips.scrollLeft + chips.clientWidth)) cur.scrollIntoView({ inline: 'nearest', block: 'nearest' });
   };
   draw();
   on(root, 'click', '[data-back]', () => go('home'));

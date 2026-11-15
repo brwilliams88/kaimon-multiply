@@ -1,7 +1,16 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.3.12';
+export const VERSION = '0.3.13';
 
 export const CHANGELOG = [
+  {
+    version: '0.3.13',
+    date: '2026-11-14',
+    title: 'Kaidex is easier to find',
+    items: [
+      'The Kaidex has its own button on the home screen, with a new Kaidex icon and how many Kaimon you\'ve caught.',
+      'Fixed: in the Kaidex, picking a times table made the filter row jump back to the start.',
+    ],
+  },
   {
     version: '0.3.12',
     date: '2026-11-14',

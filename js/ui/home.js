@@ -29,7 +29,7 @@ export function renderHome(root, go, params = {}) {
         </button>
         <div class="topbar-right">
           ${soundButton(p.settings.sound)}
-          <button class="pill" data-dex aria-label="Open Kaidex"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="3" fill="#FF6B4A" stroke="currentColor" stroke-width="2.5"/><circle cx="12" cy="10" r="3.5" fill="#FFFFFF" stroke="currentColor" stroke-width="2"/><path d="M8 16 H16" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>${dex.caught}/${dex.total}</button>
+          <button class="pill" data-dex aria-label="Open Kaidex, ${dex.caught} of ${dex.total} caught">${kaidexIcon()}${dex.caught}/${dex.total}</button>
           <button class="icon-btn hold" data-grownups aria-label="Grown-ups: press and hold"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8.5a3.5 3.5 0 1 0 0 7a3.5 3.5 0 0 0 0-7Z M19.4 13a7.6 7.6 0 0 0 0-2l2-1.6-2-3.4-2.4 1a7.4 7.4 0 0 0-1.7-1L15 3.5h-4L10.7 6a7.4 7.4 0 0 0-1.7 1l-2.4-1-2 3.4 2 1.6a7.6 7.6 0 0 0 0 2l-2 1.6 2 3.4 2.4-1a7.4 7.4 0 0 0 1.7 1l.3 2.5h4l.3-2.5a7.4 7.4 0 0 0 1.7-1l2.4 1 2-3.4Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg><span class="hold-ring" aria-hidden="true"></span></button>
         </div>
       </header>
@@ -51,6 +51,12 @@ export function renderHome(root, go, params = {}) {
           </div>
           <button class="btn-chunky btn-primary btn-xl play-btn" data-play="mix"><span>Practice</span><small>Mix of every table</small></button>
         </div>
+
+        <button class="kdx-tile" data-dex>
+          <span class="kdx-art">${kaidexIcon()}</span>
+          <span class="kdx-text"><strong>Kaidex</strong><small>Your Kaimon collection. ${dex.caught} of ${dex.total} caught${dex.seen > dex.caught ? `, ${dex.seen - dex.caught} more spotted` : ''}.</small></span>
+          <span class="kdx-go" aria-hidden="true">›</span>
+        </button>
 
         <h2 class="section-title">Regions</h2>
         <p class="section-sub">Pick one times table. Catch the Kaimon that live there and earn its medal, from Bronze to Star.</p>
@@ -177,3 +183,11 @@ function howItWorks() {
     <button class="btn-chunky btn-primary" data-close>Got it</button>
   </div>`);
 }
+
+export const kaidexIcon = () => `<svg class="kdx-ic" viewBox="0 0 48 48" aria-hidden="true">
+  <rect x="7" y="4" width="34" height="40" rx="9" fill="#2BB3A3" stroke="#14213D" stroke-width="3"/>
+  <rect x="12" y="19" width="24" height="18" rx="4" fill="#CFE8FF" stroke="#14213D" stroke-width="2.5"/>
+  <path d="M24 23 l1.6 3.4 3.6.4-2.7 2.4.8 3.5-3.3-1.9-3.3 1.9.8-3.5-2.7-2.4 3.6-.4z" fill="#F2B705" stroke="#14213D" stroke-width="1.4" stroke-linejoin="round"/>
+  <path d="M15 8.5 h7 l3.5 3 -3.5 3 h-7 l-3.5 -3z" fill="#FFD23F" stroke="#14213D" stroke-width="2.2" stroke-linejoin="round"/>
+  <circle cx="33" cy="11.5" r="2.2" fill="#FF6B4A" stroke="#14213D" stroke-width="1.6"/>
+</svg>`;
