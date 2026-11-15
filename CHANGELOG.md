@@ -2,6 +2,12 @@
 
 All notable changes. Versioning: `0.MINOR.0` marks a roadmap phase, `0.x.PATCH` is any shipped change a player or parent can notice, and `1.0.0` is the public launch. See "Versioning" in CLAUDE.md. The in-app version history (Grown-ups > What's new) reads from `js/data/changelog.js`; keep both in sync. Each release is tagged in git as `vX.Y.Z`.
 
+## v0.3.6 (2026-11-14) Sound fix for iPhone
+
+- iOS can leave the AudioContext 'interrupted' (not 'suspended') after the mic, a call or backgrounding; we now resume from any non-running state, on every tap and when the app returns to the front.
+- After a voice session ends, the audio session is set back to 'ambient' and the AudioContext is rebuilt, since one made under play-and-record can stay silent.
+- First tap plays a one-sample silent buffer (the standard iOS unlock).
+
 ## v0.3.5 (2026-11-14) New catches and a better Kaidex
 
 - New `esc` event per failed throw; `catch` now records `first` and `last` times, `seen` records `firstSeen`. Catches before this version show "Before Nov 14, 2026".

@@ -5,21 +5,46 @@ let enabled = true;
 export function setSound(on) { enabled = on; }
 export const soundOn = () => enabled;
 
-// iPhone: 'ambient' means game sounds follow the silent switch and mix with music.
-// The microphone switches the phone to a recording mode that ignores the switch,
-// so we set it back to ambient whenever listening ends.
+// iPhone notes:
+// - Game sounds use the 'ambient' audio mode, so they follow the silent switch and
+//   mix with music. The microphone switches the phone into a recording mode; after
+//   listening ends we set 'ambient' again and rebuild the audio engine, because an
+//   engine made in one mode can stay silent in the other.
+// - iPhone can leave the engine 'interrupted' (not just 'suspended') after the mic,
+//   a phone call or the app going to the background, so we wake it from any state.
 export function ambient() {
-  try { if (navigator.audioSession) navigator.audioSession.type = 'ambient'; } catch {}
+  try { if (navigator.audioSession && navigator.audioSession.type !== 'ambient') navigator.audioSession.type = 'ambient'; } catch {}
 }
-ambient();
+
+export function resetAudio() {
+  ambient();
+  try { ctx?.close(); } catch {}
+  ctx = null;
+}
+
+function wake() {
+  if (ctx.state !== 'running') ctx.resume().catch(() => {});
+}
 
 export function unlock() {
-  ambient();
   try {
-    if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
-    if (ctx.state === 'suspended') ctx.resume();
+    if (!ctx || ctx.state === 'closed') {
+      ambient();
+      ctx = new (window.AudioContext || window.webkitAudioContext)();
+      // Classic iPhone unlock: a one-sample silent sound during a tap.
+      const b = ctx.createBuffer(1, 1, 22050);
+      const src = ctx.createBufferSource();
+      src.buffer = b; src.connect(ctx.destination); src.start(0);
+    }
+    wake();
   } catch {}
 }
+export const audioCtx = () => ctx;
+
+// Wake the engine whenever the app comes back to the front.
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && ctx) wake(); });
+// Any tap wakes it too (iPhone only allows resuming during a tap).
+['touchend', 'pointerup', 'keydown'].forEach((ev) => document.addEventListener(ev, () => { if (enabled) unlock(); }, { passive: true, capture: true }));
 
 function tone(freq, start, dur, type = 'sine', vol = 0.18) {
   if (!ctx) return;
@@ -36,7 +61,7 @@ function tone(freq, start, dur, type = 'sine', vol = 0.18) {
   o.stop(t0 + dur + 0.05);
 }
 
-const play = (fn) => { if (!enabled) return; unlock(); if (ctx) fn(); };
+const play = (fn) => { if (!enabled) return; if (!ctx) unlock(); if (ctx) { wake(); fn(); } };
 
 export const sfx = {
   tap: () => play(() => tone(520, 0, 0.06, 'triangle', 0.08)),

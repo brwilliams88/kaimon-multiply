@@ -1,7 +1,16 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.3.5';
+export const VERSION = '0.3.6';
 
 export const CHANGELOG = [
+  {
+    version: '0.3.6',
+    date: '2026-11-14',
+    title: 'Sound fix for iPhone',
+    items: [
+      'Fixed: on some iPhones the game made no sound at all, even with sound on.',
+      'Sound now comes back by itself after using the microphone, a phone call, or switching apps.',
+    ],
+  },
   {
     version: '0.3.5',
     date: '2026-11-14',
