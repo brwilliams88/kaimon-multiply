@@ -863,3 +863,16 @@ button.balls-row:hover { background: rgba(20, 33, 61, .06); }
 .bh-row p { margin: 2px 0 0; font-size: 16px; color: var(--ink-2); line-height: 1.35; }
 .bh-count { font-weight: 600; color: var(--ink-2); margin-left: 4px; }
 .face { padding-top: clamp(13px, 3.5cqh, 26px); }
+
+/* v0.3.17 shiny explainer */
+.dc-sub { display: inline-flex; align-items: center; gap: 8px; }
+.dc-shiny { font: inherit; font-size: 15px; font-weight: 700; color: #7A4FD0; background: #F1EAFF; border: 0; border-radius: 99px; padding: 3px 10px; cursor: pointer; }
+.dc-shiny:active { transform: translateY(1px); }
+.entry-art-flip { border: 0; background: none; padding: 0; cursor: pointer; position: relative; font: inherit; }
+.shiny-badge { position: absolute; left: 50%; bottom: 4px; transform: translateX(-50%); background: #7A4FD0; color: #fff; font-weight: 700; font-size: 14px; border-radius: 99px; padding: 2px 10px; white-space: nowrap; }
+.shiny-pair { display: flex; justify-content: center; gap: 18px; margin: 4px 0 10px; }
+.shiny-pair figure { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.shiny-pair .kart { width: 110px; height: 110px; }
+.shiny-pair figcaption { font-weight: 700; color: var(--ink-2); }
+.sp-shiny figcaption { color: #7A4FD0; }
+.shiny-help p { text-align: left; }

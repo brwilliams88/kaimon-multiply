@@ -1,7 +1,17 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.3.16';
+export const VERSION = '0.3.17';
 
 export const CHANGELOG = [
+  {
+    version: '0.3.17',
+    date: '2026-11-14',
+    title: 'What shiny means',
+    items: [
+      'Tap ✦ shiny in the Kaidex to learn what a shiny is: a rare sparkly color, about 1 in 32 catches.',
+      'Tap a shiny Kaimon\'s picture to see its shiny colors.',
+      'The confusing catches count is gone from the Kaidex header.',
+    ],
+  },
   {
     version: '0.3.16',
     date: '2026-11-14',
