@@ -1,7 +1,15 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.3.41';
+export const VERSION = '0.3.42';
 
 export const CHANGELOG = [
+  {
+    version: '0.3.42',
+    date: '2026-11-15',
+    title: 'Gym list stays put',
+    items: [
+      'Backing out of a Gym Leader\'s intro, or coming back from a battle, now returns you to the same spot on the home screen, with the Gym Leader row still slid over to where you were.',
+    ],
+  },
   {
     version: '0.3.41',
     date: '2026-11-15',

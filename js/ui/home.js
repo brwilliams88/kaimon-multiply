@@ -116,11 +116,14 @@ export function renderHome(root, go, params = {}) {
     if (v !== 'mix' && !p.settings.tables.includes(+v)) return;
     go('play', { table: v === 'mix' ? null : +v });
   });
-  on(root, 'click', '[data-champ]', (e, el) => { unlock(); sfx.tap(); if (timesUp()) return; go('battle', { kind: 'champ', table: +el.dataset.champ }); });
+  // Remember where the player was, so coming back from a battle (or backing out of
+  // a Gym Leader's intro) lands in the same spot instead of the top of the page.
+  const keepPlace = () => { try { sessionStorage.setItem('kaimon.homePlace', JSON.stringify({ y: (document.scrollingElement || document.documentElement).scrollTop, x: root.querySelector('.champs')?.scrollLeft || 0, at: Date.now() })); } catch {} };
+  on(root, 'click', '[data-champ]', (e, el) => { unlock(); sfx.tap(); if (timesUp()) return; keepPlace(); go('battle', { kind: 'champ', table: +el.dataset.champ }); });
   on(root, 'click', '[data-boss]', () => {
     unlock(); sfx.tap();
     if (timesUp()) return;
-    if (bossUnlocked(p)) go('battle', { kind: 'boss' });
+    if (bossUnlocked(p)) { keepPlace(); go('battle', { kind: 'boss' }); }
     else sheet(`<h2>Papa's Gym</h2><p>The final gym, and a CrossFit gym. Boss Papa only battles trainers who have every Gym Leader badge. Come back when you have them all.</p><div class="sheet-actions"><button class="btn-chunky btn-primary" data-close>Okay</button></div>`);
   });
   on(root, 'click', '[data-menu]', () => { unlock(); sfx.tap(); homeMenu(p, go); });
@@ -137,6 +140,16 @@ export function renderHome(root, go, params = {}) {
   } catch {}
   on(root, 'click', '[data-dex]', () => { sfx.tap(); go('kaidex'); });
   on(root, 'click', '[data-trainer]', () => { sfx.tap(); go('trainer'); });
+
+  try {
+    const place = JSON.parse(sessionStorage.getItem('kaimon.homePlace') || 'null');
+    sessionStorage.removeItem('kaimon.homePlace');
+    if (place && Date.now() - place.at < 30 * 60000) {
+      const champs = root.querySelector('.champs');
+      if (champs) champs.scrollLeft = place.x;
+      requestAnimationFrame(() => { (document.scrollingElement || document.documentElement).scrollTop = place.y; if (champs) champs.scrollLeft = place.x; });
+    }
+  } catch {}
 
   if (params.celebrate === 'stamp') {
     sfx.levelUp();
