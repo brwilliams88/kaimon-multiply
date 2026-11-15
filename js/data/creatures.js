@@ -106,15 +106,16 @@ const RAW = [
   ['Aurorix', 'legend', 'legend', 'aurorix', 1, 'A sky serpent made of northern lights that only appears on clear nights over Frostpeak.'],
   ['Hundragon', 'legend', 'legend', 'hundragon', 1, 'A dragon with exactly 100 glowing scales, one for every fact.'],
   ['Papazilla', 'papa', 'papa', 'papazilla', 1, 'Boss Papa\u2019s grumpy partner, in a matching black trucker hat. Big, loud, and secretly a softie.'],
-  ['???', 'mythic', 'mythic', 'mythic', 1, 'Nobody has ever caught it. Some say it was dreamed up by a trainer named Kai.'],
+  ['Kairo', 'mythic', 'mythic', 'mythic', 1, 'Nobody had ever caught it. Some say it was dreamed up by a trainer named Kai, and that it flew around until Kai was ready.'],
+  ['Kairos', 'mythic', 'mythic', 'mythic', 2, 'Kairo, all grown up. It came back from the future to keep training with Kai. Its wings hold every fact Kai ever learned.'],
 ];
 
 // Species ids come from the original names and must never change: saves, the Kaidex
 // and family sync are keyed by them. A renamed Kaimon keeps its old id here.
-const KEEP_ID = { Kaizo: 'kaimo' };
+const KEEP_ID = { Kaizo: 'kaimo', Kairo: 'mythic' };
 export const SPECIES = RAW.map(([name, type, region, line, stage, desc, mega], i) => ({
   num: i + 1, name, type, region, line, stage, desc,
-  id: name === '???' ? 'mythic' : KEEP_ID[name] || name.toLowerCase(),
+  id: KEEP_ID[name] || name.toLowerCase(),
   mega: mega ? { name: mega[0], desc: mega[1] } : null,
 }));
 
@@ -135,4 +136,6 @@ export const regionOf = (table) => REGIONS.find((r) => r.table === table);
 export const lineOf = (s) => SPECIES.filter((x) => x.line === s.line).sort((a, b) => a.stage - b.stage);
 export const MYTHIC_ID = 'mythic';
 export const MYTHIC_NUM = SPECIES.find((s) => s.id === 'mythic').num;
+// Kairo's future form. Hidden from the Kaidex until a trainer first spots it.
+export const FUTURE_ID = 'kairos';
 export const STARTERS = ['kaimo', 'kaiko', 'kipbun'];

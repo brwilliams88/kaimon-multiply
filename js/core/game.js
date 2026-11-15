@@ -1,6 +1,6 @@
 import { partnerLevel, EVOLVE_AT } from './xp.js';
 // Kaimon core rules: encounters, Capture Balls, catching, partner evolution, mythic cameos.
-import { SPECIES, MYTHIC_ID } from '../data/creatures.js';
+import { SPECIES, MYTHIC_ID, FUTURE_ID } from '../data/creatures.js';
 import { tableTier, levelRank, countAtLeast } from './facts.js';
 
 export const BALLS = {
@@ -61,14 +61,19 @@ export const dexState = (profile, id) => {
   return 'unknown';
 };
 
+// Kairos (Kairo's future form) stays off the Kaidex until a trainer first spots it.
+export const dexVisible = (profile, s) => s.id !== FUTURE_ID || dexState(profile, s.id) !== 'unknown';
+
 export function dexCounts(profile) {
-  let seen = 0, caught = 0;
+  let seen = 0, caught = 0, total = 0;
   for (const s of SPECIES) {
+    if (!dexVisible(profile, s)) continue;
+    total++;
     const st = dexState(profile, s.id);
     if (st !== 'unknown') seen++;
     if (st === 'caught') caught++;
   }
-  return { seen, caught, total: SPECIES.length };
+  return { seen, caught, total };
 }
 
 // The partner (chosen starter) evolves with total mastery (facts at Silver or higher).
@@ -87,12 +92,30 @@ export function partnerOf(profile) {
 }
 
 // Mythic cameo chance per card. Rare at first, more often with badges.
+// Returns false, 'kairo' or 'kairos'. Six months after a trainer starts, some
+// cameos are Kairos, Kairo's future form, flying past from the future.
+const DAY = 86400000;
+export function trainerSince(profile) {
+  const days = Object.keys(profile.play || {}).sort();
+  const fromPlay = days.length ? new Date(days[0] + 'T12:00:00').getTime() : Infinity;
+  const made = profile.createdAt > 1e12 ? profile.createdAt : Infinity;
+  const t = Math.min(made, fromPlay);
+  return Number.isFinite(t) ? t : Date.now();
+}
 export function mythicCameo(profile) {
   const badges = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].filter((t) => tableTier(profile, t)).length;
   const sinceLast = Date.now() - (profile.mythic.lastSeen || 0);
   if (sinceLast < 10 * 60 * 1000) return false; // at most once per 10 minutes
   const chance = profile.mythic.sightings === 0 ? 1 / 25 : 1 / (60 - badges * 3);
-  return Math.random() < chance;
+  if (Math.random() >= chance) return false;
+  const future = Date.now() - trainerSince(profile) >= 182 * DAY && !profile.dex[FUTURE_ID]?.caught;
+  return future && profile.mythic.sightings > 0 && Math.random() < 0.3 ? 'kairos' : 'kairo';
+}
+
+// A year after Kairo is caught, it evolves into Kairos on its own.
+export function kairoEvolves(profile) {
+  const k = profile.dex[MYTHIC_ID];
+  return !!(k?.caught && !profile.dex[FUTURE_ID]?.caught && Date.now() - (k.first || Date.now()) >= 365 * DAY);
 }
 
 export function trainerTitle(profile) {

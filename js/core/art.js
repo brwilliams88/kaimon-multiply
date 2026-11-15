@@ -1,8 +1,13 @@
-// Kaimon art. Real illustrations (assets/kaimon/NNN.webp) replace these
-// procedural placeholders as they are approved. Silhouettes and shinies are CSS filters.
-import { TYPES } from '../data/creatures.js';
+// Kaimon art. Approved illustrations live in assets/kaimon/NNN.webp (shiny/ and
+// mega/ beside them). The procedural placeholders below are only a fallback for a
+// new Kaimon that has no art yet. Silhouettes are a CSS filter on the real art.
+import { TYPES, SPECIES } from '../data/creatures.js';
 
-export const REAL_ART = new Set([]); // Kaidex numbers that have approved art
+export const REAL_ART = new Set(SPECIES.map((s) => s.num)); // Kaidex numbers that have approved art
+export const MEGA_ART = new Set([3, 6, 9, 12, 21, 39, 44, 53]);
+const n3 = (n) => String(n).padStart(3, '0');
+export const kaimonSrc = (num, { shiny = false, mega = false } = {}) =>
+  `assets/kaimon/${mega ? 'mega/' : shiny ? 'shiny/' : ''}${n3(num)}.webp`;
 
 const INK = '#14213D';
 
@@ -142,11 +147,20 @@ export const shinyStar = (cls = '') => `<svg class="shiny-star ${cls}" viewBox="
 // Shiny Kaimon get twinkling sparkles on top of their art (shown only with .kart-shiny,
 // so the Kaidex can flip between normal and shiny colors).
 const SPARKLES = '<span class="sparkles" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>';
-export function creatureArt(s, { mode = 'full', shiny = false } = {}) {
-  const cls = ['kart', 'kart-' + mode, shiny ? 'kart-shiny' : ''].join(' ');
+export function creatureArt(s, { mode = 'full', shiny = false, mega = false } = {}) {
+  const cls = ['kart', 'kart-' + mode, shiny && mode === 'full' ? 'kart-shiny' : ''].join(' ');
   const sp = mode === 'full' ? SPARKLES : '';
   if (REAL_ART.has(s.num)) {
-    return `<span class="${cls}"><img src="assets/kaimon/${String(s.num).padStart(3, '0')}.webp" alt="" draggable="false">${sp}</span>`;
+    const src = kaimonSrc(s.num, { shiny: shiny && mode === 'full', mega: mega && MEGA_ART.has(s.num) });
+    return `<span class="${cls}" data-num="${s.num}"><img src="${src}" alt="" draggable="false" decoding="async">${sp}</span>`;
   }
   return `<span class="${cls}">${placeholder(s)}${sp}</span>`;
+}
+
+// Flip a rendered Kaimon between its normal and shiny art (the Kaidex toggle).
+export function setShiny(kart, on) {
+  if (!kart) return;
+  kart.classList.toggle('kart-shiny', on);
+  const im = kart.querySelector('img');
+  if (im && kart.dataset.num) im.src = kaimonSrc(+kart.dataset.num, { shiny: on });
 }

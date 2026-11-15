@@ -7,12 +7,18 @@ import { bossUnlocked } from '../core/battle.js';
 import { limitReached } from '../core/playtime.js';
 import { VERSION } from '../data/changelog.js';
 import { trainerArt } from './trainerArt.js';
+import { ballImg, itemImg, sceneSrc, cssUrl, uiImg, LOGO } from '../core/assets.js';
+import { kairoEvolves } from '../core/game.js';
+import { evolveKairo } from '../core/actions.js';
+import { save, touch } from '../core/store.js';
+import { syncNow } from '../core/sync.js';
+import { byId, MYTHIC_ID, FUTURE_ID } from '../data/creatures.js';
 import { avatarSVG, trainerLook } from './avatars.js';
-import { esc, on, $, holdButton, sheet, soundIcon } from './dom.js';
+import { esc, on, $, holdButton, sheet, soundIcon, toast } from './dom.js';
 import { sfx, unlock } from '../core/sound.js';
 
 export const medal = (tier) => tier
-  ? `<span class="medal medal-${tier}" title="${LEVEL_LABEL[tier]} badge"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="currentColor" stroke="#14213D" stroke-width="2.5"/><path d="M12 7 L13.6 10.5 L17.3 10.8 L14.5 13.2 L15.4 16.8 L12 14.9 L8.6 16.8 L9.5 13.2 L6.7 10.8 L10.4 10.5 Z" fill="#FFFFFF" stroke="#14213D" stroke-width="1.2" stroke-linejoin="round"/></svg><span class="sr">${LEVEL_LABEL[tier]} badge</span></span>`
+  ? `<span class="medal medal-${tier}" title="${LEVEL_LABEL[tier]} medal">${itemImg('medal-' + tier)}</span>`
   : '';
 
 export function renderHome(root, go, params = {}) {
@@ -61,7 +67,7 @@ export function renderHome(root, go, params = {}) {
             const tier = tableTier(p, r.table);
             const prog = tableProgress(p, r.table);
             const enabled = p.settings.tables.includes(r.table);
-            return `<button class="region${enabled ? '' : ' off'}" data-play="${r.table}" style="--rc:${t.color};--rl:${t.light};--ri:${t.ink}" ${enabled ? '' : 'aria-disabled="true"'}>
+            return `<button class="region${enabled ? '' : ' off'}" data-play="${r.table}" style="--rc:${t.color};--rl:${t.light};--ri:${t.ink};--scene:${esc(cssUrl(sceneSrc(String(r.table), true)))}" ${enabled ? '' : 'aria-disabled="true"'}>
               <span class="region-num">${r.table}<small>s</small></span>
               <span class="region-name">${r.name}</span>
               <span class="region-foot"><span class="bar mini"><span style="width:${Math.round(prog * 100)}%"></span></span>${medal(tier)}</span>
@@ -87,7 +93,7 @@ export function renderHome(root, go, params = {}) {
             const total = p.settings.tables.length || 10;
             const beaten = p.settings.tables.filter((t) => p.battles.champs[t]).length;
             const open = bossUnlocked(p);
-            return `<button class="tower${open ? ' open' : ''}" data-boss ${open ? '' : 'aria-disabled="true"'}>
+            return `<button class="tower${open ? ' open' : ''}" data-boss ${open ? '' : 'aria-disabled="true"'} style="--scene:${esc(cssUrl(sceneSrc('papa', true)))}">
               <span class="tower-av">${trainerArt({ kind: 'boss' })}</span>
               <span class="tower-text"><strong>Papa's Gym</strong>
                 <small>${open ? (p.battles.boss ? 'Boss Papa wants a rematch.' : 'The final gym. Boss Papa is waiting.') : `The final gym. Earn every Gym Leader badge to get in. ${beaten} of ${total} badges.`}</small>
@@ -96,15 +102,15 @@ export function renderHome(root, go, params = {}) {
             </button>`;
           })()}
         </div>
-        <p class="ver-foot">Kaimon Multiply v${VERSION}</p>
+        <p class="ver-foot">© 2026 Kaimon Games · Kaimon Multiply v${VERSION}</p>
       </div>
     </section>`;
 
   const timesUp = () => {
     if (!limitReached(p)) return false;
-    sheet(`<div class="celebrate"><div class="partner-art rest">${creatureArt(partner.species)}</div>
+    sheet(`<div class="celebrate"><div class="rest-art">${uiImg('kaizo-sleep')}</div>
       <h2>That's today's Kaimon time!</h2>
-      <p>${esc(partner.species.name)} is taking a nap to get stronger. Come back tomorrow for more catching and battles.</p>
+      <p>Your Kaimon are napping so they can get stronger. Come back tomorrow for more catching and battles.</p>
       <p class="note">A grown-up can add more time.</p>
       <button class="btn-chunky btn-primary" data-close>Okay</button></div>`);
     return true;
@@ -138,6 +144,10 @@ export function renderHome(root, go, params = {}) {
     }
     localStorage.setItem(key, partner.stage);
   } catch {}
+  if (kairoEvolves(p)) {
+    evolveKairo(p); save(); syncNow();
+    setTimeout(() => { sfx.levelUp(); sheet(`<div class="celebrate evolve"><p class="evo-kicker">A whole year with Kairo... and it's glowing!</p><div class="evo-row"><div class="partner-art">${creatureArt(byId(MYTHIC_ID))}</div><span class="evo-arrow">›</span><div class="partner-art">${creatureArt(byId(FUTURE_ID))}</div></div><h2>Kairo evolved into Kairos!</h2><p>Kaidex #060, the very last page. Kairo grew up right alongside you.</p><button class="btn-chunky btn-primary" data-close>Amazing!</button></div>`); }, 500);
+  }
   on(root, 'click', '[data-dex]', () => { sfx.tap(); go('kaidex'); });
   on(root, 'click', '[data-trainer]', () => { sfx.tap(); go('trainer'); });
 
@@ -154,7 +164,7 @@ export function renderHome(root, go, params = {}) {
   if (params.celebrate === 'stamp') {
     sfx.levelUp();
     sheet(`<div class="celebrate">
-      <p class="celebrate-star" aria-hidden="true">★</p>
+      <div class="celebrate-stamp" aria-hidden="true">${itemImg('good-work-stamp')}</div>
       <h2>Good Work Stamp!</h2>
       <p>${esc(p.name)}, your grown-up says you did great on real math work. Here's a reward:</p>
       <div class="celebrate-row"><span>${ballIcon('mega')} Mega Ball</span><span>${snackIcon()} 3 Power Snacks</span><span class="stars">★ Gold star</span></div>
@@ -162,20 +172,10 @@ export function renderHome(root, go, params = {}) {
   }
 }
 
-export function ballIcon(kind) {
-  const c = {
-    capture: ['#2D9CDB', '#1F78AD', ''],
-    super: ['#8E5CF0', '#6B3FCC', '<path d="M0 30 L100 0 L100 12 L0 42 Z" fill="#C9B2FF" opacity=".8"/>'],
-    mega: ['#F2B705', '#C99400', '<circle cx="28" cy="34" r="4" fill="#FFF6C9"/><circle cx="72" cy="30" r="4" fill="#FFF6C9"/>'],
-    legend: ['#F0552B', '#2D7FF9', '<rect x="0" y="30" width="100" height="10" fill="#F2B705"/>'],
-  }[kind];
-  const id = 'bc' + kind + Math.random().toString(36).slice(2, 6);
-  return `<svg class="ball-svg" viewBox="0 0 100 100" aria-hidden="true"><defs><clipPath id="${id}"><circle cx="50" cy="52" r="40"/></clipPath></defs><circle cx="50" cy="52" r="40" fill="${c[0]}"/><g clip-path="url(#${id})">${c[2]}<path d="M10 58 C 28 38, 42 80, 60 54 S 82 46, 90 56 L90 100 L10 100 Z" fill="${c[1]}"/><ellipse cx="34" cy="32" rx="10" ry="5" fill="#FFFFFF" opacity="0.55"/><path d="M10 58 C 28 38, 42 80, 60 54 S 82 46, 90 56" fill="none" stroke="#14213D" stroke-width="6" stroke-linecap="round"/></g><circle cx="50" cy="52" r="40" fill="none" stroke="#14213D" stroke-width="6"/><path d="M50 43 L60 49 L60 61 L50 67 L40 61 L40 49 Z" fill="#FFFFFF" stroke="#14213D" stroke-width="5" stroke-linejoin="round"/><path d="M50 49 L55 52 L55 58 L50 61 L45 58 L45 52 Z" fill="${c[0]}"/></svg>`;
-}
+// The four balls get cooler as they get stronger: blue, emerald, gold, prismatic.
+export const ballIcon = (kind) => ballImg(kind, 'ball-svg');
 
-export function snackIcon() {
-  return `<svg class="ball-svg" viewBox="0 0 72 72" aria-hidden="true"><g transform="rotate(45 36 36)"><rect x="28" y="8" width="16" height="56" rx="8" fill="#FF7AA8" stroke="#14213D" stroke-width="5"/><rect x="8" y="28" width="56" height="16" rx="8" fill="#FF7AA8" stroke="#14213D" stroke-width="5"/></g></svg>`;
-}
+export const snackIcon = () => itemImg('power-snack', 'ball-svg');
 
 export const ribbon = () => `<svg class="ribbon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 13 L5 22 L9 20 L11 23 L12 15 Z M16 13 L19 22 L15 20 L13 23 L12 15 Z" fill="#E8492A" stroke="#14213D" stroke-width="1.6" stroke-linejoin="round"/><circle cx="12" cy="9" r="7" fill="#F2B705" stroke="#14213D" stroke-width="2"/></svg>`;
 
@@ -185,12 +185,19 @@ function homeMenu(p, go) {
   const sh = sheet(`<div class="home-menu">
     <h2>Menu</h2>
     <label class="menu-row menu-switch"><span class="menu-ic" aria-hidden="true">${soundIcon(true)}</span><span class="menu-txt"><strong>Sound</strong><small>Music and sound effects</small></span><input type="checkbox" class="switch" data-sound ${p.settings.sound ? 'checked' : ''} aria-label="Sound"></label>
+    <label class="menu-row menu-switch"><span class="menu-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M13 2.5 L5 13.5 H11 L10 21.5 L19 10 H13 Z" fill="currentColor" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></span><span class="menu-txt"><strong>Quick mode</strong><small>Shorter catches and battle moves, more cards</small></span><input type="checkbox" class="switch" data-quick ${p.settings.quick ? 'checked' : ''} aria-label="Quick mode"></label>
     ${row('data-m="how"', '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M9.6 9.4a2.5 2.5 0 1 1 3.4 2.3c-.7.3-1 .8-1 1.5v.6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><circle cx="12" cy="17" r="1.4" fill="currentColor"/></svg>', 'How to play', 'Buddy, XP, regions and battles')}
     ${row('data-m="balls"', ballIcon('capture'), 'Ball guide', 'Which ball to throw, and how to earn more')}
     ${row('data-m="switch"', '<svg viewBox="0 0 24 24"><path d="M7 4 L3 8 L7 12 M3 8 H17 M17 12 L21 16 L17 20 M21 16 H7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>', 'Switch trainer')}
     <button class="menu-row menu-grown hold" data-grownups aria-label="Grown-ups: press and hold"><span class="menu-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2.5" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M8.5 10.5 V8 a3.5 3.5 0 0 1 7 0 V10.5" fill="none" stroke="currentColor" stroke-width="2.4"/></svg></span><span class="menu-txt"><strong>Grown-ups</strong><small>Press and hold. Needs the grown-up PIN.</small></span><span class="hold-ring" aria-hidden="true"></span></button>
     <p class="menu-ver">Kaimon Multiply v${VERSION}</p>
   </div>`, { cls: 'menu-sheet' });
+  sh.el.querySelector('[data-quick]').addEventListener('change', (e) => {
+    p.settings.quick = e.target.checked;
+    touch(p); syncNow();
+    sfx.tap();
+    toast(p.settings.quick ? 'Quick mode on. Catches and attacks go faster.' : 'Quick mode off', 2000);
+  });
   sh.el.addEventListener('click', (e) => {
     const m = e.target.closest('[data-m]')?.dataset.m;
     if (!m) return;
@@ -238,6 +245,7 @@ export function ballsHelp(p, opts = {}) {
   const row = (k, name, count, text) => `<div class="bh-row">${ballIcon(k)}<div><strong>${name} <span class="bh-count">${count}</span></strong><p>${text}</p></div></div>`;
   sheet(`<div class="balls-help">
     <h2>Your balls</h2>
+    ${!(p.balls.super || p.balls.mega || p.balls.legend) ? `<div class="bh-empty">${uiImg('empty-bag')}<p>No special balls yet. Win them in Gym battles, with streaks and with medals!</p></div>` : ''}
     <p class="bh-how">When a wild Kaimon appears, tap the ball you want to throw. It gets a gold ring. Then answer: a right answer throws it.</p>
     ${row('capture', 'Capture Ball', '∞', 'Free, and you never run out. Good for most Kaimon.')}
     ${row('super', 'Super Ball', '×' + p.balls.super, 'Much better at catching. Win one from Gym Leaders. A 5-answer streak also gives you a free Super throw.')}

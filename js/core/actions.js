@@ -50,7 +50,9 @@ export function apply(p, ev) {
       p.items[d.i] = Math.max(0, (p.items[d.i] || 0) + d.n);
       break;
     case 'sight':
-      p.mythic.sightings++;
+      // d.f: a sighting of Kairos, Kairo's future form.
+      if (d.f) { const e = dexEntry(p, 'kairos'); e.seen++; if (!e.firstSeen) e.firstSeen = ev.t; }
+      else p.mythic.sightings++;
       p.mythic.lastSeen = Math.max(p.mythic.lastSeen || 0, ev.t);
       break;
     case 'sess':
@@ -110,7 +112,9 @@ export function caught(p, speciesId) {
 export const escaped = (p, speciesId) => emit(p, 'esc', { n: speciesId });
 export const ball = (p, kind, n) => emit(p, 'ball', { b: kind, n });
 export const item = (p, kind, n) => emit(p, 'item', { i: kind, n });
-export const sighting = (p) => emit(p, 'sight', {});
+export const sighting = (p, future = false) => emit(p, 'sight', future ? { f: 1 } : {});
+// Kairo evolving into Kairos counts as catching it (never shiny).
+export const evolveKairo = (p) => emit(p, 'catch', { n: 'kairos', s: 0 });
 export const session = (p, ms, best) => emit(p, 'sess', { ms: Math.round(ms), best });
 export const openTime = (p, ms) => emit(p, 'open', { ms: Math.round(ms) });
 export const bonusTime = (p, m) => emit(p, 'bonus', { m });

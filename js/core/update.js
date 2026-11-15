@@ -40,6 +40,9 @@ export function startUpdates({ isBusy, showBar }) {
     document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') r.update().catch(() => {}); });
     setInterval(() => r.update().catch(() => {}), 30 * 60 * 1000);
   }).catch((e) => console.warn('Service worker not registered', e));
+  // Once the app is idle, let the service worker download the rest of the art so
+  // every Kaimon, place and trainer works offline.
+  navigator.serviceWorker.ready.then((r) => setTimeout(() => r.active?.postMessage('warmArt'), 5000)).catch(() => {});
   let reloaded = false;
   navigator.serviceWorker.addEventListener('controllerchange', () => { if (!reloaded) { reloaded = true; location.reload(); } });
 }

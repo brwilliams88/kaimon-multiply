@@ -1,7 +1,27 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.3.45';
+export const VERSION = '0.5.0';
 
 export const CHANGELOG = [
+  {
+    version: '0.5.0',
+    date: '2026-11-15',
+    title: 'The art is in',
+    items: [
+      "All 60 Kaimon now have their finished anime art, with real shiny colors (a gold ring turns behind shinies) and dark navy silhouettes in the Kaidex.",
+      "Kai's mythic now has a name: Kairo, #059. Its future form, Kairos, is #060. It stays hidden until you spot it flying past, and Kairo evolves into it a year after you catch it.",
+      "A new title screen with the Kaimon Multiply logo, Kai and the three starters.",
+      "Every region, Papa's Gym and the Training Grounds have their own place. Practice cards show the region behind the wild Kaimon, and battles happen right there.",
+      "Gym Leaders, Team Papa and Boss Papa have full anime art. They talk in their intro and react when they win or lose.",
+      "New ball art that gets cooler as it gets stronger: blue Capture, emerald Super, gold Mega and a prismatic diamond Legend Ball. Balls pop open and pull the Kaimon in when you throw.",
+      "Attacks have effects for every type. Papazilla's special is Dumbbell Drop.",
+      "New art for badges, medals, type icons, items and the card back. Your first card is dealt face down from the deck.",
+      "Quick mode in the Menu: shorter catches and battle moves, so you get more cards. A tap also skips any throw.",
+      "Kaizo helps out: it shows up for tricks, nap time, the practice summary and more.",
+      "New app icon. Installed apps on iPhone and iPad get a one-time note explaining how to get it, and when it's safer to keep the old one.",
+      "Team Papa grunts now have names that match their looks.",
+      "Art downloads in the background and stays saved, so updates only fetch what changed and everything works offline.",
+    ],
+  },
   {
     version: '0.3.45',
     date: '2026-11-15',

@@ -16,6 +16,7 @@ import { stopMusic, startMusic } from './core/music.js';
 import { save, touch } from './core/store.js';
 import { startUpdates, justUpdated } from './core/update.js';
 import './ui/install.js'; // listens for Chrome's install prompt from the start
+import { maybeIconNotice } from './ui/iconNotice.js'; // must load before justUpdated() runs
 
 const SCREENS = {
   welcome: renderWelcome,
@@ -45,6 +46,7 @@ function go(name, params = {}) {
   if (p) setSound(p.settings.sound);
   SCREENS[name](root, go, params);
   window.scrollTo(0, 0);
+  if (name === 'welcome' || name === 'home') maybeIconNotice();
 }
 
 // Several trainers on one device: start on "Who's playing?". One trainer: straight in.

@@ -3,6 +3,8 @@ import { deleteEverywhere, addBackFromFamily } from '../core/sync.js';
 import { avatarSVG, trainerLook } from './avatars.js';
 import { dexCounts } from '../core/game.js';
 import { checkNow } from '../core/update.js';
+import { showIconNotice } from './iconNotice.js';
+import { itemImg } from '../core/assets.js';
 import { installHelpHTML, canPromptInstall, promptInstall, isInstalled } from './install.js';
 import { lastDays, partsOfDay, usedToday } from '../core/playtime.js';
 import { bonusTime } from '../core/actions.js';
@@ -164,7 +166,7 @@ function renderMain(root, go) {
         </div>
 
         <div class="panel">
-          <h2>Good Work Stamp</h2>
+          <h2 class="h-ic">${itemImg('good-work-stamp')}Good Work Stamp</h2>
           <p class="note">Did ${esc(p.name)} bring home a great math test or worksheet? Give a Good Work Stamp: a Mega Ball, 3 Power Snacks and a gold star.</p>
           <button class="btn-chunky btn-primary" data-stamp>Give ${esc(p.name)} a Good Work Stamp</button>
           ${p.trophies.length ? `<div class="trophies">${p.trophies.slice().reverse().map((t) => `<figure class="trophy">${t.img ? `<img src="${t.img}" alt="">` : '<span class="trophy-star">★</span>'}<figcaption>${esc(t.note || 'Good work')}<small>${new Date(t.t).toLocaleDateString()}</small></figcaption></figure>`).join('')}</div>` : ''}
@@ -249,6 +251,7 @@ function renderMain(root, go) {
           ${canPromptInstall() && !isInstalled() ? '<button class="btn-chunky btn-primary" data-install>Install Kaimon</button>' : ''}
           ${installHelpHTML()}
           <p class="note">For another device, open <strong>brwilliams88.github.io/kaimon-multiply</strong> there.</p>
+          ${isInstalled() ? '<div class="row"><span class="note">Kaimon got a new app icon in v0.5.0.</span><button class="btn-chunky btn-sm" data-newicon>New icon help</button></div>' : ''}
         </div>
 
         <div class="panel whatsnew">
@@ -260,6 +263,7 @@ function renderMain(root, go) {
     </section>`;
 
   on(root, 'click', '[data-back]', () => go('home'));
+  on(root, 'click', '[data-newicon]', () => showIconNotice());
   on(root, 'click', '[data-install]', async () => { if (await promptInstall()) renderMain(root, go); });
   on(root, 'click', '[data-update]', async (e, btn) => {
     const msg = root.querySelector('[data-upd-msg]');

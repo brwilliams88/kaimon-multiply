@@ -1,11 +1,14 @@
 import { active } from '../core/store.js';
-import { SPECIES, TYPES, REGIONS, byId, lineOf, MYTHIC_ID } from '../data/creatures.js';
-import { creatureArt, shinyStar } from '../core/art.js';
-import { dexState, dexCounts } from '../core/game.js';
+import { SPECIES, TYPES, REGIONS, byId, lineOf, MYTHIC_ID, FUTURE_ID } from '../data/creatures.js';
+import { creatureArt, shinyStar, setShiny } from '../core/art.js';
+import { typeIcon, uiImg } from '../core/assets.js';
+import { dexState, dexCounts, dexVisible } from '../core/game.js';
 import { esc, on, sheet } from './dom.js';
 import { sfx } from '../core/sound.js';
 
 const num3 = (n) => '#' + String(n).padStart(3, '0');
+// Mythic Kaimon keep their names secret until caught.
+const shownName = (s, st) => st === 'unknown' || (s.region === 'mythic' && st !== 'caught') ? '???' : s.name;
 const day = (t) => new Date(t).toLocaleDateString([], { month: 'short', day: 'numeric', year: new Date(t).getFullYear() === new Date().getFullYear() ? undefined : 'numeric' });
 function ago(t) {
   const d = Math.floor((Date.now() - t) / 86400000);
@@ -32,6 +35,8 @@ function foundIn(s) {
   if (typeof s.region === 'number') return `Shows up while practicing the ${s.region}s`;
   if (s.region === 'legend') return 'Appears for trainers who master many tables';
   if (s.region === 'papa') return 'Boss Papa’s own Kaimon';
+  if (s.id === FUTURE_ID) return 'Kairo grows into it, a year after it’s caught';
+  if (s.id === MYTHIC_ID) return 'Lands for the trainer who beats Boss Papa';
   return 'Nobody knows';
 }
 
@@ -51,7 +56,7 @@ export function renderKaidex(root, go) {
     const keep = root.querySelector('.chips')?.scrollLeft || 0;
     const c = dexCounts(p);
     const shinyTotal = Object.values(p.dex).reduce((t, x) => t + (x.shiny || 0), 0);
-    const list = SPECIES.filter((s) => filter === 'all' || (filter === 'special' ? typeof s.region !== 'number' : filter === 'starters' ? s.region === 0 : s.region === +filter));
+    const list = SPECIES.filter((s) => dexVisible(p, s)).filter((s) => filter === 'all' || (filter === 'special' ? typeof s.region !== 'number' : filter === 'starters' ? s.region === 0 : s.region === +filter));
     root.innerHTML = `
       <section class="screen kaidex">
         <header class="topbar">
@@ -70,7 +75,7 @@ export function renderKaidex(root, go) {
             const st = dexState(p, s.id);
             const e = p.dex[s.id];
             const mythic = s.id === MYTHIC_ID;
-            const name = st === 'unknown' ? '???' : s.name;
+            const name = shownName(s, st);
             return `<button class="dex-tile dex-${st}${mythic ? ' dex-mythic' : ''}${e?.shiny ? ' dex-has-shiny' : ''}" data-n="${s.id}" style="--rc:${TYPES[s.type].color};--rl:${TYPES[s.type].light}" aria-label="${num3(s.num)} ${esc(name)}">
               <span class="dex-num">${num3(s.num)}</span>
               ${creatureArt(s, { mode: st === 'caught' ? 'full' : st, shiny: false })}
@@ -100,12 +105,14 @@ function showEntry(p, s) {
   let body;
   if (st === 'unknown') {
     body = `<p class="entry-desc">You haven't met this Kaimon yet. Keep practicing to find it.</p>`;
+  } else if (s.id === FUTURE_ID && st !== 'caught') {
+    body = `<p class="entry-desc">It looked a lot like the mythic Kaimon, only older and bigger, like it flew in from the future. Spotted ${e.seen || 1} time${(e.seen || 1) === 1 ? '' : 's'}.</p>`;
   } else if (mythic && st !== 'caught') {
     body = `<p class="entry-desc">A 1 in 10,000 Kaimon. Spotted ${p.mythic.sightings} time${p.mythic.sightings === 1 ? '' : 's'}. Nobody knows where it lives. Some say it only lands for the trainer who beats Boss Papa.</p>`;
   } else {
-    const line = lineOf(s);
+    const line = lineOf(s).filter((x) => dexVisible(p, x));
     body = `
-      <p class="entry-meta"><span class="type-tag" style="--rc:${t.color}">${t.name}</span><span>${esc(regionLabel(s))}</span>${s.stages > 1 ? `<span>Stage ${s.stage} of ${s.stages}</span>` : ''}</p>
+      <p class="entry-meta"><span class="type-tag" style="--rc:${t.color}">${typeIcon(s.type)}${t.name}</span><span>${esc(regionLabel(s))}</span>${s.stages > 1 ? `<span>Stage ${s.stage} of ${s.stages}</span>` : ''}</p>
       <p class="entry-desc">${st === 'caught' ? esc(s.desc) : 'You’ve seen it, but not caught it yet.'}</p>
       ${(() => {
         const r = RARITY[s.rarity] || RARITY.common;
@@ -123,20 +130,20 @@ function showEntry(p, s) {
         if (e.esc) rows.push(['Got away', `${e.esc} time${e.esc === 1 ? '' : 's'}`]);
         return `<dl class="entry-facts">${rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl><p class="entry-hint">${esc(r[1])}</p>`;
       })()}
-      ${line.length > 1 ? `<div class="entry-line">${line.map((x) => { const xs = dexState(p, x.id); return `<div class="line-step${x.num === s.num ? ' cur' : ''}">${creatureArt(x, { mode: xs === 'caught' ? 'full' : xs })}<span>${xs === 'unknown' ? '???' : esc(x.name)}</span></div>`; }).join('<span class="line-arrow" aria-hidden="true">›</span>')}</div>` : ''}
-      ${s.mega && st === 'caught' ? `<p class="entry-mega">Has a rare Mega form. You'll be able to unlock it later in the adventure.</p>` : ''}`;
+      ${line.length > 1 ? `<div class="entry-line">${line.map((x) => { const xs = dexState(p, x.id); return `<div class="line-step${x.num === s.num ? ' cur' : ''}">${creatureArt(x, { mode: xs === 'caught' ? 'full' : xs })}<span>${esc(shownName(x, xs))}</span></div>`; }).join('<span class="line-arrow" aria-hidden="true">›</span>')}</div>` : ''}
+      ${s.mega && st === 'caught' ? `<div class="entry-mega"><span class="mega-peek">${creatureArt(s, { mode: 'seen', mega: true })}</span><p>Has a rare Mega form. You'll be able to unlock it later in the adventure.</p></div>` : ''}`;
   }
   const sh = sheet(`
     <div class="entry" style="--rc:${t.color};--rl:${t.light}">
       <div class="entry-art">${creatureArt(s, { mode: st === 'caught' ? 'full' : st, shiny: false })}</div>
       ${e.shiny && st === 'caught' ? `<div class="look-toggle" role="group" aria-label="Colors"><button class="on" data-look="normal" aria-pressed="true">Normal</button><button data-look="shiny" aria-pressed="false">${shinyStar()}Shiny</button></div>` : ''}
       <p class="entry-num">${num3(s.num)}</p>
-      <h2 class="entry-name">${st === 'unknown' ? '???' : esc(s.name)}</h2>
+      <h2 class="entry-name">${esc(shownName(s, st))}</h2>
       ${body}
       <button class="btn-chunky" data-close>Close</button>
     </div>`, { cls: 'entry-sheet' });
   const setLook = (shiny) => {
-    sh.el.querySelector('.entry-art .kart')?.classList.toggle('kart-shiny', shiny);
+    setShiny(sh.el.querySelector('.entry-art .kart'), shiny);
     sh.el.querySelectorAll('[data-look]').forEach((b) => { const on = (b.dataset.look === 'shiny') === shiny; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); });
   };
   sh.el.addEventListener('click', (ev) => {

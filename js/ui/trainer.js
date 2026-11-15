@@ -8,6 +8,7 @@ import { syncNow } from '../core/sync.js';
 import { avatarSVG, trainerLook } from './avatars.js';
 import { lookPickerHTML, wireLookPicker } from './lookPicker.js';
 import { medal } from './home.js';
+import { badgeImg } from '../core/assets.js';
 import { teamRowHTML, teamSheet } from './teamPicker.js';
 import { esc, on, sheet, toast } from './dom.js';
 import { sfx } from '../core/sound.js';
@@ -17,14 +18,9 @@ const minutes = (ms) => {
   return m < 60 ? `${m} min` : `${Math.floor(m / 60)} hr ${m % 60} min`;
 };
 
-// A Gym badge: the table's type color with its number, in the sticker style.
+// A Gym badge: the badge art in full color once won, a faded outline until then.
 export function gymBadge(r, won) {
-  const t = TYPES[r.type];
-  return `<svg class="gym-badge${won ? ' won' : ''}" viewBox="0 0 64 64" aria-hidden="true">
-    <path d="M32 4 L56 16 L56 40 Q56 52 32 60 Q8 52 8 40 L8 16 Z" fill="${won ? t.color : '#E6EBF2'}" stroke="${won ? '#14213D' : '#B9C3D3'}" stroke-width="3.5" stroke-linejoin="round"/>
-    <path d="M32 11 L50 20 L50 39 Q50 48 32 54 Q14 48 14 39 L14 20 Z" fill="none" stroke="${won ? '#FFFFFF' : '#CFD7E3'}" stroke-width="2" opacity=".7"/>
-    <text x="32" y="41" text-anchor="middle" font-family="Fredoka, sans-serif" font-weight="700" font-size="24" fill="${won ? '#FFFFFF' : '#AEB8C8'}" stroke="${won ? '#14213D' : 'none'}" stroke-width="1.2">${r.table}</text>
-  </svg>`;
+  return `<span class="gym-badge${won ? ' won' : ''}">${badgeImg(r.table)}</span>`;
 }
 
 export function renderTrainer(root, go) {

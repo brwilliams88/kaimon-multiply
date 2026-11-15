@@ -6,6 +6,7 @@ import { VERSION } from '../data/changelog.js';
 import { maybeShowInstall } from './install.js';
 import { byId, TYPES } from '../data/creatures.js';
 import { creatureArt } from '../core/art.js';
+import { titleSrc, LOGO, typeIcon } from '../core/assets.js';
 import { avatarSVG, trainerLook, PRESETS } from './avatars.js';
 import { lookPickerHTML, wireLookPicker } from './lookPicker.js';
 import { esc, on, $ } from './dom.js';
@@ -18,11 +19,15 @@ export function renderWelcome(root, go) {
   const famLine = st.signedIn ? `<p class="fam-status">${cloudIcon()}<span>Family sync is on for <strong>${esc(st.email)}</strong>${st.busy ? '. Looking for family trainers...' : ''}</span></p>
     ${!hasFamily && !st.busy ? `<p class="fam-help">No family trainers yet. On the device where your child plays, open Grown-ups and turn on <strong>Sync with family</strong> for their trainer. It will show up here by itself.</p>` : ''}` : '';
   root.innerHTML = `
-    <section class="screen welcome">
-      <div class="welcome-hero">
-        <div class="logo" aria-label="Kaimon Multiply"><span class="logo-kai">Kai</span><span class="logo-mon">mon</span><span class="logo-sub">Multiply</span></div>
-        <div class="welcome-art">${creatureArt(byId('kaimo'))}</div>
+    <section class="screen welcome title-screen">
+      <div class="title-hero">
+        <picture>
+          <source media="(min-width: 600px)" srcset="${titleSrc(true)}">
+          <img class="title-art" src="${titleSrc(false)}" alt="Kai with Kaizo, Kaiko and Kipbun" draggable="false">
+        </picture>
+        <h1 class="title-logo"><img src="${LOGO}" alt="Kaimon Multiply" draggable="false"></h1>
       </div>
+      <div class="title-panel">
       ${famLine}
       ${profiles.length ? `
         <h2 class="welcome-q">Who's playing?</h2>
@@ -33,7 +38,8 @@ export function renderWelcome(root, go) {
         <p class="welcome-line">Answer times tables. Catch Kaimon. Fill your Kaidex.</p>
         <button class="btn-chunky btn-primary btn-xl" data-new>Start</button>`}
       ${st.signedIn ? '' : '<button class="link-btn fam-signin" data-famsignin>Family device? Sign in for family sync</button>'}
-      <p class="ver-foot">Kaimon Multiply v${VERSION}</p>
+      </div>
+      <p class="title-copy">© 2026 Kaimon Games · v${VERSION}</p>
     </section>`;
   maybeShowInstall();
   // Family trainers can arrive from sync while this screen is open.
@@ -94,7 +100,7 @@ export function renderMeetPartner(root, go) {
           <button class="starter${pick === id ? ' on' : ''}" role="radio" aria-checked="${pick === id}" data-pick="${id}" style="--rc:${t.color};--rl:${t.light}">
             <span class="starter-art">${creatureArt(s)}</span>
             <span class="starter-name">${s.name}</span>
-            <span class="type-tag" style="--rc:${t.color}">${t.name}</span>
+            <span class="type-tag" style="--rc:${t.color}">${typeIcon(s.type)}${t.name}</span>
             <span class="starter-note">${STARTER_INFO[id]}</span>
           </button>`; }).join('')}
       </div>

@@ -14,18 +14,23 @@ import { sfx, setSound, unlock } from '../core/sound.js';
 import { ballIcon } from './home.js';
 import { teamSheet } from './teamPicker.js';
 import { avatarSVG, trainerLook } from './avatars.js';
-import { trainerArt, CHAMP_LINES } from './trainerArt.js';
+import { trainerArt, trainerFull, CHAMP_LINES } from './trainerArt.js';
+import { sceneSrc, cssUrl, sceneKey, fxSrc, typeIcon } from '../core/assets.js';
+import { quick } from '../core/prefs.js';
 import { limitReached } from '../core/playtime.js';
 import { startMusic, stopMusic, setPinch } from '../core/music.js';
 import { $, on, esc, sheet, wait, reducedMotion, soundButton } from './dom.js';
 
+// Special hit-back moves for the big opponents. Papazilla lifts.
+const FOE_MOVES = { papa: 'Dumbbell Drop', legend: 'Hundred Blast', mythic: 'Dream Burst' };
+
 const hpBar = (who) => `<div class="hp hp-${who}"><div class="hp-top"><span class="hp-name"></span><span class="hp-dots"></span></div><div class="hp-bar"><span></span></div><span class="hp-num"></span></div>`;
 
-export function renderBattle(root, go, { kind = 'champ', table = 1 } = {}) {
+export function renderBattle(root, go, { kind = 'champ', table = 1, grunt } = {}) {
   const p = active();
   setSound(p.settings.sound);
   unlock();
-  const opp = opponent(p, kind, table);
+  const opp = opponent(p, kind, table, grunt);
   let mine = myTeam(p);
   const pool = factsForTables(opp.tables);
   const useVoice = p.settings.voice && voiceSupported();
@@ -38,6 +43,8 @@ export function renderBattle(root, go, { kind = 'champ', table = 1 } = {}) {
   root.style.setProperty('--rc', t.color);
   root.style.setProperty('--rl', t.light);
   root.style.setProperty('--ri', t.ink);
+  // The arena is the place itself: the Gym Leader's region, or Papa's Gym for Team Papa.
+  root.style.setProperty('--scene', cssUrl(sceneSrc(sceneKey({ kind, table: opp.table }))));
 
   const introLine = kind === 'champ' ? CHAMP_LINES[opp.table] : kind === 'boss' ? dadJoke('boss') : dadJoke('appear');
 
@@ -61,7 +68,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1 } = {}) {
           <div class="overlay intro">
             <div class="intro-card">
               <button class="icon-btn intro-x" data-leave aria-label="Not now, go back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6 L18 18 M18 6 L6 18" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg></button>
-              <div class="intro-av">${trainerArt(opp)}</div>
+              <div class="intro-body">${trainerFull(opp, 'talking')}</div>
               <p class="intro-title">${esc(opp.title)}${opp.rematch ? ' <span class="new-tag">Rematch</span>' : ''}</p>
               <h2>${esc(opp.name)}</h2>
               <p class="speech intro-speech">${esc(introLine)}</p>
@@ -131,6 +138,21 @@ export function renderBattle(root, go, { kind = 'champ', table = 1 } = {}) {
     setTimeout(() => n.remove(), 1200);
   }
   const anim = async (node, cls, ms) => { node.classList.remove(cls); void node.offsetWidth; node.classList.add(cls); await wait(ms); node.classList.remove(cls); };
+  // A type attack lands on the target: fire, water, a dumbbell for Papazilla, and so on.
+  function hitFx(target, type, big = false) {
+    if (reducedMotion()) return;
+    const r = target.getBoundingClientRect(), a = el.arena.getBoundingClientRect();
+    const im = document.createElement('img');
+    im.className = 'atk-fx' + (big ? ' big' : '') + (quick(p) ? ' quick' : '');
+    im.src = fxSrc('attack-' + type);
+    im.alt = '';
+    const size = r.width * (big ? 1.5 : 1.15);
+    im.style.width = im.style.height = size + 'px';
+    im.style.left = (r.left - a.left + r.width / 2 - size / 2) + 'px';
+    im.style.top = (r.top - a.top + r.height / 2 - size / 2) + 'px';
+    el.fx.appendChild(im);
+    setTimeout(() => im.remove(), 900);
+  }
 
   // ---------- power meter ----------
   function startPower() {
@@ -193,7 +215,10 @@ export function renderBattle(root, go, { kind = 'champ', table = 1 } = {}) {
       const me = mine[S.me], foe = opp.team[S.foe];
       const hit = attack(me, pw, S.streak);
       el.msg.textContent = hit.special ? `${powerLabel(pw)}! ${me.species.name} used ${moveName(me.species)}!` : `${powerLabel(pw)}! ${me.species.name} attacks!`;
-      await anim(el.meMon, 'lunge', 320);
+      const lunge = anim(el.meMon, 'lunge', quick(p) ? 200 : 320);
+      await wait(quick(p) ? 90 : 150);
+      hitFx(el.foeMon, me.species.type, hit.special || hit.crit);
+      await lunge;
       hit.crit ? sfx.crit() : sfx.hit();
       foe.hp -= hit.dmg;
       popNumber(el.foeMon, '-' + hit.dmg, hit.crit ? 'crit' : '');
@@ -201,7 +226,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1 } = {}) {
       drawHp(el.foeHp, opp.team, S.foe, true);
       if (S.foe === opp.team.length - 1 && foe.hp > 0 && foe.hp / foe.max < 0.4) setPinch(true);
       if (hit.crit) el.msg.textContent = hit.special ? `${moveName(me.species)}! Critical hit!` : 'Critical hit!';
-      await wait(650);
+      await wait(quick(p) ? 380 : 650);
       if (foe.hp <= 0) {
         sfx.faint();
         el.foeMon.classList.add('faint');
@@ -224,8 +249,11 @@ export function renderBattle(root, go, { kind = 'champ', table = 1 } = {}) {
       const foe = opp.team[S.foe], me = mine[S.me];
       el.qcard.classList.add('wrong');
       el.q.innerHTML = `<span>${a}</span><span class="times">×</span><span>${b}</span><span class="eq">=</span><span class="ans">${ans}</span>`;
-      el.msg.textContent = `${foe.species.name} hits back!`;
-      await anim(el.foeMon, 'lunge-foe', 320);
+      el.msg.textContent = FOE_MOVES[foe.species.type] ? `${foe.species.name} used ${FOE_MOVES[foe.species.type]}!` : `${foe.species.name} hits back!`;
+      const back = anim(el.foeMon, 'lunge-foe', 320);
+      await wait(150);
+      hitFx(el.meMon, foe.species.type, foe.species.type === 'papa');
+      await back;
       sfx.ouch();
       me.hp -= HIT_BACK;
       popNumber(el.meMon, '-' + HIT_BACK, 'mine');
@@ -283,8 +311,8 @@ export function renderBattle(root, go, { kind = 'champ', table = 1 } = {}) {
     ov.className = 'overlay result ' + (won ? 'won' : 'lost');
     ov.innerHTML = `
       <div class="intro-card">
-        <div class="intro-av">${trainerArt(opp)}</div>
-        <h2>${won ? 'You won!' : (kind === 'champ' ? 'So close!' : 'Team Papa got you this time')}</h2>
+        <div class="intro-body">${trainerFull(opp, won ? 'lost' : 'won')}</div>
+        <h2>${won ? 'You won!' : (kind === 'champ' ? 'So close!' : kind === 'boss' ? 'Boss Papa got you this time' : 'Team Papa got you this time')}</h2>
         <p class="speech intro-speech">${esc(line)}</p>
         <p class="result-stats"><strong>${S.correct}/${S.answered}</strong> right · best streak <strong>${S.best}</strong>${bonusXP ? ` · <strong>+${bonusXP} XP</strong> win bonus` : ''}</p>
         ${reward ? `<p class="result-reward">${ballIcon(reward.ball)} You got a ${BALLS[reward.ball].name}!</p>` : ''}
@@ -317,8 +345,8 @@ export function renderBattle(root, go, { kind = 'champ', table = 1 } = {}) {
       sfx.caught();
       ov.querySelector('.intro-card').innerHTML = `
         <div class="mythic-arrive caught">${creatureArt(m)}</div>
-        <h2>You caught the mythic Kaimon!</h2>
-        <p>Kaidex #${m.num}, the very last page. Some say a trainer named Kai dreamed it up.</p>
+        <h2>You caught Kairo!</h2>
+        <p>The mythic Kaimon, Kaidex #${String(m.num).padStart(3, '0')}. Some say a trainer named Kai dreamed it up.</p>
         <button class="btn-chunky btn-primary" data-dex>See it in the Kaidex</button>`;
       on(ov, 'click', '[data-dex]', () => go('kaidex'));
     });

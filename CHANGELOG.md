@@ -2,6 +2,24 @@
 
 All notable changes. Versioning: `0.MINOR.0` marks a roadmap phase, `0.x.PATCH` is any shipped change a player or parent can notice, and `1.0.0` is the public launch. See "Versioning" in CLAUDE.md. The in-app version history (Grown-ups > What's new) reads from `js/data/changelog.js`; keep both in sync. Each release is tagged in git as `vX.Y.Z`.
 
+## v0.5.0 (2026-11-15) The art is in
+
+Roadmap milestone v0.5: art production.
+
+- All 60 Kaimon now have their finished anime art, with real shiny colors (a gold ring turns behind shinies) and dark navy silhouettes in the Kaidex.
+- Kai's mythic now has a name: Kairo, #059. Its future form, Kairos, is #060. It stays hidden until you spot it flying past, and Kairo evolves into it a year after you catch it.
+- A new title screen with the Kaimon Multiply logo, Kai and the three starters.
+- Every region, Papa's Gym and the Training Grounds have their own place. Practice cards show the region behind the wild Kaimon, and battles happen right there.
+- Gym Leaders, Team Papa and Boss Papa have full anime art. They talk in their intro and react when they win or lose.
+- New ball art that gets cooler as it gets stronger: blue Capture, emerald Super, gold Mega and a prismatic diamond Legend Ball. Balls pop open and pull the Kaimon in when you throw.
+- Attacks have effects for every type. Papazilla's special is Dumbbell Drop.
+- New art for badges, medals, type icons, items and the card back. Your first card is dealt face down from the deck.
+- Quick mode in the Menu: shorter catches and battle moves, so you get more cards. A tap also skips any throw.
+- Kaizo helps out: it shows up for tricks, nap time, the practice summary and more.
+- New app icon. Installed apps on iPhone and iPad get a one-time note explaining how to get it, and when it's safer to keep the old one.
+- Team Papa grunts now have names that match their looks.
+- Art downloads in the background and stays saved, so updates only fetch what changed and everything works offline.
+
 ## v0.3.45 (2026-11-15) Tidier battle screen
 
 - The battle screen now sizes itself to fit, so the question never covers the HP boxes and the counting row after a wrong answer always shows, even on small iPhones.

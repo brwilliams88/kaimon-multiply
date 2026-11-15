@@ -1,11 +1,11 @@
 import { active, save } from '../core/store.js';
-import { regionOf, TYPES, byId, MYTHIC_ID } from '../data/creatures.js';
+import { regionOf, TYPES, byId, MYTHIC_ID, FUTURE_ID } from '../data/creatures.js';
 import { creatureArt, shinyStar } from '../core/art.js';
 import { factsForTables, pickNext, answerOf, parseFact, hintLadder, trickFor, levelRank, LEVEL_LABEL, tableTier } from '../core/facts.js';
 import { answer, seen, caught as catchIt, escaped, ball as giveBall, sighting, session } from '../core/actions.js';
 import { syncNow } from '../core/sync.js';
 import { pickEncounter, ballForStreak, rollCatch, mythicCameo, BALLS, dexState } from '../core/game.js';
-import { powerFor, powerLabel } from '../core/battle.js';
+import { powerFor, powerLabel, GRUNTS } from '../core/battle.js';
 import { dadJoke } from '../data/dadjokes.js';
 import { trainerArt } from './trainerArt.js';
 import { limitReached } from '../core/playtime.js';
@@ -14,6 +14,8 @@ import { voiceSupported, listen, stop as stopVoice } from '../core/voice.js';
 import { sfx, setSound } from '../core/sound.js';
 import { ballIcon, medal } from './home.js';
 import { avatarSVG, trainerLook } from './avatars.js';
+import { ballSrc, sceneSrc, cssUrl, sceneKey, uiImg, itemImg, fxSrc, CARD_BACK } from '../core/assets.js';
+import { quick } from '../core/prefs.js';
 import { $, on, esc, sheet, wait, toast, soundButton } from './dom.js';
 
 export function renderPlay(root, go, { table }) {
@@ -40,6 +42,7 @@ export function renderPlay(root, go, { table }) {
       <div class="play-body">
         <div class="stage">
           <div class="mythic-fly" aria-hidden="true">${creatureArt(byId(MYTHIC_ID), { mode: 'seen' })}</div>
+          <div class="deck" aria-hidden="true"><i></i><i></i></div>
           <div class="card3d"><div class="card-inner">
             <div class="face front"></div>
             <div class="face back"></div>
@@ -120,14 +123,34 @@ export function renderPlay(root, go, { table }) {
     root.style.setProperty('--rc', t.color);
     root.style.setProperty('--rl', t.light);
     root.style.setProperty('--ri', t.ink);
+    root.style.setProperty('--scene', cssUrl(sceneSrc(sceneKey({ table: a }))));
     el.front.innerHTML = `
       <div class="card-head"><span>${region.name}</span><span class="card-type">${t.name}</span></div>
       <div class="card-q"><span>${a}</span><span class="times">×</span><span>${b}</span></div>
       <div class="card-wild${lingering ? ' stay' : ''}"><div class="wild-art">${creatureArt(species)}</div><p>${lingering ? `<strong>${esc(species.name)}</strong> is still here!` : `A wild <strong>${esc(species.name)}</strong> appeared!${known ? '' : ' <span class="wild-new">New!</span>'}`}</p></div>
       ${beltHTML(species)}`;
     el.front.classList.toggle('has-belt', !!el.front.querySelector('.belt'));
-    el.back.innerHTML = '';
-    flip(false);
+    el.stage.dataset.left = Math.max(0, Math.min(2, S.length - S.n - 1));
+    if (S.n === 0 && !S.dealt && !quick(p)) {
+      // The first card is dealt face down (the Kaimon card back), then flips up.
+      S.dealt = true;
+      el.back.innerHTML = `<img class="cover-art" src="${CARD_BACK}" alt="" draggable="false">`;
+      el.back.classList.add('cover');
+      el.inner.classList.add('no-anim', 'flipped', 'back-up');
+      void el.inner.offsetWidth;
+      el.inner.classList.remove('no-anim');
+      el.stage.classList.add('dealing');
+      setTimeout(() => {
+        flip(false);
+        S.shownAt = performance.now();
+        el.stage.classList.remove('dealing');
+        setTimeout(() => { el.back.classList.remove('cover'); if (el.back.querySelector('.cover-art')) el.back.innerHTML = ''; }, 320);
+      }, 560);
+    } else {
+      el.back.classList.remove('cover');
+      el.back.innerHTML = '';
+      flip(false);
+    }
     setInput('');
     el.hint.textContent = '';
     el.val.dataset.ph = '?';
@@ -154,14 +177,19 @@ export function renderPlay(root, go, { table }) {
   }
 
   async function maybeMythic() {
-    if (!mythicCameo(p)) return;
+    const who = mythicCameo(p);
+    if (!who) return;
     await wait(900);
     if (S.phase !== 'ask') return;
-    sighting(p);
+    const future = who === 'kairos';
+    sighting(p, future);
     save();
+    el.fly.innerHTML = creatureArt(byId(future ? FUTURE_ID : MYTHIC_ID), { mode: 'seen' });
+    el.fly.classList.toggle('future', future);
     el.fly.classList.remove('go'); void el.fly.offsetWidth; el.fly.classList.add('go');
     sfx.mythic();
-    if (p.mythic.sightings === 1) setTimeout(() => toast('Something flew past! Check the last page of your Kaidex.', 3800), 1400);
+    if (future && (p.dex[FUTURE_ID]?.seen || 0) === 1) setTimeout(() => toast('Something huge flew past! It looked like it came from the future. Check your Kaidex.', 4200), 1400);
+    else if (!future && p.mythic.sightings === 1) setTimeout(() => toast('Something flew past! Check the last page of your Kaidex.', 3800), 1400);
   }
 
   async function submit(via = 'pad') {
@@ -205,23 +233,28 @@ export function renderPlay(root, go, { table }) {
       save();
       updateStreak();
       el.back.innerHTML = `
-        <div class="card-head"><span>${a} × ${b} = ${ans}</span><span class="head-tags">${fast ? '<span class="card-type fast">Fast</span>' : ''}<span class="xp-chip">+${gained} XP</span></span></div>
+        <div class="card-head"><span>${a} × ${b} = ${ans}</span><span class="head-tags">${fast ? '<span class="card-type fast">Fast</span>' : ''}<span class="xp-chip">${itemImg('xp-star')}+${gained} XP</span></span></div>
         <div class="catch-zone">
           <div class="catch-art">${creatureArt(S.species, { shiny: result?.shiny })}</div>
           <div class="catch-trainer" aria-hidden="true">${avatarSVG(trainerLook(p))}</div>
-          <div class="throw-ball">${ballIcon(ball)}</div>
+          <img class="catch-fx beam" src="${fxSrc('capture-beam')}" alt="" aria-hidden="true">
+          <img class="catch-fx burst" src="${fxSrc('capture-burst')}" alt="" aria-hidden="true">
+          <div class="throw-ball"><img class="ball-svg ball-img" src="${ballSrc(ball)}" alt="" draggable="false"></div>
         </div>
         <p class="catch-msg" aria-live="polite">${powerLabel(pw)} throw! ${BALLS[ball].name}!</p>`;
       flip(true);
-      await animateCatch(roll, result, pw);
+      S.skip = false;
+      await animateCatch(roll, result, pw, ball);
       if (S.levelUps.length && S.levelUps[S.levelUps.length - 1].id === S.fact) {
         const l = S.levelUps[S.levelUps.length - 1];
         sfx.levelUp();
         toast(`${a} × ${b} reached ${LEVEL_LABEL[l.level]}!`);
       }
       S.phase = 'done';
-      // Give a new Kaimon its moment; repeats stay quick but visible.
-      await wait(caught ? (result.isNew ? 2600 : 1500) : 900);
+      // Give a new Kaimon its moment; repeats stay quick but visible. Quick mode
+      // keeps only a short look. A tap moves on at any time.
+      const q = quick(p);
+      await wait(caught ? (result.isNew ? (q ? 1500 : 2400) : (q ? 650 : 1300)) : (q ? 500 : 850));
       if (S.phase === 'done') advance();
     } else {
       S.streak = 0;
@@ -244,8 +277,8 @@ export function renderPlay(root, go, { table }) {
       el.back.innerHTML = `
         <div class="card-head"><span>Not quite</span></div>
         <div class="card-q answer-reveal"><span>${a}</span><span class="times">×</span><span>${b}</span><span class="eq">=</span><span class="ans">${ans}</span></div>
-        <div class="hint-scroll"><p>Count by ${a}s</p><div class="ladder">${hintLadder(S.fact).map((v, i, arr) => `<span class="${i === arr.length - 1 ? 'last' : ''}">${v}</span>`).join('')}</div><p class="trick"><span class="trick-tag">Trick</span> ${esc(trickFor(S.fact))}</p></div>
-        <p class="catch-msg learn-msg">Learn it, and the next one won't get away!</p>`;
+        <div class="hint-scroll"><p>Count by ${a}s</p><div class="ladder">${hintLadder(S.fact).map((v, i, arr) => `<span class="${i === arr.length - 1 ? 'last' : ''}">${v}</span>`).join('')}</div><p class="trick"><span class="trick-tag">${itemImg('hint-lamp')}Trick</span> ${esc(trickFor(S.fact))}</p></div>
+        <p class="catch-msg learn-msg">${uiImg('kaizo-hint', 'learn-buddy')}<span>Learn it, and the next one won't get away!</span></p>`;
       flip(true, 'wrong');
       S.phase = 'learn';
       S.mustType = ans;
@@ -259,32 +292,51 @@ export function renderPlay(root, go, { table }) {
     else { setInput(''); sfx.wrong(); }
   }
 
-  async function animateCatch(roll, result, pw = 0.5) {
+  // The throw: under 2 seconds, about half that in Quick mode, and a tap skips
+  // straight to the result (nap() returns early once S.skip is set).
+  const nap = (ms) => new Promise((res) => {
+    if (S.skip) return res();
+    const t = setTimeout(res, ms);
+    S.wake = () => { clearTimeout(t); res(); };
+  });
+  async function animateCatch(roll, result, pw = 0.5, ball = 'capture') {
     const caught = roll.caught;
     const zone = $('.catch-zone', el.back);
     const msg = $('.catch-msg', el.back);
-    await wait(380);
+    const ballEl = $('.throw-ball img', zone);
+    const q = quick(p);
+    const shakes = q ? Math.min(roll.shakes, 1) : roll.shakes;
+    zone.classList.toggle('quick', q);
+    await nap(q ? 120 : 200);
     sfx.throw();
     zone.style.setProperty('--spin', '-' + (360 + Math.round(pw * 540)) + 'deg');
     zone.classList.add('thrown');
-    await wait(520);
+    await nap(q ? 300 : 420);
+    // The ball pops open and pulls the Kaimon in with a beam of light, then snaps shut.
+    if (ballEl) ballEl.src = ballSrc(ball, true);
     zone.classList.add('absorbed');
-    for (let i = 0; i < roll.shakes; i++) { await wait(380); sfx.wobble(); zone.classList.toggle('wob'); }
-    await wait(roll.shakes ? 360 : 200);
+    await nap(q ? 120 : 220);
+    if (ballEl) ballEl.src = ballSrc(ball);
+    zone.classList.add('shut');
+    for (let i = 0; i < shakes; i++) { await nap(q ? 200 : 260); sfx.wobble(); zone.classList.toggle('wob'); }
+    await nap(shakes ? (q ? 140 : 220) : 120);
+    S.wake = null;
     if (caught) {
       zone.classList.add('caught');
       if (result.shiny) { zone.classList.add('shiny-catch'); setTimeout(() => sfx.shiny(), 700); }
       const s = S.species;
+      const shinyTag = result.shiny ? `<span class="tags"><span class="new-tag shiny-tag">${shinyStar()}Shiny! A rare sparkly one!</span></span>` : '';
       if (result.isNew) {
         sfx.newCatch();
         const hard = s.rarity === 'rare' || s.rarity === 'legendary';
         zone.insertAdjacentHTML('beforeend', `<div class="new-banner" aria-hidden="true"><span class="nb-rays"></span><strong>New Kaimon!</strong><small>${hard ? 'A rare find! ' : ''}#${String(s.num).padStart(3, '0')} added to your Kaidex</small></div>`);
-        msg.innerHTML = `You caught ${esc(s.name)}!${result.shiny ? '<span class="tags"><span class="new-tag shiny-tag">${shinyStar()}Shiny! A rare sparkly one!</span></span>' : ''}`;
+        msg.innerHTML = `You caught ${esc(s.name)}!${shinyTag}`;
       } else {
         sfx.caught();
-        msg.innerHTML = `Caught ${esc(s.name)}!${result.shiny ? '<span class="tags"><span class="new-tag shiny-tag">${shinyStar()}Shiny! A rare sparkly one!</span></span>' : ''}`;
+        msg.innerHTML = `Caught ${esc(s.name)}!${shinyTag}`;
       }
     } else {
+      if (ballEl) ballEl.src = ballSrc(ball, true);
       zone.classList.add('escaped');
       sfx.escape();
       msg.textContent = roll.shakes === 2 ? 'Argh! So close! The answer still counts.' : roll.shakes === 1 ? 'It broke free! The answer still counts.' : 'It popped right out! The answer still counts.';
@@ -310,23 +362,24 @@ export function renderPlay(root, go, { table }) {
     syncNow();
     // Team Papa sometimes jumps out at the end of a practice.
     const ambush = S.answered >= 8 && Math.random() < 0.3 && !limitReached(p);
+    const grunt = 1 + Math.floor(Math.random() * 6);
     const uniq = [];
     for (const c of S.catches) if (!uniq.find((u) => u.id === c.id)) uniq.push(c);
     root.innerHTML = `
       <section class="screen summary">
-        <h1 class="screen-title">Nice work, ${esc(p.name)}!</h1>
+        <div class="sum-hero">${uiImg(S.answered && S.correct / S.answered < 0.6 ? 'kaizo-oops' : 'kaizo-cheer', 'sum-kaizo')}<h1 class="screen-title">${S.answered && S.correct / S.answered < 0.6 ? `Good practice, ${esc(p.name)}!` : `Nice work, ${esc(p.name)}!`}</h1></div>
         <div class="sum-stats">
           <div><strong>${S.correct}/${S.answered}</strong><span>right</span></div>
-          <div><strong>${S.best}</strong><span>best streak</span></div>
-          <div><strong>${S.catches.length}</strong><span>caught</span></div>
-          <div><strong>${S.xp || 0}</strong><span>XP</span></div>
+          <div>${itemImg('streak-flame', 'sum-ic')}<strong>${S.best}</strong><span>best streak</span></div>
+          <div>${ballIcon('capture')}<strong>${S.catches.length}</strong><span>caught</span></div>
+          <div>${itemImg('xp-star', 'sum-ic')}<strong>${S.xp || 0}</strong><span>XP</span></div>
         </div>
         ${newBadges.length ? `<div class="sum-badges">${newBadges.map((b) => `<p>${medal(b.tier)} ${LEVEL_LABEL[b.tier]} medal for the ${b.t}s! You got a Legend Ball.</p>`).join('')}</div>` : ''}
         ${uniq.length ? `<h2 class="section-title">Caught this time</h2><div class="sum-catches">${uniq.map((c) => { const s = byId(c.id); return `<div class="sum-catch">${creatureArt(s, { shiny: c.shiny })}<span>${esc(s.name)}</span>${c.isNew ? '<span class="new-tag">New</span>' : ''}</div>`; }).join('')}</div>` : ''}
         ${S.levelUps.length ? `<h2 class="section-title">Facts you leveled up</h2><div class="sum-levels">${S.levelUps.map((l) => { const [a, b] = parseFact(l.id); return `<span class="lvl lvl-${l.level}">${a} × ${b} · ${LEVEL_LABEL[l.level]}</span>`; }).join('')}</div>` : ''}
         ${ambush ? `<div class="ambush">
-          <span class="ambush-av">${trainerArt({ kind: 'grunt' })}</span>
-          <div class="ambush-text"><strong>A Team Papa grunt jumps out!</strong><p>${esc(dadJoke('appear'))}</p></div>
+          <span class="ambush-av">${trainerArt({ kind: 'grunt', grunt })}</span>
+          <div class="ambush-text"><strong>${esc(GRUNTS[grunt - 1])} jumps out!</strong><p>${esc(dadJoke('appear'))}</p></div>
           <button class="btn-chunky btn-primary" data-ambush>Battle!</button>
         </div>` : ''}
         <div class="sum-actions">
@@ -336,7 +389,7 @@ export function renderPlay(root, go, { table }) {
       </section>`;
     on(root, 'click', '[data-again]', () => go(limitReached(p) ? 'home' : 'play', { table }));
     on(root, 'click', '[data-home]', () => go('home'));
-    on(root, 'click', '[data-ambush]', () => go('battle', { kind: 'grunt' }));
+    on(root, 'click', '[data-ambush]', () => go('battle', { kind: 'grunt', grunt }));
   }
 
   // Input handlers
@@ -350,7 +403,10 @@ export function renderPlay(root, go, { table }) {
     else if (S.input.length < 3) setInput(S.input + v);
     if (S.phase === 'learn' && S.input.length >= String(S.mustType).length) checkRetype();
   });
-  on(root, 'click', '.card3d', () => { if (S.phase === 'done') advance(); });
+  on(root, 'click', '.card3d', () => {
+    if (S.phase === 'done') advance();
+    else if (S.phase === 'result' && !S.skip) { S.skip = true; S.wake?.(); }
+  });
   on(root, 'click', '[data-ball]', (e, b) => {
     e.stopPropagation();
     if (S.phase !== 'ask') return;

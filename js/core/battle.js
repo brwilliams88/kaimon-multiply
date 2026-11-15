@@ -47,7 +47,7 @@ export function myTeam(profile) {
 }
 
 // Opponents. kind: 'champ' (one table), 'grunt' (Team Papa ambush), 'boss' (Boss Papa).
-export function opponent(profile, kind, table) {
+export function opponent(profile, kind, table, grunt) {
   if (kind === 'champ') {
     const r = REGIONS.find((x) => x.table === table);
     const beaten = profile.battles.champs[table] || 0;
@@ -69,10 +69,11 @@ export function opponent(profile, kind, table) {
   }
   const tables = profile.settings.tables.length ? profile.settings.tables : [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
   if (kind === 'grunt') {
+    const g = grunt >= 1 && grunt <= GRUNTS.length ? grunt - 1 : Math.floor(Math.random() * GRUNTS.length);
     const t = pick(tables);
     const s = pick(regional(t).filter((x) => x.stage === 1));
     return {
-      kind, table: t, name: pick(GRUNTS), title: 'Team Papa', rematch: false,
+      kind, table: t, name: GRUNTS[g], grunt: g + 1, title: 'Team Papa', rematch: false,
       team: [{ species: s, hp: 50, max: 50 }],
       tables,
     };
@@ -88,7 +89,8 @@ export function opponent(profile, kind, table) {
   };
 }
 
-export const GRUNTS = ['Grunt Deadlift Dan', 'Grunt Squat Sam', 'Grunt Snatch Sasha', 'Grunt Kettlebell Kev', 'Grunt Burpee Bo', 'Grunt Box Jump Jo'];
+// In the same order as their art (assets/trainers/grunt-1 to grunt-6).
+export const GRUNTS = ['Grunt Squat Sam', 'Grunt Jump Rope Jo', 'Grunt Deadlift Dan', 'Grunt Kettlebell Kat', 'Grunt Med Ball Max', 'Grunt Snatch Sasha'];
 
 // Damage for a right answer.
 export function attack(mine, power, streak) {
@@ -104,7 +106,7 @@ export function attack(mine, power, streak) {
 const MOVES = {
   dragon: 'Gem Beam', fire: 'Flame Burst', leaf: 'Leaf Storm', water: 'Tidal Splash', wind: 'Twister',
   spark: 'Thunder Zap', stone: 'Crystal Crash', frost: 'Blizzard', metal: 'Gear Grinder', shadow: 'Moon Pounce',
-  cosmic: 'Meteor Shower', legend: 'Hundred Blast', papa: 'Dad Joke', mythic: 'Dream Burst',
+  cosmic: 'Meteor Shower', legend: 'Hundred Blast', papa: 'Dumbbell Drop', mythic: 'Dream Burst',
 };
 export const moveName = (s) => MOVES[s.type] || 'Power Move';
 

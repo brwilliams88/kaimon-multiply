@@ -6,9 +6,9 @@ Times tables flashcard game for Kai (8, Blair's son), shared with his friends. I
 - The point is multiplication practice. About 90% of time should be answering cards. Every reward comes from answering. Battles exist only as flashcard battles (every move is an answer). No trading, maps or leaderboards.
 - Original creatures only. Never use Pokémon names, designs, the Poké Ball look, or the word Pokémon anywhere in the app, repo or share text.
 - Kaimon "core" (creatures, balls, Kaidex, trainers) is reusable for future games (Kaimon Divide). Subject logic lives in `js/core/facts.js`.
-- Kai is the hero trainer. Kai's mythic is always the highest Kaidex number (now #059), seen in cameos all game and caught last, after beating Boss Papa. Its hidden future form can appear after 6 months and evolves on its own after a year.
+- Kai is the hero trainer. Kai's mythic line always holds the highest Kaidex numbers: #059 Kairo (id stays `mythic`), seen in cameos all game and caught last, after beating Boss Papa; and #060 Kairos, its future form (id `kairos`), hidden from the Kaidex until spotted. Kairos cameos can start 6 months after a trainer starts, and Kairo evolves into it on its own a year after it is caught.
 - Starters: Kaizo (flagship, Dragon; id stays `kaimo`; renamed from Kaimo on Nov 15, 2026 because it was too close to Kaimon; line: Kaizo, Kaizen, Kaizenith), Kaiko (Fire), Kipbun (Grass). Villains: Boss Papa (trench coat, black flat-brim trucker hat with red P) and Team Papa (white jackets, red P, train at Papa's Gym: squats, deadlifts, snatches, kettlebell swings, never tire flips), with Papazilla as his Kaimon. They always tell kid-friendly dad jokes (js/data/dadjokes.js).
-- Each times table has a Gym Leader who gives a badge (Little Leader Nozomi runs the 1s). Papa's Gym is the final gym (and a CrossFit gym) where Boss Papa battles; the Hundred Tower is where legendaries live. Professor Keith only if Miss Keith agrees.
+- Each times table has a Gym Leader who gives a badge (Little Leader Nozomi runs the 1s). Papa's Gym is the final gym (and a CrossFit gym) where Boss Papa battles; the Hundred Tower is where legendaries live. Kai's teacher appears as Teacher K (never her real name), and only if Miss Keith agrees. Her art is ready but kept out of the public repo until then. Proposed role: the mentor who gives the buddy, teaches the tricks on wrong answers, gives the Good Work Stamp and runs a weekly Pop Quiz battle.
 - Kaidex data is keyed by species id, never by number.
 - The grown-ups area is behind a parent PIN. The Good Work Stamp lives there.
 - Long-term play: fact levels need correct, fast answers on separate days (Bronze 2, Silver 5, Gold 10, Star 20).
@@ -32,4 +32,6 @@ Times tables flashcard game for Kai (8, Blair's son), shared with his friends. I
 - Bump `VERSION` and add an entry in `js/data/changelog.js` and `CHANGELOG.md` for every release.
 - Run `node tools/gen-sw.mjs` before committing so offline caching picks up changes.
 - Tag releases `vX.Y.Z`. Test at iPhone (390x844), iPad portrait (820x1180) and landscape (1180x820).
-- Art: approved images go in `assets/kaimon/NNN.webp` and their numbers in `REAL_ART` in `js/core/art.js`.
+- Art: originals live on Blair's Mac in ~/kaimon-art/final (never in the repo). Web copies are WebP in `assets/`: `kaimon/NNN.webp` (shiny/ and mega/ beside it), `trainers/<id>/{base,talking,won,lost,face}.webp`, `balls/<kind>-{closed,open}.webp`, `badges/N.webp`, `items/`, `types/`, `fx/`, `ui/`, `scenes/` (region number, `papa`, `tower`, `training`; `thumb/` copies), `title/`, `brand/`. File names are only built in `js/core/assets.js` and `js/core/art.js`.
+- Ball tiers get cooler as they get stronger: Capture blue, Super emerald and white, Mega gold, Legend prismatic diamond. Never red-and-white or red-over-blue.
+- The service worker keeps art in its own `kaimon-art` cache keyed by content hash, so updates only download changed art.
