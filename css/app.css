@@ -952,3 +952,16 @@ button.balls-row:hover { background: rgba(20, 33, 61, .06); }
 .sheet-back { display: inline-flex; align-items: center; gap: 2px; align-self: flex-start; margin: -4px 0 6px -6px; padding: 6px 10px 6px 4px; border: 0; background: none; font: inherit; font-weight: 700; font-size: 17px; color: #1E6FD9; cursor: pointer; border-radius: 10px; }
 .sheet-back svg { width: 20px; height: 20px; }
 .sheet-back:active { background: #EEF2F8; }
+
+/* v0.3.23 balls in one neat row */
+.partner { grid-template-areas: 'art info' 'balls balls' 'play play'; }
+button.balls-row { grid-area: balls; display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 6px; margin: 0; padding: 8px 6px; width: 100%; background: #F4F7FB; border: 2px solid #E3E9F2; border-radius: 16px; }
+button.balls-row:hover { background: #EDF2F9; }
+.balls-row .ball-count { justify-content: center; gap: 5px; font-size: 18px; font-variant-numeric: tabular-nums; }
+.balls-row .ball-svg { width: 28px; height: 28px; }
+@media (min-width: 760px) {
+  .partner { grid-template-areas: 'art info play' 'art balls play'; grid-template-rows: 1fr auto; }
+  .partner-info { align-self: end; }
+  .partner { grid-template-columns: 170px minmax(0, 1fr) 220px; }
+  button.balls-row { grid-auto-columns: 1fr; gap: 4px; padding: 8px 10px; align-self: start; max-width: 380px; }
+}

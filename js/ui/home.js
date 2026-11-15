@@ -37,14 +37,14 @@ export function renderHome(root, go, params = {}) {
             <p class="partner-name">${partner.species.name}<span class="partner-tag">Buddy</span><span class="lv-tag">Lv ${partner.level}</span></p>
             <div class="bar xp-bar" role="progressbar" aria-label="XP to the next level" aria-valuemin="0" aria-valuemax="${partner.need}" aria-valuenow="${partner.into}"><span style="width:${Math.round((partner.into / partner.need) * 100)}%"></span></div>
             <p class="partner-note">${partner.need - partner.into} XP to Lv ${partner.level + 1}. ${partner.evolveAt ? `Evolves at Lv ${partner.evolveAt}!` : 'Fully evolved!'}</p>
-            <button class="balls-row" data-balls aria-label="Your balls. Tap to learn how to use them.">
+          </div>
+          <button class="balls-row" data-balls aria-label="Your balls. Tap to learn how to use them.">
               <span class="ball-count" title="Capture Balls">${ballIcon('capture')}∞</span>
               <span class="ball-count" title="Super Balls">${ballIcon('super')}${p.balls.super}</span>
               <span class="ball-count" title="Mega Balls">${ballIcon('mega')}${p.balls.mega}</span>
               <span class="ball-count" title="Legend Balls">${ballIcon('legend')}${p.balls.legend}</span>
               ${p.items.snack ? `<span class="ball-count" title="Power Snacks">${snackIcon()}${p.items.snack}</span>` : ''}
             </button>
-          </div>
           <button class="btn-chunky btn-primary btn-xl play-btn" data-play="mix"><span>Practice</span><small>Mix of every table</small></button>
         </div>
 

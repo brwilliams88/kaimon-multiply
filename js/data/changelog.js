@@ -1,7 +1,15 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.3.22';
+export const VERSION = '0.3.23';
 
 export const CHANGELOG = [
+  {
+    version: '0.3.23',
+    date: '2026-11-14',
+    title: 'Balls in one neat row',
+    items: [
+      'Your balls and snacks on the home card now sit in one evenly spaced row under your Buddy on phones, and beside it on iPad.',
+    ],
+  },
   {
     version: '0.3.22',
     date: '2026-11-14',
