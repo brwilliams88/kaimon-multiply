@@ -2,6 +2,10 @@
 
 All notable changes. Versioning: `0.MINOR.0` marks a roadmap phase, `0.x.PATCH` is any shipped change a player or parent can notice, and `1.0.0` is the public launch. See "Versioning" in CLAUDE.md. The in-app version history (Grown-ups > What's new) reads from `js/data/changelog.js`; keep both in sync. Each release is tagged in git as `vX.Y.Z`.
 
+## v0.3.10 (2026-11-14) Back out of a battle
+
+- Battle intro overlay: close button, Not now link, backdrop tap and Escape all return home before the battle starts.
+
 ## v0.3.9 (2026-11-14) Install help
 
 - `js/ui/install.js`: detects iPhone, iPad (including iPadOS desktop mode), Android, Chromebook and computer; captures `beforeinstallprompt` for a real Install button on Chrome; `display-mode: standalone` / `navigator.standalone` hides it inside the installed app. Shown once per browser (`kaimon.installSeen`).

@@ -1,7 +1,16 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.3.9';
+export const VERSION = '0.3.10';
 
 export const CHANGELOG = [
+  {
+    version: '0.3.10',
+    date: '2026-11-14',
+    title: 'Back out of a battle',
+    items: [
+      'The Gym Leader card before a battle now has an X and a Not now button.',
+      'Tapping outside the card, or pressing Esc, also goes back.',
+    ],
+  },
   {
     version: '0.3.9',
     date: '2026-11-14',

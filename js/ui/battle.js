@@ -58,6 +58,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1 } = {}) {
           <div class="fx" aria-hidden="true"></div>
           <div class="overlay intro">
             <div class="intro-card">
+              <button class="icon-btn intro-x" data-leave aria-label="Not now, go back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6 L18 18 M18 6 L6 18" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg></button>
               <div class="intro-av">${trainerArt(opp)}</div>
               <p class="intro-title">${esc(opp.title)}${opp.rematch ? ' <span class="new-tag">Rematch</span>' : ''}</p>
               <h2>${esc(opp.name)}</h2>
@@ -68,6 +69,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1 } = {}) {
                 <span class="team-row">${opp.team.map((m) => `<span class="mini">${creatureArt(m.species, { mode: 'seen' })}</span>`).join('')}</span>
               </div>
               <button class="btn-chunky btn-primary btn-xl" data-start>Battle!</button>
+              <button class="link-btn" data-leave>Not now</button>
             </div>
           </div>
         </div>
@@ -329,6 +331,9 @@ export function renderBattle(root, go, { kind = 'champ', table = 1 } = {}) {
     anim(el.meMon, 'enter', 500);
     next();
   });
+  // Back out before the battle starts: X, Not now, tapping outside the card, or Esc.
+  on(root, 'click', '[data-leave]', () => { sfx.tap(); go('home'); });
+  el.intro.addEventListener('click', (e) => { if (e.target === el.intro) go('home'); });
   on(root, 'click', '[data-k]', (e, k) => {
     const v = k.dataset.k;
     if (v === 'go') return submit('pad');
@@ -366,6 +371,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1 } = {}) {
     if (!document.body.contains(root.querySelector('.battle'))) { document.removeEventListener('keydown', onKey); return; }
     if (document.querySelector('.sheet-wrap')) return;
     if (S.phase === 'intro' && e.key === 'Enter') { e.preventDefault(); $('[data-start]', root)?.click(); return; }
+    if (S.phase === 'intro' && e.key === 'Escape') { go('home'); return; }
     if (/^[0-9]$/.test(e.key)) $(`[data-k="${e.key}"]`, root)?.click();
     else if (e.key === 'Backspace') $('[data-k="del"]', root)?.click();
     else if (e.key === 'Enter') { e.preventDefault(); submit('keyboard'); }
