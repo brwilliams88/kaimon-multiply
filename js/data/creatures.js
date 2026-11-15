@@ -8,7 +8,7 @@ export const TYPES = {
   leaf:   { name: 'Grass',   color: '#3FA34D', ink: '#1E5E28', light: '#DDF3E0' },
   water:  { name: 'Water',  color: '#2D7FF9', ink: '#123F8C', light: '#DCEBFF' },
   fire:   { name: 'Fire',   color: '#E8492A', ink: '#7A1E0C', light: '#FFE1D8' },
-  wind:   { name: 'Wind',   color: '#59C3C3', ink: '#1F6363', light: '#DDF5F5' },
+  wind:   { name: 'Flying',   color: '#59C3C3', ink: '#1F6363', light: '#DDF5F5' },
   spark:  { name: 'Electric',  color: '#F2B705', ink: '#6B5000', light: '#FFF3C4' },
   stone:  { name: 'Rock',  color: '#9C6B3F', ink: '#4D3216', light: '#F1E4D6' },
   frost:  { name: 'Ice',  color: '#7FD4F5', ink: '#1B5C78', light: '#E0F5FD' },

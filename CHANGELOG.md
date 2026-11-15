@@ -2,6 +2,10 @@
 
 All notable changes. Versioning: `0.MINOR.0` marks a roadmap phase, `0.x.PATCH` is any shipped change a player or parent can notice, and `1.0.0` is the public launch. See "Versioning" in CLAUDE.md. The in-app version history (Grown-ups > What's new) reads from `js/data/changelog.js`; keep both in sync. Each release is tagged in git as `vX.Y.Z`.
 
+## v0.3.41 (2026-11-15) Flying type
+
+- Skyhigh Cliffs Kaimon are now Flying type (it was Wind).
+
 ## v0.3.40 (2026-11-15) New type names
 
 - Type names are now Grass (Mossy Meadow), Electric (Thunder Plains), Rock (Crystal Caves), Ice (Frostpeak) and Steel (Gearworks). Shadow and Cosmic stay.

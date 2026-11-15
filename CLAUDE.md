@@ -20,7 +20,7 @@ Times tables flashcard game for Kai (8, Blair's son), shared with his friends. I
 - UI polish bar is high: crisp typography, a deliberate palette, consistent spacing, real motion design. Every screen should look professionally designed.
 
 ## Style
-- Chunky sticker look: navy ink outlines (#14213D), press-down buttons, Fredoka font (self-hosted), sky field (#CFE8FF). Type colors per region in `js/data/creatures.js`. Type names: Dragon, Grass, Water, Fire, Wind, Electric, Rock, Ice, Steel, Shadow, Cosmic (keys stay leaf/spark/stone/frost/metal).
+- Chunky sticker look: navy ink outlines (#14213D), press-down buttons, Fredoka font (self-hosted), sky field (#CFE8FF). Type colors per region in `js/data/creatures.js`. Type names: Dragon, Grass, Water, Fire, Flying, Electric, Rock, Ice, Steel, Shadow, Cosmic (keys stay leaf/spark/stone/frost/metal/wind).
 - Writing: plain, short, kid-readable. No em dashes.
 
 ## Versioning

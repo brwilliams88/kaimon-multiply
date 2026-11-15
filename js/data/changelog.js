@@ -1,7 +1,15 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.3.40';
+export const VERSION = '0.3.41';
 
 export const CHANGELOG = [
+  {
+    version: '0.3.41',
+    date: '2026-11-15',
+    title: 'Flying type',
+    items: [
+      'Skyhigh Cliffs Kaimon are now Flying type (it was Wind).',
+    ],
+  },
   {
     version: '0.3.40',
     date: '2026-11-15',
