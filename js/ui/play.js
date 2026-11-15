@@ -366,17 +366,28 @@ export function renderPlay(root, go, { table }) {
     sh.el.querySelector('[data-stop]').addEventListener('click', () => { sh.close(); stopVoice(); session(p, Date.now() - S.startedAt, S.best); save(); syncNow(); go('home'); });
   });
   if (el.mic) {
+    const label = el.mic.querySelector('span');
+    let bubbleTimer = 0;
+    const bubble = (msg) => {
+      let b = root.querySelector('.voice-bubble');
+      if (!b) { b = document.createElement('div'); b.className = 'voice-bubble'; b.setAttribute('role', 'status'); root.querySelector('.pad-wrap').appendChild(b); }
+      b.textContent = msg;
+      b.classList.remove('show'); void b.offsetWidth; b.classList.add('show');
+      clearTimeout(bubbleTimer);
+      bubbleTimer = setTimeout(() => b.classList.remove('show'), 3200);
+    };
     el.mic.addEventListener('click', () => {
       if (S.phase === 'done') return advance();
       if (S.listening) { stopVoice(); return; }
       S.listening = true;
       el.mic.classList.add('on');
-      el.hint.textContent = 'Listening...';
+      label.textContent = 'Listening…';
+      root.querySelector('.voice-bubble')?.classList.remove('show');
       listen({
         onPartial: (n) => setInput(String(n)),
-        onResult: (n) => { setInput(String(n)); el.hint.textContent = ''; if (S.phase === 'learn') checkRetype(); else submit('voice'); },
-        onError: (msg) => { el.hint.textContent = msg; },
-        onEnd: () => { S.listening = false; el.mic.classList.remove('on'); if (el.hint.textContent === 'Listening...') el.hint.textContent = ''; },
+        onResult: (n) => { setInput(String(n)); if (S.phase === 'learn') checkRetype(); else submit('voice'); },
+        onError: (msg, code) => bubble(code === 'not-allowed' || code === 'service-not-allowed' ? 'The mic is blocked. Use the number pad.' : code === 'no-speech' ? 'I didn’t hear a number. Try again!' : msg.startsWith('I didn’t catch') ? 'I didn’t catch a number. Try again.' : 'Voice didn’t work. Use the number pad.'),
+        onEnd: () => { S.listening = false; el.mic.classList.remove('on'); label.textContent = 'Say it'; },
       });
     });
   }

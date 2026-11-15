@@ -1,7 +1,16 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.3.29';
+export const VERSION = '0.3.30';
 
 export const CHANGELOG = [
+  {
+    version: '0.3.30',
+    date: '2026-11-14',
+    title: 'Cleaner voice messages',
+    items: [
+      'Say it now shows Listening… on the button itself.',
+      'If the mic can\'t hear a number, a short bubble pops up above the answer box and fades away, instead of small text hiding under the big numbers.',
+    ],
+  },
   {
     version: '0.3.29',
     date: '2026-11-14',
