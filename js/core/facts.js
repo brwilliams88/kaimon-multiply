@@ -95,3 +95,25 @@ export function hintLadder(id) {
   const [a, b] = parseFact(id);
   return Array.from({ length: b }, (_, i) => a * (i + 1));
 }
+
+// A short "how to think about it" trick for a fact, using the friendliest factor.
+// Shown after a miss, next to the counting ladder.
+const TRICK_ORDER = [1, 10, 2, 5, 9, 4, 3, 8, 6, 7];
+export function trickFor(id) {
+  const [a, b] = parseFact(id);
+  const t = TRICK_ORDER.find((x) => x === a || x === b);
+  const n = t === a ? b : a;
+  const ans = a * b;
+  switch (t) {
+    case 1: return `Anything times 1 stays the same: ${n}.`;
+    case 10: return `Times 10: put a 0 on the end. ${n} becomes ${ans}.`;
+    case 2: return `Times 2 is a double: ${n} + ${n} = ${ans}.`;
+    case 5: return `Times 5 is half of times 10. ${n} × 10 = ${n * 10}, and half is ${ans}.`;
+    case 9: return `Times 9: do times 10, then take away one ${n}. ${n * 10} − ${n} = ${ans}.`;
+    case 4: return `Times 4: double, then double again. ${n} → ${n * 2} → ${ans}.`;
+    case 3: return `Times 3: a double, plus one more ${n}. ${n * 2} + ${n} = ${ans}.`;
+    case 8: return `Times 8: double three times. ${n} → ${n * 2} → ${n * 4} → ${ans}.`;
+    case 6: return `Times 6: times 5, plus one more ${n}. ${n * 5} + ${n} = ${ans}.`;
+    default: return `Times 7: times 5, plus times 2. ${n * 5} + ${n * 2} = ${ans}.`;
+  }
+}

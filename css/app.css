@@ -939,3 +939,11 @@ button.balls-row:hover { background: rgba(20, 33, 61, .06); }
 @keyframes bang { 0% { transform: scale(0) rotate(-20deg); opacity: 0; } 100% { transform: none; opacity: 1; } }
 @keyframes dust { 0% { opacity: 0; transform: translate(var(--dx, -10px), 0) scale(.4); } 30% { opacity: .9; } 100% { opacity: 0; transform: translate(calc(var(--dx, -10px) - 30px), -20px) scale(1.4); } }
 @media (prefers-reduced-motion: reduce) { .card-wild.flee .wild-art .kart { animation: none; opacity: .3; } .flee-dust { display: none; } }
+
+/* v0.3.21 times table tricks */
+.hint-scroll .trick { margin: clamp(4px, 1.4cqh, 10px) 0 0; font-size: clamp(12px, 3.7cqh, 18px); font-weight: 600; line-height: 1.25; color: var(--ink); text-align: left; }
+.trick-tag { display: inline-block; font-size: .8em; font-weight: 700; background: var(--sun); border: 2px solid var(--ink); border-radius: 99px; padding: 0 7px; margin-right: 2px; vertical-align: 1px; }
+@container (max-height: 340px) {
+  .learn-msg { display: none; }
+  .hint-scroll .trick { font-size: 13.5px; }
+}

@@ -1,7 +1,16 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.3.20';
+export const VERSION = '0.3.21';
 
 export const CHANGELOG = [
+  {
+    version: '0.3.21',
+    date: '2026-11-14',
+    title: 'Times table tricks',
+    items: [
+      'After a miss, the card shows a trick for that fact next to the counting ladder, like: Times 9: do times 10, then take away one 8. 80 − 8 = 72.',
+      'Tricks for every table, from doubles for the 2s to double-double for the 4s.',
+    ],
+  },
   {
     version: '0.3.20',
     date: '2026-11-14',

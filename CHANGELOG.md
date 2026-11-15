@@ -2,6 +2,11 @@
 
 All notable changes. Versioning: `0.MINOR.0` marks a roadmap phase, `0.x.PATCH` is any shipped change a player or parent can notice, and `1.0.0` is the public launch. See "Versioning" in CLAUDE.md. The in-app version history (Grown-ups > What's new) reads from `js/data/changelog.js`; keep both in sync. Each release is tagged in git as `vX.Y.Z`.
 
+## v0.3.21 (2026-11-14) Times table tricks
+
+- After a miss, the card shows a trick for that fact next to the counting ladder, like: Times 9: do times 10, then take away one 8. 80 − 8 = 72.
+- Tricks for every table, from doubles for the 2s to double-double for the 4s.
+
 ## v0.3.20 (2026-11-14) Wild Kaimon run away
 
 - A wrong answer spooks the wild Kaimon. It jumps with a !, then dashes off the card in a puff of dust before the card flips to show the answer.

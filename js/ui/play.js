@@ -1,7 +1,7 @@
 import { active, save } from '../core/store.js';
 import { regionOf, TYPES, byId, MYTHIC_ID } from '../data/creatures.js';
 import { creatureArt } from '../core/art.js';
-import { factsForTables, pickNext, answerOf, parseFact, hintLadder, levelRank, LEVEL_LABEL, tableTier } from '../core/facts.js';
+import { factsForTables, pickNext, answerOf, parseFact, hintLadder, trickFor, levelRank, LEVEL_LABEL, tableTier } from '../core/facts.js';
 import { answer, seen, caught as catchIt, escaped, ball as giveBall, sighting, session } from '../core/actions.js';
 import { syncNow } from '../core/sync.js';
 import { pickEncounter, ballForStreak, rollCatch, mythicCameo, BALLS, dexState } from '../core/game.js';
@@ -231,8 +231,8 @@ export function renderPlay(root, go, { table }) {
       el.back.innerHTML = `
         <div class="card-head"><span>Not quite</span></div>
         <div class="card-q answer-reveal"><span>${a}</span><span class="times">×</span><span>${b}</span><span class="eq">=</span><span class="ans">${ans}</span></div>
-        <div class="hint-scroll"><p>Count by ${a}s</p><div class="ladder">${hintLadder(S.fact).map((v, i, arr) => `<span class="${i === arr.length - 1 ? 'last' : ''}">${v}</span>`).join('')}</div></div>
-        <p class="catch-msg">Learn it, and the next one won't get away!</p>`;
+        <div class="hint-scroll"><p>Count by ${a}s</p><div class="ladder">${hintLadder(S.fact).map((v, i, arr) => `<span class="${i === arr.length - 1 ? 'last' : ''}">${v}</span>`).join('')}</div><p class="trick"><span class="trick-tag">Trick</span> ${esc(trickFor(S.fact))}</p></div>
+        <p class="catch-msg learn-msg">Learn it, and the next one won't get away!</p>`;
       el.inner.classList.add('flipped', 'wrong');
       S.phase = 'learn';
       S.mustType = ans;
