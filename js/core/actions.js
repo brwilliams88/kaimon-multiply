@@ -4,6 +4,7 @@
 import { save, deviceId } from './store.js';
 import { applyAnswer, levelOf } from './facts.js';
 import { dayRec } from './playtime.js';
+import { answerXP, XP } from './xp.js';
 import { today } from './store.js';
 
 let counter = 0;
@@ -17,6 +18,7 @@ export function apply(p, ev) {
   const d = ev.d || {};
   switch (ev.k) {
     case 'a':
+      p.xp = (p.xp || 0) + answerXP(levelOf(p.facts[d.f]), !!d.ok, d.ms || 0, p.settings.fastMs || 5000);
       applyAnswer(p, d.f, !!d.ok, d.ms || 0, ev.t);
       p.stats.answers++;
       if (d.ok) p.stats.correct++;
@@ -71,6 +73,7 @@ export function apply(p, ev) {
       b.played++;
       if (d.w) {
         b.wins++;
+        p.xp = (p.xp || 0) + (XP[d.o] || 0);
         if (d.o === 'champ') b.champs[d.tb] = (b.champs[d.tb] || 0) + 1;
         if (d.o === 'boss') b.boss++;
         if (d.o === 'grunt') b.grunts++;

@@ -133,7 +133,7 @@ export function joinFamily(p) {
   p.family = true;
   p.updatedAt = Date.now();
   p.outbox = [];
-  emit(p, 'snap', { facts: p.facts, dex: p.dex, balls: p.balls, items: p.items, stats: p.stats, mythic: p.mythic, battles: p.battles, play: p.play });
+  emit(p, 'snap', { facts: p.facts, dex: p.dex, balls: p.balls, items: p.items, stats: p.stats, mythic: p.mythic, battles: p.battles, play: p.play, xp: p.xp });
   save();
   syncNow();
 }
@@ -146,6 +146,7 @@ export function leaveFamily(p) {
 
 // Snapshot from another device: merge into this trainer.
 export function applySnapshot(p, d) {
+  p.xp = Math.max(p.xp || 0, d.xp || 0);
   for (const [id, r] of Object.entries(d.facts || {})) {
     const cur = p.facts[id] || (p.facts[id] = { a: 0, c: 0, ms: 0, days: [], fastDays: [], lastMiss: 0 });
     cur.a += r.a || 0; cur.c += r.c || 0; cur.ms += r.ms || 0;

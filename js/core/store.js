@@ -33,6 +33,7 @@ export function newProfile(name, avatar, id) {
     mythic: { sightings: 0, lastSeen: 0 },
     battles: newBattles(),
     play: {},
+    xp: 0,
     trophies: [],
     outbox: [],
   };
@@ -54,6 +55,7 @@ function migrate(p) {
   p.mythic = p.mythic || { sightings: 0, lastSeen: 0 };
   p.battles = { ...newBattles(), ...(p.battles || {}) };
   p.play = p.play || {};
+  if (p.xp == null) p.xp = (p.stats?.correct || 0) * 12; // estimate for saves from before XP
   p.trophies = p.trophies || [];
   p.outbox = p.outbox || [];
   p.updatedAt = p.updatedAt || p.createdAt || Date.now();

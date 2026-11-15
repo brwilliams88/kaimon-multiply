@@ -1,7 +1,18 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.3.10';
+export const VERSION = '0.3.11';
 
 export const CHANGELOG = [
+  {
+    version: '0.3.11',
+    date: '2026-11-14',
+    title: 'XP and levels',
+    items: [
+      'Your partner Kaimon now earns XP for every right answer: 10 XP, plus 5 for a fast answer and 5 for a fact you\'re still learning. Battle wins give bonus XP.',
+      'Your partner levels up and evolves at Lv 10 and Lv 20, with a big evolution moment.',
+      'The home screen shows your partner\'s level and XP, and a ? button explains Practice, Regions, Gym battles and XP.',
+      'Table progress is now called medals (Bronze, Silver, Gold, Star), so badges only come from Gym Leaders.',
+    ],
+  },
   {
     version: '0.3.10',
     date: '2026-11-14',

@@ -263,7 +263,9 @@ export function renderBattle(root, go, { kind = 'champ', table = 1 } = {}) {
     stopVoice();
     stopMusic(0.25);
     const reward = won ? rewardFor(p, kind, opp.table) : null;
+    const xpBefore = p.xp || 0;
     recordBattle(p, kind, opp.table, won);
+    const bonusXP = (p.xp || 0) - xpBefore;
     if (reward) giveBall(p, reward.ball, reward.n);
     session(p, Date.now() - S.startedAt, S.best);
     save();
@@ -281,7 +283,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1 } = {}) {
         <div class="intro-av">${trainerArt(opp)}</div>
         <h2>${won ? 'You won!' : (kind === 'champ' ? 'So close!' : 'Team Papa got you this time')}</h2>
         <p class="speech intro-speech">${esc(line)}</p>
-        <p class="result-stats"><strong>${S.correct}/${S.answered}</strong> right · best streak <strong>${S.best}</strong></p>
+        <p class="result-stats"><strong>${S.correct}/${S.answered}</strong> right · best streak <strong>${S.best}</strong>${bonusXP ? ` · <strong>+${bonusXP} XP</strong> win bonus` : ''}</p>
         ${reward ? `<p class="result-reward">${ballIcon(reward.ball)} You got a ${BALLS[reward.ball].name}!</p>` : ''}
         <div class="sheet-actions">
           ${won ? '' : '<button class="btn-chunky btn-primary" data-again>Try again</button>'}

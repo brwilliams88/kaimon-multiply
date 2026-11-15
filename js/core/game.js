@@ -1,3 +1,4 @@
+import { partnerLevel, EVOLVE_AT } from './xp.js';
 // Kaimon core rules: encounters, Capture Balls, catching, partner evolution, mythic cameos.
 import { SPECIES, MYTHIC_ID } from '../data/creatures.js';
 import { tableTier, levelRank, countAtLeast } from './facts.js';
@@ -71,13 +72,18 @@ export function dexCounts(profile) {
 }
 
 // The partner (chosen starter) evolves with total mastery (facts at Silver or higher).
+// Partner evolves by level (XP from right answers). Never goes backwards for
+// trainers who evolved under the old Silver-facts rule.
 export function partnerOf(profile) {
+  const pl = partnerLevel(profile);
   const silver = countAtLeast(profile, 'silver');
-  const stage = silver >= 100 ? 3 : silver >= 30 ? 2 : 1;
-  const next = stage === 1 ? 30 : stage === 2 ? 100 : null;
+  const old = silver >= 100 ? 3 : silver >= 30 ? 2 : 1;
+  const byLevel = pl.level >= EVOLVE_AT[3] ? 3 : pl.level >= EVOLVE_AT[2] ? 2 : 1;
+  const stage = Math.max(old, byLevel);
   const line = profile.starter || 'kaimo';
   const species = SPECIES.find((s) => s.line === line && s.stage === stage);
-  return { species, silver, next };
+  const evolveAt = stage === 1 ? EVOLVE_AT[2] : stage === 2 ? EVOLVE_AT[3] : null;
+  return { species, stage, ...pl, evolveAt };
 }
 
 // Mythic cameo chance per card. Rare at first, more often with badges.

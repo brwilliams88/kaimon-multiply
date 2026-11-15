@@ -1,5 +1,5 @@
 import { active } from '../core/store.js';
-import { REGIONS, TYPES } from '../data/creatures.js';
+import { SPECIES, REGIONS, TYPES } from '../data/creatures.js';
 import { creatureArt } from '../core/art.js';
 import { tableTier, tableProgress, LEVEL_LABEL } from '../core/facts.js';
 import { partnerOf, dexCounts, trainerTitle } from '../core/game.js';
@@ -19,7 +19,6 @@ export function renderHome(root, go, params = {}) {
   const p = active();
   const partner = partnerOf(p);
   const dex = dexCounts(p);
-  const toNext = partner.next ? Math.max(0, partner.next - partner.silver) : 0;
   root.innerHTML = `
     <section class="screen home">
       <header class="topbar">
@@ -38,12 +37,11 @@ export function renderHome(root, go, params = {}) {
       <div class="home-main">
         <div class="partner">
           <div class="partner-art">${creatureArt(partner.species)}</div>
+          <button class="icon-btn help-btn" data-help aria-label="How Kaimon works">?</button>
           <div class="partner-info">
-            <p class="partner-name">${partner.species.name}<span class="partner-tag">Partner</span></p>
-            ${partner.next
-              ? `<div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="${partner.next}" aria-valuenow="${partner.silver}"><span style="width:${Math.min(100, (partner.silver / partner.next) * 100)}%"></span></div>
-                 <p class="partner-note">${toNext} more Silver facts until ${partner.species.name} evolves</p>`
-              : `<p class="partner-note">Fully evolved. Amazing work.</p>`}
+            <p class="partner-name">${partner.species.name}<span class="partner-tag">Partner</span><span class="lv-tag">Lv ${partner.level}</span></p>
+            <div class="bar xp-bar" role="progressbar" aria-label="XP to the next level" aria-valuemin="0" aria-valuemax="${partner.need}" aria-valuenow="${partner.into}"><span style="width:${Math.round((partner.into / partner.need) * 100)}%"></span></div>
+            <p class="partner-note">${partner.need - partner.into} XP to Lv ${partner.level + 1}. ${partner.evolveAt ? `Evolves at Lv ${partner.evolveAt}!` : 'Fully evolved!'}</p>
             <div class="balls-row" aria-label="Special balls">
               <span class="ball-count" title="Super Balls">${ballIcon('super')}${p.balls.super}</span>
               <span class="ball-count" title="Mega Balls">${ballIcon('mega')}${p.balls.mega}</span>
@@ -51,11 +49,11 @@ export function renderHome(root, go, params = {}) {
               ${p.items.snack ? `<span class="ball-count" title="Power Snacks">${snackIcon()}${p.items.snack}</span>` : ''}
             </div>
           </div>
-          <button class="btn-chunky btn-primary btn-xl play-btn" data-play="mix"><span>Practice</span><small>A smart mix of every table</small></button>
+          <button class="btn-chunky btn-primary btn-xl play-btn" data-play="mix"><span>Practice</span><small>Mix of every table</small></button>
         </div>
 
         <h2 class="section-title">Regions</h2>
-        <p class="section-sub">Practice one times table at a time. Each region has its own Kaimon to catch.</p>
+        <p class="section-sub">Pick one times table. Catch the Kaimon that live there and earn its medal, from Bronze to Star.</p>
         <div class="regions">
           ${REGIONS.map((r) => {
             const t = TYPES[r.type];
@@ -71,7 +69,7 @@ export function renderHome(root, go, params = {}) {
         </div>
 
         <h2 class="section-title">Gym battles</h2>
-        <p class="section-sub">Every answer is an attack. Beat each Gym Leader to earn their badge, then face Boss Papa at Papa's Gym, the final gym.</p>
+        <p class="section-sub">Your team battles with your answers. Beat each Gym Leader for their badge and bonus XP, then face Boss Papa at Papa's Gym, the final gym.</p>
         <div class="battles">
           <div class="champs">
             ${REGIONS.filter((r) => p.settings.tables.includes(r.table)).map((r) => {
@@ -124,6 +122,17 @@ export function renderHome(root, go, params = {}) {
     if (bossUnlocked(p)) go('battle', { kind: 'boss' });
     else sheet(`<h2>Papa's Gym</h2><p>The final gym, and a CrossFit gym. Boss Papa only battles trainers with every Gym Leader badge. Come back when you have them all.</p><div class="sheet-actions"><button class="btn-chunky btn-primary" data-close>Okay</button></div>`);
   });
+  on(root, 'click', '[data-help]', () => { unlock(); sfx.tap(); howItWorks(); });
+  // Evolution moment: shown once on this device when the partner reaches a new stage.
+  try {
+    const key = 'kaimon.stage.' + p.id;
+    const seen = +localStorage.getItem(key) || 0;
+    if (seen && partner.stage > seen) {
+      const from = SPECIES.find((s) => s.line === partner.species.line && s.stage === seen);
+      setTimeout(() => { sfx.levelUp(); sheet(`<div class="celebrate evolve"><p class="evo-kicker">What? ${esc(from.name)} is evolving!</p><div class="evo-row"><div class="partner-art">${creatureArt(from)}</div><span class="evo-arrow">›</span><div class="partner-art evo-new">${creatureArt(partner.species)}</div></div><h2>${esc(from.name)} evolved into ${esc(partner.species.name)}!</h2><p>All those right answers paid off. Lv ${partner.level}!</p><button class="btn-chunky btn-primary" data-close>Awesome!</button></div>`); }, 400);
+    }
+    localStorage.setItem(key, partner.stage);
+  } catch {}
   on(root, 'click', '[data-dex]', () => { sfx.tap(); go('kaidex'); });
   on(root, 'click', '[data-switch]', () => { sfx.tap(); go('welcome'); });
   holdButton($('[data-grownups]', root), 1200, () => go('grownups'));
@@ -155,3 +164,16 @@ export function snackIcon() {
 }
 
 export const ribbon = () => `<svg class="ribbon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 13 L5 22 L9 20 L11 23 L12 15 Z M16 13 L19 22 L15 20 L13 23 L12 15 Z" fill="#E8492A" stroke="#14213D" stroke-width="1.6" stroke-linejoin="round"/><circle cx="12" cy="9" r="7" fill="#F2B705" stroke="#14213D" stroke-width="2"/></svg>`;
+
+function howItWorks() {
+  sheet(`<div class="how">
+    <h2>How Kaimon works</h2>
+    <dl>
+      <dt>Practice</dt><dd>A mix of all your times tables. Every right answer can catch a wild Kaimon from any region.</dd>
+      <dt>Regions</dt><dd>One times table at a time. Catch the Kaimon that live in that region, and earn the table's medal: Bronze, Silver, Gold, then Star.</dd>
+      <dt>Gym battles</dt><dd>Your partner and your two strongest Kaimon battle a Gym Leader. Every right answer is an attack. Win their badge, then take on Boss Papa at Papa's Gym.</dd>
+      <dt>XP</dt><dd>Every right answer gives your partner XP: 10 XP, plus 5 for a fast answer and 5 for a fact you're still learning. Battle wins give bonus XP. Your partner evolves at Lv 10 and Lv 20.</dd>
+    </dl>
+    <button class="btn-chunky btn-primary" data-close>Got it</button>
+  </div>`);
+}

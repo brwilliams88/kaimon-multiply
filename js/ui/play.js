@@ -9,6 +9,7 @@ import { powerFor, powerLabel } from '../core/battle.js';
 import { dadJoke } from '../data/dadjokes.js';
 import { trainerArt } from './trainerArt.js';
 import { limitReached } from '../core/playtime.js';
+import { partnerOf } from '../core/game.js';
 import { voiceSupported, listen, stop as stopVoice } from '../core/voice.js';
 import { sfx, setSound } from '../core/sound.js';
 import { ballIcon, medal } from './home.js';
@@ -142,7 +143,12 @@ export function renderPlay(root, go, { table }) {
     const ans = answerOf(S.fact);
     const ok = parseInt(S.input, 10) === ans;
     const [a, b] = parseFact(S.fact);
+    const xp0 = p.xp || 0, pl0 = partnerOf(p);
     const lv = answer(p, S.fact, ok, ms, via);
+    const gained = (p.xp || 0) - xp0;
+    S.xp = (S.xp || 0) + gained;
+    const pl1 = partnerOf(p);
+    if (pl1.level > pl0.level) setTimeout(() => toast(pl1.stage > pl0.stage ? `${pl0.species.name} is evolving! Check the home screen.` : `${pl1.species.name} reached Lv ${pl1.level}!`, 2600), 1400);
     S.answered++;
     S.results = S.results || [];
     S.results[S.n] = ok;
@@ -167,7 +173,7 @@ export function renderPlay(root, go, { table }) {
       save();
       updateStreak();
       el.back.innerHTML = `
-        <div class="card-head"><span>${a} × ${b} = ${ans}</span>${fast ? '<span class="card-type fast">Fast</span>' : ''}</div>
+        <div class="card-head"><span>${a} × ${b} = ${ans}</span><span class="head-tags">${fast ? '<span class="card-type fast">Fast</span>' : ''}<span class="xp-chip">+${gained} XP</span></span></div>
         <div class="catch-zone">
           <div class="catch-art">${creatureArt(S.species, { shiny: result?.shiny })}</div>
           <div class="throw-ball">${ballIcon(ball)}</div>
@@ -268,8 +274,9 @@ export function renderPlay(root, go, { table }) {
           <div><strong>${S.correct}/${S.answered}</strong><span>right</span></div>
           <div><strong>${S.best}</strong><span>best streak</span></div>
           <div><strong>${S.catches.length}</strong><span>caught</span></div>
+          <div><strong>${S.xp || 0}</strong><span>XP</span></div>
         </div>
-        ${newBadges.length ? `<div class="sum-badges">${newBadges.map((b) => `<p>${medal(b.tier)} ${regionOf(b.t).badge}: ${LEVEL_LABEL[b.tier]}! You got a Legend Ball.</p>`).join('')}</div>` : ''}
+        ${newBadges.length ? `<div class="sum-badges">${newBadges.map((b) => `<p>${medal(b.tier)} ${b.t}s medal: ${LEVEL_LABEL[b.tier]}! You got a Legend Ball.</p>`).join('')}</div>` : ''}
         ${uniq.length ? `<h2 class="section-title">Caught this time</h2><div class="sum-catches">${uniq.map((c) => { const s = byId(c.id); return `<div class="sum-catch">${creatureArt(s, { shiny: c.shiny })}<span>${esc(s.name)}</span>${c.isNew ? '<span class="new-tag">New</span>' : ''}</div>`; }).join('')}</div>` : ''}
         ${S.levelUps.length ? `<h2 class="section-title">Facts that leveled up</h2><div class="sum-levels">${S.levelUps.map((l) => { const [a, b] = parseFact(l.id); return `<span class="lvl lvl-${l.level}">${a} × ${b} · ${LEVEL_LABEL[l.level]}</span>`; }).join('')}</div>` : ''}
         ${ambush ? `<div class="ambush">
