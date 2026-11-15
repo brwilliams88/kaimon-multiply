@@ -1,16 +1,18 @@
 // Kaimon species, regions and types. Shared "Kaimon core" data: future subject
 // packs (Divide, etc.) reuse this file. Numbers are Kaidex numbers.
 
+// Type keys (leaf, spark, stone, frost, metal...) are saved data and never change.
+// Only the names players see do: Grass, Electric, Rock, Ice, Steel (Nov 15, 2026).
 export const TYPES = {
   dragon: { name: 'Dragon', color: '#2BB3A3', ink: '#0E5E55', light: '#D5F4F0' },
-  leaf:   { name: 'Leaf',   color: '#3FA34D', ink: '#1E5E28', light: '#DDF3E0' },
+  leaf:   { name: 'Grass',   color: '#3FA34D', ink: '#1E5E28', light: '#DDF3E0' },
   water:  { name: 'Water',  color: '#2D7FF9', ink: '#123F8C', light: '#DCEBFF' },
   fire:   { name: 'Fire',   color: '#E8492A', ink: '#7A1E0C', light: '#FFE1D8' },
   wind:   { name: 'Wind',   color: '#59C3C3', ink: '#1F6363', light: '#DDF5F5' },
-  spark:  { name: 'Spark',  color: '#F2B705', ink: '#6B5000', light: '#FFF3C4' },
-  stone:  { name: 'Stone',  color: '#9C6B3F', ink: '#4D3216', light: '#F1E4D6' },
-  frost:  { name: 'Frost',  color: '#7FD4F5', ink: '#1B5C78', light: '#E0F5FD' },
-  metal:  { name: 'Metal',  color: '#7A869A', ink: '#333B48', light: '#E4E8EF' },
+  spark:  { name: 'Electric',  color: '#F2B705', ink: '#6B5000', light: '#FFF3C4' },
+  stone:  { name: 'Rock',  color: '#9C6B3F', ink: '#4D3216', light: '#F1E4D6' },
+  frost:  { name: 'Ice',  color: '#7FD4F5', ink: '#1B5C78', light: '#E0F5FD' },
+  metal:  { name: 'Steel',  color: '#7A869A', ink: '#333B48', light: '#E4E8EF' },
   shadow: { name: 'Shadow', color: '#5B3F99', ink: '#2A1A4D', light: '#E9E1F7' },
   cosmic: { name: 'Cosmic', color: '#2E3C8F', ink: '#121A45', light: '#DEE2F7' },
   legend: { name: 'Legendary', color: '#F2B705', ink: '#5C3B00', light: '#FFF1C2' },

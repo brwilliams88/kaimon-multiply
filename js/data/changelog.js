@@ -1,7 +1,16 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.3.39';
+export const VERSION = '0.3.40';
 
 export const CHANGELOG = [
+  {
+    version: '0.3.40',
+    date: '2026-11-15',
+    title: 'New type names',
+    items: [
+      'Type names are now Grass (Mossy Meadow), Electric (Thunder Plains), Rock (Crystal Caves), Ice (Frostpeak) and Steel (Gearworks). Shadow and Cosmic stay.',
+      'The new names show everywhere: flashcards, the Kaidex and choosing a starter.',
+    ],
+  },
   {
     version: '0.3.39',
     date: '2026-11-15',
