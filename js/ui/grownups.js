@@ -155,6 +155,7 @@ function renderMain(root, go) {
           <label class="row"><span>Cards per session</span><select data-set="sessionLength">${[10, 15, 20, 30].map((n) => `<option ${s.sessionLength === n ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
           <label class="row"><span>Counts as fast</span><select data-set="fastMs">${[3000, 4000, 5000, 6000, 8000].map((n) => `<option value="${n}" ${s.fastMs === n ? 'selected' : ''}>${n / 1000} seconds</option>`).join('')}</select></label>
           <label class="row"><span>Sound<small class="row-note">Also on the speaker button in the game. On iPhone, the silent switch mutes it.</small></span><input type="checkbox" data-set="sound" ${s.sound ? 'checked' : ''}></label>
+          <label class="row"><span>Battle music<small class="row-note">Plays during battles only, never during practice cards.</small></span><input type="checkbox" data-set="music" ${s.music !== false ? 'checked' : ''}></label>
           <label class="row"><span>Voice answers<small class="row-note">The phone asks to use the microphone the first time each day it's used.</small></span><input type="checkbox" data-set="voice" ${s.voice ? 'checked' : ''}></label>
           <p class="note">${voiceSupported() ? 'Voice works on this device. Kids tap Say it, then say the number.' : 'Voice isn’t available here. On iPad and iPhone it may work in Safari but not from the home screen icon; the number pad always works.'}</p>
         </div>

@@ -14,6 +14,7 @@ import { sfx, setSound, unlock } from '../core/sound.js';
 import { ballIcon } from './home.js';
 import { trainerArt, CHAMP_LINES } from './trainerArt.js';
 import { limitReached } from '../core/playtime.js';
+import { startMusic, stopMusic, setPinch } from '../core/music.js';
 import { $, on, esc, sheet, wait, reducedMotion, soundButton } from './dom.js';
 
 const hpBar = (who) => `<div class="hp hp-${who}"><div class="hp-top"><span class="hp-name"></span><span class="hp-dots"></span></div><div class="hp-bar"><span></span></div><span class="hp-num"></span></div>`;
@@ -193,6 +194,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1 } = {}) {
       popNumber(el.foeMon, '-' + hit.dmg, hit.crit ? 'crit' : '');
       anim(el.foeMon, 'shake', 420);
       drawHp(el.foeHp, opp.team, S.foe, true);
+      if (S.foe === opp.team.length - 1 && foe.hp > 0 && foe.hp / foe.max < 0.4) setPinch(true);
       if (hit.crit) el.msg.textContent = hit.special ? `${moveName(me.species)}! Critical hit!` : 'Critical hit!';
       await wait(650);
       if (foe.hp <= 0) {
@@ -257,6 +259,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1 } = {}) {
     S.phase = 'over';
     cancelAnimationFrame(S.raf);
     stopVoice();
+    stopMusic(0.25);
     const reward = won ? rewardFor(p, kind, opp.table) : null;
     recordBattle(p, kind, opp.table, won);
     if (reward) giveBall(p, reward.ball, reward.n);
@@ -318,6 +321,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1 } = {}) {
   on(root, 'click', '[data-start]', async () => {
     sfx.tap();
     el.intro.classList.add('gone');
+    if (p.settings.music !== false) startMusic();
     drawMons();
     await wait(reducedMotion() ? 0 : 250);
     el.intro.remove();
@@ -338,7 +342,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1 } = {}) {
     if (S.phase === 'over') return go('home');
     const sh = sheet(`<h2>Leave the battle?</h2><p>Your answers still count for practice.</p><div class="sheet-actions"><button class="btn-chunky btn-primary" data-stop>Leave</button><button class="btn-chunky" data-close>Keep battling</button></div>`);
     sh.el.querySelector('[data-stop]').addEventListener('click', () => {
-      sh.close(); stopVoice(); cancelAnimationFrame(S.raf);
+      sh.close(); stopVoice(); stopMusic(); cancelAnimationFrame(S.raf);
       if (S.answered) { session(p, Date.now() - S.startedAt, S.best); save(); syncNow(); }
       go('home');
     });

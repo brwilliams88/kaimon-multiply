@@ -1,7 +1,17 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.3.6';
+export const VERSION = '0.3.7';
 
 export const CHANGELOG = [
+  {
+    version: '0.3.7',
+    date: '2026-11-14',
+    title: 'Battle music',
+    items: [
+      'Battles now have their own music: a fast, heroic theme made just for Kaimon.',
+      'The music speeds up when the other side is down to its last Kaimon.',
+      'It never plays during practice cards. Grown-ups can turn battle music off, and the speaker button turns all sound off.',
+    ],
+  },
   {
     version: '0.3.6',
     date: '2026-11-14',

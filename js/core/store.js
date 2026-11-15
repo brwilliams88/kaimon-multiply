@@ -10,6 +10,7 @@ const defaultSettings = () => ({
   fastMs: 5000,
   sound: true,
   voice: true,
+  music: true,
   dailyLimit: 0,
 });
 

@@ -11,6 +11,7 @@ import { VERSION } from './data/changelog.js';
 import { startAutoSync, completeLinkSignIn } from './core/sync.js';
 import { toast, soundIcon } from './ui/dom.js';
 import { openTime } from './core/actions.js';
+import { stopMusic, startMusic } from './core/music.js';
 import { save, touch } from './core/store.js';
 import { startUpdates, justUpdated } from './core/update.js';
 
@@ -29,6 +30,7 @@ const NEEDS_PROFILE = new Set(['home', 'play', 'kaidex', 'grownups', 'meetPartne
 
 function go(name, params = {}) {
   stopVoice();
+  stopMusic(0.2);
   if (NEEDS_PROFILE.has(name) && !active()) name = 'welcome';
   // Fresh element per screen so old listeners go away.
   const old = document.getElementById('app');
@@ -60,7 +62,8 @@ document.addEventListener('click', (e) => {
   btn.setAttribute('aria-pressed', p.settings.sound);
   btn.setAttribute('aria-label', 'Sound ' + (p.settings.sound ? 'on' : 'off'));
   btn.innerHTML = soundIcon(p.settings.sound);
-  if (p.settings.sound) sfx.correct();
+  if (p.settings.sound) sfx.correct(); else stopMusic(0.1);
+  if (p.settings.sound && p.settings.music !== false && document.querySelector('.battle .intro') === null && document.getElementById('app')?.dataset.screen === 'battle' && !document.querySelector('.overlay.result')) startMusic();
   toast(p.settings.sound ? 'Sound on' : 'Sound off', 1400);
 });
 

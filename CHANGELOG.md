@@ -2,6 +2,12 @@
 
 All notable changes. Versioning: `0.MINOR.0` marks a roadmap phase, `0.x.PATCH` is any shipped change a player or parent can notice, and `1.0.0` is the public launch. See "Versioning" in CLAUDE.md. The in-app version history (Grown-ups > What's new) reads from `js/data/changelog.js`; keep both in sync. Each release is tagged in git as `vX.Y.Z`.
 
+## v0.3.7 (2026-11-14) Battle music
+
+- `js/core/music.js`: original 8-bar A-minor theme (Am F G E / Am F D E) at 156 BPM, synthesized live: square lead, filtered saw bass in driving 16ths, off-beat triangle stabs, kick/snare/hat from a noise buffer. Lookahead scheduler (25 ms tick, 150 ms ahead).
+- Pinch mode (172 BPM, lead up an octave, double hats) when the last opposing Kaimon drops under 40% HP.
+- Stops on every screen change, on battle end (before the win or loss sound), when the app is hidden, and when sound is turned off; reattaches if the iPhone audio engine is rebuilt. New `settings.music` (default on) in Grown-ups.
+
 ## v0.3.6 (2026-11-14) Sound fix for iPhone
 
 - iOS can leave the AudioContext 'interrupted' (not 'suspended') after the mic, a call or backgrounding; we now resume from any non-running state, on every tap and when the app returns to the front.
