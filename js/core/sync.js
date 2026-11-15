@@ -172,6 +172,7 @@ export function applySnapshot(p, d) {
   if (b) {
     for (const k of ['played', 'wins', 'grunts', 'boss']) p.battles[k] = (p.battles[k] || 0) + (b[k] || 0);
     for (const [t, n] of Object.entries(b.champs || {})) p.battles.champs[t] = (p.battles.champs[t] || 0) + n;
+    if (b.quiz) p.battles.quiz = Math.max(p.battles.quiz || 0, b.quiz);
   }
   for (const [day, r] of Object.entries(d.play || {})) {
     const cur = p.play[day] || (p.play[day] = { open: 0, ms: 0, a: 0, c: 0, n: 0, h: {}, bonus: 0 });

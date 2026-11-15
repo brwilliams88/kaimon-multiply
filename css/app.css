@@ -1653,3 +1653,63 @@ img.ball-svg, img.ball-img { object-fit: contain; }
 .tc-color.on { box-shadow: 0 0 0 3px #FFD23F, 0 0 0 5px var(--ink); }
 .lp-label small { font-weight: 500; color: var(--ink-2); margin-left: 6px; }
 @media (min-width: 640px) { .tc { grid-template-columns: 230px 1fr; align-items: start; } .tc-stage { height: 280px; } }
+/* Teacher K's Pop Quiz card on Home */
+.quiz-card { display: flex; align-items: center; gap: 14px; width: 100%; text-align: left; background: var(--paper); border: 3px solid var(--ink); border-radius: 22px; padding: 12px 16px; box-shadow: 0 5px 0 var(--ink); }
+.quiz-card:active { transform: translateY(4px); box-shadow: 0 1px 0 var(--ink); }
+.quiz-card.ready { background: linear-gradient(90deg, #FFF3C4, #FFFFFF 70%); box-shadow: 0 5px 0 var(--ink), 0 0 0 4px #FFD23F; }
+.quiz-av { width: 64px; height: 64px; border-radius: 50%; border: 3px solid var(--ink); overflow: hidden; flex-shrink: 0; background: #FFF3D6; }
+.quiz-av img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.quiz-text { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.quiz-text strong { font-size: 21px; }
+.quiz-text small { font-size: 15px; color: var(--ink-2); }
+/* v0.5.3 Menu: one icon family, drawn art */
+.menu-ic { width: 46px; height: 46px; border-radius: 0; background: none; }
+.menu-grown .menu-ic { background: none; }
+.menu-ic .ui-img, .menu-ic .ball-svg { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 2px 0 rgba(20, 33, 61, .2)); }
+.kdx-art { background: none; border: 0; width: 66px; height: 66px; }
+.kdx-art .kdx-ic, .how-pic .kdx-ic { width: 100%; height: 100%; object-fit: contain; }
+.how-pic .kdx-ic { width: 58px; height: 58px; }
+.pill .kdx-ic { object-fit: contain; }
+/* Teacher K */
+.mentor { display: flex; align-items: flex-end; gap: 8px; }
+.mentor-pic { width: clamp(110px, 30vw, 190px); flex-shrink: 0; aspect-ratio: 1; }
+.mentor-pic img, .how-teacher img, .stamp-teacher img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.mentor .speech { flex: 1; margin-bottom: 24px; }
+.mentor .speech::after { left: -17px; bottom: 30px; transform: rotate(135deg); }
+.how-hero-row { display: flex; align-items: flex-end; justify-content: center; gap: 0; }
+.how-teacher { width: 130px; height: 130px; }
+.how-hero-row .how-hero-art { margin: 0 0 6px -18px; width: 90px; height: 90px; }
+.how-hero .speech-who { text-align: center; }
+.stamp-row { display: flex; align-items: flex-end; justify-content: center; gap: 4px; }
+.stamp-teacher { width: 130px; height: 130px; }
+.play.v2 .retype .learn-teacher { width: clamp(42px, 13cqh, 68px); height: clamp(42px, 13cqh, 68px); flex: none; border-radius: 50%; border: 2.5px solid var(--ink); overflow: hidden; background: #FFF3D6; }
+.learn-teacher img { width: 100%; height: 100%; object-fit: cover; display: block; }
+/* v0.5.3 Game-title headings, in the logo's style: white letters, navy outline, a soft blue glow */
+.screen-title, .section-title, .intro-card h2, .celebrate h2, .how-hero h2, .home-menu > h2, .title-panel .welcome-q, .entry-name {
+  color: #FFFFFF; -webkit-text-stroke: 5px var(--ink); paint-order: stroke fill; letter-spacing: .01em;
+  text-shadow: 0 3px 0 var(--ink), 0 0 14px rgba(70, 160, 255, .45);
+}
+.section-title { font-size: 26px; }
+.entry-name { -webkit-text-stroke-width: 4px; }
+.home-menu > h2 { font-size: 30px; margin: 0 0 6px; }
+.mentor-pic { width: clamp(130px, 36vw, 210px); }
+.mentor .speech { font-size: 18px; padding: 14px 18px; }
+@media (max-width: 480px) { .mentor { flex-direction: column; align-items: center; } .mentor-pic { width: 190px; margin-bottom: -10px; order: 0; } .mentor .speech { margin-bottom: 8px; } .mentor .speech::after { left: 50%; bottom: auto; top: -17px; transform: translateX(-50%) rotate(225deg); } }
+/* Family sign-in: matches the title screen */
+.fs-sheet { padding: 0 !important; overflow: hidden; }
+.fs-hero { position: relative; height: 150px; overflow: hidden; border-bottom: 3px solid var(--ink); }
+.fs-bg { width: 100%; height: 100%; object-fit: cover; object-position: 50% 28%; display: block; }
+.fs-logo { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(78%, 360px); filter: drop-shadow(0 4px 8px rgba(20, 33, 61, .35)); }
+.fs-body { padding: 16px 20px 22px; display: flex; flex-direction: column; gap: 14px; }
+.fs-head { display: flex; align-items: center; gap: 12px; }
+.fs-head h2 { margin: 0; color: #fff; -webkit-text-stroke: 5px var(--ink); paint-order: stroke fill; text-shadow: 0 3px 0 var(--ink); font-size: 28px; }
+.fs-head p { margin: 4px 0 0; color: var(--ink-2); font-size: 16px; }
+.fs-kaizo { width: 76px; height: 76px; flex-shrink: 0; }
+.fs-field { font-size: 22px; height: 60px; border-radius: 18px; }
+.fs-actions { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.fs-actions .btn-xl { width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; }
+.fs-ball { width: 32px; height: 32px; }
+.fs-links { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; }
+.how-scene { background: var(--scene) center / cover no-repeat !important; position: relative; }
+.how-scene b, .how-scene i, .how-scene small { position: relative; color: #fff; -webkit-text-stroke: 3px var(--ink); paint-order: stroke fill; }
+.how-pic { border-radius: 16px; overflow: hidden; }

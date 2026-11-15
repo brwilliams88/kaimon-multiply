@@ -6,7 +6,7 @@ import { VERSION } from '../data/changelog.js';
 import { maybeShowInstall } from './install.js';
 import { byId, TYPES } from '../data/creatures.js';
 import { creatureArt } from '../core/art.js';
-import { titleSrc, LOGO, typeIcon } from '../core/assets.js';
+import { titleSrc, LOGO, typeIcon, trainerBody } from '../core/assets.js';
 import { avatarSVG, trainerLook, PRESETS } from './avatars.js';
 import { lookPickerHTML, wireLookPicker } from './lookPicker.js';
 import { esc, on, $ } from './dom.js';
@@ -92,9 +92,12 @@ export function renderMeetPartner(root, go) {
   const draw = () => {
     root.innerHTML = `
     <section class="screen meet">
+      <div class="mentor">
+      <div class="mentor-pic">${trainerBody('teacher-k', 'talking')}</div>
       <div class="speech">
-        <p class="speech-who">The Professor</p>
+        <p class="speech-who">Teacher K</p>
         <p>Welcome, ${esc(p.name)}! Every trainer starts with a buddy Kaimon. Your buddy travels with you, gets stronger with every right answer, and leads your battle team. Pick one!</p>
+      </div>
       </div>
       <div class="starters" role="radiogroup" aria-label="Choose your buddy">
         ${['kaimo', 'kaiko', 'kipbun'].map((id) => { const s = byId(id); const t = TYPES[s.type]; return `

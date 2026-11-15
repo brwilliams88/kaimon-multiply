@@ -2,22 +2,22 @@
 // (for example a parent's phone). Same two steps as Grown-ups: email, then code.
 import { requestCode, verifyCode, syncNow } from '../core/sync.js';
 import { sheet, toast, esc, busy, cleanCode, codeOk } from './dom.js';
+import { titleSrc, LOGO, uiImg, ballImg } from '../core/assets.js';
 
 export function familySignInSheet(onDone) {
   let email = '';
-  const sh = sheet('<div data-fs></div>');
+  // Same look as the title screen: the art across the top with the logo on it.
+  const sh = sheet(`<div class="fs-hero" aria-hidden="true"><img class="fs-bg" src="${titleSrc(true)}" alt=""><img class="fs-logo" src="${LOGO}" alt=""></div><div class="fs-body" data-fs></div>`, { cls: 'fs-sheet' });
   const box = sh.el.querySelector('[data-fs]');
   const draw = () => {
     box.innerHTML = !email ? `
-      <h2>Family sign-in</h2>
-      <p>For your family's devices. Type a family email and we'll email you a code.</p>
-      <input class="field" type="email" autocomplete="email" placeholder="Family email" data-email>
-      <div class="sheet-actions"><button class="btn-chunky btn-primary" data-send>Email me a code</button><button class="btn-chunky" data-close>Cancel</button></div>`
+      <div class="fs-head">${uiImg('kaizo-wave', 'fs-kaizo')}<div><h2>Family sign-in</h2><p>For your family's devices. Type a family email and we'll send you a code.</p></div></div>
+      <input class="field fs-field" type="email" autocomplete="email" placeholder="Family email" data-email>
+      <div class="fs-actions"><button class="btn-chunky btn-primary btn-xl" data-send>${ballImg('capture', 'fs-ball')}Email me a code</button><button class="link-btn" data-close>Not now</button></div>`
     : `
-      <h2>Type the code</h2>
-      <p class="sent-ok">Code sent to <strong>${esc(email)}</strong>. It can take a minute. Not there? Check Spam.</p>
-      <input class="field code-field" inputmode="numeric" autocomplete="one-time-code" maxlength="12" placeholder="Code" data-code>
-      <div class="sheet-actions"><button class="btn-chunky btn-primary" data-verify>Sign in</button><button class="btn-chunky" data-resend>Send a new code</button><button class="link-btn" data-change>Use a different email</button></div>`;
+      <div class="fs-head">${uiImg('kaizo-cheer', 'fs-kaizo')}<div><h2>Type the code</h2><p class="sent-ok">Sent to <strong>${esc(email)}</strong>. It can take a minute. Not there? Check Spam.</p></div></div>
+      <input class="field code-field fs-field" inputmode="numeric" autocomplete="one-time-code" maxlength="12" placeholder="Code" data-code>
+      <div class="fs-actions"><button class="btn-chunky btn-primary btn-xl" data-verify>Sign in</button><div class="fs-links"><button class="link-btn" data-resend>Send a new code</button><button class="link-btn" data-change>Use a different email</button></div></div>`;
     box.querySelector('input')?.focus();
   };
   const send = (e, btn) => busy(btn, 'Sending...', async () => {

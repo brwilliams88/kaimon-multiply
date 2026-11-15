@@ -25,6 +25,7 @@ const LEADERS = { 1: 'nozomi', 2: 'captain-tide', 3: 'blaze', 4: 'skye', 5: 'vol
 const FULL_POSES = { has: () => true };
 export function trainerKey(opp) {
   if (opp.kind === 'boss') return 'boss-papa';
+  if (opp.kind === 'quiz') return 'teacher-k';
   if (opp.kind === 'grunt') return 'grunt-' + (opp.grunt || 1);
   return LEADERS[opp.table] || 'nozomi';
 }
@@ -40,6 +41,7 @@ export const trainerBody = (key, pose = 'base', cls = '') => img(trainerSrc(key,
 export function sceneKey({ table, kind } = {}) {
   if (kind === 'boss' || kind === 'grunt') return 'papa';
   if (kind === 'legend') return 'tower';
+  if (kind === 'quiz') return 'training';
   if (table && REGIONS.some((r) => r.table === table)) return String(table);
   return 'training';
 }

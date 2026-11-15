@@ -1,7 +1,7 @@
 // Kaimon core battle rules. Every move is an answer: a right answer attacks,
 // a wrong answer lets the other side hit back. Subject packs only supply the cards.
 import { SPECIES, byId, REGIONS } from '../data/creatures.js';
-import { tableTier, levelRank } from './facts.js';
+import { tableTier, levelRank, levelOf, factsForTables } from './facts.js';
 import { partnerOf } from './game.js';
 
 export const MY_HP = 40;      // each of your Kaimon
@@ -68,6 +68,19 @@ export function opponent(profile, kind, table, grunt) {
     };
   }
   const tables = profile.settings.tables.length ? profile.settings.tables : [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+  // Teacher K's Pop Quiz: once a week, built from the facts that keep getting away.
+  if (kind === 'quiz') {
+    const facts = quizFacts(profile, tables);
+    const finals = SPECIES.filter((s) => typeof s.region === 'number' && s.region > 0 && s.stage === 3 && tables.includes(s.region));
+    const pool = finals.length >= 3 ? finals : SPECIES.filter((s) => typeof s.region === 'number' && s.region > 0 && s.stage >= 2);
+    const team = [];
+    while (team.length < 3) { const s = pick(pool); if (!team.includes(s)) team.push(s); }
+    return {
+      kind, table: null, name: 'Teacher K', title: 'Pop Quiz', rematch: false,
+      team: team.map((s, i) => ({ species: s, hp: 50 + i * 5, max: 50 + i * 5 })),
+      tables, facts,
+    };
+  }
   if (kind === 'grunt') {
     const g = grunt >= 1 && grunt <= GRUNTS.length ? grunt - 1 : Math.floor(Math.random() * GRUNTS.length);
     const t = pick(tables);
@@ -110,6 +123,21 @@ const MOVES = {
 };
 export const moveName = (s) => MOVES[s.type] || 'Power Move';
 
+// The trickiest facts: missed lately or still low, from the tables being practiced.
+export function quizFacts(profile, tables) {
+  const all = factsForTables(tables);
+  const score = (id) => {
+    const r = profile.facts[id];
+    if (!r || !r.a) return 1;
+    const miss = r.lastMiss ? Math.max(0, 1 - (Date.now() - r.lastMiss) / (21 * 86400000)) : 0;
+    return miss * 3 + (5 - levelRank(levelOf(r))) * 0.6 + (r.a - r.c) / Math.max(1, r.a);
+  };
+  return all.map((id) => [id, score(id) + Math.random() * 0.2]).sort((a, b) => b[1] - a[1]).slice(0, 12).map(([id]) => id);
+}
+const WEEK = 7 * 86400000;
+export const quizReady = (profile) => Date.now() - (profile.battles.quiz || 0) >= WEEK - 3600000;
+export const quizNextIn = (profile) => Math.max(0, Math.ceil(((profile.battles.quiz || 0) + WEEK - Date.now()) / 86400000));
+
 // Who can be challenged right now.
 export function bossUnlocked(profile) {
   const tables = profile.settings.tables.length ? profile.settings.tables : [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
@@ -124,5 +152,6 @@ export function champReady(profile, table) {
 export function rewardFor(profile, kind, table) {
   if (kind === 'boss') return profile.battles.boss ? { ball: 'mega', n: 1 } : { ball: 'legend', n: 1, mythic: true };
   if (kind === 'champ') return profile.battles.champs[table] ? { ball: 'super', n: 1 } : { ball: 'mega', n: 1 };
+  if (kind === 'quiz') return { ball: 'mega', n: 1 };
   return { ball: 'super', n: 1 };
 }

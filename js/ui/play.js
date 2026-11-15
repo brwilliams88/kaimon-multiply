@@ -14,7 +14,7 @@ import { voiceSupported, listen, stop as stopVoice } from '../core/voice.js';
 import { sfx, setSound } from '../core/sound.js';
 import { ballIcon, medal } from './home.js';
 import { avatarSVG, trainerLook } from './avatars.js';
-import { ballSrc, sceneSrc, cssUrl, sceneKey, uiImg, itemImg, fxSrc, typeIcon, CARD_BACK } from '../core/assets.js';
+import { ballSrc, sceneSrc, cssUrl, sceneKey, uiImg, itemImg, fxSrc, typeIcon, trainerFace, CARD_BACK } from '../core/assets.js';
 import { quick } from '../core/prefs.js';
 import { $, on, esc, sheet, wait, toast, soundButton } from './dom.js';
 
@@ -282,8 +282,8 @@ export function renderPlay(root, go, { table }) {
       el.back.innerHTML = `
         <div class="card-head"><span class="chip">Not quite</span></div>
         <div class="card-q answer-reveal"><span>${a}</span><span class="times">×</span><span>${b}</span><span class="eq">=</span><span class="ans">${ans}</span></div>
-        <div class="hint-scroll"><p>Count by ${a}s</p><div class="ladder">${hintLadder(S.fact).map((v, i, arr) => `<span class="${i === arr.length - 1 ? 'last' : ''}">${v}</span>`).join('')}</div><p class="trick"><span class="trick-tag">${itemImg('hint-lamp')}Trick</span> ${esc(trickFor(S.fact))}</p></div>
-        <div class="retype">${uiImg('kaizo-hint', 'learn-buddy')}<span class="retype-label">Type it to keep going</span><span class="answer-val empty" data-ph="${ans}"></span></div>`;
+        <div class="hint-scroll"><p>Count by ${a}s</p><div class="ladder">${hintLadder(S.fact).map((v, i, arr) => `<span class="${i === arr.length - 1 ? 'last' : ''}">${v}</span>`).join('')}</div><p class="trick"><span class="trick-tag">${itemImg('hint-lamp')}Teacher K's trick</span> ${esc(trickFor(S.fact))}</p></div>
+        <div class="retype"><span class="learn-teacher">${trainerFace('teacher-k')}</span><span class="retype-label">Type it to keep going</span><span class="answer-val empty" data-ph="${ans}"></span></div>`;
       flip(true, 'wrong');
       S.phase = 'learn';
       S.mustType = ans;

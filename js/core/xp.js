@@ -3,7 +3,7 @@
 // to level up is practicing the hard ones. Kaimon core: subject packs don't change it.
 import { levelRank } from './facts.js';
 
-export const XP = { right: 10, fast: 5, learning: 5, champ: 60, boss: 150, grunt: 30 };
+export const XP = { right: 10, fast: 5, learning: 5, champ: 60, boss: 150, grunt: 30, quiz: 80 };
 export const EVOLVE_AT = { 2: 10, 3: 20 }; // stage: partner level
 
 // Total XP needed to reach a level: 0, 100, 300, 600, 1000, ... (50 * L * (L - 1)).

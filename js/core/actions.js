@@ -79,6 +79,7 @@ export function apply(p, ev) {
         if (d.o === 'champ') b.champs[d.tb] = (b.champs[d.tb] || 0) + 1;
         if (d.o === 'boss') b.boss++;
         if (d.o === 'grunt') b.grunts++;
+        if (d.o === 'quiz') b.quiz = Math.max(b.quiz || 0, ev.t);
       }
       break;
     }

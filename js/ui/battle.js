@@ -32,27 +32,27 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt } = {}
   unlock();
   const opp = opponent(p, kind, table, grunt);
   let mine = myTeam(p);
-  const pool = factsForTables(opp.tables);
+  const pool = opp.facts || factsForTables(opp.tables);
   const useVoice = p.settings.voice && voiceSupported();
   const S = {
     me: 0, foe: 0, n: 0, streak: 0, best: 0, correct: 0, answered: 0, recent: [], requeue: [],
     fact: null, shownAt: 0, input: '', phase: 'intro', mustType: null, listening: false, startedAt: Date.now(), raf: 0,
   };
   const region = opp.table ? regionOf(opp.table) : null;
-  const t = region ? TYPES[region.type] : TYPES.papa;
+  const t = region ? TYPES[region.type] : kind === 'quiz' ? TYPES.dragon : TYPES.papa;
   root.style.setProperty('--rc', t.color);
   root.style.setProperty('--rl', t.light);
   root.style.setProperty('--ri', t.ink);
   // The arena is the place itself: the Gym Leader's region, or Papa's Gym for Team Papa.
   root.style.setProperty('--scene', cssUrl(sceneSrc(sceneKey({ kind, table: opp.table }))));
 
-  const introLine = kind === 'champ' ? CHAMP_LINES[opp.table] : kind === 'boss' ? dadJoke('boss') : dadJoke('appear');
+  const introLine = kind === 'champ' ? CHAMP_LINES[opp.table] : kind === 'quiz' ? 'Pop quiz! These are the facts that keep getting away from you. Let\u2019s catch them today!' : kind === 'boss' ? dadJoke('boss') : dadJoke('appear');
 
   root.innerHTML = `
     <section class="screen play battle v2 battle-${kind}">
       <header class="play-top">
         <button class="icon-btn" data-exit aria-label="Leave battle"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6 L18 18 M18 6 L6 18" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg></button>
-        <div class="vs-chip"><span class="vs-av">${trainerArt(opp)}</span><span><strong>${esc(opp.name)}</strong><small>${esc(opp.kind === 'champ' ? `${opp.table}s Gym Leader` : opp.kind === 'boss' ? 'The final gym' : 'Team Papa')}</small></span></div>
+        <div class="vs-chip"><span class="vs-av">${trainerArt(opp)}</span><span><strong>${esc(opp.name)}</strong><small>${esc(opp.kind === 'champ' ? `${opp.table}s Gym Leader` : opp.kind === 'boss' ? 'The final gym' : opp.kind === 'quiz' ? 'Pop Quiz' : 'Team Papa')}</small></span></div>
         ${soundButton(p.settings.sound)}
         <div class="streak" aria-live="polite"><span class="streak-ball">${ballIcon('capture')}</span><span class="streak-num">0</span></div>
       </header>
@@ -310,6 +310,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt } = {}
 
     const line = kind === 'champ'
       ? (won ? (opp.rematch ? `You won the rematch! ${region.badge} polished.` : `You did it! You earned the ${region.badge}!`) : `Great battle! Practice your ${opp.table}s and come back.`)
+      : kind === 'quiz' ? (won ? 'A+! Those tricky facts didn\u2019t stand a chance. See you at next week\u2019s quiz!' : 'Good try! Every miss is a fact you\u2019re about to learn. You can take the quiz again anytime this week.')
       : kind === 'boss' ? (won ? dadJoke('boss') : dadJoke('papaWins')) : dadJoke(won ? 'kidWins' : 'papaWins');
 
     const ov = document.createElement('div');

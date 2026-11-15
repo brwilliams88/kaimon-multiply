@@ -3,11 +3,11 @@ import { SPECIES, REGIONS, TYPES } from '../data/creatures.js';
 import { creatureArt } from '../core/art.js';
 import { tableTier, tableProgress, LEVEL_LABEL } from '../core/facts.js';
 import { partnerOf, dexCounts, trainerTitle } from '../core/game.js';
-import { bossUnlocked } from '../core/battle.js';
+import { bossUnlocked, quizReady, quizNextIn } from '../core/battle.js';
 import { limitReached } from '../core/playtime.js';
 import { VERSION } from '../data/changelog.js';
 import { trainerArt } from './trainerArt.js';
-import { ballImg, itemImg, sceneSrc, cssUrl, uiImg, LOGO } from '../core/assets.js';
+import { ballImg, itemImg, sceneSrc, cssUrl, uiImg, trainerFace, trainerBody, LOGO } from '../core/assets.js';
 import { kairoEvolves } from '../core/game.js';
 import { evolveKairo } from '../core/actions.js';
 import { save, touch } from '../core/store.js';
@@ -102,6 +102,16 @@ export function renderHome(root, go, params = {}) {
             </button>`;
           })()}
         </div>
+        <h2 class="section-title">Teacher K's Pop Quiz</h2>
+        ${(() => {
+          const ready = quizReady(p), next = quizNextIn(p);
+          return `<button class="quiz-card${ready ? ' ready' : ''}" data-quiz>
+            <span class="quiz-av">${trainerFace('teacher-k')}</span>
+            <span class="quiz-text"><strong>${ready ? 'A new Pop Quiz is ready!' : 'Quiz done this week'}</strong>
+              <small>${ready ? 'Teacher K battles you with the facts that keep getting away. Win a Mega Ball.' : `Great work! The next quiz is in ${next} day${next === 1 ? '' : 's'}. You can still take this one again for practice.`}</small></span>
+            <span class="kdx-go" aria-hidden="true">›</span>
+          </button>`;
+        })()}
         <p class="ver-foot">© 2026 Kaimon Games · Kaimon Multiply v${VERSION}</p>
       </div>
     </section>`;
@@ -149,6 +159,7 @@ export function renderHome(root, go, params = {}) {
     setTimeout(() => { sfx.levelUp(); sheet(`<div class="celebrate evolve"><p class="evo-kicker">A whole year with Kairo... and it's glowing!</p><div class="evo-row"><div class="partner-art">${creatureArt(byId(MYTHIC_ID))}</div><span class="evo-arrow">›</span><div class="partner-art">${creatureArt(byId(FUTURE_ID))}</div></div><h2>Kairo evolved into Kairos!</h2><p>Kaidex #060, the very last page. Kairo grew up right alongside you.</p><button class="btn-chunky btn-primary" data-close>Amazing!</button></div>`); }, 500);
   }
   on(root, 'click', '[data-dex]', () => { sfx.tap(); go('kaidex'); });
+  on(root, 'click', '[data-quiz]', () => { unlock(); sfx.tap(); if (timesUp()) return; keepPlace(); go('battle', { kind: 'quiz' }); });
   on(root, 'click', '[data-trainer]', () => { sfx.tap(); go('trainer'); });
 
   try {
@@ -164,9 +175,9 @@ export function renderHome(root, go, params = {}) {
   if (params.celebrate === 'stamp') {
     sfx.levelUp();
     sheet(`<div class="celebrate">
-      <div class="celebrate-stamp" aria-hidden="true">${itemImg('good-work-stamp')}</div>
+      <div class="stamp-row" aria-hidden="true"><span class="stamp-teacher">${trainerBody('teacher-k', 'won')}</span><span class="celebrate-stamp">${itemImg('good-work-stamp')}</span></div>
       <h2>Good Work Stamp!</h2>
-      <p>${esc(p.name)}, your grown-up says you did great on real math work. Here's a reward:</p>
+      <p>${esc(p.name)}, your grown-up says you did great on real math work. Teacher K is proud of you! Here's a reward:</p>
       <div class="celebrate-row"><span>${ballIcon('mega')} Mega Ball</span><span>${snackIcon()} 3 Power Snacks</span><span class="stars">★ Gold star</span></div>
       <button class="btn-chunky btn-primary" data-close>Awesome!</button></div>`);
   }
@@ -184,12 +195,12 @@ function homeMenu(p, go) {
   const row = (attrs, icon, label, sub = '') => `<button class="menu-row" ${attrs}><span class="menu-ic" aria-hidden="true">${icon}</span><span class="menu-txt"><strong>${label}</strong>${sub ? `<small>${sub}</small>` : ''}</span><span class="menu-go" aria-hidden="true">›</span></button>`;
   const sh = sheet(`<div class="home-menu">
     <h2>Menu</h2>
-    <label class="menu-row menu-switch"><span class="menu-ic" aria-hidden="true">${soundIcon(true)}</span><span class="menu-txt"><strong>Sound</strong><small>Music and sound effects</small></span><input type="checkbox" class="switch" data-sound ${p.settings.sound ? 'checked' : ''} aria-label="Sound"></label>
-    <label class="menu-row menu-switch"><span class="menu-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M13 2.5 L5 13.5 H11 L10 21.5 L19 10 H13 Z" fill="currentColor" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></span><span class="menu-txt"><strong>Quick mode</strong><small>Shorter catches and battle moves, more cards</small></span><input type="checkbox" class="switch" data-quick ${p.settings.quick ? 'checked' : ''} aria-label="Quick mode"></label>
-    ${row('data-m="how"', '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M9.6 9.4a2.5 2.5 0 1 1 3.4 2.3c-.7.3-1 .8-1 1.5v.6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><circle cx="12" cy="17" r="1.4" fill="currentColor"/></svg>', 'How to play', 'Buddy, XP, regions and battles')}
+    <label class="menu-row menu-switch"><span class="menu-ic" aria-hidden="true">${uiImg('icon-sound')}</span><span class="menu-txt"><strong>Sound</strong><small>Music and sound effects</small></span><input type="checkbox" class="switch" data-sound ${p.settings.sound ? 'checked' : ''} aria-label="Sound"></label>
+    <label class="menu-row menu-switch"><span class="menu-ic" aria-hidden="true">${uiImg('icon-quick')}</span><span class="menu-txt"><strong>Quick mode</strong><small>Shorter catches and battle moves, more cards</small></span><input type="checkbox" class="switch" data-quick ${p.settings.quick ? 'checked' : ''} aria-label="Quick mode"></label>
+    ${row('data-m="how"', uiImg('icon-howto'), 'How to play', 'Teacher K explains everything')}
     ${row('data-m="balls"', ballIcon('capture'), 'Ball guide', 'Which ball to throw, and how to earn more')}
-    ${row('data-m="switch"', '<svg viewBox="0 0 24 24"><path d="M7 4 L3 8 L7 12 M3 8 H17 M17 12 L21 16 L17 20 M21 16 H7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>', 'Title screen', 'Switch trainer or add a new one')}
-    <button class="menu-row menu-grown hold" data-grownups aria-label="Grown-ups: press and hold"><span class="menu-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2.5" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M8.5 10.5 V8 a3.5 3.5 0 0 1 7 0 V10.5" fill="none" stroke="currentColor" stroke-width="2.4"/></svg></span><span class="menu-txt"><strong>Grown-ups</strong><small>Press and hold. Needs the grown-up PIN.</small></span><span class="hold-ring" aria-hidden="true"></span></button>
+    ${row('data-m="switch"', uiImg('icon-trainers'), 'Title screen', 'Switch trainer or add a new one')}
+    <button class="menu-row menu-grown hold" data-grownups aria-label="Grown-ups: press and hold"><span class="menu-ic" aria-hidden="true">${uiImg('icon-grownups')}</span><span class="menu-txt"><strong>Grown-ups</strong><small>Press and hold. Needs the grown-up PIN.</small></span><span class="hold-ring" aria-hidden="true"></span></button>
     <p class="menu-ver">Kaimon Multiply v${VERSION}</p>
   </div>`, { cls: 'menu-sheet' });
   sh.el.querySelector('[data-quick]').addEventListener('change', (e) => {
@@ -214,11 +225,12 @@ function homeMenu(p, go) {
 function howItWorks(p, opts = {}) {
   const buddy = partnerOf(p).species;
   const sec = (pic, title, text) => `<section class="how-sec"><div class="how-pic" aria-hidden="true">${pic}</div><div><h3>${title}</h3><p>${text}</p></div></section>`;
-  const card = '<span class="how-card"><b>7</b><i>×</i><b>8</b></span>';
-  const region = '<span class="how-region"><b>4</b><small>s</small></span>';
+  const card = `<span class="how-card how-scene" style="--scene:${esc(cssUrl(sceneSrc('2', true)))}"><b>7</b><i>×</i><b>8</b></span>`;
+  const region = `<span class="how-region how-scene" style="--scene:${esc(cssUrl(sceneSrc('4', true)))}"><b>4</b><small>s</small></span>`;
   sheet(`<div class="how">
     <div class="how-hero">
-      <div class="how-hero-art">${creatureArt(buddy)}</div>
+      <div class="how-hero-row"><div class="how-teacher">${trainerBody('teacher-k', 'talking')}</div><div class="how-hero-art">${creatureArt(buddy)}</div></div>
+      <p class="speech-who">Teacher K says</p>
       <h2>Welcome, Trainer!</h2>
       <p>Wild Kaimon are hiding all over the world, and the only way to catch them is with <strong>multiplication</strong>. Every right answer throws a ball. The faster and smarter you get, the more you catch.</p>
       <p class="how-goal">Can you become a times table master and fill your whole Kaidex?</p>
@@ -233,13 +245,7 @@ function howItWorks(p, opts = {}) {
   </div>`, { ...opts, cls: 'how-sheet' });
 }
 
-export const kaidexIcon = () => `<svg class="kdx-ic" viewBox="0 0 48 48" aria-hidden="true">
-  <rect x="7" y="4" width="34" height="40" rx="9" fill="#2BB3A3" stroke="#14213D" stroke-width="3"/>
-  <rect x="12" y="19" width="24" height="18" rx="4" fill="#CFE8FF" stroke="#14213D" stroke-width="2.5"/>
-  <path d="M24 23 l1.6 3.4 3.6.4-2.7 2.4.8 3.5-3.3-1.9-3.3 1.9.8-3.5-2.7-2.4 3.6-.4z" fill="#F2B705" stroke="#14213D" stroke-width="1.4" stroke-linejoin="round"/>
-  <path d="M15 8.5 h7 l3.5 3 -3.5 3 h-7 l-3.5 -3z" fill="#FFD23F" stroke="#14213D" stroke-width="2.2" stroke-linejoin="round"/>
-  <circle cx="33" cy="11.5" r="2.2" fill="#FF6B4A" stroke="#14213D" stroke-width="1.6"/>
-</svg>`;
+export const kaidexIcon = () => uiImg('kaidex-a', 'kdx-ic');
 
 export function ballsHelp(p, opts = {}) {
   const row = (k, name, count, text) => `<div class="bh-row">${ballIcon(k)}<div><strong>${name} <span class="bh-count">${count}</span></strong><p>${text}</p></div></div>`;

@@ -1,7 +1,22 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.5.2';
+export const VERSION = '0.5.3';
 
 export const CHANGELOG = [
+  {
+    version: '0.5.3',
+    date: '2026-11-15',
+    title: "Teacher K and a real Kaidex",
+    items: [
+      "Teacher K joins the game. She welcomes new trainers and gives them their buddy, explains How to play, teaches the counting trick when you miss a card, and hands out the Good Work Stamp.",
+      "Teacher K's Pop Quiz: once a week, she battles you with the facts that keep getting away from you. Win it for a Mega Ball and bonus XP.",
+      "A real Kaidex: the Kaidex is now a little handheld gadget, on Home and in How to play.",
+      "New menu icons, drawn in the same style as the balls and items.",
+      "Big headings now match the logo: white letters with a navy outline.",
+      "Family sign-in now looks like the title screen, with the art and logo across the top.",
+      "How to play shows real places behind the practice card and region pictures.",
+      "The sign-in email is now branded, with the logo, Kaizo and the four balls.",
+    ],
+  },
   {
     version: '0.5.2',
     date: '2026-11-15',

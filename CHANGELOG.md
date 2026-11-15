@@ -2,6 +2,17 @@
 
 All notable changes. Versioning: `0.MINOR.0` marks a roadmap phase, `0.x.PATCH` is any shipped change a player or parent can notice, and `1.0.0` is the public launch. See "Versioning" in CLAUDE.md. The in-app version history (Grown-ups > What's new) reads from `js/data/changelog.js`; keep both in sync. Each release is tagged in git as `vX.Y.Z`.
 
+## v0.5.3 (2026-11-15) Teacher K and a real Kaidex
+
+- Teacher K joins the game. She welcomes new trainers and gives them their buddy, explains How to play, teaches the counting trick when you miss a card, and hands out the Good Work Stamp.
+- Teacher K's Pop Quiz: once a week, she battles you with the facts that keep getting away from you. Win it for a Mega Ball and bonus XP.
+- A real Kaidex: the Kaidex is now a little handheld gadget, on Home and in How to play.
+- New menu icons, drawn in the same style as the balls and items.
+- Big headings now match the logo: white letters with a navy outline.
+- Family sign-in now looks like the title screen, with the art and logo across the top.
+- How to play shows real places behind the practice card and region pictures.
+- The sign-in email is now branded, with the logo, Kaizo and the four balls.
+
 ## v0.5.2 (2026-11-15) Bigger scenes and your own trainer
 
 - Practice cards are now a window into the region: the place fills the whole card, the wild Kaimon is much bigger, and the question sits on top as 3 × 5 = ?, with your answer typed right where the ? is.
