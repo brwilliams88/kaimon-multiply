@@ -1,7 +1,17 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.3.11';
+export const VERSION = '0.3.12';
 
 export const CHANGELOG = [
+  {
+    version: '0.3.12',
+    date: '2026-11-14',
+    title: 'Smoother family sign-in',
+    items: [
+      'Fixed: the sign-in email sent an 8-digit code, but the app only took 6. Codes are now 6 digits, and the app accepts either.',
+      'Buttons now show Sending..., Checking... and Syncing... while they work, and a message confirms the code was sent.',
+      'The install tips never pop up on top of the family sign-in.',
+    ],
+  },
   {
     version: '0.3.11',
     date: '2026-11-14',

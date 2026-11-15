@@ -74,9 +74,14 @@ export function installSheet({ first = false } = {}) {
   return sh;
 }
 
-// First visit in a browser only.
+// First visit in a browser only. Waits its turn: never opens over another sheet,
+// and only counts as seen once it has actually been shown.
 export function maybeShowInstall() {
   if (isInstalled()) return;
-  try { if (localStorage.getItem(SEEN)) return; localStorage.setItem(SEEN, '1'); } catch { return; }
-  setTimeout(() => installSheet({ first: true }), 900);
+  try { if (localStorage.getItem(SEEN)) return; } catch { return; }
+  setTimeout(() => {
+    if (document.querySelector('.sheet-wrap.open') || document.getElementById('app')?.dataset.screen !== 'welcome') return;
+    try { localStorage.setItem(SEEN, '1'); } catch {}
+    installSheet({ first: true });
+  }, 900);
 }

@@ -12,7 +12,7 @@ import { goodWorkStamp } from '../core/actions.js';
 import { levelOf, factId, LEVEL_LABEL, RULES, countAtLeast } from '../core/facts.js';
 import { voiceSupported } from '../core/voice.js';
 import { CHANGELOG, VERSION } from '../data/changelog.js';
-import { esc, on, sheet, toast, $ } from './dom.js';
+import { esc, on, sheet, toast, $, busy, cleanCode, codeOk } from './dom.js';
 
 const mins = (ms) => Math.round(ms / 60000);
 
@@ -73,19 +73,21 @@ export function renderGrownups(root, go) {
 function forgotPin(root, go) {
   const st = syncStatus();
   const sh = sheet(`<h2>Reset the parent PIN</h2>
-    <p>${st.signedIn ? `We'll email a 6-digit code to ${esc(st.email)}.` : 'Sign in with a family email to reset it. Friends\u2019 families: clearing this site\u2019s data in the browser settings also resets it, but erases progress on this device.'}</p>
+    <p>${st.signedIn ? `We'll email a sign-in code to ${esc(st.email)}.` : 'Sign in with a family email to reset it. Friends\u2019 families: clearing this site\u2019s data in the browser settings also resets it, but erases progress on this device.'}</p>
     <input class="field" type="email" placeholder="Family email" value="${esc(st.email || '')}" ${st.signedIn ? 'readonly' : ''} data-email>
     <button class="btn-chunky" data-send>Send code</button>
-    <input class="field" inputmode="numeric" maxlength="6" placeholder="6-digit code" data-code>
+    <input class="field code-field" inputmode="numeric" autocomplete="one-time-code" maxlength="12" placeholder="Code" data-code>
     <div class="sheet-actions"><button class="btn-chunky btn-primary" data-verify>Reset PIN</button><button class="btn-chunky" data-close>Cancel</button></div>`);
   const email = () => sh.el.querySelector('[data-email]').value;
-  sh.el.querySelector('[data-send]').addEventListener('click', async () => {
-    try { await requestCode(email()); toast('Code sent. Check that inbox.'); } catch (e) { toast(e.message); }
-  });
-  sh.el.querySelector('[data-verify]').addEventListener('click', async () => {
-    try { await verifyCode(email(), sh.el.querySelector('[data-code]').value); clearPin(); sh.close(); toast('PIN cleared. Choose a new one.'); renderGrownups(root, go); }
-    catch (e) { toast(e.message); }
-  });
+  sh.el.querySelector('[data-send]').addEventListener('click', (e) => busy(e.currentTarget, 'Sending...', async () => {
+    try { await requestCode(email()); toast('Code sent. Check that inbox.'); } catch (err) { toast(err.message); }
+  }));
+  sh.el.querySelector('[data-verify]').addEventListener('click', (e) => busy(e.currentTarget, 'Checking...', async () => {
+    const code = cleanCode(sh.el.querySelector('[data-code]').value);
+    if (!codeOk(code)) return toast('Type the code from the email.');
+    try { await verifyCode(email(), code); clearPin(); sh.close(); toast('PIN cleared. Choose a new one.'); renderGrownups(root, go); }
+    catch (err) { toast(err.message); }
+  }));
 }
 
 function resizePhoto(file) {
@@ -281,14 +283,14 @@ function renderMain(root, go) {
     : pendingEmail ? `
       <div class="step">${check(false)}<div class="step-body">
         <p class="step-title">1. Type the code from the email</p>
-        <p class="note">We sent a 6-digit code to <strong>${esc(pendingEmail)}</strong>. Not there? Check Spam, or wait a minute.</p>
-        <input class="field code-field" inputmode="numeric" autocomplete="one-time-code" maxlength="9" placeholder="000000" data-code>
+        <p class="note sent-ok">Code sent to <strong>${esc(pendingEmail)}</strong>. It can take a minute. Not there? Check Spam.</p>
+        <input class="field code-field" inputmode="numeric" autocomplete="one-time-code" maxlength="12" placeholder="Code" data-code>
         <div class="btn-row"><button class="btn-chunky btn-primary" data-verify>Sign in</button><button class="btn-chunky btn-sm" data-resend>Send a new code</button><button class="link-btn" data-change>Use a different email</button></div>
       </div></div>`
     : `
       <div class="step">${check(false)}<div class="step-body">
         <p class="step-title">1. Sign in this device</p>
-        <p class="note">Use a family email. We'll email you a 6-digit code to type here.</p>
+        <p class="note">Use a family email. We'll email you a code to type here.</p>
         <input class="field" type="email" autocomplete="email" placeholder="Family email" data-email>
         <button class="btn-chunky btn-primary" data-send>Email me a code</button>
       </div></div>`;
@@ -303,29 +305,29 @@ function renderMain(root, go) {
   };
   drawSync();
   const off = onSyncChange(() => { if (document.body.contains(syncPanel)) { if (!syncPanel.contains(document.activeElement)) drawSync(); } else off(); });
-  const send = async (email) => {
-    try { await requestCode(email); pendingEmail = email.trim().toLowerCase(); drawSync(); syncPanel.querySelector('[data-code]')?.focus(); }
+  const send = (email, btn) => busy(btn, 'Sending...', async () => {
+    try { await requestCode(email); pendingEmail = email.trim().toLowerCase(); drawSync(); syncPanel.querySelector('[data-code]')?.focus(); toast('Code sent. Check your email.'); }
     catch (e) { toast(/rate|seconds/i.test(e.message) ? 'Please wait a minute before asking for another code.' : e.message); }
-  };
-  on(root, 'click', '[data-send]', () => {
+  });
+  on(root, 'click', '[data-send]', (e, btn) => {
     const email = root.querySelector('[data-email]').value;
     if (!/^\S+@\S+\.\S+$/.test(email)) { toast('Type a family email first.'); return; }
-    send(email);
+    send(email, btn);
   });
-  on(root, 'click', '[data-resend]', () => send(pendingEmail));
+  on(root, 'click', '[data-resend]', (e, btn) => send(pendingEmail, btn));
   on(root, 'click', '[data-change]', () => { pendingEmail = ''; drawSync(); });
-  on(root, 'click', '[data-verify]', async () => {
-    const code = (root.querySelector('[data-code]').value || '').replace(/\D/g, '');
-    if (code.length !== 6) { toast('The code has 6 numbers.'); return; }
+  on(root, 'click', '[data-verify]', (e, btn) => busy(btn, 'Checking...', async () => {
+    const code = cleanCode(root.querySelector('[data-code]').value);
+    if (!codeOk(code)) { toast('Type the code from the email.'); return; }
     try {
       await verifyCode(pendingEmail, code);
       pendingEmail = '';
       toast('Signed in. Looking for family trainers...');
       await syncNow();
       renderMain(root, go);
-    } catch (e) { toast(/expired|invalid/i.test(e.message) ? 'That code didn’t work. It may have expired. Send a new one.' : e.message); }
-  });
-  on(root, 'click', '[data-syncnow]', async () => { const ok = await syncNow(); toast(ok ? 'Synced' : 'Couldn\u2019t sync right now. Check the internet.'); });
+    } catch (err) { toast(/expired|invalid/i.test(err.message) ? 'That code didn\u2019t work. It may have expired. Send a new one.' : err.message); }
+  }));
+  on(root, 'click', '[data-syncnow]', (e, btn) => busy(btn, 'Syncing...', async () => { const ok = await syncNow(); toast(ok ? 'Synced' : 'Couldn\u2019t sync right now. Check the internet.'); }));
   on(root, 'click', '[data-signout]', () => { signOut(); renderMain(root, go); });
   on(root, 'change', '[data-fam]', (e, el) => {
     const x = allProfiles().find((y) => y.id === el.dataset.fam);

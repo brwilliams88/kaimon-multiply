@@ -57,3 +57,18 @@ export const soundIcon = (on) => `<svg viewBox="0 0 24 24" aria-hidden="true">${
   ? '<path d="M16 9 Q18.5 12 16 15 M18.5 6.5 Q23 12 18.5 17.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>'
   : '<path d="M16.5 9.5 L21.5 14.5 M21.5 9.5 L16.5 14.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>'}</svg>`;
 export const soundButton = (on) => `<button class="icon-btn sound-btn${on ? '' : ' off'}" data-sound aria-pressed="${on}" aria-label="Sound ${on ? 'on' : 'off'}">${soundIcon(on)}</button>`;
+
+// Show that a button is working: disabled, a spinner and a label like "Sending...".
+export async function busy(btn, label, work) {
+  if (!btn || btn.dataset.busy) return;
+  const html = btn.innerHTML;
+  btn.dataset.busy = '1';
+  btn.disabled = true;
+  btn.setAttribute('aria-busy', 'true');
+  btn.innerHTML = `<span class="spin" aria-hidden="true"></span>${label}`;
+  try { return await work(); }
+  finally { if (btn.isConnected) { btn.innerHTML = html; btn.disabled = false; btn.removeAttribute('aria-busy'); delete btn.dataset.busy; } }
+}
+// Sign-in codes are 6 digits; accept 6 to 10 in case the server setting changes.
+export const cleanCode = (v) => (v || '').replace(/\D/g, '');
+export const codeOk = (c) => c.length >= 6 && c.length <= 10;

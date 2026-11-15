@@ -821,3 +821,9 @@ button { font: inherit; color: inherit; cursor: pointer; touch-action: manipulat
 .evo-arrow { font-size: 40px; font-weight: 700; }
 .evo-new { animation: pulse 1.2s ease-in-out infinite; filter: drop-shadow(0 0 16px #FFD23F); }
 .evo-kicker { margin: 0; font-weight: 700; color: var(--coral-ink); }
+
+/* v0.3.12 busy buttons */
+.spin { display: inline-block; width: 1em; height: 1em; margin-right: 8px; vertical-align: -0.15em; border: 3px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: spin .7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+button[aria-busy="true"] { opacity: .85; cursor: progress; }
+.sent-ok { color: #1E5E28; }
