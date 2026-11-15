@@ -1,7 +1,16 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.3.26';
+export const VERSION = '0.3.27';
 
 export const CHANGELOG = [
+  {
+    version: '0.3.27',
+    date: '2026-11-14',
+    title: 'Clearer words',
+    items: [
+      'Clearer wording around times tables, so "pick one times table" no longer reads like the 1s. Regions now say: each region is a times table.',
+      'Gym battles, Practice, medals and the time\'s-up screen got shorter, plainer text.',
+    ],
+  },
   {
     version: '0.3.26',
     date: '2026-11-14',

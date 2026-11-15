@@ -356,7 +356,7 @@ function renderMain(root, go) {
   });
   on(root, 'click', '[data-t]', (e, el) => {
     const t = +el.dataset.t;
-    if (s.tables.includes(t)) { if (s.tables.length === 1) { toast('Keep at least one table on.'); return; } s.tables = s.tables.filter((x) => x !== t); }
+    if (s.tables.includes(t)) { if (s.tables.length === 1) { toast('Keep at least one times table on.'); return; } s.tables = s.tables.filter((x) => x !== t); }
     else s.tables = [...s.tables, t].sort((a, b) => a - b);
     el.classList.toggle('on'); el.setAttribute('aria-pressed', s.tables.includes(t)); save();
   });

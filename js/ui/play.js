@@ -308,9 +308,9 @@ export function renderPlay(root, go, { table }) {
           <div><strong>${S.catches.length}</strong><span>caught</span></div>
           <div><strong>${S.xp || 0}</strong><span>XP</span></div>
         </div>
-        ${newBadges.length ? `<div class="sum-badges">${newBadges.map((b) => `<p>${medal(b.tier)} ${b.t}s medal: ${LEVEL_LABEL[b.tier]}! You got a Legend Ball.</p>`).join('')}</div>` : ''}
+        ${newBadges.length ? `<div class="sum-badges">${newBadges.map((b) => `<p>${medal(b.tier)} ${LEVEL_LABEL[b.tier]} medal for the ${b.t}s! You got a Legend Ball.</p>`).join('')}</div>` : ''}
         ${uniq.length ? `<h2 class="section-title">Caught this time</h2><div class="sum-catches">${uniq.map((c) => { const s = byId(c.id); return `<div class="sum-catch">${creatureArt(s, { shiny: c.shiny })}<span>${esc(s.name)}</span>${c.isNew ? '<span class="new-tag">New</span>' : ''}</div>`; }).join('')}</div>` : ''}
-        ${S.levelUps.length ? `<h2 class="section-title">Facts that leveled up</h2><div class="sum-levels">${S.levelUps.map((l) => { const [a, b] = parseFact(l.id); return `<span class="lvl lvl-${l.level}">${a} × ${b} · ${LEVEL_LABEL[l.level]}</span>`; }).join('')}</div>` : ''}
+        ${S.levelUps.length ? `<h2 class="section-title">Facts you leveled up</h2><div class="sum-levels">${S.levelUps.map((l) => { const [a, b] = parseFact(l.id); return `<span class="lvl lvl-${l.level}">${a} × ${b} · ${LEVEL_LABEL[l.level]}</span>`; }).join('')}</div>` : ''}
         ${ambush ? `<div class="ambush">
           <span class="ambush-av">${trainerArt({ kind: 'grunt' })}</span>
           <div class="ambush-text"><strong>A Team Papa grunt jumps out!</strong><p>${esc(dadJoke('appear'))}</p></div>

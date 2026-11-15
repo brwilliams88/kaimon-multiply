@@ -115,7 +115,7 @@ function showEntry(p, s) {
         return `<dl class="entry-facts">${rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl><p class="entry-hint">${esc(r[1])}</p>${e.shiny ? '<p class="entry-hint shiny-word">✦ You caught a shiny one: a rare sparkly color. Tap the picture to see it.</p>' : ''}`;
       })()}
       ${line.length > 1 ? `<div class="entry-line">${line.map((x) => { const xs = dexState(p, x.id); return `<div class="line-step${x.num === s.num ? ' cur' : ''}">${creatureArt(x, { mode: xs === 'caught' ? 'full' : xs })}<span>${xs === 'unknown' ? '???' : esc(x.name)}</span></div>`; }).join('<span class="line-arrow" aria-hidden="true">›</span>')}</div>` : ''}
-      ${s.mega && st === 'caught' ? `<p class="entry-mega">Has a rare Mega form. Mega Crystals arrive with Gym Leader rematches.</p>` : ''}`;
+      ${s.mega && st === 'caught' ? `<p class="entry-mega">Has a rare Mega form. You'll be able to unlock it later in the adventure.</p>` : ''}`;
   }
   const sh = sheet(`
     <div class="entry" style="--rc:${t.color};--rl:${t.light}">

@@ -45,7 +45,7 @@ export function renderHome(root, go, params = {}) {
               <span class="ball-count" title="Legend Balls">${ballIcon('legend')}${p.balls.legend}</span>
               ${p.items.snack ? `<span class="ball-count" title="Power Snacks">${snackIcon()}${p.items.snack}</span>` : ''}
             </button>
-          <button class="btn-chunky btn-primary btn-xl play-btn" data-play="mix"><span>Practice</span><small>Mix of every table</small></button>
+          <button class="btn-chunky btn-primary btn-xl play-btn" data-play="mix"><span>Practice</span><small>All your times tables, mixed</small></button>
         </div>
 
         <button class="kdx-tile" data-dex>
@@ -55,7 +55,7 @@ export function renderHome(root, go, params = {}) {
         </button>
 
         <h2 class="section-title">Regions</h2>
-        <p class="section-sub">Pick one times table. Catch the Kaimon that live there and earn its medal, from Bronze to Star.</p>
+        <p class="section-sub">Each region is a times table. Pick a region, catch the Kaimon that live there, and earn its medal: Bronze, Silver, Gold, then Star.</p>
         <div class="regions">
           ${REGIONS.map((r) => {
             const t = TYPES[r.type];
@@ -71,7 +71,7 @@ export function renderHome(root, go, params = {}) {
         </div>
 
         <h2 class="section-title">Gym battles</h2>
-        <p class="section-sub">Your team battles with your answers. Beat each Gym Leader for their badge and bonus XP, then face Boss Papa at Papa's Gym, the final gym.</p>
+        <p class="section-sub">Every right answer is an attack. Beat a Gym Leader to win their badge and bonus XP. Win every badge to face Boss Papa.</p>
         <div class="battles">
           <div class="champs">
             ${REGIONS.filter((r) => p.settings.tables.includes(r.table)).map((r) => {
@@ -106,7 +106,7 @@ export function renderHome(root, go, params = {}) {
     sheet(`<div class="celebrate"><div class="partner-art rest">${creatureArt(partner.species)}</div>
       <h2>That's today's Kaimon time!</h2>
       <p>${esc(partner.species.name)} is taking a nap to get stronger. Come back tomorrow for more catching and battles.</p>
-      <p class="note">Grown-ups can add more time in Grown-ups.</p>
+      <p class="note">A grown-up can add more time.</p>
       <button class="btn-chunky btn-primary" data-close>Okay</button></div>`);
     return true;
   };
@@ -122,7 +122,7 @@ export function renderHome(root, go, params = {}) {
     unlock(); sfx.tap();
     if (timesUp()) return;
     if (bossUnlocked(p)) go('battle', { kind: 'boss' });
-    else sheet(`<h2>Papa's Gym</h2><p>The final gym, and a CrossFit gym. Boss Papa only battles trainers with every Gym Leader badge. Come back when you have them all.</p><div class="sheet-actions"><button class="btn-chunky btn-primary" data-close>Okay</button></div>`);
+    else sheet(`<h2>Papa's Gym</h2><p>The final gym, and a CrossFit gym. Boss Papa only battles trainers who have every Gym Leader badge. Come back when you have them all.</p><div class="sheet-actions"><button class="btn-chunky btn-primary" data-close>Okay</button></div>`);
   });
   on(root, 'click', '[data-menu]', () => { unlock(); sfx.tap(); homeMenu(p, go); });
   on(root, 'click', '[data-balls]', () => { unlock(); sfx.tap(); ballsHelp(p); });
