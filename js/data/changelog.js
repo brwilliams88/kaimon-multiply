@@ -4,7 +4,7 @@ export const VERSION = '0.3.32';
 export const CHANGELOG = [
   {
     version: '0.3.32',
-    date: '2026-11-14',
+    date: '2026-11-15',
     title: 'Shiny, done right',
     items: [
       'Kaidex entries for a shiny Kaimon have a Normal / Shiny switch under the picture. Tapping the gold shiny tag flips it too.',
@@ -13,7 +13,7 @@ export const CHANGELOG = [
   },
   {
     version: '0.3.31',
-    date: '2026-11-14',
+    date: '2026-11-15',
     title: 'A cleaner ball picker',
     items: [
       'Balls on the card are now round buttons. The one you\'ll throw gets a gold ring and its name shows beside the row. Tap another ball to switch.',
@@ -22,7 +22,7 @@ export const CHANGELOG = [
   },
   {
     version: '0.3.30',
-    date: '2026-11-14',
+    date: '2026-11-15',
     title: 'Cleaner voice messages',
     items: [
       'Say it now shows Listening… on the button itself.',
@@ -31,7 +31,7 @@ export const CHANGELOG = [
   },
   {
     version: '0.3.29',
-    date: '2026-11-14',
+    date: '2026-11-15',
     title: 'Card flips, fixed for real',
     items: [
       'The card\'s front and back now swap just before the card turns edge-on, so nothing from the front can show through backwards. v0.3.24 swapped them too late on fast flips.',
@@ -39,7 +39,7 @@ export const CHANGELOG = [
   },
   {
     version: '0.3.28',
-    date: '2026-11-14',
+    date: '2026-11-15',
     title: 'A real How to play',
     items: [
       'How to play now starts with the adventure: catch wild Kaimon with multiplication, and the better you get, the more you catch.',
@@ -48,7 +48,7 @@ export const CHANGELOG = [
   },
   {
     version: '0.3.27',
-    date: '2026-11-14',
+    date: '2026-11-15',
     title: 'Clearer words',
     items: [
       'Clearer wording around times tables, so "pick one times table" no longer reads like the 1s. Regions now say: each region is a times table.',

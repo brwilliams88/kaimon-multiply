@@ -2,31 +2,31 @@
 
 All notable changes. Versioning: `0.MINOR.0` marks a roadmap phase, `0.x.PATCH` is any shipped change a player or parent can notice, and `1.0.0` is the public launch. See "Versioning" in CLAUDE.md. The in-app version history (Grown-ups > What's new) reads from `js/data/changelog.js`; keep both in sync. Each release is tagged in git as `vX.Y.Z`.
 
-## v0.3.32 (2026-11-14) Shiny, done right
+## v0.3.32 (2026-11-15) Shiny, done right
 
 - Kaidex entries for a shiny Kaimon have a Normal / Shiny switch under the picture. Tapping the gold shiny tag flips it too.
 - One gold sparkle sticker now marks shiny Kaimon everywhere: Kaidex tiles, the shiny count, catches and the shiny guide. The pink badges are gone.
 
-## v0.3.31 (2026-11-14) A cleaner ball picker
+## v0.3.31 (2026-11-15) A cleaner ball picker
 
 - Balls on the card are now round buttons. The one you'll throw gets a gold ring and its name shows beside the row. Tap another ball to switch.
 - Special balls show how many you have in a small badge. No more Throw label or ready text.
 
-## v0.3.30 (2026-11-14) Cleaner voice messages
+## v0.3.30 (2026-11-15) Cleaner voice messages
 
 - Say it now shows Listening… on the button itself.
 - If the mic can't hear a number, a short bubble pops up above the answer box and fades away, instead of small text hiding under the big numbers.
 
-## v0.3.29 (2026-11-14) Card flips, fixed for real
+## v0.3.29 (2026-11-15) Card flips, fixed for real
 
 - The card's front and back now swap just before the card turns edge-on, so nothing from the front can show through backwards. v0.3.24 swapped them too late on fast flips.
 
-## v0.3.28 (2026-11-14) A real How to play
+## v0.3.28 (2026-11-15) A real How to play
 
 - How to play now starts with the adventure: catch wild Kaimon with multiplication, and the better you get, the more you catch.
 - Then each part of the game gets a picture and a short, kid-friendly explanation: your Buddy, Practice, Balls, Regions, Gym battles and the Kaidex.
 
-## v0.3.27 (2026-11-14) Clearer words
+## v0.3.27 (2026-11-15) Clearer words
 
 - Clearer wording around times tables, so "pick one times table" no longer reads like the 1s. Regions now say: each region is a times table.
 - Gym battles, Practice, medals and the time's-up screen got shorter, plainer text.
