@@ -3,6 +3,7 @@ import { dexCounts } from '../core/game.js';
 import { status as syncStatus, onSyncChange } from '../core/sync.js';
 import { familySignInSheet } from './familySignIn.js';
 import { VERSION } from '../data/changelog.js';
+import { maybeShowInstall } from './install.js';
 import { byId, TYPES } from '../data/creatures.js';
 import { creatureArt } from '../core/art.js';
 import { avatarSVG, AVATAR_COUNT } from './avatars.js';
@@ -33,6 +34,7 @@ export function renderWelcome(root, go) {
       ${st.signedIn ? '' : '<button class="link-btn fam-signin" data-famsignin>Family device? Sign in for family sync</button>'}
       <p class="ver-foot">Kaimon Multiply v${VERSION}</p>
     </section>`;
+  maybeShowInstall();
   // Family trainers can arrive from sync while this screen is open.
   const sig = () => JSON.stringify([allProfiles().map((p) => p.id + p.family), syncStatus().signedIn, syncStatus().busy]);
   const before = sig();

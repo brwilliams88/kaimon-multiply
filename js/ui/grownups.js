@@ -3,6 +3,7 @@ import { deleteEverywhere, addBackFromFamily } from '../core/sync.js';
 import { avatarSVG } from './avatars.js';
 import { dexCounts } from '../core/game.js';
 import { checkNow } from '../core/update.js';
+import { installHelpHTML, canPromptInstall, promptInstall, isInstalled } from './install.js';
 import { lastDays, partsOfDay, usedToday } from '../core/playtime.js';
 import { bonusTime } from '../core/actions.js';
 import { active, save, exportBackup, importBackup, deleteProfile, allProfiles, hasPin, setPin, checkPin, clearPin } from '../core/store.js';
@@ -242,8 +243,10 @@ function renderMain(root, go) {
         </div>
 
         <div class="panel">
-          <h2>Install on a phone or iPad</h2>
-          <p class="note"><strong>iPhone or iPad:</strong> open this page in Safari, tap Share, then Add to Home Screen. <strong>Chromebook or Android:</strong> open in Chrome and choose Install app from the menu. It works offline after the first visit.</p>
+          <h2>Install on this device</h2>
+          ${canPromptInstall() && !isInstalled() ? '<button class="btn-chunky btn-primary" data-install>Install Kaimon</button>' : ''}
+          ${installHelpHTML()}
+          <p class="note">For another device, open <strong>brwilliams88.github.io/kaimon-multiply</strong> there.</p>
         </div>
 
         <div class="panel whatsnew">
@@ -255,6 +258,7 @@ function renderMain(root, go) {
     </section>`;
 
   on(root, 'click', '[data-back]', () => go('home'));
+  on(root, 'click', '[data-install]', async () => { if (await promptInstall()) renderMain(root, go); });
   on(root, 'click', '[data-update]', async (e, btn) => {
     const msg = root.querySelector('[data-upd-msg]');
     btn.disabled = true; msg.textContent = 'Checking...';

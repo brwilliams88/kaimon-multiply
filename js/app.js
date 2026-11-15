@@ -14,6 +14,7 @@ import { openTime } from './core/actions.js';
 import { stopMusic, startMusic } from './core/music.js';
 import { save, touch } from './core/store.js';
 import { startUpdates, justUpdated } from './core/update.js';
+import './ui/install.js'; // listens for Chrome's install prompt from the start
 
 const SCREENS = {
   welcome: renderWelcome,

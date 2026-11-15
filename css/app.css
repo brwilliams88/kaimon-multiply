@@ -792,3 +792,13 @@ button { font: inherit; color: inherit; cursor: pointer; touch-action: manipulat
   .champ-name { font-size: 14px; }
   .champ-tag { font-size: 13px; }
 }
+
+/* v0.3.9 install help */
+.ins h2 { margin-top: 0; }
+.ins-steps { margin: 6px 0 4px; padding-left: 0; list-style: none; counter-reset: s; display: grid; gap: 10px; text-align: left; }
+.ins-steps li { counter-increment: s; display: flex; align-items: center; flex-wrap: wrap; gap: 6px; font-size: 18px; line-height: 1.35; padding-left: 44px; position: relative; min-height: 34px; }
+.ins-steps li::before { content: counter(s); position: absolute; left: 0; top: 0; width: 32px; height: 32px; border-radius: 50%; background: var(--sun); border: 2.5px solid var(--ink); display: grid; place-items: center; font-weight: 700; }
+.ins-ic { width: 26px; height: 26px; color: #1E6FD9; vertical-align: middle; }
+.ins-later { margin-top: 6px; text-align: center; }
+.ins-steps li { display: block; padding-top: 3px; }
+.ins-ic { margin: -4px 2px 0; }

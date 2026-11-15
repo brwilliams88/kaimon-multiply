@@ -1,7 +1,17 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.3.8';
+export const VERSION = '0.3.9';
 
 export const CHANGELOG = [
+  {
+    version: '0.3.9',
+    date: '2026-11-14',
+    title: 'Install help',
+    items: [
+      'The first time Kaimon opens in a browser, it shows how to put it on your home screen, with steps for your kind of device.',
+      'Android phones and Chromebooks get a one-tap Install button.',
+      'It never shows inside the installed app, and the steps are always in Grown-ups.',
+    ],
+  },
   {
     version: '0.3.8',
     date: '2026-11-14',
