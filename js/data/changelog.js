@@ -1,7 +1,16 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.3.37';
+export const VERSION = '0.3.38';
 
 export const CHANGELOG = [
+  {
+    version: '0.3.38',
+    date: '2026-11-15',
+    title: 'Kaimo is now Kaizo',
+    items: [
+      'The dragon starter is now called Kaizo, so it doesn\'t sound like Kaimon without the n. Its family is Kaizo, Kaizen and Kaizenith.',
+      'Nothing else changes: if Kaizo is your Buddy, it keeps its level, XP and catches.',
+    ],
+  },
   {
     version: '0.3.37',
     date: '2026-11-15',

@@ -35,7 +35,7 @@ export const REGIONS = [
 // [num, name, type, region(table|0 flagship|'legend'|'mythic'), line, stage, desc, mega?]
 // [name, type, region(table|0 starter|'legend'|'papa'|'mythic'), line, stage, desc, mega?]. Kaidex numbers are assigned in order.
 const RAW = [
-  ['Kaimo', 'dragon', 0, 'kaimo', 1, 'A round baby dragon with stubby wings and a gold gem on its forehead. The face of every Kaimon game.'],
+  ['Kaizo', 'dragon', 0, 'kaimo', 1, 'A round baby dragon with stubby wings and a gold gem on its forehead. The face of every Kaimon game.'],
   ['Kaizen', 'dragon', 0, 'kaimo', 2, 'Its wings have grown strong enough to glide. The gem glows brighter with every fact you learn.'],
   ['Kaizenith', 'dragon', 0, 'kaimo', 3, 'A mighty dragon whose gem shines like a star. Kaizen means always getting better.', ['Mega Kaizenith', 'Its gem splits into a crown of light and its wings span the whole sky.']],
   ['Kaiko', 'fire', 0, 'kaiko', 1, 'A fluffy baby firebird with a flame crest and a gem on its forehead.'],
