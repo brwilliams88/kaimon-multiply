@@ -1,7 +1,16 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.3.3';
+export const VERSION = '0.3.4';
 
 export const CHANGELOG = [
+  {
+    version: '0.3.4',
+    date: '2026-11-14',
+    title: 'Cards fit every phone',
+    items: [
+      'Fixed: on iPhones, the card could slide under the answer box and the Say it button.',
+      'Everything on a card now sizes itself to the card, so the words never touch the bottom edge.',
+    ],
+  },
   {
     version: '0.3.3',
     date: '2026-11-14',

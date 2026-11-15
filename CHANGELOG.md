@@ -2,6 +2,11 @@
 
 All notable changes. Versioning: `0.MINOR.0` marks a roadmap phase, `0.x.PATCH` is any shipped change a player or parent can notice, and `1.0.0` is the public launch. See "Versioning" in CLAUDE.md. The in-app version history (Grown-ups > What's new) reads from `js/data/changelog.js`; keep both in sync. Each release is tagged in git as `vX.Y.Z`.
 
+## v0.3.4 (2026-11-14) Cards fit every phone
+
+- Removed the card's 300px minimum height; on an installed iPhone app (notch and home bar take ~80px) with the Say it button showing, the card overflowed under the answer row.
+- Card contents use container query units (cqh/cqw) on .card3d, so type, Kaimon art, ball and hint ladder scale to the card's real size. Verified at 390x763, 430x851, 375x647, 820x1140 and 1180x790 with voice on.
+
 ## v0.3.3 (2026-11-14) Cleaner cards and a sound button
 
 v0.3.1 to v0.3.3 were built in that order and shipped together in one push (tag v0.3.3).
