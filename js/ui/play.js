@@ -76,17 +76,18 @@ export function renderPlay(root, go, { table }) {
   }
 
   // Ball belt: the free ball (better on a streak) plus any special balls you own.
+  // The picked ball is the one a right answer throws.
   function beltHTML(species) {
     S.pick = 'free';
     const free = ballForStreak(p, S.streak + 1);
     const owned = ['super', 'mega', 'legend'].filter((k) => (p.balls[k] || 0) > 0);
     if (!owned.length && free === 'capture') return '';
     const rare = ['rare', 'legendary'].includes(species.rarity);
-    const btn = (k, label, isFree) => `<button class="belt-ball${isFree ? ' on' : ''}" data-ball="${isFree ? 'free' : k}" aria-pressed="${isFree}" aria-label="${BALLS[k].name}${isFree ? ', free' : ''}">${ballIcon(k)}<span>${label}</span></button>`;
-    return `<div class="belt${rare && owned.length ? ' rare' : ''}" role="group" aria-label="Pick a ball, then answer">
-      ${rare && owned.length ? '<span class="belt-tip">Rare! Pick a ball</span>' : ''}
-      ${btn(free, free === 'capture' ? 'Free' : 'Streak!', true)}
-      ${owned.map((k) => btn(k, '×' + p.balls[k], false)).join('')}
+    const btn = (k, count, isFree) => `<button class="belt-ball${isFree ? ' on' : ''}" data-ball="${isFree ? 'free' : k}" aria-pressed="${isFree}" aria-label="${BALLS[k].name}${isFree ? ', free' : `, ${count} left`}">${ballIcon(k)}<span class="bb-name">${BALLS[k].name.replace(' Ball', '')}</span>${isFree ? (k === 'capture' ? '' : '<span class="bb-count">free</span>') : `<span class="bb-count">${count}</span>`}</button>`;
+    return `<div class="belt${rare && owned.length ? ' rare' : ''}" role="group" aria-label="Pick the ball a right answer throws">
+      <span class="belt-label">${rare && owned.length ? 'Rare! Throw' : 'Throw'}</span>
+      ${btn(free, 0, true)}
+      ${owned.map((k) => btn(k, p.balls[k], false)).join('')}
     </div>`;
   }
 
@@ -110,8 +111,9 @@ export function renderPlay(root, go, { table }) {
     el.front.innerHTML = `
       <div class="card-head"><span>${region.name}</span><span class="card-type">${t.name}</span></div>
       <div class="card-q"><span>${a}</span><span class="times">×</span><span>${b}</span></div>
-      <div class="card-wild">${creatureArt(species, { mode: 'seen' })}<p>${lingering ? `${known ? esc(species.name) : 'The wild Kaimon'} is still here!` : `A wild ${known ? esc(species.name) : '???'} appeared`}</p></div>
+      <div class="card-wild${lingering ? ' stay' : ''}"><div class="wild-art">${creatureArt(species)}</div><p>${lingering ? `<strong>${esc(species.name)}</strong> is still here!` : `A wild <strong>${esc(species.name)}</strong> appeared!${known ? '' : ' <span class="wild-new">New!</span>'}`}</p></div>
       ${beltHTML(species)}`;
+    el.front.classList.toggle('has-belt', !!el.front.querySelector('.belt'));
     el.back.innerHTML = '';
     el.inner.classList.remove('flipped', 'wrong');
     setInput('');
@@ -330,6 +332,11 @@ export function renderPlay(root, go, { table }) {
     sfx.tap();
     S.pick = b.dataset.ball === S.pick ? 'free' : b.dataset.ball;
     root.querySelectorAll('[data-ball]').forEach((x) => { const on = x.dataset.ball === S.pick; x.classList.toggle('on', on); x.setAttribute('aria-pressed', on); });
+    const lab = root.querySelector('.belt-label');
+    if (lab) {
+      lab.textContent = S.pick === 'free' ? 'Throw' : `${BALLS[S.pick].name.replace(' Ball', '')} ready!`;
+      lab.classList.toggle('ready', S.pick !== 'free');
+    }
   });
   on(root, 'click', '[data-exit]', () => {
     const sh = sheet(`<h2>Stop practicing?</h2><p>Your catches and progress are saved.</p><div class="sheet-actions"><button class="btn-chunky btn-primary" data-stop>Stop</button><button class="btn-chunky" data-close>Keep going</button></div>`);

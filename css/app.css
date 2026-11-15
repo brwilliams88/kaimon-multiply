@@ -894,3 +894,28 @@ button.balls-row:hover { background: rgba(20, 33, 61, .06); }
 .menu-grown .menu-ic { background: #FFE9C7; }
 .menu-grown .hold-ring { inset: 6px auto auto 4px; width: 40px; height: 40px; }
 .menu-ver { margin: 10px 0 0; text-align: center; font-size: 14px; color: var(--ink-2); }
+
+/* v0.3.19 wild Kaimon in color, belt inside the frame */
+.face { padding: clamp(18px, 4cqh, 28px) clamp(20px, 4.5cqw, 30px); }
+.front.has-belt .card-q { font-size: clamp(40px, min(21cqh, 18cqw), 140px); }
+.front.has-belt .card-wild .kart { width: clamp(48px, 24cqh, 190px); height: clamp(48px, 24cqh, 190px); }
+.wild-art { position: relative; display: grid; place-items: center; }
+.wild-art::after { content: ''; position: absolute; left: 50%; bottom: 2%; width: 70%; height: 10%; transform: translateX(-50%); border-radius: 50%; background: rgba(20, 33, 61, .14); z-index: -1; }
+.card-wild:not(.stay) .wild-art .kart { animation: wildIn .7s cubic-bezier(.3, 1.5, .5, 1) .25s both; }
+.card-wild p strong { color: var(--ink); }
+.wild-new { display: inline-block; font-size: .8em; font-weight: 700; color: #7A1E0C; background: var(--sun); border: 2px solid var(--ink); border-radius: 99px; padding: 0 7px; margin-left: 2px; vertical-align: 1px; }
+@keyframes wildIn { 0% { transform: translateX(60%) scale(.6); opacity: 0; } 60% { transform: translateX(-6%) scale(1.05); opacity: 1; } 80% { transform: translateY(-8%); } 100% { transform: none; } }
+.belt { gap: clamp(4px, 1.4cqw, 8px); }
+.belt-label { font-weight: 700; font-size: clamp(12px, 3.6cqh, 16px); color: var(--ink-2); white-space: nowrap; }
+.belt-label.ready { color: #1E5E28; }
+.belt-tip { display: none; }
+.belt-ball { padding: 2px 8px 2px 3px; gap: 3px; }
+.belt-ball .bb-name { font-size: clamp(11px, 3.2cqh, 15px); }
+.belt-ball .bb-count { font-size: clamp(10px, 2.9cqh, 13px); color: var(--ink-2); font-weight: 700; }
+.belt-ball.on { background: var(--sun); outline: 3px solid #1E6FD9; outline-offset: 1px; }
+.belt-ball.on .bb-count { color: var(--ink); }
+@media (prefers-reduced-motion: reduce) { .card-wild .wild-art .kart { animation: none !important; } }
+@container (max-width: 440px) {
+  .belt-ball:not(.on) .bb-name { display: none; }
+  .belt-ball:not(.on) { padding-right: 7px; }
+}

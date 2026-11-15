@@ -1,7 +1,17 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.3.18';
+export const VERSION = '0.3.19';
 
 export const CHANGELOG = [
+  {
+    version: '0.3.19',
+    date: '2026-11-14',
+    title: 'Wild Kaimon jump out in color',
+    items: [
+      'Wild Kaimon now jump onto the card in full color: A wild Voltfoal appeared! A New! tag means you haven\'t caught it yet.',
+      'The ball belt sits inside the card and says Throw, so it\'s clear which ball a right answer throws. Picking a special ball says it\'s ready.',
+      'The belt no longer covers the card\'s border on phones.',
+    ],
+  },
   {
     version: '0.3.18',
     date: '2026-11-14',
