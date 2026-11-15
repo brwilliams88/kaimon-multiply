@@ -2,6 +2,11 @@
 
 All notable changes. Versioning: `0.MINOR.0` marks a roadmap phase, `0.x.PATCH` is any shipped change a player or parent can notice, and `1.0.0` is the public launch. See "Versioning" in CLAUDE.md. The in-app version history (Grown-ups > What's new) reads from `js/data/changelog.js`; keep both in sync. Each release is tagged in git as `vX.Y.Z`.
 
+## v0.3.16 (2026-11-14) Cleaner switches
+
+- On and off switches in Grown-ups now look and move like the ones on an iPhone.
+- Family sync names and their switches stay on one line.
+
 ## v0.3.15 (2026-11-14) Install steps for your browser
 
 - Install help detects the browser as well as the device: Safari or Chrome on iPhone and iPad, Chrome, Samsung Internet or Edge on Android, Chrome, Edge or Safari on computers.

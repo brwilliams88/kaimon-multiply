@@ -157,9 +157,9 @@ function renderMain(root, go) {
           <div class="table-toggles">${[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((t) => `<button class="tt${s.tables.includes(t) ? ' on' : ''}" data-t="${t}" aria-pressed="${s.tables.includes(t)}">${t}s</button>`).join('')}</div>
           <label class="row"><span>Cards per session</span><select data-set="sessionLength">${[10, 15, 20, 30].map((n) => `<option ${s.sessionLength === n ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
           <label class="row"><span>Counts as fast</span><select data-set="fastMs">${[3000, 4000, 5000, 6000, 8000].map((n) => `<option value="${n}" ${s.fastMs === n ? 'selected' : ''}>${n / 1000} seconds</option>`).join('')}</select></label>
-          <label class="row"><span>Sound<small class="row-note">Also on the speaker button in the game. On iPhone, the silent switch mutes it.</small></span><input type="checkbox" data-set="sound" ${s.sound ? 'checked' : ''}></label>
-          <label class="row"><span>Battle music<small class="row-note">Plays during battles only, never during practice cards.</small></span><input type="checkbox" data-set="music" ${s.music !== false ? 'checked' : ''}></label>
-          <label class="row"><span>Voice answers<small class="row-note">The phone asks to use the microphone the first time each day it's used.</small></span><input type="checkbox" data-set="voice" ${s.voice ? 'checked' : ''}></label>
+          <label class="row"><span>Sound<small class="row-note">Also on the speaker button in the game. On iPhone, the silent switch mutes it.</small></span><input type="checkbox" class="switch" data-set="sound" ${s.sound ? 'checked' : ''}></label>
+          <label class="row"><span>Battle music<small class="row-note">Plays during battles only, never during practice cards.</small></span><input type="checkbox" class="switch" data-set="music" ${s.music !== false ? 'checked' : ''}></label>
+          <label class="row"><span>Voice answers<small class="row-note">The phone asks to use the microphone the first time each day it's used.</small></span><input type="checkbox" class="switch" data-set="voice" ${s.voice ? 'checked' : ''}></label>
           <p class="note">${voiceSupported() ? 'Voice works on this device. Kids tap Say it, then say the number.' : 'Voice isn’t available here. On iPad and iPhone it may work in Safari but not from the home screen icon; the number pad always works.'}</p>
         </div>
 
@@ -299,7 +299,7 @@ function renderMain(root, go) {
       <div class="step ${st.signedIn ? '' : 'off'}">${check(st.signedIn && people.some((x) => x.family))}<div class="step-body">
         <p class="step-title">2. Choose who syncs</p>
         <p class="note">${st.signedIn ? 'Synced trainers show up on every signed-in family device, with the same progress.' : 'After signing in, pick the family trainers to sync.'}</p>
-        ${st.signedIn ? `<div class="trainer-rows">${people.map((x) => `<label class="trow sync-row"><span class="trow-name">${esc(x.name)}</span><span class="trow-tag ${x.family ? 'fam' : ''}">${x.family ? 'Synced' : 'This device only'}</span><input type="checkbox" class="switch" data-fam="${x.id}" ${x.family ? 'checked' : ''} aria-label="Sync ${esc(x.name)} with family"></label>`).join('')}</div>` : ''}
+        ${st.signedIn ? `<div class="trainer-rows">${people.map((x) => `<label class="trow sync-row"><span class="sync-who"><span class="trow-name">${esc(x.name)}</span><span class="trow-tag ${x.family ? 'fam' : ''}">${x.family ? 'Synced' : 'This device only'}</span></span><input type="checkbox" class="switch" data-fam="${x.id}" ${x.family ? 'checked' : ''} aria-label="Sync ${esc(x.name)} with family"></label>`).join('')}</div>` : ''}
       </div></div>`;
     syncPanel.innerHTML = `<h2>Family sync</h2>${step1}${step2}`;
   };

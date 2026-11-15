@@ -1,7 +1,16 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.3.15';
+export const VERSION = '0.3.16';
 
 export const CHANGELOG = [
+  {
+    version: '0.3.16',
+    date: '2026-11-14',
+    title: 'Cleaner switches',
+    items: [
+      'On and off switches in Grown-ups now look and move like the ones on an iPhone.',
+      'Family sync names and their switches stay on one line.',
+    ],
+  },
   {
     version: '0.3.15',
     date: '2026-11-14',
