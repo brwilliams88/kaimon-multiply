@@ -1,7 +1,17 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.3.44';
+export const VERSION = '0.3.45';
 
 export const CHANGELOG = [
+  {
+    version: '0.3.45',
+    date: '2026-11-15',
+    title: 'Tidier battle screen',
+    items: [
+      'The battle screen now sizes itself to fit, so the question never covers the HP boxes and the counting row after a wrong answer always shows, even on small iPhones.',
+      'Numbers like 1 no longer show a seam in their outline.',
+      'The trainer circle is gone from the battle arena: just the two Kaimon, their HP and the question. Full-body trainer art comes with the art stage.',
+    ],
+  },
   {
     version: '0.3.44',
     date: '2026-11-15',

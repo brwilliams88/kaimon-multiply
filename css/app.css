@@ -1214,3 +1214,42 @@ button.team-slot { cursor: pointer; }
 .to-stars i { font-style: normal; color: #E3E9F2; -webkit-text-stroke: 0; }
 .to-move { font-size: 12px; color: var(--ink-2); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .team-note { margin: 4px 0 0; font-size: 13px; color: var(--ink-2); }
+
+/* v0.3.45 outlined numbers: draw the outline under the fill, so overlapping glyph
+   shapes (like the 1 in Fredoka) don't show seams. Width doubled since half is hidden. */
+.card-q .times, .q .times { -webkit-text-stroke: 4px var(--ink); paint-order: stroke fill; }
+.answer-reveal .ans, .q .ans { -webkit-text-stroke: 4px var(--ink); paint-order: stroke fill; }
+.celebrate-star { -webkit-text-stroke: 6px var(--ink); paint-order: stroke fill; }
+.vs { -webkit-text-stroke: 3px var(--ink); paint-order: stroke fill; }
+.flee-bang { -webkit-text-stroke: 4px var(--ink); paint-order: stroke fill; }
+.to-stars { -webkit-text-stroke: 1.2px var(--ink); paint-order: stroke fill; }
+
+/* v0.3.45 battle arena: everything sized from the arena's own height, so the question
+   never covers the HP boxes and the counting row always has room. 1cqh = 1% of arena height. */
+.battle .arena { container-type: size; grid-template-rows: auto minmax(0, 1fr) auto; gap: clamp(2px, 1.2cqh, 10px); padding: clamp(8px, 2.4cqh, 16px) clamp(10px, 3cqw, 18px); }
+.battle .side { min-height: 0; }
+.battle .mon { width: clamp(52px, 24cqh, 168px); }
+.battle .hp { padding: clamp(4px, 1.4cqh, 8px) clamp(8px, 2.5cqw, 12px) clamp(3px, 1cqh, 6px); border-radius: 16px; box-shadow: 0 3px 0 var(--ink); }
+.battle .hp-name { font-size: clamp(13px, 4.4cqh, 18px); }
+.battle .hp-bar { height: clamp(8px, 2.8cqh, 14px); margin-top: clamp(2px, .8cqh, 5px); }
+.battle .hp-num { font-size: clamp(10px, 3.2cqh, 13px); margin-top: 1px; }
+.battle .center { gap: clamp(2px, 1.4cqh, 10px); overflow: hidden; }
+.battle .q-card { padding: clamp(0px, .8cqh, 6px) clamp(12px, 4cqw, 26px); }
+.battle .q { font-size: clamp(28px, 14cqh, 92px); line-height: 1.08; }
+.battle .b-msg { font-size: clamp(12px, 4.2cqh, 20px); min-height: 0; line-height: 1.2; }
+.battle .ladder-inline { gap: clamp(2px, .9cqh, 5px); }
+.battle .ladder-inline span { font-size: clamp(11px, 3.8cqh, 17px); padding: 0 clamp(4px, 1.2cqw, 8px); border-width: 1.5px; border-radius: 7px; }
+.me-wrap, .me-trainer { display: none; }
+.battle .q { font-size: clamp(32px, 21cqh, 96px); }
+.battle .mon { width: clamp(48px, 21cqh, 168px); }
+.battle .hp { max-width: min(300px, 62cqw); }
+.battle .ladder-inline { flex-wrap: nowrap; max-width: 100%; }
+.battle .ladder-inline span { font-size: clamp(10px, 3.6cqh, 17px); padding: 0 clamp(3px, 1cqw, 8px); }
+@container (max-height: 250px) {
+  .battle .q { font-size: clamp(26px, 17cqh, 60px); }
+  .battle .mon { width: clamp(40px, 17cqh, 90px); }
+  .battle .hp-num { display: none; }
+}
+.vs-chip { min-width: 0; }
+.vs-chip > span:last-child { min-width: 0; display: flex; flex-direction: column; }
+.vs-chip strong, .vs-chip small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

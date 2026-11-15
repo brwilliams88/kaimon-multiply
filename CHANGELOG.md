@@ -2,6 +2,12 @@
 
 All notable changes. Versioning: `0.MINOR.0` marks a roadmap phase, `0.x.PATCH` is any shipped change a player or parent can notice, and `1.0.0` is the public launch. See "Versioning" in CLAUDE.md. The in-app version history (Grown-ups > What's new) reads from `js/data/changelog.js`; keep both in sync. Each release is tagged in git as `vX.Y.Z`.
 
+## v0.3.45 (2026-11-15) Tidier battle screen
+
+- The battle screen now sizes itself to fit, so the question never covers the HP boxes and the counting row after a wrong answer always shows, even on small iPhones.
+- Numbers like 1 no longer show a seam in their outline.
+- The trainer circle is gone from the battle arena: just the two Kaimon, their HP and the question. Full-body trainer art comes with the art stage.
+
 ## v0.3.44 (2026-11-15) A clearer team picker
 
 - Picking your battle team now shows each Kaimon's Kaidex number, type, strength stars, special move and how many times you caught it.

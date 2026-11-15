@@ -56,7 +56,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1 } = {}) {
             <div class="q-card"><div class="q"></div></div>
             <p class="b-msg" aria-live="polite"></p>
           </div>
-          <div class="side me"><div class="me-wrap"><div class="me-trainer" aria-hidden="true">${avatarSVG(trainerLook(p))}</div><div class="mon me-mon"></div></div>${hpBar('me')}</div>
+          <div class="side me"><div class="mon me-mon"></div>${hpBar('me')}</div>
           <div class="fx" aria-hidden="true"></div>
           <div class="overlay intro">
             <div class="intro-card">
@@ -94,7 +94,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1 } = {}) {
     foeMon: $('.foe-mon', root), meMon: $('.me-mon', root), foeHp: $('.hp-foe', root), meHp: $('.hp-me', root),
     power: $('.answer .power-strip', root), powerFill: $('.answer .power-fill', root), fx: $('.fx', root),
     val: $('.answer-val', root), hint: $('.answer-hint', root), streak: $('.streak-num', root), streakBall: $('.streak-ball', root),
-    mic: $('[data-mic]', root), intro: $('.intro', root), meTrainer: $('.me-trainer', root),
+    mic: $('[data-mic]', root), intro: $('.intro', root),
   };
 
   // ---------- drawing ----------
@@ -193,7 +193,6 @@ export function renderBattle(root, go, { kind = 'champ', table = 1 } = {}) {
       const me = mine[S.me], foe = opp.team[S.foe];
       const hit = attack(me, pw, S.streak);
       el.msg.textContent = hit.special ? `${powerLabel(pw)}! ${me.species.name} used ${moveName(me.species)}!` : `${powerLabel(pw)}! ${me.species.name} attacks!`;
-      anim(el.meTrainer, 'cheer', 520);
       await anim(el.meMon, 'lunge', 320);
       hit.crit ? sfx.crit() : sfx.hit();
       foe.hp -= hit.dmg;
