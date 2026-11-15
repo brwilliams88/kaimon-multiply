@@ -1,7 +1,18 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.5.7';
+export const VERSION = '0.5.8';
 
 export const CHANGELOG = [
+  {
+    version: '0.5.8',
+    date: '2026-11-15',
+    title: "Face-off battle intro",
+    items: [
+      "New battle intro: a full-screen face-off with you on one side, the Gym Leader on the other, and a big VS between you.",
+      "The top shows what's at stake, like the badge you can win or the Mega Ball from a Pop Quiz.",
+      "One way out: Not now. The extra X is gone, and tapping the background no longer closes it by accident.",
+      "Change team is right under your trainer, and your team saves the moment you pick.",
+    ],
+  },
   {
     version: '0.5.7',
     date: '2026-11-15',

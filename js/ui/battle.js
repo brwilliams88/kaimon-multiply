@@ -14,9 +14,8 @@ import { micMode, micButton } from './micMode.js';
 import { sfx, setSound, unlock } from '../core/sound.js';
 import { ballIcon } from './home.js';
 import { teamSheet } from './teamPicker.js';
-import { avatarSVG, trainerLook } from './avatars.js';
 import { trainerArt, trainerFull, playerArt, CHAMP_LINES } from './trainerArt.js';
-import { sceneSrc, cssUrl, sceneKey, fxSrc, typeIcon } from '../core/assets.js';
+import { sceneSrc, cssUrl, sceneKey, fxSrc, typeIcon, badgeImg } from '../core/assets.js';
 import { quick } from '../core/prefs.js';
 import { limitReached } from '../core/playtime.js';
 import { startMusic, stopMusic, setPinch } from '../core/music.js';
@@ -49,8 +48,16 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt } = {}
 
   const introLine = kind === 'champ' ? CHAMP_LINES[opp.table] : kind === 'quiz' ? 'Pop quiz! These are the facts that keep getting away from you. Let\u2019s catch them today!' : kind === 'boss' ? dadJoke('boss') : dadJoke('appear');
 
+  // What this battle is for, shown at the top of the intro.
+  function stakeHTML() {
+    if (kind === 'champ') return `${badgeImg(opp.table, 'vsi-badge')}<span><small>${opp.rematch ? 'Rematch' : 'Win the'}</small><strong>${esc(region.badge)}</strong></span>`;
+    if (kind === 'boss') return `<span><small>The final gym</small><strong>Papa’s Gym</strong></span>`;
+    if (kind === 'quiz') return `${ballIcon('mega')}<span><small>Win a Mega Ball</small><strong>Pop Quiz</strong></span>`;
+    return `<span><small>Ambush!</small><strong>Team Papa</strong></span>`;
+  }
+
   root.innerHTML = `
-    <section class="screen play battle v2 battle-${kind}">
+    <section class="screen play battle v2 battle-${kind} intro-on">
       <header class="play-top">
         <button class="icon-btn" data-exit aria-label="Leave battle"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6 L18 18 M18 6 L6 18" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg></button>
         <div class="vs-chip"><span class="vs-av">${trainerArt(opp)}</span><span><strong>${esc(opp.name)}</strong><small>${esc(opp.kind === 'champ' ? `${opp.table}s Gym Leader` : opp.kind === 'boss' ? 'The final gym' : opp.kind === 'quiz' ? 'Pop Quiz' : 'Team Papa')}</small></span></div>
@@ -66,21 +73,29 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt } = {}
           </div>
           <div class="side me"><div class="mon me-mon"></div>${hpBar('me')}</div>
           <div class="fx" aria-hidden="true"></div>
-          <div class="overlay intro">
-            <div class="intro-card">
-              <button class="icon-btn intro-x" data-leave aria-label="Not now, go back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6 L18 18 M18 6 L6 18" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg></button>
-              <div class="intro-body">${trainerFull(opp, 'talking')}</div>
-              <p class="intro-title">${esc(opp.title)}${opp.rematch ? ' <span class="new-tag">Rematch</span>' : ''}</p>
-              <h2>${esc(opp.name)}</h2>
-              <p class="speech intro-speech">${esc(introLine)}</p>
-              <div class="intro-teams">
-                <span class="intro-me" aria-hidden="true">${avatarSVG(trainerLook(p))}</span>
-                <button class="team-row team-change" data-team aria-label="Your team. Tap to change it.">${mine.map((m) => `<span class="mini">${creatureArt(m.species)}</span>`).join('')}<span class="tc-label">Change team</span></button>
-                <span class="vs">VS</span>
-                <span class="team-row">${opp.team.map((m) => `<span class="mini">${creatureArt(m.species, { mode: 'seen' })}</span>`).join('')}</span>
+          <div class="overlay intro vs-intro" role="dialog" aria-modal="true" aria-label="${esc(opp.name)} wants to battle">
+            <div class="vsi">
+              <div class="vsi-stake">${stakeHTML()}</div>
+              <div class="vsi-side vsi-foe">
+                <div class="vsi-body">${trainerFull(opp, 'talking')}</div>
+                <div class="vsi-info">
+                  <p class="vsi-speech">${esc(introLine)}</p>
+                  <div class="vsi-tag"><small>${esc(opp.kind === 'champ' ? `${opp.table}s Gym Leader` : opp.title)}</small><strong>${esc(opp.name)}</strong></div>
+                  <span class="team-row vsi-team">${opp.team.map((m) => `<span class="mini">${creatureArt(m.species, { mode: 'seen' })}</span>`).join('')}</span>
+                </div>
               </div>
-              <button class="btn-chunky btn-primary btn-xl" data-start>Battle!</button>
-              <button class="link-btn" data-leave>Not now</button>
+              <div class="vsi-vs" aria-hidden="true"><span>VS</span></div>
+              <div class="vsi-side vsi-me">
+                <div class="vsi-body">${playerArt(p, 'base')}</div>
+                <div class="vsi-info">
+                  <div class="vsi-tag"><small>Trainer</small><strong>${esc(p.name)}</strong></div>
+                  <button class="team-row team-change vsi-team" data-team aria-label="Your team. Tap to change it.">${mine.map((m) => `<span class="mini">${creatureArt(m.species)}</span>`).join('')}<span class="tc-label">Change team</span></button>
+                </div>
+              </div>
+              <div class="vsi-actions">
+                <button class="btn-chunky btn-primary btn-xl" data-start>Battle!</button>
+                <button class="link-btn vsi-later" data-leave>Not now</button>
+              </div>
             </div>
           </div>
         </div>
@@ -370,6 +385,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt } = {}
   on(root, 'click', '[data-start]', async () => {
     sfx.tap();
     el.intro.classList.add('gone');
+    root.querySelector('.battle')?.classList.remove('intro-on');
     if (p.settings.music !== false) startMusic();
     drawMons();
     await wait(reducedMotion() ? 0 : 250);
@@ -378,7 +394,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt } = {}
     anim(el.meMon, 'enter', 500);
     next();
   });
-  // Back out before the battle starts: X, Not now, tapping outside the card, or Esc.
+  // Back out before the battle starts: Not now (or Esc on a keyboard).
   on(root, 'click', '[data-team]', () => {
     if (S.phase !== 'intro') return;
     sfx.tap();
@@ -390,7 +406,6 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt } = {}
     });
   });
   on(root, 'click', '[data-leave]', () => { sfx.tap(); go('home'); });
-  el.intro.addEventListener('click', (e) => { if (e.target === el.intro) go('home'); });
   on(root, 'click', '[data-k]', (e, k) => {
     const v = k.dataset.k;
     if (v === 'go') return submit('pad');

@@ -2,6 +2,13 @@
 
 All notable changes. Versioning: `0.MINOR.0` marks a roadmap phase, `0.x.PATCH` is any shipped change a player or parent can notice, and `1.0.0` is the public launch. See "Versioning" in CLAUDE.md. The in-app version history (Grown-ups > What's new) reads from `js/data/changelog.js`; keep both in sync. Each release is tagged in git as `vX.Y.Z`.
 
+## v0.5.8 (2026-11-15) Face-off battle intro
+
+- New battle intro: a full-screen face-off with you on one side, the Gym Leader on the other, and a big VS between you.
+- The top shows what's at stake, like the badge you can win or the Mega Ball from a Pop Quiz.
+- One way out: Not now. The extra X is gone, and tapping the background no longer closes it by accident.
+- Change team is right under your trainer, and your team saves the moment you pick.
+
 ## v0.5.7 (2026-11-15) Team changes save
 
 - Fixed: changing your battle team now saves. Before, closing the team picker any way other than the Save button at the very bottom threw your picks away.
