@@ -876,3 +876,21 @@ button.balls-row:hover { background: rgba(20, 33, 61, .06); }
 .shiny-pair figcaption { font-weight: 700; color: var(--ink-2); }
 .sp-shiny figcaption { color: #7A4FD0; }
 .shiny-help p { text-align: left; }
+
+/* v0.3.18 home menu */
+.menu-btn { margin-left: auto; }
+.home-menu { display: flex; flex-direction: column; gap: 0; text-align: left; }
+.home-menu h2 { margin: 0 0 8px; }
+.menu-row { display: flex; align-items: center; gap: 14px; width: 100%; padding: 12px 4px; border: 0; border-top: 2px solid #EEF2F8; background: none; font: inherit; color: var(--ink); text-align: left; cursor: pointer; position: relative; -webkit-tap-highlight-color: transparent; }
+.menu-row:first-of-type { border-top: 0; }
+.menu-row:active { background: #F4F7FB; }
+.menu-ic { width: 40px; height: 40px; flex-shrink: 0; border-radius: 12px; background: var(--sky); display: grid; place-items: center; color: var(--ink); }
+.menu-ic svg { width: 24px; height: 24px; }
+.menu-ic .ball-svg { width: 28px; height: 28px; }
+.menu-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.menu-txt strong { font-size: 19px; }
+.menu-txt small { font-size: 15px; color: var(--ink-2); }
+.menu-go { font-size: 28px; color: var(--ink-2); line-height: 1; }
+.menu-grown .menu-ic { background: #FFE9C7; }
+.menu-grown .hold-ring { inset: 6px auto auto 4px; width: 40px; height: 40px; }
+.menu-ver { margin: 10px 0 0; text-align: center; font-size: 14px; color: var(--ink-2); }

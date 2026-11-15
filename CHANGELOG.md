@@ -2,6 +2,12 @@
 
 All notable changes. Versioning: `0.MINOR.0` marks a roadmap phase, `0.x.PATCH` is any shipped change a player or parent can notice, and `1.0.0` is the public launch. See "Versioning" in CLAUDE.md. The in-app version history (Grown-ups > What's new) reads from `js/data/changelog.js`; keep both in sync. Each release is tagged in git as `vX.Y.Z`.
 
+## v0.3.18 (2026-11-14) A tidier home screen
+
+- New Menu button at the top right with Sound, How to play, Ball guide, Switch trainer and Grown-ups.
+- The ? button no longer covers your Buddy.
+- One way into the Kaidex: the Kaidex card. The extra counter at the top is gone.
+
 ## v0.3.17 (2026-11-14) What shiny means
 
 - Tap ✦ shiny in the Kaidex to learn what a shiny is: a rare sparkly color, about 1 in 32 catches.

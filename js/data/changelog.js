@@ -1,7 +1,17 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.3.17';
+export const VERSION = '0.3.18';
 
 export const CHANGELOG = [
+  {
+    version: '0.3.18',
+    date: '2026-11-14',
+    title: 'A tidier home screen',
+    items: [
+      'New Menu button at the top right with Sound, How to play, Ball guide, Switch trainer and Grown-ups.',
+      'The ? button no longer covers your Buddy.',
+      'One way into the Kaidex: the Kaidex card. The extra counter at the top is gone.',
+    ],
+  },
   {
     version: '0.3.17',
     date: '2026-11-14',

@@ -8,7 +8,7 @@ import { limitReached } from '../core/playtime.js';
 import { VERSION } from '../data/changelog.js';
 import { trainerArt } from './trainerArt.js';
 import { avatarSVG } from './avatars.js';
-import { esc, on, $, holdButton, sheet, soundButton } from './dom.js';
+import { esc, on, $, holdButton, sheet, soundIcon } from './dom.js';
 import { sfx, unlock } from '../core/sound.js';
 
 export const medal = (tier) => tier
@@ -27,17 +27,12 @@ export function renderHome(root, go, params = {}) {
           <span class="trainer-swap" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 4 L3 8 L7 12 M3 8 H17 M17 12 L21 16 L17 20 M21 16 H7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
           <span class="trainer-text"><strong>${esc(p.name)}${p.stats.stars ? ` <span class="stars" title="Good Work Stamps">★${p.stats.stars}</span>` : ''}</strong><small>${trainerTitle(p)}</small></span>
         </button>
-        <div class="topbar-right">
-          ${soundButton(p.settings.sound)}
-          <button class="pill" data-dex aria-label="Open Kaidex, ${dex.caught} of ${dex.total} caught">${kaidexIcon()}${dex.caught}/${dex.total}</button>
-          <button class="icon-btn hold" data-grownups aria-label="Grown-ups: press and hold"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8.5a3.5 3.5 0 1 0 0 7a3.5 3.5 0 0 0 0-7Z M19.4 13a7.6 7.6 0 0 0 0-2l2-1.6-2-3.4-2.4 1a7.4 7.4 0 0 0-1.7-1L15 3.5h-4L10.7 6a7.4 7.4 0 0 0-1.7 1l-2.4-1-2 3.4 2 1.6a7.6 7.6 0 0 0 0 2l-2 1.6 2 3.4 2.4-1a7.4 7.4 0 0 0 1.7 1l.3 2.5h4l.3-2.5a7.4 7.4 0 0 0 1.7-1l2.4 1 2-3.4Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg><span class="hold-ring" aria-hidden="true"></span></button>
-        </div>
+        <button class="icon-btn menu-btn" data-menu aria-label="Menu"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7 H19 M5 12 H19 M5 17 H19" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"/></svg></button>
       </header>
 
       <div class="home-main">
         <div class="partner">
           <div class="partner-art">${creatureArt(partner.species)}</div>
-          <button class="icon-btn help-btn" data-help aria-label="How Kaimon works">?</button>
           <div class="partner-info">
             <p class="partner-name">${partner.species.name}<span class="partner-tag">Buddy</span><span class="lv-tag">Lv ${partner.level}</span></p>
             <div class="bar xp-bar" role="progressbar" aria-label="XP to the next level" aria-valuemin="0" aria-valuemax="${partner.need}" aria-valuenow="${partner.into}"><span style="width:${Math.round((partner.into / partner.need) * 100)}%"></span></div>
@@ -129,7 +124,7 @@ export function renderHome(root, go, params = {}) {
     if (bossUnlocked(p)) go('battle', { kind: 'boss' });
     else sheet(`<h2>Papa's Gym</h2><p>The final gym, and a CrossFit gym. Boss Papa only battles trainers with every Gym Leader badge. Come back when you have them all.</p><div class="sheet-actions"><button class="btn-chunky btn-primary" data-close>Okay</button></div>`);
   });
-  on(root, 'click', '[data-help]', () => { unlock(); sfx.tap(); howItWorks(); });
+  on(root, 'click', '[data-menu]', () => { unlock(); sfx.tap(); homeMenu(p, go); });
   on(root, 'click', '[data-balls]', () => { unlock(); sfx.tap(); ballsHelp(p); });
   // Evolution moment: shown once on this device when the partner reaches a new stage.
   try {
@@ -143,7 +138,6 @@ export function renderHome(root, go, params = {}) {
   } catch {}
   on(root, 'click', '[data-dex]', () => { sfx.tap(); go('kaidex'); });
   on(root, 'click', '[data-switch]', () => { sfx.tap(); go('welcome'); });
-  holdButton($('[data-grownups]', root), 1200, () => go('grownups'));
 
   if (params.celebrate === 'stamp') {
     sfx.levelUp();
@@ -173,6 +167,29 @@ export function snackIcon() {
 
 export const ribbon = () => `<svg class="ribbon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 13 L5 22 L9 20 L11 23 L12 15 Z M16 13 L19 22 L15 20 L13 23 L12 15 Z" fill="#E8492A" stroke="#14213D" stroke-width="1.6" stroke-linejoin="round"/><circle cx="12" cy="9" r="7" fill="#F2B705" stroke="#14213D" stroke-width="2"/></svg>`;
 
+// The kid-facing menu. Simple things kids may change, plus the locked grown-ups area.
+function homeMenu(p, go) {
+  const row = (attrs, icon, label, sub = '') => `<button class="menu-row" ${attrs}><span class="menu-ic" aria-hidden="true">${icon}</span><span class="menu-txt"><strong>${label}</strong>${sub ? `<small>${sub}</small>` : ''}</span><span class="menu-go" aria-hidden="true">›</span></button>`;
+  const sh = sheet(`<div class="home-menu">
+    <h2>Menu</h2>
+    <label class="menu-row menu-switch"><span class="menu-ic" aria-hidden="true">${soundIcon(true)}</span><span class="menu-txt"><strong>Sound</strong><small>Music and sound effects</small></span><input type="checkbox" class="switch" data-sound ${p.settings.sound ? 'checked' : ''} aria-label="Sound"></label>
+    ${row('data-m="how"', '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M9.6 9.4a2.5 2.5 0 1 1 3.4 2.3c-.7.3-1 .8-1 1.5v.6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><circle cx="12" cy="17" r="1.4" fill="currentColor"/></svg>', 'How to play', 'Buddy, XP, regions and battles')}
+    ${row('data-m="balls"', ballIcon('capture'), 'Ball guide', 'Which ball to throw, and how to earn more')}
+    ${row('data-m="switch"', '<svg viewBox="0 0 24 24"><path d="M7 4 L3 8 L7 12 M3 8 H17 M17 12 L21 16 L17 20 M21 16 H7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>', 'Switch trainer')}
+    <button class="menu-row menu-grown hold" data-grownups aria-label="Grown-ups: press and hold"><span class="menu-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2.5" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M8.5 10.5 V8 a3.5 3.5 0 0 1 7 0 V10.5" fill="none" stroke="currentColor" stroke-width="2.4"/></svg></span><span class="menu-txt"><strong>Grown-ups</strong><small>Press and hold. Needs the grown-up PIN.</small></span><span class="hold-ring" aria-hidden="true"></span></button>
+    <p class="menu-ver">Kaimon Multiply v${VERSION}</p>
+  </div>`, { cls: 'menu-sheet' });
+  sh.el.addEventListener('click', (e) => {
+    const m = e.target.closest('[data-m]')?.dataset.m;
+    if (!m) return;
+    sfx.tap(); sh.close();
+    if (m === 'how') setTimeout(howItWorks, 200);
+    if (m === 'balls') setTimeout(() => ballsHelp(p), 200);
+    if (m === 'switch') go('welcome');
+  });
+  holdButton(sh.el.querySelector('[data-grownups]'), 1200, () => { sh.close(); go('grownups'); });
+}
+
 function howItWorks() {
   sheet(`<div class="how">
     <h2>How Kaimon works</h2>
@@ -180,8 +197,8 @@ function howItWorks() {
       <dt>Your buddy</dt><dd>The Kaimon that travels with you. It earns XP from every right answer, evolves as it levels up, and leads your battle team.</dd>
       <dt>Practice</dt><dd>A mix of all your times tables. Every right answer can catch a wild Kaimon from any region.</dd>
       <dt>Regions</dt><dd>One times table at a time. Catch the Kaimon that live in that region, and earn the table's medal: Bronze, Silver, Gold, then Star.</dd>
-      <dt>Gym battles</dt><dd>Your partner and your two strongest Kaimon battle a Gym Leader. Every right answer is an attack. Win their badge, then take on Boss Papa at Papa's Gym.</dd>
-      <dt>XP</dt><dd>Every right answer gives your partner XP: 10 XP, plus 5 for a fast answer and 5 for a fact you're still learning. Battle wins give bonus XP. Your partner evolves at Lv 10 and Lv 20.</dd>
+      <dt>Gym battles</dt><dd>Your buddy and your two strongest Kaimon battle a Gym Leader. Every right answer is an attack. Win their badge, then take on Boss Papa at Papa's Gym.</dd>
+      <dt>XP</dt><dd>Every right answer gives your buddy XP: 10 XP, plus 5 for a fast answer and 5 for a fact you're still learning. Battle wins give bonus XP. Your buddy evolves at Lv 10 and Lv 20.</dd>
     </dl>
     <button class="btn-chunky btn-primary" data-close>Got it</button>
   </div>`);
