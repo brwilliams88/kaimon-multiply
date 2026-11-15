@@ -839,3 +839,21 @@ button[aria-busy="true"] { opacity: .85; cursor: progress; }
 .kdx-text strong { font-size: 22px; }
 .kdx-text small { font-size: 15px; color: var(--ink-2); }
 .kdx-go { font-size: 34px; font-weight: 700; color: var(--ink-2); line-height: 1; }
+
+/* v0.3.14 ball belt and balls help */
+.belt { display: flex; align-items: center; justify-content: center; gap: clamp(4px, 1.5cqw, 10px); flex-wrap: nowrap; position: relative; }
+.belt-ball { display: inline-flex; align-items: center; gap: 4px; padding: 2px 9px 2px 3px; border: 2.5px solid var(--ink); border-radius: 99px; background: var(--paper); font-weight: 700; font-size: clamp(12px, 3.6cqh, 16px); box-shadow: 0 2px 0 var(--ink); }
+.belt-ball .ball-svg { width: clamp(22px, 7cqh, 32px); height: clamp(22px, 7cqh, 32px); }
+.belt-ball.on { background: var(--sun); transform: translateY(-1px); box-shadow: 0 3px 0 var(--ink); }
+.belt.rare .belt-ball:not([data-ball="free"]) { animation: pulse 1.2s ease-in-out infinite; }
+.belt-tip { position: absolute; top: -1.5em; left: 50%; transform: translateX(-50%); white-space: nowrap; font-size: clamp(11px, 3.2cqh, 14px); font-weight: 700; color: #7A1E0C; }
+button.balls-row { background: none; border: 0; padding: 4px 6px; margin-left: -6px; border-radius: 12px; cursor: pointer; }
+button.balls-row:hover { background: rgba(20, 33, 61, .06); }
+.balls-help h2 { margin-top: 0; }
+.bh-how { background: #FFF5D6; border: 2px solid var(--ink); border-radius: 14px; padding: 8px 12px; font-weight: 600; }
+.bh-row { display: flex; gap: 12px; align-items: flex-start; text-align: left; margin: 10px 0; }
+.bh-row .ball-svg { width: 40px; height: 40px; flex-shrink: 0; }
+.bh-row strong { font-size: 18px; }
+.bh-row p { margin: 2px 0 0; font-size: 16px; color: var(--ink-2); line-height: 1.35; }
+.bh-count { font-weight: 600; color: var(--ink-2); margin-left: 4px; }
+.face { padding-top: clamp(13px, 3.5cqh, 26px); }

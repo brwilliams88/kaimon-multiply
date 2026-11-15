@@ -2,6 +2,12 @@
 
 All notable changes. Versioning: `0.MINOR.0` marks a roadmap phase, `0.x.PATCH` is any shipped change a player or parent can notice, and `1.0.0` is the public launch. See "Versioning" in CLAUDE.md. The in-app version history (Grown-ups > What's new) reads from `js/data/changelog.js`; keep both in sync. Each release is tagged in git as `vX.Y.Z`.
 
+## v0.3.14 (2026-11-14) Choose your ball, meet your Buddy
+
+- Ball belt on the practice card: free ball (upgraded by streak) plus owned Super, Mega and Legend Balls; a ball is spent only when a right answer throws it. Rare and legendary Kaimon pulse the owned balls with a 'Rare! Pick a ball' tip.
+- Removed the hidden rule that auto-spent a Legend Ball on any rare Kaimon; owned Super and Mega Balls were never used before.
+- Home ball row is a button that opens a balls guide (Capture shown as unlimited). 'Partner' renamed 'Buddy' in the app; How it works explains the buddy.
+
 ## v0.3.13 (2026-11-14) Kaidex is easier to find
 
 - Home: Kaidex tile under the buddy card (caught and spotted counts); new original Kaidex icon (teal device, hex-button lens) in the top bar too.

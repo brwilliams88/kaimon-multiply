@@ -39,15 +39,16 @@ export function renderHome(root, go, params = {}) {
           <div class="partner-art">${creatureArt(partner.species)}</div>
           <button class="icon-btn help-btn" data-help aria-label="How Kaimon works">?</button>
           <div class="partner-info">
-            <p class="partner-name">${partner.species.name}<span class="partner-tag">Partner</span><span class="lv-tag">Lv ${partner.level}</span></p>
+            <p class="partner-name">${partner.species.name}<span class="partner-tag">Buddy</span><span class="lv-tag">Lv ${partner.level}</span></p>
             <div class="bar xp-bar" role="progressbar" aria-label="XP to the next level" aria-valuemin="0" aria-valuemax="${partner.need}" aria-valuenow="${partner.into}"><span style="width:${Math.round((partner.into / partner.need) * 100)}%"></span></div>
             <p class="partner-note">${partner.need - partner.into} XP to Lv ${partner.level + 1}. ${partner.evolveAt ? `Evolves at Lv ${partner.evolveAt}!` : 'Fully evolved!'}</p>
-            <div class="balls-row" aria-label="Special balls">
+            <button class="balls-row" data-balls aria-label="Your balls. Tap to learn how to use them.">
+              <span class="ball-count" title="Capture Balls">${ballIcon('capture')}∞</span>
               <span class="ball-count" title="Super Balls">${ballIcon('super')}${p.balls.super}</span>
               <span class="ball-count" title="Mega Balls">${ballIcon('mega')}${p.balls.mega}</span>
               <span class="ball-count" title="Legend Balls">${ballIcon('legend')}${p.balls.legend}</span>
               ${p.items.snack ? `<span class="ball-count" title="Power Snacks">${snackIcon()}${p.items.snack}</span>` : ''}
-            </div>
+            </button>
           </div>
           <button class="btn-chunky btn-primary btn-xl play-btn" data-play="mix"><span>Practice</span><small>Mix of every table</small></button>
         </div>
@@ -129,6 +130,7 @@ export function renderHome(root, go, params = {}) {
     else sheet(`<h2>Papa's Gym</h2><p>The final gym, and a CrossFit gym. Boss Papa only battles trainers with every Gym Leader badge. Come back when you have them all.</p><div class="sheet-actions"><button class="btn-chunky btn-primary" data-close>Okay</button></div>`);
   });
   on(root, 'click', '[data-help]', () => { unlock(); sfx.tap(); howItWorks(); });
+  on(root, 'click', '[data-balls]', () => { unlock(); sfx.tap(); ballsHelp(p); });
   // Evolution moment: shown once on this device when the partner reaches a new stage.
   try {
     const key = 'kaimon.stage.' + p.id;
@@ -175,6 +177,7 @@ function howItWorks() {
   sheet(`<div class="how">
     <h2>How Kaimon works</h2>
     <dl>
+      <dt>Your buddy</dt><dd>The Kaimon that travels with you. It earns XP from every right answer, evolves as it levels up, and leads your battle team.</dd>
       <dt>Practice</dt><dd>A mix of all your times tables. Every right answer can catch a wild Kaimon from any region.</dd>
       <dt>Regions</dt><dd>One times table at a time. Catch the Kaimon that live in that region, and earn the table's medal: Bronze, Silver, Gold, then Star.</dd>
       <dt>Gym battles</dt><dd>Your partner and your two strongest Kaimon battle a Gym Leader. Every right answer is an attack. Win their badge, then take on Boss Papa at Papa's Gym.</dd>
@@ -191,3 +194,16 @@ export const kaidexIcon = () => `<svg class="kdx-ic" viewBox="0 0 48 48" aria-hi
   <path d="M15 8.5 h7 l3.5 3 -3.5 3 h-7 l-3.5 -3z" fill="#FFD23F" stroke="#14213D" stroke-width="2.2" stroke-linejoin="round"/>
   <circle cx="33" cy="11.5" r="2.2" fill="#FF6B4A" stroke="#14213D" stroke-width="1.6"/>
 </svg>`;
+
+export function ballsHelp(p) {
+  const row = (k, name, count, text) => `<div class="bh-row">${ballIcon(k)}<div><strong>${name} <span class="bh-count">${count}</span></strong><p>${text}</p></div></div>`;
+  sheet(`<div class="balls-help">
+    <h2>Your balls</h2>
+    <p class="bh-how">When a wild Kaimon appears, tap a ball under it, then answer. A right answer throws that ball.</p>
+    ${row('capture', 'Capture Ball', '∞', 'Free, and you never run out. Good for most Kaimon.')}
+    ${row('super', 'Super Ball', '×' + p.balls.super, 'Much better at catching. Win one from Gym Leaders. A 5-answer streak also gives you a free Super throw.')}
+    ${row('mega', 'Mega Ball', '×' + p.balls.mega, 'Even better, for rare Kaimon. Win one by beating a Gym Leader the first time or with a Good Work Stamp. A 10-answer streak gives a free Mega throw.')}
+    ${row('legend', 'Legend Ball', '×' + p.balls.legend, 'Never misses. Earn one each time a times table gets a new medal. Save it for a Kaimon you really want!')}
+    <button class="btn-chunky btn-primary" data-close>Got it</button>
+  </div>`);
+}

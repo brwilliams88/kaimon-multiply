@@ -1,7 +1,18 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.3.13';
+export const VERSION = '0.3.14';
 
 export const CHANGELOG = [
+  {
+    version: '0.3.14',
+    date: '2026-11-14',
+    title: 'Choose your ball, meet your Buddy',
+    items: [
+      'When a wild Kaimon appears, tap a ball under it before you answer. Capture Balls are free. Super, Mega and Legend Balls are used only when you pick them.',
+      'Answer streaks still give a free Super (5 in a row) or Mega (10 in a row) throw.',
+      'Tap the balls on the home screen to learn what each one does and how to earn more.',
+      'Your partner Kaimon is now called your Buddy: it travels with you, earns XP and leads your battle team.',
+    ],
+  },
   {
     version: '0.3.13',
     date: '2026-11-14',

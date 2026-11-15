@@ -75,6 +75,21 @@ export function renderPlay(root, go, { table }) {
     el.streakBall.innerHTML = ballIcon(ballForStreak(p, S.streak));
   }
 
+  // Ball belt: the free ball (better on a streak) plus any special balls you own.
+  function beltHTML(species) {
+    S.pick = 'free';
+    const free = ballForStreak(p, S.streak + 1);
+    const owned = ['super', 'mega', 'legend'].filter((k) => (p.balls[k] || 0) > 0);
+    if (!owned.length && free === 'capture') return '';
+    const rare = ['rare', 'legendary'].includes(species.rarity);
+    const btn = (k, label, isFree) => `<button class="belt-ball${isFree ? ' on' : ''}" data-ball="${isFree ? 'free' : k}" aria-pressed="${isFree}" aria-label="${BALLS[k].name}${isFree ? ', free' : ''}">${ballIcon(k)}<span>${label}</span></button>`;
+    return `<div class="belt${rare && owned.length ? ' rare' : ''}" role="group" aria-label="Pick a ball, then answer">
+      ${rare && owned.length ? '<span class="belt-tip">Rare! Pick a ball</span>' : ''}
+      ${btn(free, free === 'capture' ? 'Free' : 'Streak!', true)}
+      ${owned.map((k) => btn(k, '×' + p.balls[k], false)).join('')}
+    </div>`;
+  }
+
   function next() {
     if (S.n >= S.length) return finish();
     const id = pickNext(p, pool, S.recent, S.requeue, S.n);
@@ -95,7 +110,8 @@ export function renderPlay(root, go, { table }) {
     el.front.innerHTML = `
       <div class="card-head"><span>${region.name}</span><span class="card-type">${t.name}</span></div>
       <div class="card-q"><span>${a}</span><span class="times">×</span><span>${b}</span></div>
-      <div class="card-wild">${creatureArt(species, { mode: 'seen' })}<p>${lingering ? `${known ? esc(species.name) : 'The wild Kaimon'} is still here! Answer to throw again.` : `A wild ${known ? esc(species.name) : '???'} appeared`}</p></div>`;
+      <div class="card-wild">${creatureArt(species, { mode: 'seen' })}<p>${lingering ? `${known ? esc(species.name) : 'The wild Kaimon'} is still here!` : `A wild ${known ? esc(species.name) : '???'} appeared`}</p></div>
+      ${beltHTML(species)}`;
     el.back.innerHTML = '';
     el.inner.classList.remove('flipped', 'wrong');
     setInput('');
@@ -159,8 +175,10 @@ export function renderPlay(root, go, { table }) {
       S.streak++;
       S.best = Math.max(S.best, S.streak);
       sfx.correct();
+      // The ball the player picked on the belt, or the free one (streaks upgrade it).
       let ball = ballForStreak(p, S.streak);
-      if ((S.species.rarity === 'rare') && p.balls.legend > 0) { ball = 'legend'; giveBall(p, 'legend', -1); }
+      if (S.pick !== 'free' && (p.balls[S.pick] || 0) > 0) { ball = S.pick; giveBall(p, S.pick, -1); }
+      S.pick = 'free';
       const fast = ms <= p.settings.fastMs;
       const pw = powerFor(ms);
       cancelAnimationFrame(S.raf);
@@ -306,6 +324,13 @@ export function renderPlay(root, go, { table }) {
     if (S.phase === 'learn' && S.input.length >= String(S.mustType).length) checkRetype();
   });
   on(root, 'click', '.card3d', () => { if (S.phase === 'done') advance(); });
+  on(root, 'click', '[data-ball]', (e, b) => {
+    e.stopPropagation();
+    if (S.phase !== 'ask') return;
+    sfx.tap();
+    S.pick = b.dataset.ball === S.pick ? 'free' : b.dataset.ball;
+    root.querySelectorAll('[data-ball]').forEach((x) => { const on = x.dataset.ball === S.pick; x.classList.toggle('on', on); x.setAttribute('aria-pressed', on); });
+  });
   on(root, 'click', '[data-exit]', () => {
     const sh = sheet(`<h2>Stop practicing?</h2><p>Your catches and progress are saved.</p><div class="sheet-actions"><button class="btn-chunky btn-primary" data-stop>Stop</button><button class="btn-chunky" data-close>Keep going</button></div>`);
     sh.el.querySelector('[data-stop]').addEventListener('click', () => { sh.close(); stopVoice(); session(p, Date.now() - S.startedAt, S.best); save(); syncNow(); go('home'); });
