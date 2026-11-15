@@ -44,9 +44,9 @@ export const DAD_JOKES = {
     "I'll be back! Mostly because I forgot my water bottle.",
   ],
   boss: [
-    "Welcome to the top of the Hundred Tower. I'd shake your hand, but I just did 50 burpees.",
+    "Welcome to Papa's Gym, the final gym. I'd shake your hand, but I just did 50 burpees.",
     "I am Boss Papa! I have a trench coat, a trucker hat, and a LOT of dad jokes.",
-    "Why did the dad bring a ladder to the Hundred Tower? He heard the stakes were high!",
+    "Why did Boss Papa bring a pencil to Papa's Gym? To draw a crowd!",
     "You think you can beat me? I've been doing math since before calculators were cool. They were never cool.",
     "What's 7 times 8? 56! What's my villain plan? Also 56. I'm still working on it.",
     "I was going to make a joke about infinity, but it wouldn't have an ending.",

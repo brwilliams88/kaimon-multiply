@@ -269,7 +269,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1 } = {}) {
     won ? sfx.win() : sfx.lose();
 
     const line = kind === 'champ'
-      ? (won ? `You did it! You earned the ${region.badge} ribbon.` : 'Great battle! Practice your ' + opp.table + 's and come back.')
+      ? (won ? (opp.rematch ? `You won the rematch! ${region.badge} polished.` : `You did it! You earned the ${region.badge}!`) : `Great battle! Practice your ${opp.table}s and come back.`)
       : kind === 'boss' ? (won ? dadJoke('boss') : dadJoke('papaWins')) : dadJoke(won ? 'kidWins' : 'papaWins');
 
     const ov = document.createElement('div');

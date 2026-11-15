@@ -67,7 +67,7 @@ export function trainerArt(opp) {
   return champion(opp.table);
 }
 
-// Short intro lines for the Champions. Team Papa and Boss Papa use dad jokes.
+// Short intro lines for the Gym Leaders. Team Papa and Boss Papa use dad jokes.
 export const CHAMP_LINES = {
   1: "I'm the Little Leader! I'm small, but my ones are mighty!",
   2: "Ahoy! Everything comes in twos at Tidepool Bay. Let's double up!",

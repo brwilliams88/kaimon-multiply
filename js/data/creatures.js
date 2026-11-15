@@ -18,7 +18,7 @@ export const TYPES = {
   mythic: { name: 'Mythic', color: '#FF6B9A', ink: '#5C1030', light: '#FFE0EC' },
 };
 
-// One region per times table. Champions and badges are used from v0.2.
+// One region per times table. `champion` is the region's Gym Leader (field name kept for saved data).
 export const REGIONS = [
   { table: 1,  name: 'Mossy Meadow',    type: 'leaf',   badge: 'Sprout Badge', champion: 'Little Leader Nozomi' },
   { table: 2,  name: 'Tidepool Bay',    type: 'water',  badge: 'Wave Badge',   champion: 'Captain Tide' },

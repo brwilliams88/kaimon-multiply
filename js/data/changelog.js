@@ -1,7 +1,18 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.3.7';
+export const VERSION = '0.3.8';
 
 export const CHANGELOG = [
+  {
+    version: '0.3.8',
+    date: '2026-11-14',
+    title: 'Gym Leaders and clearer home screen',
+    items: [
+      'The 10 Champions are now Gym Leaders. Beat one to earn their badge.',
+      'Boss Papa\'s final battle is now at Papa\'s Gym, the final gym.',
+      'The home screen explains each way to play: Practice mixes every table, Regions practice one table and its Kaimon, Gym battles earn badges.',
+      'On phones, Gym Leaders are a row you can swipe.',
+    ],
+  },
   {
     version: '0.3.7',
     date: '2026-11-14',

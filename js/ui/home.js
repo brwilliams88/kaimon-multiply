@@ -51,10 +51,11 @@ export function renderHome(root, go, params = {}) {
               ${p.items.snack ? `<span class="ball-count" title="Power Snacks">${snackIcon()}${p.items.snack}</span>` : ''}
             </div>
           </div>
-          <button class="btn-chunky btn-primary btn-xl play-btn" data-play="mix">Practice</button>
+          <button class="btn-chunky btn-primary btn-xl play-btn" data-play="mix"><span>Practice</span><small>A smart mix of every table</small></button>
         </div>
 
         <h2 class="section-title">Regions</h2>
+        <p class="section-sub">Practice one times table at a time. Each region has its own Kaimon to catch.</p>
         <div class="regions">
           ${REGIONS.map((r) => {
             const t = TYPES[r.type];
@@ -69,15 +70,16 @@ export function renderHome(root, go, params = {}) {
           }).join('')}
         </div>
 
-        <h2 class="section-title">Battles</h2>
+        <h2 class="section-title">Gym battles</h2>
+        <p class="section-sub">Every answer is an attack. Beat each Gym Leader to earn their badge, then face Boss Papa at Papa's Gym, the final gym.</p>
         <div class="battles">
           <div class="champs">
             ${REGIONS.filter((r) => p.settings.tables.includes(r.table)).map((r) => {
               const t = TYPES[r.type];
               const won = p.battles.champs[r.table];
-              return `<button class="champ${won ? ' won' : ''}" data-champ="${r.table}" style="--rc:${t.color};--rl:${t.light}" aria-label="Battle ${esc(r.champion)}, ${r.table}s Champion${won ? ', beaten' : ''}">
+              return `<button class="champ${won ? ' won' : ''}" data-champ="${r.table}" style="--rc:${t.color};--rl:${t.light}" aria-label="Battle ${esc(r.champion)}, ${r.table}s Gym Leader${won ? ', badge earned' : ''}">
                 <span class="champ-av">${trainerArt({ kind: 'champ', table: r.table })}</span>
-                <span class="champ-name">${esc(r.champion.replace('Little Leader ', ''))}</span>
+                <span class="champ-name">${esc(r.champion.replace('Little Leader ', '').replace('Professor ', 'Prof. ').replace('Commander ', 'Cmdr. '))}</span>
                 <span class="champ-tag">${r.table}s${won ? ' ' + ribbon() : ''}</span>
               </button>`;
             }).join('')}
@@ -88,8 +90,8 @@ export function renderHome(root, go, params = {}) {
             const open = bossUnlocked(p);
             return `<button class="tower${open ? ' open' : ''}" data-boss ${open ? '' : 'aria-disabled="true"'}>
               <span class="tower-av">${trainerArt({ kind: 'boss' })}</span>
-              <span class="tower-text"><strong>Hundred Tower</strong>
-                <small>${open ? (p.battles.boss ? 'Boss Papa wants a rematch.' : 'Boss Papa is waiting at the top.') : `Beat every Champion to climb. ${beaten} of ${total} done.`}</small>
+              <span class="tower-text"><strong>Papa's Gym</strong>
+                <small>${open ? (p.battles.boss ? 'Boss Papa wants a rematch.' : 'The final gym. Boss Papa is waiting.') : `The final gym. Earn every Gym Leader badge to get in. ${beaten} of ${total} badges.`}</small>
                 ${open ? '' : `<span class="bar mini"><span style="width:${Math.round((beaten / total) * 100)}%"></span></span>`}
               </span>
             </button>`;
@@ -120,7 +122,7 @@ export function renderHome(root, go, params = {}) {
     unlock(); sfx.tap();
     if (timesUp()) return;
     if (bossUnlocked(p)) go('battle', { kind: 'boss' });
-    else sheet(`<h2>The Hundred Tower</h2><p>Boss Papa is at the top. Beat every Champion first, then come back.</p><div class="sheet-actions"><button class="btn-chunky btn-primary" data-close>Okay</button></div>`);
+    else sheet(`<h2>Papa's Gym</h2><p>The final gym, and a CrossFit gym. Boss Papa only battles trainers with every Gym Leader badge. Come back when you have them all.</p><div class="sheet-actions"><button class="btn-chunky btn-primary" data-close>Okay</button></div>`);
   });
   on(root, 'click', '[data-dex]', () => { sfx.tap(); go('kaidex'); });
   on(root, 'click', '[data-switch]', () => { sfx.tap(); go('welcome'); });

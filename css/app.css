@@ -777,3 +777,18 @@ button { font: inherit; color: inherit; cursor: pointer; touch-action: manipulat
 .shiny-word { color: #7A4FD0; font-weight: 700; }
 .entry-hint { margin: 2px 0 8px; font-size: 15px; color: var(--ink-2); }
 .dex-count .dc-main { color: var(--ink); font-size: 18px; }
+
+/* v0.3.8 home explainers */
+.section-sub { margin: -6px 0 12px; font-size: 16px; color: var(--ink-2); max-width: 60ch; }
+.play-btn { display: flex; flex-direction: column; align-items: center; gap: 0; line-height: 1.1; }
+.play-btn small { font-size: 14px; font-weight: 600; opacity: .9; }
+.balls-row { flex-wrap: wrap; row-gap: 4px; }
+.champ-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+@media (max-width: 600px) {
+  .champs { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: 10px; padding: 2px 2px 10px; margin: 0 -2px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+  .champs::-webkit-scrollbar { display: none; }
+  .champ { flex: 0 0 96px; scroll-snap-align: start; padding: 10px 6px; border-radius: 18px; }
+  .champ-av { width: 60px; }
+  .champ-name { font-size: 14px; }
+  .champ-tag { font-size: 13px; }
+}

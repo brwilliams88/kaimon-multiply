@@ -8,7 +8,7 @@ Times tables flashcard game for Kai (8, Blair's son), shared with his friends. I
 - Kaimon "core" (creatures, balls, Kaidex, trainers) is reusable for future games (Kaimon Divide). Subject logic lives in `js/core/facts.js`.
 - Kai is the hero trainer. Kai's mythic is always the highest Kaidex number (now #059), seen in cameos all game and caught last, after beating Boss Papa. Its hidden future form can appear after 6 months and evolves on its own after a year.
 - Starters: Kaimo (flagship, Dragon), Kaiko (Fire), Kipbun (Leaf). Villains: Boss Papa (trench coat, black flat-brim trucker hat with red P) and Team Papa (white jackets, red P, train at Papa's Gym: squats, deadlifts, snatches, kettlebell swings, never tire flips), with Papazilla as his Kaimon. They always tell kid-friendly dad jokes (js/data/dadjokes.js).
-- Little Leader Nozomi runs the 1s. Professor Keith only if Miss Keith agrees.
+- Each times table has a Gym Leader who gives a badge (Little Leader Nozomi runs the 1s). Papa's Gym is the final gym (and a CrossFit gym) where Boss Papa battles; the Hundred Tower is where legendaries live. Professor Keith only if Miss Keith agrees.
 - Kaidex data is keyed by species id, never by number.
 - The grown-ups area is behind a parent PIN. The Good Work Stamp lives there.
 - Long-term play: fact levels need correct, fast answers on separate days (Bronze 2, Silver 5, Gold 10, Star 20).

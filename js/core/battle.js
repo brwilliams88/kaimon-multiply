@@ -52,7 +52,7 @@ export function opponent(profile, kind, table) {
     ];
     const hp = beaten ? 64 : 55;
     return {
-      kind, table, name: r.champion, title: `${r.name} Champion`, rematch: beaten > 0,
+      kind, table, name: r.champion, title: `${r.table}s Gym Leader · ${r.name}`, rematch: beaten > 0,
       team: team.map((s, i) => ({ species: s, hp: hp + i * 5, max: hp + i * 5 })),
       tables: [table],
     };
@@ -72,7 +72,7 @@ export function opponent(profile, kind, table) {
   const a = pick(finals.length ? finals : SPECIES.filter((s) => s.stage === 3 && typeof s.region === 'number' && s.region > 0));
   const b = pick((finals.length > 1 ? finals : SPECIES.filter((s) => s.stage === 3 && typeof s.region === 'number' && s.region > 0)).filter((s) => s.id !== a.id));
   return {
-    kind, table: null, name: 'Boss Papa', title: 'Top of the Hundred Tower', rematch: profile.battles.boss > 0,
+    kind, table: null, name: 'Boss Papa', title: 'Papa\u2019s Gym, the final gym', rematch: profile.battles.boss > 0,
     team: [{ species: a, hp: 60, max: 60 }, { species: b, hp: 60, max: 60 }, { species: byId('papazilla'), hp: 80, max: 80 }],
     tables,
   };

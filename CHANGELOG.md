@@ -2,6 +2,11 @@
 
 All notable changes. Versioning: `0.MINOR.0` marks a roadmap phase, `0.x.PATCH` is any shipped change a player or parent can notice, and `1.0.0` is the public launch. See "Versioning" in CLAUDE.md. The in-app version history (Grown-ups > What's new) reads from `js/data/changelog.js`; keep both in sync. Each release is tagged in git as `vX.Y.Z`.
 
+## v0.3.8 (2026-11-14) Gym Leaders and clearer home screen
+
+- Renamed Champions to Gym Leaders in all player-facing text (data field `champion` kept for saved data). Boss battle location is Papa's Gym (final gym); the Hundred Tower remains the legendaries' home in the Kaidex.
+- Home: Practice button subtitle, one-line explainers under Regions and Gym battles, Papa's Gym card shows badges earned. Swipeable Gym Leader row under 600px; ball counts wrap.
+
 ## v0.3.7 (2026-11-14) Battle music
 
 - `js/core/music.js`: original 8-bar A-minor theme (Am F G E / Am F D E) at 156 BPM, synthesized live: square lead, filtered saw bass in driving 16ths, off-beat triangle stabs, kick/snare/hat from a noise buffer. Lookahead scheduler (25 ms tick, 150 ms ahead).
