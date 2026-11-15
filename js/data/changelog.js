@@ -1,7 +1,16 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.3.14';
+export const VERSION = '0.3.15';
 
 export const CHANGELOG = [
+  {
+    version: '0.3.15',
+    date: '2026-11-14',
+    title: 'Install steps for your browser',
+    items: [
+      'Install steps now match your browser. Chrome works on iPhone and iPad too, not just Safari.',
+      'Android steps for Chrome, Samsung Internet and Edge. Computer steps for Chrome, Edge and Safari.',
+    ],
+  },
   {
     version: '0.3.14',
     date: '2026-11-14',

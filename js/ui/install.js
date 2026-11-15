@@ -27,20 +27,62 @@ const SHARE = '<svg class="ins-ic" viewBox="0 0 24 24" aria-hidden="true"><path 
 const PLUS = '<svg class="ins-ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="4" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M12 8.5 V15.5 M8.5 12 H15.5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>';
 const DOTS = '<svg class="ins-ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5" r="2" fill="currentColor"/><circle cx="12" cy="12" r="2" fill="currentColor"/><circle cx="12" cy="19" r="2" fill="currentColor"/></svg>';
 
-export function steps(pf = platform()) {
-  if (pf === 'iphone' || pf === 'ipad') return [
-    `Open this page in <strong>Safari</strong>.`,
-    `Tap the <strong>Share</strong> button ${SHARE} ${pf === 'iphone' ? 'at the bottom of the screen' : 'at the top of the screen'}.`,
-    `Scroll down and tap <strong>Add to Home Screen</strong> ${PLUS}, then <strong>Add</strong>.`,
+// Which browser we're in, so the steps name the buttons the kid actually sees.
+export function browser() {
+  const ua = navigator.userAgent;
+  if (/CriOS|Chrome\//.test(ua) && !/EdgiOS|EdgA|Edg\/|SamsungBrowser|OPR\//.test(ua)) return 'chrome';
+  if (/EdgiOS|EdgA|Edg\//.test(ua)) return 'edge';
+  if (/SamsungBrowser/.test(ua)) return 'samsung';
+  if (/FxiOS|Firefox\//.test(ua)) return 'firefox';
+  if (/Safari\//.test(ua)) return 'safari';
+  return 'other';
+}
+
+const BROWSER_NAME = { chrome: 'Chrome', edge: 'Edge', samsung: 'Samsung Internet', firefox: 'Firefox', safari: 'Safari', other: 'this browser' };
+
+export function steps(pf = platform(), br = browser()) {
+  const addHome = `Tap <strong>Add to Home Screen</strong> ${PLUS}, then <strong>Add</strong>.`;
+  if (pf === 'iphone' || pf === 'ipad') {
+    if (br === 'chrome') return [
+      `Tap the <strong>Share</strong> button ${SHARE} at the right end of the address bar.`,
+      addHome,
+    ];
+    if (br === 'safari') return [
+      `Tap the <strong>Share</strong> button ${SHARE} ${pf === 'iphone' ? 'at the bottom of the screen' : 'at the top of the screen'}. On newer ${pf === 'iphone' ? 'iPhones' : 'iPads'} it can be inside the <strong>•••</strong> menu.`,
+      `Scroll down and ${addHome.charAt(0).toLowerCase()}${addHome.slice(1)}`,
+    ];
+    return [
+      `Open the <strong>Share</strong> menu ${SHARE} in ${BROWSER_NAME[br]}.`,
+      addHome,
+      `Don't see it? Open this page in <strong>Safari</strong> or <strong>Chrome</strong> instead.`,
+    ];
+  }
+  if (pf === 'android') {
+    if (br === 'samsung') return [
+      `Tap the menu <strong>☰</strong> at the bottom right.`,
+      `Tap <strong>Add page to</strong>, then <strong>Home screen</strong>.`,
+    ];
+    if (br === 'edge') return [
+      `Tap the menu <strong>☰</strong> at the bottom.`,
+      `Tap <strong>Add to phone</strong>.`,
+    ];
+    return [
+      `Tap the menu ${DOTS} at the top right.`,
+      `Tap <strong>Install app</strong> or <strong>Add to Home screen</strong>.`,
+      ...(br === 'chrome' || br === 'firefox' ? [] : [`Don't see it? Open this page in <strong>Chrome</strong> instead.`]),
+    ];
+  }
+  // Chromebook and computers
+  if (br === 'safari') return [
+    `In the menu bar, click <strong>File</strong>, then <strong>Add to Dock</strong>.`,
   ];
-  if (pf === 'android') return [
-    `Open this page in <strong>Chrome</strong>.`,
-    `Tap the menu ${DOTS} at the top right.`,
-    `Tap <strong>Install app</strong> (or <strong>Add to Home screen</strong>).`,
+  if (br === 'chrome' || br === 'edge') return [
+    `Click the install icon at the right end of the address bar.`,
+    `No icon? Open the menu ${br === 'edge' ? '<strong>•••</strong>' : DOTS}, choose <strong>${br === 'edge' ? 'Apps' : 'Cast, save, and share'}</strong>, then <strong>Install</strong>.`,
   ];
   return [
-    `Open this page in <strong>Chrome</strong>.`,
-    `Click the install icon at the right end of the address bar, or open the menu ${DOTS} and choose <strong>Install Kaimon Multiply</strong>.`,
+    `${BROWSER_NAME[br].replace(/^t/, 'T')} can't install apps. Open this page in <strong>Chrome</strong> or <strong>Edge</strong>.`,
+    `Click the install icon at the right end of the address bar.`,
   ];
 }
 
@@ -58,13 +100,15 @@ export function installHelpHTML() {
   return `<ol class="ins-steps">${steps().map((s) => `<li>${s}</li>`).join('')}</ol>`;
 }
 
+const WORKS = { iphone: 'Safari and Chrome both work.', ipad: 'Safari and Chrome both work.', android: 'Chrome, Samsung Internet and Edge all work.', chromebook: 'Use Chrome.', computer: 'Chrome, Edge and Safari work.' };
+
 export function installSheet({ first = false } = {}) {
   const pf = platform();
   const where = { iphone: 'iPhone', ipad: 'iPad', android: 'phone', chromebook: 'Chromebook', computer: 'computer' }[pf];
   const sh = sheet(`
     <div class="ins">
       <h2>Put Kaimon on your ${where}</h2>
-      <p>Add it to your home screen so it opens like an app, full screen, and works without internet.</p>
+      <p>${pf === 'chromebook' || pf === 'computer' ? 'Install it' : 'Add it to your home screen'} so it opens like an app, full screen, and works without internet. ${WORKS[pf]}</p>
       ${deferred ? `<button class="btn-chunky btn-primary btn-xl" data-install>Install Kaimon</button><p class="note">Or do it yourself:</p>` : ''}
       <ol class="ins-steps">${steps(pf).map((s) => `<li>${s}</li>`).join('')}</ol>
       <div class="sheet-actions"><button class="btn-chunky${deferred ? '' : ' btn-primary'}" data-close>${first ? 'Maybe later' : 'Got it'}</button></div>
