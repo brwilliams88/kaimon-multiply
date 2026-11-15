@@ -87,18 +87,18 @@ export function renderPlay(root, go, { table }) {
   }
 
   // Ball belt: the free ball (better on a streak) plus any special balls you own.
-  // The picked ball is the one a right answer throws.
+  // The picked ball (gold ring, name at the left) is the one a right answer throws.
   function beltHTML(species) {
     S.pick = 'free';
     const free = ballForStreak(p, S.streak + 1);
     const owned = ['super', 'mega', 'legend'].filter((k) => (p.balls[k] || 0) > 0);
     if (!owned.length && free === 'capture') return '';
+    S.freeKind = free;
     const rare = ['rare', 'legendary'].includes(species.rarity);
-    const btn = (k, count, isFree) => `<button class="belt-ball${isFree ? ' on' : ''}" data-ball="${isFree ? 'free' : k}" aria-pressed="${isFree}" aria-label="${BALLS[k].name}${isFree ? ', free' : `, ${count} left`}">${ballIcon(k)}<span class="bb-name">${BALLS[k].name.replace(' Ball', '')}</span>${isFree ? (k === 'capture' ? '' : '<span class="bb-count">free</span>') : `<span class="bb-count">${count}</span>`}</button>`;
-    return `<div class="belt${rare && owned.length ? ' rare' : ''}" role="group" aria-label="Pick the ball a right answer throws">
-      <span class="belt-label">${rare && owned.length ? 'Rare! Throw' : 'Throw'}</span>
-      ${btn(free, 0, true)}
-      ${owned.map((k) => btn(k, p.balls[k], false)).join('')}
+    const btn = (k, count, isFree) => `<button class="belt-ball${isFree ? ' on' : ''}" data-ball="${isFree ? 'free' : k}" aria-pressed="${isFree}" aria-label="${BALLS[k].name}${isFree ? (k === 'capture' ? '' : ', free streak ball') : `, ${count} left`}">${ballIcon(k)}${isFree ? (k === 'capture' ? '' : '<span class="bb-badge free">free</span>') : `<span class="bb-badge">${count}</span>`}</button>`;
+    return `<div class="belt${rare && owned.length ? ' rare' : ''}" role="group" aria-label="Pick a ball. A right answer throws it.">
+      <span class="belt-name" aria-hidden="true">${BALLS[free].name}</span>
+      <span class="belt-balls">${btn(free, 0, true)}${owned.map((k) => btn(k, p.balls[k], false)).join('')}</span>
     </div>`;
   }
 
@@ -353,12 +353,12 @@ export function renderPlay(root, go, { table }) {
     e.stopPropagation();
     if (S.phase !== 'ask') return;
     sfx.tap();
-    S.pick = b.dataset.ball === S.pick ? 'free' : b.dataset.ball;
+    S.pick = b.dataset.ball;
     root.querySelectorAll('[data-ball]').forEach((x) => { const on = x.dataset.ball === S.pick; x.classList.toggle('on', on); x.setAttribute('aria-pressed', on); });
-    const lab = root.querySelector('.belt-label');
-    if (lab) {
-      lab.textContent = S.pick === 'free' ? 'Throw' : `${BALLS[S.pick].name.replace(' Ball', '')} ready!`;
-      lab.classList.toggle('ready', S.pick !== 'free');
+    const name = root.querySelector('.belt-name');
+    if (name) {
+      name.textContent = BALLS[S.pick === 'free' ? S.freeKind : S.pick].name;
+      name.classList.remove('pop'); void name.offsetWidth; name.classList.add('pop');
     }
   });
   on(root, 'click', '[data-exit]', () => {

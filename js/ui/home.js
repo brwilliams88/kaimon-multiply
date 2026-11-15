@@ -226,7 +226,7 @@ export function ballsHelp(p, opts = {}) {
   const row = (k, name, count, text) => `<div class="bh-row">${ballIcon(k)}<div><strong>${name} <span class="bh-count">${count}</span></strong><p>${text}</p></div></div>`;
   sheet(`<div class="balls-help">
     <h2>Your balls</h2>
-    <p class="bh-how">When a wild Kaimon appears, tap a ball under it, then answer. A right answer throws that ball.</p>
+    <p class="bh-how">When a wild Kaimon appears, tap the ball you want to throw. It gets a gold ring. Then answer: a right answer throws it.</p>
     ${row('capture', 'Capture Ball', '∞', 'Free, and you never run out. Good for most Kaimon.')}
     ${row('super', 'Super Ball', '×' + p.balls.super, 'Much better at catching. Win one from Gym Leaders. A 5-answer streak also gives you a free Super throw.')}
     ${row('mega', 'Mega Ball', '×' + p.balls.mega, 'Even better, for rare Kaimon. Win one by beating a Gym Leader the first time or with a Good Work Stamp. A 10-answer streak gives a free Mega throw.')}

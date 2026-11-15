@@ -1,7 +1,16 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.3.30';
+export const VERSION = '0.3.31';
 
 export const CHANGELOG = [
+  {
+    version: '0.3.31',
+    date: '2026-11-14',
+    title: 'A cleaner ball picker',
+    items: [
+      'Balls on the card are now round buttons. The one you\'ll throw gets a gold ring and its name shows beside the row. Tap another ball to switch.',
+      'Special balls show how many you have in a small badge. No more Throw label or ready text.',
+    ],
+  },
   {
     version: '0.3.30',
     date: '2026-11-14',
