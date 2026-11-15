@@ -1,7 +1,15 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.3.42';
+export const VERSION = '0.3.43';
 
 export const CHANGELOG = [
+  {
+    version: '0.3.43',
+    date: '2026-11-15',
+    title: 'Change look works every time',
+    items: [
+      'Fixed Change look getting stuck after the first pick. You can now try as many looks, hair styles, colors and hats as you like before saving.',
+    ],
+  },
   {
     version: '0.3.42',
     date: '2026-11-15',

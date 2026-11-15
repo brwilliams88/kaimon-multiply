@@ -33,8 +33,8 @@ export function lookPickerHTML(look) {
 // Wire a picker inside el. onChange(look) runs on every change.
 export function wireLookPicker(el, look, onChange) {
   let L = lookOf(look);
-  const box = el.querySelector('.lp');
   const redraw = () => {
+    const box = el.querySelector('.lp'); // always the panel on screen now
     const open = box.querySelector('.lp-more')?.open;
     const scroll = box.querySelector('.lp-presets')?.scrollLeft || 0;
     box.outerHTML = lookPickerHTML(L);

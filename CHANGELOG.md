@@ -2,6 +2,10 @@
 
 All notable changes. Versioning: `0.MINOR.0` marks a roadmap phase, `0.x.PATCH` is any shipped change a player or parent can notice, and `1.0.0` is the public launch. See "Versioning" in CLAUDE.md. The in-app version history (Grown-ups > What's new) reads from `js/data/changelog.js`; keep both in sync. Each release is tagged in git as `vX.Y.Z`.
 
+## v0.3.43 (2026-11-15) Change look works every time
+
+- Fixed Change look getting stuck after the first pick. You can now try as many looks, hair styles, colors and hats as you like before saving.
+
 ## v0.3.42 (2026-11-15) Gym list stays put
 
 - Backing out of a Gym Leader's intro, or coming back from a battle, now returns you to the same spot on the home screen, with the Gym Leader row still slid over to where you were.
