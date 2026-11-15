@@ -47,7 +47,19 @@ function go(name, params = {}) {
   SCREENS[name](root, go, params);
   window.scrollTo(0, 0);
   if (name === 'welcome' || name === 'home') maybeIconNotice();
+  // The title screen is one fixed screen: no rubber-band scrolling on iPhone.
+  document.documentElement.classList.toggle('lock-screen', name === 'welcome');
 }
+// iOS can still nudge a fixed page; stop drags on the title screen unless they're inside a sheet.
+document.addEventListener('touchmove', (e) => {
+  if (!document.documentElement.classList.contains('lock-screen')) return;
+  if (e.target.closest?.('.sheet, .overlay, .fs-sheet, input, textarea')) return;
+  for (let el = e.target; el && el !== document.body; el = el.parentElement) {
+    if (el.scrollHeight > el.clientHeight + 1 && /auto|scroll/.test(getComputedStyle(el).overflowY)) return;
+    if (el.scrollWidth > el.clientWidth + 1 && /auto|scroll/.test(getComputedStyle(el).overflowX)) return;
+  }
+  e.preventDefault();
+}, { passive: false });
 
 // Several trainers on one device: start on "Who's playing?". One trainer: straight in.
 go(!active() || allProfiles().length > 1 ? 'welcome' : (active().starter ? 'home' : 'meetPartner'));

@@ -2,6 +2,12 @@
 
 All notable changes. Versioning: `0.MINOR.0` marks a roadmap phase, `0.x.PATCH` is any shipped change a player or parent can notice, and `1.0.0` is the public launch. See "Versioning" in CLAUDE.md. The in-app version history (Grown-ups > What's new) reads from `js/data/changelog.js`; keep both in sync. Each release is tagged in git as `vX.Y.Z`.
 
+## v0.5.4 (2026-11-15) Title screen locked in place
+
+- The title screen is locked in place: no more little bounce when you drag it on iPhone or iPad.
+- The Kaimon Multiply logo sits a bit lower, clear of the Dynamic Island, and is bigger on every screen size.
+- The sky behind the top of the screen fades in more gently so the logo stays crisp.
+
 ## v0.5.3 (2026-11-15) Teacher K and a real Kaidex
 
 - Teacher K joins the game. She welcomes new trainers and gives them their buddy, explains How to play, teaches the counting trick when you miss a card, and hands out the Good Work Stamp.

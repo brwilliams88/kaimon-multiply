@@ -118,27 +118,36 @@ export function renderMeetPartner(root, go) {
 
 export const cloudIcon = () => `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 18 H17.5 a4 4 0 0 0 0.4 -8 a6 6 0 0 0 -11.6 1.2 A3.5 3.5 0 0 0 7 18 Z" fill="currentColor"/></svg>`;
 
-// Size the logo to the open sky above Kai's cap in the tall title art, so it never
-// covers him on any phone or tablet. The wide art (landscape) keeps its CSS spot.
+// Lay out the tall title art so the logo is big, sits clear of the Dynamic Island,
+// and never covers Kai: the art is scaled and shifted so Kai's cap starts just under
+// the logo and everyone's feet stay above the panel. The wide art (landscape) keeps
+// its CSS layout.
 function fitTitleLogo(root) {
   const hero = root.querySelector('.title-hero');
   const logo = root.querySelector('.title-logo');
-  if (!hero || !logo) return;
+  const art = root.querySelector('.title-art');
+  if (!hero || !logo || !art) return;
+  const CAP = 0.36, FEET = 0.9, RATIO = 1152 / 768; // positions in the tall art
   const fit = () => {
     if (!hero.isConnected) { removeEventListener('resize', fit); return; }
-    if (matchMedia('(min-aspect-ratio: 1/1)').matches) { logo.style.removeProperty('--logo-w'); return; }
+    if (matchMedia('(min-aspect-ratio: 1/1)').matches) { logo.style.removeProperty('--logo-w'); art.removeAttribute('style'); logo.style.visibility = ''; return; }
     const W = hero.clientWidth, H = hero.clientHeight;
-    const s = Math.max(W / 768, H / 1152);           // object-fit: cover
-    const artH = 1152 * s;
-    const top = (H - artH) * 0.78;                    // object-position y 78%
-    const cap = top + 0.355 * artH;                   // Kai's cap starts about 35.5% down the art
-    const safe = parseFloat(getComputedStyle(logo).top) || 0;
-    const room = cap - safe - 10;                     // logo height that fits
-    const w = Math.max(0, Math.min(W * 0.88, room * 2.31, 620));
+    const top0 = parseFloat(getComputedStyle(logo).top) || 0;
+    const overlap = 34; // the panel rides up over the bottom of the art
+    let w = Math.min(W * 0.9, 600), artH = 0, top = 0;
+    for (;;) {
+      const LB = top0 + w / 2.31 + 4;                        // bottom of the logo
+      const lo = Math.max(W * RATIO, LB / CAP, (H - LB) / (1 - CAP));
+      const hi = (H + overlap - LB) / (FEET - CAP);
+      if (lo <= hi || w <= W * 0.55) { artH = lo; top = LB - CAP * artH; break; }
+      w *= 0.96;
+    }
+    const artW = artH / RATIO;
+    Object.assign(art.style, { position: 'absolute', width: artW + 'px', height: artH + 'px', left: (W - artW) / 2 + 'px', top: Math.min(0, top) + 'px', objectFit: 'fill', maxWidth: 'none' });
     logo.style.setProperty('--logo-w', w + 'px');
-    logo.style.visibility = w < 120 ? 'hidden' : '';
+    logo.style.visibility = '';
   };
   fit();
   addEventListener('resize', fit);
-  root.querySelector('.title-art')?.addEventListener('load', fit);
+  art.addEventListener('load', fit);
 }

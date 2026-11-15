@@ -1,7 +1,17 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.5.3';
+export const VERSION = '0.5.4';
 
 export const CHANGELOG = [
+  {
+    version: '0.5.4',
+    date: '2026-11-15',
+    title: "Title screen locked in place",
+    items: [
+      "The title screen is locked in place: no more little bounce when you drag it on iPhone or iPad.",
+      "The Kaimon Multiply logo sits a bit lower, clear of the Dynamic Island, and is bigger on every screen size.",
+      "The sky behind the top of the screen fades in more gently so the logo stays crisp.",
+    ],
+  },
   {
     version: '0.5.3',
     date: '2026-11-15',
