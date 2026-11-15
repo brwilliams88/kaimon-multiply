@@ -4,6 +4,7 @@ import { avatarSVG, trainerLook } from './avatars.js';
 import { dexCounts } from '../core/game.js';
 import { checkNow } from '../core/update.js';
 import { showIconNotice } from './iconNotice.js';
+import { sfx, soundOn, soundStatus } from '../core/sound.js';
 import { itemImg } from '../core/assets.js';
 import { installHelpHTML, canPromptInstall, promptInstall, isInstalled } from './install.js';
 import { lastDays, partsOfDay, usedToday } from '../core/playtime.js';
@@ -29,7 +30,7 @@ function pinPad(title, sub, onDone, extra = '') {
       <div class="pin-dots" aria-live="polite"><span></span><span></span><span></span><span></span></div>
       <div class="pad pin-pad" role="group" aria-label="PIN pad">
         ${[1, 2, 3, 4, 5, 6, 7, 8, 9].map((d) => `<button class="key" data-pk="${d}">${d}</button>`).join('')}
-        <span></span><button class="key" data-pk="0">0</button><button class="key key-del" data-pk="del" aria-label="Delete"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5 H20 V19 H9 L3 12 Z M12 9 L17 15 M17 9 L12 15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/></svg></button>
+        <span></span><button class="key" data-pk="0">0</button><button class="key key-del" data-pk="del" aria-label="Delete"><svg viewBox="0 0 32 24" aria-hidden="true"><path d="M11 3h15.5A3.5 3.5 0 0 1 30 6.5v11a3.5 3.5 0 0 1-3.5 3.5H11a2.4 2.4 0 0 1-1.9-.9L2.6 12l6.5-8.1A2.4 2.4 0 0 1 11 3z" fill="currentColor"/><path d="M15.5 8.2l7.6 7.6m0-7.6l-7.6 7.6" stroke="#fff" stroke-width="2.9" stroke-linecap="round"/></svg></button>
       </div>
       ${extra}
     </section>`, onDone };
@@ -160,6 +161,7 @@ function renderMain(root, go) {
           <label class="row"><span>Cards per session</span><select data-set="sessionLength">${[10, 15, 20, 30].map((n) => `<option ${s.sessionLength === n ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
           <label class="row"><span>Counts as fast</span><select data-set="fastMs">${[3000, 4000, 5000, 6000, 8000].map((n) => `<option value="${n}" ${s.fastMs === n ? 'selected' : ''}>${n / 1000} seconds</option>`).join('')}</select></label>
           <label class="row"><span>Sound<small class="row-note">Also in the kids' Menu and on the speaker button in the game. Plays even when the phone is on silent.</small></span><input type="checkbox" class="switch" data-set="sound" ${s.sound ? 'checked' : ''}></label>
+          <div class="row"><span class="note" data-soundmsg>No sound on an iPhone? Turn the volume up with the side buttons, then tap Test sound.</span><button class="btn-chunky btn-sm" data-soundtest>Test sound</button></div>
           <label class="row"><span>Battle music<small class="row-note">Plays during battles only, never during practice cards.</small></span><input type="checkbox" class="switch" data-set="music" ${s.music !== false ? 'checked' : ''}></label>
           <label class="row"><span>Voice answers <span class="beta-tag">Beta</span><small class="row-note">Kids tap Say it and say the answer. While the mic listens, iPhone plays game sounds quieter. The phone asks to use the microphone the first time each day.</small></span><input type="checkbox" class="switch" data-set="voice" ${s.voice ? 'checked' : ''}></label>
           <p class="note">${voiceSupported() ? 'Voice works on this device. Kids tap Say it, then say the number.' : 'Voice isn’t available here. On iPad and iPhone it may work in Safari but not from the home screen icon; the number pad always works.'}</p>
@@ -264,6 +266,12 @@ function renderMain(root, go) {
 
   on(root, 'click', '[data-back]', () => go('home'));
   on(root, 'click', '[data-newicon]', () => showIconNotice());
+  on(root, 'click', '[data-soundtest]', () => {
+    const msg = root.querySelector('[data-soundmsg]');
+    if (!soundOn()) { msg.textContent = 'Sound is off for this trainer. Turn on Sound above first.'; return; }
+    sfx.caught();
+    setTimeout(() => { const st = soundStatus(); msg.textContent = st.lastErr ? `The phone blocked the sound (${st.lastErr}). Tap Test sound again.` : 'You should have heard a little tune. If not, check the volume buttons and that the phone is not on Do Not Disturb with media muted.'; }, 500);
+  });
   on(root, 'click', '[data-install]', async () => { if (await promptInstall()) renderMain(root, go); });
   on(root, 'click', '[data-update]', async (e, btn) => {
     const msg = root.querySelector('[data-upd-msg]');

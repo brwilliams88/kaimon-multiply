@@ -1,7 +1,22 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.5.0';
+export const VERSION = '0.5.1';
 
 export const CHANGELOG = [
+  {
+    version: '0.5.1',
+    date: '2026-11-15',
+    title: "Fixed title screen and sound",
+    items: [
+      "The title screen is now one fixed screen. It no longer slides up and down on iPhone, the sky fills in behind the Dynamic Island, and the logo always fits above Kai on every phone and iPad.",
+      "Trainers on the title screen are a neat row of cards on phones and iPads.",
+      "Fixed sound on iPhone: game sounds now play through the phone's media player, which works in the home screen app and with the Silent switch on. Grown-ups has a new Test sound button.",
+      "A cleaner delete key on the number pad and the grown-up PIN pad.",
+      "The Kaidex now counts all 60 Kaimon. #060 stays a faint silhouette until you spot it.",
+      "The Menu has a Title screen option, which is also where you switch trainers. The trainer page has a Switch trainer button too.",
+      "In battles, the little balls by each name show how many Kaimon each side has left, and Gym Leader names no longer get cut off.",
+      "Fixed the Gym battles picture in How to play.",
+    ],
+  },
   {
     version: '0.5.0',
     date: '2026-11-15',

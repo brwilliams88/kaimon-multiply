@@ -52,7 +52,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt } = {}
     <section class="screen play battle battle-${kind}">
       <header class="play-top">
         <button class="icon-btn" data-exit aria-label="Leave battle"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6 L18 18 M18 6 L6 18" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg></button>
-        <div class="vs-chip"><span class="vs-av">${trainerArt(opp)}</span><span><strong>${esc(opp.name)}</strong><small>${esc(opp.title)}</small></span></div>
+        <div class="vs-chip"><span class="vs-av">${trainerArt(opp)}</span><span><strong>${esc(opp.name)}</strong><small>${esc(opp.kind === 'champ' ? `${opp.table}s Gym Leader` : opp.kind === 'boss' ? 'The final gym' : 'Team Papa')}</small></span></div>
         ${soundButton(p.settings.sound)}
         <div class="streak" aria-live="polite"><span class="streak-ball">${ballIcon('capture')}</span><span class="streak-num">0</span></div>
       </header>
@@ -87,7 +87,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt } = {}
           <div class="answer" aria-live="polite"><span class="answer-val empty" data-ph="?"></span><span class="answer-hint"></span><span class="power-strip" aria-hidden="true"><span class="power-fill"></span></span></div>
           <div class="pad" role="group" aria-label="Number pad">
             ${[1, 2, 3, 4, 5, 6, 7, 8, 9].map((d) => `<button class="key" data-k="${d}">${d}</button>`).join('')}
-            <button class="key key-del" data-k="del" aria-label="Delete"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5 H20 V19 H9 L3 12 Z M12 9 L17 15 M17 9 L12 15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/></svg></button>
+            <button class="key key-del" data-k="del" aria-label="Delete"><svg viewBox="0 0 32 24" aria-hidden="true"><path d="M11 3h15.5A3.5 3.5 0 0 1 30 6.5v11a3.5 3.5 0 0 1-3.5 3.5H11a2.4 2.4 0 0 1-1.9-.9L2.6 12l6.5-8.1A2.4 2.4 0 0 1 11 3z" fill="currentColor"/><path d="M15.5 8.2l7.6 7.6m0-7.6l-7.6 7.6" stroke="#fff" stroke-width="2.9" stroke-linecap="round"/></svg></button>
             <button class="key" data-k="0">0</button>
             <button class="key key-go" data-k="go" aria-label="Attack with this answer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5 L10 17.5 L19 7" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
           </div>
@@ -110,7 +110,11 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt } = {}
   function drawHp(box, team, idx, known) {
     const m = team[idx];
     $('.hp-name', box).textContent = known ? m.species.name : (box === el.foeHp && !p.dex[m.species.id]?.caught ? 'Wild ???' : m.species.name);
+    // One ball per Kaimon on that side: bright while it can still battle, gray once it's out.
+    const left = team.filter((x) => x.hp > 0).length;
     $('.hp-dots', box).innerHTML = team.map((x, i) => `<i class="${x.hp <= 0 ? 'out' : i === idx ? 'on' : ''}"></i>`).join('');
+    $('.hp-dots', box).setAttribute('aria-label', `${left} of ${team.length} Kaimon left`);
+    $('.hp-dots', box).title = `${left} of ${team.length} Kaimon left`;
     const pct = Math.max(0, m.hp / m.max) * 100;
     const bar = $('.hp-bar > span', box);
     bar.style.width = pct + '%';

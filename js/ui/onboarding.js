@@ -22,7 +22,7 @@ export function renderWelcome(root, go) {
     <section class="screen welcome title-screen">
       <div class="title-hero">
         <picture>
-          <source media="(min-width: 600px)" srcset="${titleSrc(true)}">
+          <source media="(min-aspect-ratio: 1/1)" srcset="${titleSrc(true)}">
           <img class="title-art" src="${titleSrc(false)}" alt="Kai with Kaizo, Kaiko and Kipbun" draggable="false">
         </picture>
         <h1 class="title-logo"><img src="${LOGO}" alt="Kaimon Multiply" draggable="false"></h1>
@@ -42,6 +42,7 @@ export function renderWelcome(root, go) {
       <p class="title-copy">© 2026 Kaimon Games · v${VERSION}</p>
     </section>`;
   maybeShowInstall();
+  fitTitleLogo(root);
   // Family trainers can arrive from sync while this screen is open.
   const sig = () => JSON.stringify([allProfiles().map((p) => p.id + p.family), syncStatus().signedIn, syncStatus().busy]);
   const before = sig();
@@ -113,3 +114,28 @@ export function renderMeetPartner(root, go) {
 }
 
 export const cloudIcon = () => `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 18 H17.5 a4 4 0 0 0 0.4 -8 a6 6 0 0 0 -11.6 1.2 A3.5 3.5 0 0 0 7 18 Z" fill="currentColor"/></svg>`;
+
+// Size the logo to the open sky above Kai's cap in the tall title art, so it never
+// covers him on any phone or tablet. The wide art (landscape) keeps its CSS spot.
+function fitTitleLogo(root) {
+  const hero = root.querySelector('.title-hero');
+  const logo = root.querySelector('.title-logo');
+  if (!hero || !logo) return;
+  const fit = () => {
+    if (!hero.isConnected) { removeEventListener('resize', fit); return; }
+    if (matchMedia('(min-aspect-ratio: 1/1)').matches) { logo.style.removeProperty('--logo-w'); return; }
+    const W = hero.clientWidth, H = hero.clientHeight;
+    const s = Math.max(W / 768, H / 1152);           // object-fit: cover
+    const artH = 1152 * s;
+    const top = (H - artH) * 0.78;                    // object-position y 78%
+    const cap = top + 0.355 * artH;                   // Kai's cap starts about 35.5% down the art
+    const safe = parseFloat(getComputedStyle(logo).top) || 0;
+    const room = cap - safe - 10;                     // logo height that fits
+    const w = Math.max(0, Math.min(W * 0.88, room * 2.31, 620));
+    logo.style.setProperty('--logo-w', w + 'px');
+    logo.style.visibility = w < 120 ? 'hidden' : '';
+  };
+  fit();
+  addEventListener('resize', fit);
+  root.querySelector('.title-art')?.addEventListener('load', fit);
+}

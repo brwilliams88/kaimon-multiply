@@ -2,6 +2,17 @@
 
 All notable changes. Versioning: `0.MINOR.0` marks a roadmap phase, `0.x.PATCH` is any shipped change a player or parent can notice, and `1.0.0` is the public launch. See "Versioning" in CLAUDE.md. The in-app version history (Grown-ups > What's new) reads from `js/data/changelog.js`; keep both in sync. Each release is tagged in git as `vX.Y.Z`.
 
+## v0.5.1 (2026-11-15) Fixed title screen and sound
+
+- The title screen is now one fixed screen. It no longer slides up and down on iPhone, the sky fills in behind the Dynamic Island, and the logo always fits above Kai on every phone and iPad.
+- Trainers on the title screen are a neat row of cards on phones and iPads.
+- Fixed sound on iPhone: game sounds now play through the phone's media player, which works in the home screen app and with the Silent switch on. Grown-ups has a new Test sound button.
+- A cleaner delete key on the number pad and the grown-up PIN pad.
+- The Kaidex now counts all 60 Kaimon. #060 stays a faint silhouette until you spot it.
+- The Menu has a Title screen option, which is also where you switch trainers. The trainer page has a Switch trainer button too.
+- In battles, the little balls by each name show how many Kaimon each side has left, and Gym Leader names no longer get cut off.
+- Fixed the Gym battles picture in How to play.
+
 ## v0.5.0 (2026-11-15) The art is in
 
 Roadmap milestone v0.5: art production.

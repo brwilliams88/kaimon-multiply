@@ -44,7 +44,7 @@ export function renderTrainer(root, go) {
         <div class="tr-who">
           <h2>${esc(p.name)}</h2>
           <p class="tr-title">${trainerTitle(p)}${p.stats.stars ? ` <span class="stars">★${p.stats.stars}</span>` : ''}</p>
-          <button class="btn-chunky tr-look" data-look>Change look</button>
+          <div class="tr-btns"><button class="btn-chunky tr-look" data-look>Change look</button><button class="btn-chunky tr-look" data-switch>Switch trainer</button></div>
         </div>
         <div class="tr-buddy" aria-label="Buddy ${esc(buddy.species.name)}, level ${buddy.level}">
           <div class="tr-buddy-art">${creatureArt(buddy.species)}</div>
@@ -82,6 +82,7 @@ export function renderTrainer(root, go) {
   draw();
   on(root, 'click', '[data-back]', () => { sfx.tap(); go('home'); });
   on(root, 'click', '[data-team]', () => { sfx.tap(); teamSheet(p, draw); });
+  on(root, 'click', '[data-switch]', () => { sfx.tap(); go('welcome'); });
   on(root, 'click', '[data-look]', () => {
     sfx.tap();
     let look = trainerLook(p);

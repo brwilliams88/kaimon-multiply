@@ -188,7 +188,7 @@ function homeMenu(p, go) {
     <label class="menu-row menu-switch"><span class="menu-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M13 2.5 L5 13.5 H11 L10 21.5 L19 10 H13 Z" fill="currentColor" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></span><span class="menu-txt"><strong>Quick mode</strong><small>Shorter catches and battle moves, more cards</small></span><input type="checkbox" class="switch" data-quick ${p.settings.quick ? 'checked' : ''} aria-label="Quick mode"></label>
     ${row('data-m="how"', '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M9.6 9.4a2.5 2.5 0 1 1 3.4 2.3c-.7.3-1 .8-1 1.5v.6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><circle cx="12" cy="17" r="1.4" fill="currentColor"/></svg>', 'How to play', 'Buddy, XP, regions and battles')}
     ${row('data-m="balls"', ballIcon('capture'), 'Ball guide', 'Which ball to throw, and how to earn more')}
-    ${row('data-m="switch"', '<svg viewBox="0 0 24 24"><path d="M7 4 L3 8 L7 12 M3 8 H17 M17 12 L21 16 L17 20 M21 16 H7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>', 'Switch trainer')}
+    ${row('data-m="switch"', '<svg viewBox="0 0 24 24"><path d="M7 4 L3 8 L7 12 M3 8 H17 M17 12 L21 16 L17 20 M21 16 H7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>', 'Title screen', 'Switch trainer or add a new one')}
     <button class="menu-row menu-grown hold" data-grownups aria-label="Grown-ups: press and hold"><span class="menu-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2.5" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M8.5 10.5 V8 a3.5 3.5 0 0 1 7 0 V10.5" fill="none" stroke="currentColor" stroke-width="2.4"/></svg></span><span class="menu-txt"><strong>Grown-ups</strong><small>Press and hold. Needs the grown-up PIN.</small></span><span class="hold-ring" aria-hidden="true"></span></button>
     <p class="menu-ver">Kaimon Multiply v${VERSION}</p>
   </div>`, { cls: 'menu-sheet' });
@@ -227,7 +227,7 @@ function howItWorks(p, opts = {}) {
     ${sec(card, 'Practice', 'All your times tables, mixed together. A wild Kaimon jumps onto each card. Answer right to throw a ball at it.')}
     ${sec(`${ballIcon('capture')}${ballIcon('super')}`, 'Balls', 'Fast answers throw harder. Super, Mega and Legend Balls catch rare Kaimon more easily. Win them with streaks and medals.')}
     ${sec(region, 'Regions', 'Each region is a times table with its own Kaimon. Get its facts right and fast on different days to earn its medal: Bronze, Silver, Gold, then Star.')}
-    ${sec(trainerArt({ kind: 'champ', table: 2 }), 'Gym battles', 'Your Buddy and your two strongest Kaimon battle a Gym Leader. Every right answer is an attack! Win all the badges to face Boss Papa at Papa’s Gym.')}
+    ${sec(trainerArt({ kind: 'champ', table: 2 }), 'Gym battles', 'Your Buddy and your two strongest Kaimon battle a Gym Leader. Every right answer is an attack! The little balls by each name show how many Kaimon each side has left. Win all the badges to face Boss Papa at Papa’s Gym.')}
     ${sec(kaidexIcon(), 'Kaidex', `Every Kaimon you catch goes in your Kaidex. There are ${dexCounts(p).total} to find, and some are very rare.`)}
     <button class="btn-chunky btn-primary btn-xl how-go" data-close>Let's go!</button>
   </div>`, { ...opts, cls: 'how-sheet' });
