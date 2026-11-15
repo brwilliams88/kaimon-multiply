@@ -1,4 +1,4 @@
-import { resetAudio } from './sound.js';
+import { micStarting, micStopped } from './sound.js';
 // Voice answers using the browser's built-in speech recognition (free, no API key).
 // iPad/iPhone Safari and Chrome support it; some installed home-screen apps do not.
 // If it is missing, the mic button is hidden and the number pad is used.
@@ -49,23 +49,26 @@ export function listen(cb) {
     for (let i = 0; i < res.length; i++) {
       const n = parseNumber(res[i].transcript);
       if (n !== null && n <= 100) {
-        if (res.isFinal) { done = true; cb.onResult?.(n); r.stop(); } else cb.onPartial?.(n);
+        // Let go of the mic first, so the "correct" sound plays at normal volume.
+        if (res.isFinal) { done = true; try { r.abort(); } catch {} micStopped(); cb.onResult?.(n); } else cb.onPartial?.(n);
         return;
       }
     }
     if (res.isFinal && !done) cb.onError?.('I didn’t catch a number. Try again or use the keypad.');
   };
   r.onerror = (e) => {
+    if (done || e.error === 'aborted') return; // we stopped it ourselves
     const msg = e.error === 'not-allowed' || e.error === 'service-not-allowed'
       ? 'Microphone is blocked. Use the keypad, or allow the microphone in settings.'
       : e.error === 'no-speech' ? 'I didn’t hear anything. Tap the mic and say the answer.'
       : 'Voice didn’t work this time. Use the keypad.';
     cb.onError?.(msg, e.error);
   };
-  r.onend = () => { if (current === r) current = null; resetAudio(); cb.onEnd?.(); };
-  try { r.start(); } catch (err) { cb.onError?.('Voice didn’t start. Use the keypad.'); cb.onEnd?.(); }
+  r.onend = () => { if (current === r) current = null; micStopped(); cb.onEnd?.(); };
+  micStarting();
+  try { r.start(); } catch (err) { micStopped(); cb.onError?.('Voice didn’t start. Use the keypad.'); cb.onEnd?.(); }
 }
 
 export function stop() {
-  if (current) { try { current.abort(); } catch {} current = null; }
+  if (current) { try { current.abort(); } catch {} current = null; micStopped(); }
 }

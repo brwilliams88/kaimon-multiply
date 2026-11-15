@@ -1,7 +1,17 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.5.4';
+export const VERSION = '0.5.5';
 
 export const CHANGELOG = [
+  {
+    version: '0.5.5',
+    date: '2026-11-15',
+    title: "Sounds stay loud after the mic",
+    items: [
+      "Sounds after using the mic play at normal volume again. The game now switches the iPhone out of its quieter mic mode before the \"correct\" sound plays.",
+      "If a sound would play while the mic is still letting go, it waits a split second instead of coming out too quiet.",
+      "Grown-ups has a tip about iPhone keeping a separate volume for the mic.",
+    ],
+  },
   {
     version: '0.5.4',
     date: '2026-11-15',

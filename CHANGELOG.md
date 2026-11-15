@@ -2,6 +2,12 @@
 
 All notable changes. Versioning: `0.MINOR.0` marks a roadmap phase, `0.x.PATCH` is any shipped change a player or parent can notice, and `1.0.0` is the public launch. See "Versioning" in CLAUDE.md. The in-app version history (Grown-ups > What's new) reads from `js/data/changelog.js`; keep both in sync. Each release is tagged in git as `vX.Y.Z`.
 
+## v0.5.5 (2026-11-15) Sounds stay loud after the mic
+
+- Sounds after using the mic play at normal volume again. The game now switches the iPhone out of its quieter mic mode before the "correct" sound plays.
+- If a sound would play while the mic is still letting go, it waits a split second instead of coming out too quiet.
+- Grown-ups has a tip about iPhone keeping a separate volume for the mic.
+
 ## v0.5.4 (2026-11-15) Title screen locked in place
 
 - The title screen is locked in place: no more little bounce when you drag it on iPhone or iPad.

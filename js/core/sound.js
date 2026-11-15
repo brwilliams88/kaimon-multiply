@@ -168,9 +168,42 @@ function prime() {
 }
 ['touchend', 'pointerup', 'keydown', 'click'].forEach((ev) => document.addEventListener(ev, () => { if (enabled) prime(); }, { passive: true, capture: true }));
 
+// The mic and game sounds on iPhone: while the mic is on, the phone is in its
+// "call" audio mode, which has its own (usually low) volume and can route to the
+// earpiece. A sound started in that mode, or in the instant the phone switches
+// back, plays quietly. So we switch modes ourselves at known moments, and hold any
+// sound that comes in while the mic is on or just let go, then play it once the
+// phone is back in normal playback mode.
+let micOn = false, micOffAt = 0, held = new Set(), heldTimer = 0;
+const SETTLE = 380; // ms for iPhone to finish switching back to playback
+export function micStarting() {
+  micOn = true;
+  try { if (navigator.audioSession) navigator.audioSession.type = 'play-and-record'; } catch {}
+}
+export function micStopped() {
+  if (!micOn) return;
+  micOn = false;
+  micOffAt = performance.now();
+  resetAudio();
+  clearTimeout(heldTimer);
+  heldTimer = setTimeout(flushHeld, SETTLE);
+}
+function flushHeld() {
+  if (micOn) return;
+  playbackMode();
+  const list = [...held]; held.clear();
+  list.forEach((n, i) => setTimeout(() => playSfx(n), i * 60));
+}
+export const micBusy = () => micOn || performance.now() - micOffAt < SETTLE;
+
 let lastErr = '';
 function playSfx(name) {
   if (!enabled) return;
+  if (micBusy()) {
+    // Key taps while listening just stay quiet; everything else waits a moment.
+    if (name !== 'tap') { held.add(name); if (!micOn) { clearTimeout(heldTimer); heldTimer = setTimeout(flushHeld, Math.max(30, SETTLE - (performance.now() - micOffAt))); } }
+    return;
+  }
   try {
     const list = [el(name, 0), el(name, 1)];
     const a = list.find((x) => x.paused || x.ended) || list[0];
@@ -180,6 +213,6 @@ function playSfx(name) {
     if (r) r.catch((e) => { lastErr = e?.name || 'blocked'; });
   } catch (e) { lastErr = e?.name || 'error'; }
 }
-export const soundStatus = () => ({ enabled, primed, lastErr, session: navigator.audioSession?.type || 'n/a', engine: ctx?.state || 'none' });
+export const soundStatus = () => ({ enabled, primed, lastErr, mic: micOn, session: navigator.audioSession?.type || 'n/a', engine: ctx?.state || 'none' });
 
 export const sfx = Object.fromEntries(Object.keys(RECIPES).map((k) => [k, () => playSfx(k)]));
