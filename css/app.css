@@ -1079,3 +1079,15 @@ button.balls-row:hover { background: #EDF2F9; }
 .sp-shiny figcaption { display: inline-flex; align-items: center; gap: 4px; color: var(--ink); }
 .sp-shiny figcaption .shiny-star { width: 18px; height: 18px; }
 @media (prefers-reduced-motion: reduce) { .dex-shiny .shiny-star { animation: none; } }
+
+/* v0.3.33 ball picker: flat round buttons that never move; the gold ring wraps the whole ball */
+.belt .belt-ball, .belt .belt-ball.on { transform: none; box-shadow: none; transition: opacity .15s, background .15s, box-shadow .15s; }
+.belt .belt-ball { border: 2.5px solid var(--ink); }
+.belt .belt-ball.on { background: #FFF3C4; box-shadow: 0 0 0 3px #FFD23F, 0 0 0 5px var(--ink); }
+.belt .belt-ball:active { transform: scale(.94); }
+.belt .belt-ball:focus-visible { box-shadow: 0 0 0 3px #1E6FD9; }
+.belt-name.pop { animation: nameFade .25s ease-out; }
+@keyframes nameFade { from { opacity: .2; } to { opacity: 1; } }
+.belt.rare .belt-ball:not([data-ball="free"]) { animation: ringPulse 1.4s ease-in-out infinite; }
+@keyframes ringPulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(255, 210, 63, 0); } 50% { box-shadow: 0 0 0 4px rgba(255, 210, 63, .7); } }
+.belt .belt-balls { gap: clamp(9px, 2.6cqw, 14px); padding: 5px; }

@@ -2,6 +2,11 @@
 
 All notable changes. Versioning: `0.MINOR.0` marks a roadmap phase, `0.x.PATCH` is any shipped change a player or parent can notice, and `1.0.0` is the public launch. See "Versioning" in CLAUDE.md. The in-app version history (Grown-ups > What's new) reads from `js/data/changelog.js`; keep both in sync. Each release is tagged in git as `vX.Y.Z`.
 
+## v0.3.33 (2026-11-15) Steadier ball picker, real catch dates
+
+- The ball you'll throw has a gold ring all the way around it, and the balls no longer move up and down, so the ball name stays put.
+- Kaidex entries caught before catch dates were saved now show a real First caught date (the day the trainer started) instead of Before Nov 14, 2026.
+
 ## v0.3.32 (2026-11-15) Shiny, done right
 
 - Kaidex entries for a shiny Kaimon have a Normal / Shiny switch under the picture. Tapping the gold shiny tag flips it too.

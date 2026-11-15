@@ -1,7 +1,16 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.3.32';
+export const VERSION = '0.3.33';
 
 export const CHANGELOG = [
+  {
+    version: '0.3.33',
+    date: '2026-11-15',
+    title: 'Steadier ball picker, real catch dates',
+    items: [
+      'The ball you\'ll throw has a gold ring all the way around it, and the balls no longer move up and down, so the ball name stays put.',
+      'Kaidex entries caught before catch dates were saved now show a real First caught date (the day the trainer started) instead of Before Nov 14, 2026.',
+    ],
+  },
   {
     version: '0.3.32',
     date: '2026-11-15',

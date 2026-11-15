@@ -11,6 +11,15 @@ function ago(t) {
   const d = Math.floor((Date.now() - t) / 86400000);
   return d <= 0 ? 'today' : d === 1 ? 'yesterday' : d < 30 ? `${d} days ago` : day(t);
 }
+// Catches from before catch dates were saved (v0.3.5) have no date. Use the day the
+// trainer started: the earliest of when it was made and its first recorded play day.
+function firstDayGuess(p) {
+  const days = Object.keys(p.play || {}).sort();
+  const fromPlay = days.length ? new Date(days[0] + 'T12:00:00').getTime() : Infinity;
+  const made = p.createdAt > 1e12 ? p.createdAt : Infinity;
+  const t = Math.min(made, fromPlay);
+  return Number.isFinite(t) ? t : Date.now();
+}
 const RARITY = {
   common: ['Common', 'Easy to catch', 1],
   uncommon: ['Uncommon', 'A little tricky to catch', 2],
@@ -106,7 +115,7 @@ function showEntry(p, s) {
         ];
         if (st === 'caught') {
           rows.push(['Caught', `<strong>${e.caught}</strong> time${e.caught === 1 ? '' : 's'}${e.shiny ? ` · <button class="shiny-word" data-showshiny>${shinyStar()}${e.shiny} shiny</button>` : ''}`]);
-          rows.push(['First caught', e.first ? day(e.first) : 'Before Nov 14, 2026']);
+          rows.push(['First caught', day(e.first || firstDayGuess(p))]);
           if (e.last && e.caught > 1) rows.push(['Last caught', ago(e.last)]);
         } else {
           rows.push(['Seen', `${e.seen || 1} time${(e.seen || 1) === 1 ? '' : 's'}`]);
