@@ -20,22 +20,32 @@ export function toast(msg, ms = 2600) {
 }
 
 // Bottom sheet / dialog. Returns a close function.
-export function sheet(html, { onClose, cls = '' } = {}) {
+// back: a sheet opened from another sheet (like the Menu). Its own buttons and
+// Escape return to the parent; tapping outside closes everything.
+export function sheet(html, { onClose, cls = '', back = null, backLabel = 'Menu' } = {}) {
   const wrap = document.createElement('div');
   wrap.className = 'sheet-wrap';
-  wrap.innerHTML = `<div class="sheet ${cls}" role="dialog" aria-modal="true">${html}</div>`;
+  const top = back ? `<button class="sheet-back" data-sheetback aria-label="Back to ${backLabel}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 L8 12 L15 19" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>${backLabel}</button>` : '';
+  wrap.innerHTML = `<div class="sheet ${cls}" role="dialog" aria-modal="true">${top}${html}</div>`;
   document.body.appendChild(wrap);
   requestAnimationFrame(() => wrap.classList.add('open'));
-  const close = () => {
+  let done = false;
+  const close = (toParent = false) => {
+    if (done) return;
+    done = true;
     wrap.classList.remove('open');
     setTimeout(() => wrap.remove(), 220);
     document.removeEventListener('keydown', onKey);
     onClose?.();
+    if (toParent && back) back();
   };
-  const onKey = (e) => { if (e.key === 'Escape') close(); };
+  const onKey = (e) => { if (e.key === 'Escape') close(true); };
   document.addEventListener('keydown', onKey);
-  wrap.addEventListener('click', (e) => { if (e.target === wrap || e.target.closest('[data-close]')) close(); });
-  return { el: wrap.firstElementChild, close };
+  wrap.addEventListener('click', (e) => {
+    if (e.target === wrap) close(false);
+    else if (e.target.closest('[data-close], [data-sheetback]')) close(true);
+  });
+  return { el: wrap.firstElementChild, close: () => close(false) };
 }
 
 // Hold-to-open for the grown-ups area, so kids don't wander in by accident.

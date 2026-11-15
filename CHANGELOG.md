@@ -2,6 +2,11 @@
 
 All notable changes. Versioning: `0.MINOR.0` marks a roadmap phase, `0.x.PATCH` is any shipped change a player or parent can notice, and `1.0.0` is the public launch. See "Versioning" in CLAUDE.md. The in-app version history (Grown-ups > What's new) reads from `js/data/changelog.js`; keep both in sync. Each release is tagged in git as `vX.Y.Z`.
 
+## v0.3.22 (2026-11-14) Menu pages go back to the Menu
+
+- How to play and Ball guide now go back to the Menu when you tap Got it or ‹ Menu.
+- Tap outside any page to close everything and get back to the game.
+
 ## v0.3.21 (2026-11-14) Times table tricks
 
 - After a miss, the card shows a trick for that fact next to the counting ladder, like: Times 9: do times 10, then take away one 8. 80 − 8 = 72.

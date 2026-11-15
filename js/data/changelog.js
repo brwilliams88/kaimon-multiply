@@ -1,7 +1,16 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.3.21';
+export const VERSION = '0.3.22';
 
 export const CHANGELOG = [
+  {
+    version: '0.3.22',
+    date: '2026-11-14',
+    title: 'Menu pages go back to the Menu',
+    items: [
+      'How to play and Ball guide now go back to the Menu when you tap Got it or ‹ Menu.',
+      'Tap outside any page to close everything and get back to the game.',
+    ],
+  },
   {
     version: '0.3.21',
     date: '2026-11-14',

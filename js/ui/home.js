@@ -183,14 +183,15 @@ function homeMenu(p, go) {
     const m = e.target.closest('[data-m]')?.dataset.m;
     if (!m) return;
     sfx.tap(); sh.close();
-    if (m === 'how') setTimeout(howItWorks, 200);
-    if (m === 'balls') setTimeout(() => ballsHelp(p), 200);
+    const back = () => setTimeout(() => homeMenu(p, go), 120);
+    if (m === 'how') setTimeout(() => howItWorks({ back }), 200);
+    if (m === 'balls') setTimeout(() => ballsHelp(p, { back }), 200);
     if (m === 'switch') go('welcome');
   });
   holdButton(sh.el.querySelector('[data-grownups]'), 1200, () => { sh.close(); go('grownups'); });
 }
 
-function howItWorks() {
+function howItWorks(opts = {}) {
   sheet(`<div class="how">
     <h2>How Kaimon works</h2>
     <dl>
@@ -201,7 +202,7 @@ function howItWorks() {
       <dt>XP</dt><dd>Every right answer gives your buddy XP: 10 XP, plus 5 for a fast answer and 5 for a fact you're still learning. Battle wins give bonus XP. Your buddy evolves at Lv 10 and Lv 20.</dd>
     </dl>
     <button class="btn-chunky btn-primary" data-close>Got it</button>
-  </div>`);
+  </div>`, opts);
 }
 
 export const kaidexIcon = () => `<svg class="kdx-ic" viewBox="0 0 48 48" aria-hidden="true">
@@ -212,7 +213,7 @@ export const kaidexIcon = () => `<svg class="kdx-ic" viewBox="0 0 48 48" aria-hi
   <circle cx="33" cy="11.5" r="2.2" fill="#FF6B4A" stroke="#14213D" stroke-width="1.6"/>
 </svg>`;
 
-export function ballsHelp(p) {
+export function ballsHelp(p, opts = {}) {
   const row = (k, name, count, text) => `<div class="bh-row">${ballIcon(k)}<div><strong>${name} <span class="bh-count">${count}</span></strong><p>${text}</p></div></div>`;
   sheet(`<div class="balls-help">
     <h2>Your balls</h2>
@@ -222,5 +223,5 @@ export function ballsHelp(p) {
     ${row('mega', 'Mega Ball', '×' + p.balls.mega, 'Even better, for rare Kaimon. Win one by beating a Gym Leader the first time or with a Good Work Stamp. A 10-answer streak gives a free Mega throw.')}
     ${row('legend', 'Legend Ball', '×' + p.balls.legend, 'Never misses. Earn one each time a times table gets a new medal. Save it for a Kaimon you really want!')}
     <button class="btn-chunky btn-primary" data-close>Got it</button>
-  </div>`);
+  </div>`, opts);
 }

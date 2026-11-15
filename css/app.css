@@ -947,3 +947,8 @@ button.balls-row:hover { background: rgba(20, 33, 61, .06); }
   .learn-msg { display: none; }
   .hint-scroll .trick { font-size: 13.5px; }
 }
+
+/* v0.3.22 sheets opened from the Menu have a way back */
+.sheet-back { display: inline-flex; align-items: center; gap: 2px; align-self: flex-start; margin: -4px 0 6px -6px; padding: 6px 10px 6px 4px; border: 0; background: none; font: inherit; font-weight: 700; font-size: 17px; color: #1E6FD9; cursor: pointer; border-radius: 10px; }
+.sheet-back svg { width: 20px; height: 20px; }
+.sheet-back:active { background: #EEF2F8; }
