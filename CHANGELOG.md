@@ -2,6 +2,11 @@
 
 All notable changes. Versioning: `0.MINOR.0` marks a roadmap phase, `0.x.PATCH` is any shipped change a player or parent can notice, and `1.0.0` is the public launch. See "Versioning" in CLAUDE.md. The in-app version history (Grown-ups > What's new) reads from `js/data/changelog.js`; keep both in sync. Each release is tagged in git as `vX.Y.Z`.
 
+## v0.3.44 (2026-11-15) A clearer team picker
+
+- Picking your battle team now shows each Kaimon's Kaidex number, type, strength stars, special move and how many times you caught it.
+- Sort by Strongest or by Kaidex number. Evolved Kaimon hit harder, so they show more stars.
+
 ## v0.3.43 (2026-11-15) Change look works every time
 
 - Fixed Change look getting stuck after the first pick. You can now try as many looks, hair styles, colors and hats as you like before saving.

@@ -1,7 +1,16 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.3.43';
+export const VERSION = '0.3.44';
 
 export const CHANGELOG = [
+  {
+    version: '0.3.44',
+    date: '2026-11-15',
+    title: 'A clearer team picker',
+    items: [
+      'Picking your battle team now shows each Kaimon\'s Kaidex number, type, strength stars, special move and how many times you caught it.',
+      'Sort by Strongest or by Kaidex number. Evolved Kaimon hit harder, so they show more stars.',
+    ],
+  },
   {
     version: '0.3.43',
     date: '2026-11-15',
