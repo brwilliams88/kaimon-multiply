@@ -1055,3 +1055,27 @@ button.balls-row:hover { background: #EDF2F9; }
   .front.has-belt .card-q { font-size: clamp(34px, 18cqh, 80px); }
   .front.has-belt .card-wild .kart { width: clamp(40px, 20cqh, 120px); height: clamp(40px, 20cqh, 120px); }
 }
+
+/* v0.3.32 shiny UI: one gold sticker sparkle everywhere, Normal / Shiny switch in the Kaidex */
+.shiny-star { width: 1.15em; height: 1.15em; flex-shrink: 0; vertical-align: -.2em; }
+.dex-shiny { top: 6px; right: 6px; width: 26px; height: 26px; background: none; border: 0; box-shadow: none; border-radius: 0; }
+.dex-shiny .shiny-star { width: 26px; height: 26px; filter: drop-shadow(0 1px 0 rgba(20, 33, 61, .25)); animation: starTwinkle 2.6s ease-in-out infinite; }
+@keyframes starTwinkle { 0%, 80%, 100% { transform: scale(1) rotate(0); } 88% { transform: scale(1.18) rotate(12deg); } }
+.dex-has-shiny { box-shadow: 0 4px 0 var(--ink); }
+.dc-shiny, .dc-shiny.has { display: inline-flex; align-items: center; gap: 4px; font-size: 15px; font-weight: 700; padding: 3px 10px 3px 7px; color: var(--ink-2); background: #EEF2F8; border: 0; box-shadow: none; border-radius: 99px; }
+.dc-shiny.has { color: var(--ink); background: #FFF3C4; }
+.dc-shiny .shiny-star { width: 18px; height: 18px; }
+.dc-shiny:not(.has) .shiny-star { opacity: .55; }
+.shiny-word { display: inline-flex; align-items: center; gap: 3px; font: inherit; font-weight: 700; color: var(--ink); background: #FFF3C4; border: 0; border-radius: 99px; padding: 1px 9px 1px 5px; cursor: pointer; }
+.shiny-word .shiny-star { width: 17px; height: 17px; }
+.look-toggle { display: inline-flex; padding: 3px; gap: 2px; margin: 4px auto 2px; background: #EEF2F8; border-radius: 99px; }
+.look-toggle button { display: inline-flex; align-items: center; gap: 5px; border: 0; background: none; font: inherit; font-weight: 700; font-size: 15px; color: var(--ink-2); padding: 6px 14px; border-radius: 99px; cursor: pointer; }
+.look-toggle button.on { background: #fff; color: var(--ink); box-shadow: 0 1px 3px rgba(20, 33, 61, .2); }
+.look-toggle .shiny-star { width: 17px; height: 17px; }
+.shiny-tag { display: inline-flex; align-items: center; gap: 4px; background: #FFF3C4; color: var(--ink); }
+.shiny-tag .shiny-star { width: 18px; height: 18px; }
+.shiny-title { display: flex; align-items: center; gap: 8px; }
+.shiny-title .shiny-star { width: 28px; height: 28px; }
+.sp-shiny figcaption { display: inline-flex; align-items: center; gap: 4px; color: var(--ink); }
+.sp-shiny figcaption .shiny-star { width: 18px; height: 18px; }
+@media (prefers-reduced-motion: reduce) { .dex-shiny .shiny-star { animation: none; } }

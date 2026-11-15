@@ -1,6 +1,6 @@
 import { active, save } from '../core/store.js';
 import { regionOf, TYPES, byId, MYTHIC_ID } from '../data/creatures.js';
-import { creatureArt } from '../core/art.js';
+import { creatureArt, shinyStar } from '../core/art.js';
 import { factsForTables, pickNext, answerOf, parseFact, hintLadder, trickFor, levelRank, LEVEL_LABEL, tableTier } from '../core/facts.js';
 import { answer, seen, caught as catchIt, escaped, ball as giveBall, sighting, session } from '../core/actions.js';
 import { syncNow } from '../core/sync.js';
@@ -277,10 +277,10 @@ export function renderPlay(root, go, { table }) {
         sfx.newCatch();
         const hard = s.rarity === 'rare' || s.rarity === 'legendary';
         zone.insertAdjacentHTML('beforeend', `<div class="new-banner" aria-hidden="true"><span class="nb-rays"></span><strong>New Kaimon!</strong><small>${hard ? 'A rare find! ' : ''}#${String(s.num).padStart(3, '0')} added to your Kaidex</small></div>`);
-        msg.innerHTML = `You caught ${esc(s.name)}!${result.shiny ? '<span class="tags"><span class="new-tag shiny-tag"><span class="tw">✦</span> Shiny! A rare sparkly one!</span></span>' : ''}`;
+        msg.innerHTML = `You caught ${esc(s.name)}!${result.shiny ? '<span class="tags"><span class="new-tag shiny-tag">${shinyStar()}Shiny! A rare sparkly one!</span></span>' : ''}`;
       } else {
         sfx.caught();
-        msg.innerHTML = `Caught ${esc(s.name)}!${result.shiny ? '<span class="tags"><span class="new-tag shiny-tag"><span class="tw">✦</span> Shiny! A rare sparkly one!</span></span>' : ''}`;
+        msg.innerHTML = `Caught ${esc(s.name)}!${result.shiny ? '<span class="tags"><span class="new-tag shiny-tag">${shinyStar()}Shiny! A rare sparkly one!</span></span>' : ''}`;
       }
     } else {
       zone.classList.add('escaped');

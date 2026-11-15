@@ -2,6 +2,11 @@
 
 All notable changes. Versioning: `0.MINOR.0` marks a roadmap phase, `0.x.PATCH` is any shipped change a player or parent can notice, and `1.0.0` is the public launch. See "Versioning" in CLAUDE.md. The in-app version history (Grown-ups > What's new) reads from `js/data/changelog.js`; keep both in sync. Each release is tagged in git as `vX.Y.Z`.
 
+## v0.3.32 (2026-11-14) Shiny, done right
+
+- Kaidex entries for a shiny Kaimon have a Normal / Shiny switch under the picture. Tapping the gold shiny tag flips it too.
+- One gold sparkle sticker now marks shiny Kaimon everywhere: Kaidex tiles, the shiny count, catches and the shiny guide. The pink badges are gone.
+
 ## v0.3.31 (2026-11-14) A cleaner ball picker
 
 - Balls on the card are now round buttons. The one you'll throw gets a gold ring and its name shows beside the row. Tap another ball to switch.

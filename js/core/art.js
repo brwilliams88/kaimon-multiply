@@ -136,6 +136,9 @@ function placeholder(s) {
 }
 
 // mode: 'full' | 'seen' (dark silhouette) | 'unknown' (faded silhouette)
+// The shiny mark: a gold sticker sparkle with the navy outline used across the app.
+export const shinyStar = (cls = '') => `<svg class="shiny-star ${cls}" viewBox="0 0 28 28" aria-hidden="true"><path d="M12 2.5 L14.4 9.6 L21.5 12 L14.4 14.4 L12 21.5 L9.6 14.4 L2.5 12 L9.6 9.6 Z" fill="#FFD23F" stroke="#14213D" stroke-width="2" stroke-linejoin="round"/><path d="M22 16.5 L23.1 19.9 L26.5 21 L23.1 22.1 L22 25.5 L20.9 22.1 L17.5 21 L20.9 19.9 Z" fill="#FFF3C4" stroke="#14213D" stroke-width="1.6" stroke-linejoin="round"/></svg>`;
+
 // Shiny Kaimon get twinkling sparkles on top of their art (shown only with .kart-shiny,
 // so the Kaidex can flip between normal and shiny colors).
 const SPARKLES = '<span class="sparkles" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>';

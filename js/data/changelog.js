@@ -1,7 +1,16 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.3.31';
+export const VERSION = '0.3.32';
 
 export const CHANGELOG = [
+  {
+    version: '0.3.32',
+    date: '2026-11-14',
+    title: 'Shiny, done right',
+    items: [
+      'Kaidex entries for a shiny Kaimon have a Normal / Shiny switch under the picture. Tapping the gold shiny tag flips it too.',
+      'One gold sparkle sticker now marks shiny Kaimon everywhere: Kaidex tiles, the shiny count, catches and the shiny guide. The pink badges are gone.',
+    ],
+  },
   {
     version: '0.3.31',
     date: '2026-11-14',

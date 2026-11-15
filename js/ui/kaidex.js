@@ -1,6 +1,6 @@
 import { active } from '../core/store.js';
 import { SPECIES, TYPES, REGIONS, byId, lineOf, MYTHIC_ID } from '../data/creatures.js';
-import { creatureArt } from '../core/art.js';
+import { creatureArt, shinyStar } from '../core/art.js';
 import { dexState, dexCounts } from '../core/game.js';
 import { esc, on, sheet } from './dom.js';
 import { sfx } from '../core/sound.js';
@@ -48,7 +48,7 @@ export function renderKaidex(root, go) {
         <header class="topbar">
           <button class="icon-btn" data-back aria-label="Back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 L8 12 L15 19" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
           <h1 class="screen-title">Kaidex</h1>
-          <p class="dex-count"><span class="dc-main"><strong>${c.caught}</strong> of ${c.total} caught</span><span class="dc-sub"><span>${c.seen} seen</span><button class="dc-shiny${shinyTotal ? ' has' : ''}" data-shinyhelp aria-label="${shinyTotal} shiny. What is shiny?"><span class="tw" aria-hidden="true">✦</span>${shinyTotal} shiny</button></span></p>
+          <p class="dex-count"><span class="dc-main"><strong>${c.caught}</strong> of ${c.total} caught</span><span class="dc-sub"><span>${c.seen} seen</span><button class="dc-shiny${shinyTotal ? ' has' : ''}" data-shinyhelp aria-label="${shinyTotal} shiny. What is shiny?">${shinyStar()}${shinyTotal} shiny</button></span></p>
         </header>
         <div class="chips" role="tablist" aria-label="Filter">
           <button class="chip${filter === 'all' ? ' on' : ''}" data-f="all">All</button>
@@ -66,7 +66,7 @@ export function renderKaidex(root, go) {
               <span class="dex-num">${num3(s.num)}</span>
               ${creatureArt(s, { mode: st === 'caught' ? 'full' : st, shiny: false })}
               <span class="dex-name">${esc(name)}</span>
-              ${e?.shiny ? '<span class="dex-shiny" aria-label="Shiny caught"><span class="tw">✦</span></span>' : ''}
+              ${e?.shiny ? `<span class="dex-shiny" title="Shiny caught">${shinyStar()}</span>` : ''}
             </button>`;
           }).join('')}
         </div>
@@ -105,43 +105,46 @@ function showEntry(p, s) {
           ['Found', esc(foundIn(s))],
         ];
         if (st === 'caught') {
-          rows.push(['Caught', `<strong>${e.caught}</strong> time${e.caught === 1 ? '' : 's'}${e.shiny ? ` · <span class="shiny-word">✦ ${e.shiny} shiny</span>` : ''}`]);
+          rows.push(['Caught', `<strong>${e.caught}</strong> time${e.caught === 1 ? '' : 's'}${e.shiny ? ` · <button class="shiny-word" data-showshiny>${shinyStar()}${e.shiny} shiny</button>` : ''}`]);
           rows.push(['First caught', e.first ? day(e.first) : 'Before Nov 14, 2026']);
           if (e.last && e.caught > 1) rows.push(['Last caught', ago(e.last)]);
         } else {
           rows.push(['Seen', `${e.seen || 1} time${(e.seen || 1) === 1 ? '' : 's'}`]);
         }
         if (e.esc) rows.push(['Got away', `${e.esc} time${e.esc === 1 ? '' : 's'}`]);
-        return `<dl class="entry-facts">${rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl><p class="entry-hint">${esc(r[1])}</p>${e.shiny ? '<p class="entry-hint shiny-word">✦ You caught a shiny one: a rare sparkly color. Tap the picture to see it.</p>' : ''}`;
+        return `<dl class="entry-facts">${rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl><p class="entry-hint">${esc(r[1])}</p>`;
       })()}
       ${line.length > 1 ? `<div class="entry-line">${line.map((x) => { const xs = dexState(p, x.id); return `<div class="line-step${x.num === s.num ? ' cur' : ''}">${creatureArt(x, { mode: xs === 'caught' ? 'full' : xs })}<span>${xs === 'unknown' ? '???' : esc(x.name)}</span></div>`; }).join('<span class="line-arrow" aria-hidden="true">›</span>')}</div>` : ''}
       ${s.mega && st === 'caught' ? `<p class="entry-mega">Has a rare Mega form. You'll be able to unlock it later in the adventure.</p>` : ''}`;
   }
   const sh = sheet(`
     <div class="entry" style="--rc:${t.color};--rl:${t.light}">
-      ${e.shiny && st === 'caught' ? `<button class="entry-art entry-art-flip" data-shinyflip aria-label="Show shiny colors">${creatureArt(s)}<span class="shiny-badge" hidden>✦ Shiny</span></button>` : `<div class="entry-art">${creatureArt(s, { mode: st === 'caught' ? 'full' : st, shiny: false })}</div>`}
+      <div class="entry-art">${creatureArt(s, { mode: st === 'caught' ? 'full' : st, shiny: false })}</div>
+      ${e.shiny && st === 'caught' ? `<div class="look-toggle" role="group" aria-label="Colors"><button class="on" data-look="normal" aria-pressed="true">Normal</button><button data-look="shiny" aria-pressed="false">${shinyStar()}Shiny</button></div>` : ''}
       <p class="entry-num">${num3(s.num)}</p>
       <h2 class="entry-name">${st === 'unknown' ? '???' : esc(s.name)}</h2>
       ${body}
       <button class="btn-chunky" data-close>Close</button>
     </div>`, { cls: 'entry-sheet' });
-  const flip = sh.el.querySelector('[data-shinyflip]');
-  flip?.addEventListener('click', () => {
+  const setLook = (shiny) => {
+    sh.el.querySelector('.entry-art .kart')?.classList.toggle('kart-shiny', shiny);
+    sh.el.querySelectorAll('[data-look]').forEach((b) => { const on = (b.dataset.look === 'shiny') === shiny; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); });
+  };
+  sh.el.addEventListener('click', (ev) => {
+    const b = ev.target.closest('[data-look], [data-showshiny]');
+    if (!b) return;
     sfx.tap();
-    const on = flip.classList.toggle('is-shiny');
-    flip.querySelector('.kart')?.classList.toggle('kart-shiny', on);
-    flip.querySelector('.shiny-badge').hidden = !on;
-    flip.setAttribute('aria-label', on ? 'Show normal colors' : 'Show shiny colors');
+    setLook(b.dataset.look ? b.dataset.look === 'shiny' : true);
   });
 }
 
 function shinyHelp(p) {
   const ex = SPECIES.find((s) => p.dex[s.id]?.shiny) || SPECIES.find((s) => p.dex[s.id]?.caught) || SPECIES[0];
   sheet(`<div class="how shiny-help">
-    <h2>✦ Shiny Kaimon</h2>
-    <div class="shiny-pair"><figure>${creatureArt(ex)}<figcaption>Normal</figcaption></figure><figure class="sp-shiny">${creatureArt(ex, { shiny: true })}<figcaption>✦ Shiny</figcaption></figure></div>
+    <h2 class="shiny-title">${shinyStar()}Shiny Kaimon</h2>
+    <div class="shiny-pair"><figure>${creatureArt(ex)}<figcaption>Normal</figcaption></figure><figure class="sp-shiny">${creatureArt(ex, { shiny: true })}<figcaption>${shinyStar()}Shiny</figcaption></figure></div>
     <p>Once in a while, a Kaimon you catch comes in a rare sparkly color. That's a shiny! About 1 in every 32 catches is shiny.</p>
-    <p>Shiny Kaimon get a ✦ in your Kaidex. Tap one, then tap its picture to see its shiny colors.</p>
+    <p>Shiny Kaimon get a gold sparkle in your Kaidex. Open one and tap <strong>Shiny</strong> to see its colors.</p>
     <button class="btn-chunky btn-primary" data-close>Got it</button>
   </div>`);
 }
