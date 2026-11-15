@@ -2,6 +2,11 @@
 
 All notable changes. Versioning: `0.MINOR.0` marks a roadmap phase, `0.x.PATCH` is any shipped change a player or parent can notice, and `1.0.0` is the public launch. See "Versioning" in CLAUDE.md. The in-app version history (Grown-ups > What's new) reads from `js/data/changelog.js`; keep both in sync. Each release is tagged in git as `vX.Y.Z`.
 
+## v0.3.34 (2026-11-15) Make your trainer
+
+- New trainers pick a look: start from Kai, Mia, Leo, Hana, Sam, Zara, Max or Ivy, then change skin tone, hair style, hair color, clothes and hat.
+- Trainer looks sync to family devices. Older trainers keep their look.
+
 ## v0.3.33 (2026-11-15) Steadier ball picker, real catch dates
 
 - The ball you'll throw has a gold ring all the way around it, and the balls no longer move up and down, so the ball name stays put.

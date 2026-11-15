@@ -7,7 +7,7 @@ import { bossUnlocked } from '../core/battle.js';
 import { limitReached } from '../core/playtime.js';
 import { VERSION } from '../data/changelog.js';
 import { trainerArt } from './trainerArt.js';
-import { avatarSVG } from './avatars.js';
+import { avatarSVG, trainerLook } from './avatars.js';
 import { esc, on, $, holdButton, sheet, soundIcon } from './dom.js';
 import { sfx, unlock } from '../core/sound.js';
 
@@ -23,7 +23,7 @@ export function renderHome(root, go, params = {}) {
     <section class="screen home">
       <header class="topbar">
         <button class="trainer-chip" data-switch aria-label="Switch trainer">
-          <span class="trainer-av">${avatarSVG(p.avatar)}</span>
+          <span class="trainer-av">${avatarSVG(trainerLook(p))}</span>
           <span class="trainer-swap" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 4 L3 8 L7 12 M3 8 H17 M17 12 L21 16 L17 20 M21 16 H7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
           <span class="trainer-text"><strong>${esc(p.name)}${p.stats.stars ? ` <span class="stars" title="Good Work Stamps">★${p.stats.stars}</span>` : ''}</strong><small>${trainerTitle(p)}</small></span>
         </button>

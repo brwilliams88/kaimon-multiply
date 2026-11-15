@@ -6,7 +6,8 @@ import { VERSION } from '../data/changelog.js';
 import { maybeShowInstall } from './install.js';
 import { byId, TYPES } from '../data/creatures.js';
 import { creatureArt } from '../core/art.js';
-import { avatarSVG, AVATAR_COUNT } from './avatars.js';
+import { avatarSVG, trainerLook, PRESETS } from './avatars.js';
+import { lookPickerHTML, wireLookPicker } from './lookPicker.js';
 import { esc, on, $ } from './dom.js';
 import { sfx, unlock } from '../core/sound.js';
 
@@ -26,7 +27,7 @@ export function renderWelcome(root, go) {
       ${profiles.length ? `
         <h2 class="welcome-q">Who's playing?</h2>
         <div class="who-list">
-          ${profiles.map((p) => `<button class="who btn-chunky${p.id === active()?.id ? ' last' : ''}" data-id="${p.id}"><span class="who-av">${avatarSVG(p.avatar)}</span><span class="who-text"><span class="who-name">${esc(p.name)}</span><span class="who-meta"><span class="who-where ${p.family ? 'fam' : ''}">${p.family ? cloudIcon() + 'Family' : 'This device'}</span><span>${dexCounts(p).caught} caught</span></span></span></button>`).join('')}
+          ${profiles.map((p) => `<button class="who btn-chunky${p.id === active()?.id ? ' last' : ''}" data-id="${p.id}"><span class="who-av">${avatarSVG(trainerLook(p))}</span><span class="who-text"><span class="who-name">${esc(p.name)}</span><span class="who-meta"><span class="who-where ${p.family ? 'fam' : ''}">${p.family ? cloudIcon() + 'Family' : 'This device'}</span><span>${dexCounts(p).caught} caught</span></span></span></button>`).join('')}
           <button class="who who-new btn-chunky" data-new><span class="who-av who-plus" aria-hidden="true">+</span><span>New trainer</span></button>
         </div>` : `
         <p class="welcome-line">Answer times tables. Catch Kaimon. Fill your Kaidex.</p>
@@ -45,7 +46,7 @@ export function renderWelcome(root, go) {
 }
 
 export function renderNewTrainer(root, go) {
-  let avatar = 0;
+  let look = { ...PRESETS[0].look };
   root.innerHTML = `
     <section class="screen newtrainer">
       <button class="icon-btn back" data-back aria-label="Back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 L8 12 L15 19" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
@@ -54,22 +55,19 @@ export function renderNewTrainer(root, go) {
         <label class="field-label" for="tname">Trainer name</label>
         <input id="tname" class="field" maxlength="16" placeholder="Your name" autocapitalize="words" required>
         <p class="field-label">Pick your look</p>
-        <div class="avatar-grid" role="radiogroup" aria-label="Trainer look">
-          ${Array.from({ length: AVATAR_COUNT }, (_, i) => `<button type="button" class="avatar-opt${i === 0 ? ' on' : ''}" role="radio" aria-checked="${i === 0}" aria-label="Look ${i + 1}" data-av="${i}">${avatarSVG(i)}</button>`).join('')}
-        </div>
+        <div class="nt-look">${lookPickerHTML(look)}</div>
         <button class="btn-chunky btn-primary btn-xl" type="submit">Next</button>
       </form>
     </section>`;
   on(root, 'click', '[data-back]', () => go('welcome'));
-  on(root, 'click', '[data-av]', (e, el) => {
-    avatar = +el.dataset.av; sfx.tap();
-    root.querySelectorAll('.avatar-opt').forEach((b) => { b.classList.toggle('on', b === el); b.setAttribute('aria-checked', b === el); });
-  });
+  wireLookPicker($('.nt-look', root), look, (L) => { look = L; });
   $('form', root).addEventListener('submit', (e) => {
     e.preventDefault();
     const name = $('#tname', root).value.trim();
     if (!name) { $('#tname', root).focus(); return; }
-    addProfile(newProfile(name, avatar));
+    const np = newProfile(name, 0);
+    np.look = look;
+    addProfile(np);
     go('meetPartner');
   });
   setTimeout(() => $('#tname', root)?.focus(), 50);

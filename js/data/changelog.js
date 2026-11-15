@@ -1,7 +1,16 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.3.33';
+export const VERSION = '0.3.34';
 
 export const CHANGELOG = [
+  {
+    version: '0.3.34',
+    date: '2026-11-15',
+    title: 'Make your trainer',
+    items: [
+      'New trainers pick a look: start from Kai, Mia, Leo, Hana, Sam, Zara, Max or Ivy, then change skin tone, hair style, hair color, clothes and hat.',
+      'Trainer looks sync to family devices. Older trainers keep their look.',
+    ],
+  },
   {
     version: '0.3.33',
     date: '2026-11-15',

@@ -1,6 +1,6 @@
 import { touch, switchProfile, renameProfile, hideProfile, hiddenProfiles } from '../core/store.js';
 import { deleteEverywhere, addBackFromFamily } from '../core/sync.js';
-import { avatarSVG } from './avatars.js';
+import { avatarSVG, trainerLook } from './avatars.js';
 import { dexCounts } from '../core/game.js';
 import { checkNow } from '../core/update.js';
 import { installHelpHTML, canPromptInstall, promptInstall, isInstalled } from './install.js';
@@ -226,7 +226,7 @@ function renderMain(root, go) {
           <div class="tm-list">${allProfiles().map((x) => `
             <div class="tm${x.id === p.id ? ' on' : ''}">
               <button class="tm-main" data-tm-switch="${x.id}" aria-label="Show ${esc(x.name)}">
-                <span class="tm-av">${avatarSVG(x.avatar)}</span>
+                <span class="tm-av">${avatarSVG(trainerLook(x))}</span>
                 <span class="tm-text"><strong>${esc(x.name)}</strong><small><span class="trow-tag ${x.family ? 'fam' : ''}">${x.family ? 'Synced with family' : 'This device only'}</span> ${dexCounts(x).caught} caught · ${x.stats.answers} answers</small></span>
                 ${x.id === p.id ? '<span class="tm-viewing">Viewing</span>' : ''}
               </button>

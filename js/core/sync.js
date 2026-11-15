@@ -83,7 +83,7 @@ async function token() {
 
 const profileRow = (p) => ({
   id: p.id, name: p.name, avatar: p.avatar,
-  settings: { ...p.settings, starter: p.starter },
+  settings: { ...p.settings, starter: p.starter, look: p.look || null, team: p.team || null },
   created_at: p.createdAt, updated_at: p.updatedAt, deleted: false,
 });
 
@@ -92,9 +92,11 @@ function profileFromRow(r) {
   p.family = true;
   p.createdAt = r.created_at;
   p.updatedAt = r.updated_at;
-  const { starter, ...rest } = r.settings || {};
+  const { starter, look, team, ...rest } = r.settings || {};
   p.settings = { ...p.settings, ...rest };
   p.starter = starter || 'kaimo';
+  if (look) p.look = look;
+  if (team) p.team = team;
   return p;
 }
 
@@ -213,9 +215,11 @@ export function syncNow() {
           putProfile(profileFromRow(r));
         } else if (p.family && r.updated_at > p.updatedAt) {
           p.name = r.name; p.avatar = r.avatar; p.updatedAt = r.updated_at;
-          const { starter, ...rest } = r.settings || {};
+          const { starter, look, team, ...rest } = r.settings || {};
           p.settings = { ...p.settings, ...rest };
           if (starter) p.starter = starter;
+          if (look) p.look = look;
+          if (team) p.team = team;
         }
       }
 
