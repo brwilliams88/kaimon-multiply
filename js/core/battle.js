@@ -19,17 +19,27 @@ const regional = (t) => SPECIES.filter((s) => s.region === t);
 const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
 
 // The trainer's battle team: the partner, then up to 2 of the strongest caught Kaimon.
+// Your battle team: your Buddy leads, then the two you picked on the trainer page
+// (p.team). Until you pick, it's your two strongest, one from each family line.
+export function teamPicks(profile) {
+  const partner = partnerOf(profile).species;
+  return (profile.team || [])
+    .map((id) => SPECIES.find((s) => s.id === id))
+    .filter((s, i, a) => s && s.id !== partner.id && profile.dex[s.id]?.caught && a.findIndex((x) => x?.id === s.id) === i)
+    .slice(0, 2);
+}
+
 export function myTeam(profile) {
   const partner = partnerOf(profile).species;
+  const team = [partner, ...teamPicks(profile)];
   const caught = SPECIES
     .filter((s) => s.id !== partner.id && typeof s.region === 'number' && profile.dex[s.id]?.caught)
     .sort((a, b) => b.stage - a.stage || (profile.dex[b.id].caught - profile.dex[a.id].caught));
-  // Only one from each line, so the team has variety.
-  const lines = new Set([partner.line]);
-  const team = [partner];
+  // Fill empty spots with the strongest, one from each line, so the team has variety.
+  const lines = new Set(team.map((s) => s.line));
   for (const s of caught) {
     if (team.length >= 3) break;
-    if (lines.has(s.line)) continue;
+    if (lines.has(s.line) || team.includes(s)) continue;
     lines.add(s.line);
     team.push(s);
   }

@@ -8,6 +8,7 @@ import { syncNow } from '../core/sync.js';
 import { avatarSVG, trainerLook } from './avatars.js';
 import { lookPickerHTML, wireLookPicker } from './lookPicker.js';
 import { medal } from './home.js';
+import { teamRowHTML, teamSheet } from './teamPicker.js';
 import { esc, on, sheet, toast } from './dom.js';
 import { sfx } from '../core/sound.js';
 
@@ -55,6 +56,9 @@ export function renderTrainer(root, go) {
         </div>
       </div>
 
+      <h2 class="section-title">Battle team</h2>
+      <div class="tr-team">${teamRowHTML(p)}<button class="btn-chunky" data-team>Change team</button></div>
+
       <h2 class="section-title">Gym badges <span class="tr-count">${badges} of ${REGIONS.length}</span></h2>
       <div class="tr-badges">
         ${REGIONS.map((r) => `<div class="tr-badge" title="${esc(r.champion)}, ${r.table}s Gym Leader">${gymBadge(r, !!p.battles.champs[r.table])}<span>${esc(r.champion.replace('Little Leader ', '').replace('Professor ', 'Prof. ').replace('Commander ', 'Cmdr. ').replace('Captain ', 'Capt. ').replace('Coach ', ''))}</span></div>`).join('')}
@@ -81,6 +85,7 @@ export function renderTrainer(root, go) {
   };
   draw();
   on(root, 'click', '[data-back]', () => { sfx.tap(); go('home'); });
+  on(root, 'click', '[data-team]', () => { sfx.tap(); teamSheet(p, draw); });
   on(root, 'click', '[data-look]', () => {
     sfx.tap();
     let look = trainerLook(p);

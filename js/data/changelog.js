@@ -1,7 +1,17 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.3.35';
+export const VERSION = '0.3.36';
 
 export const CHANGELOG = [
+  {
+    version: '0.3.36',
+    date: '2026-11-15',
+    title: 'Pick your battle team',
+    items: [
+      'Your Buddy leads, and you pick 2 more Kaimon to battle with. If one faints, the next one jumps in.',
+      'Change your team on your trainer page, or tap your team on a Gym Leader\'s battle screen before you start.',
+      'Until you pick, your two strongest Kaimon battle with you, like before.',
+    ],
+  },
   {
     version: '0.3.35',
     date: '2026-11-15',

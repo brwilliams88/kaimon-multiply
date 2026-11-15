@@ -12,6 +12,7 @@ import { dadJoke } from '../data/dadjokes.js';
 import { voiceSupported, listen, stop as stopVoice } from '../core/voice.js';
 import { sfx, setSound, unlock } from '../core/sound.js';
 import { ballIcon } from './home.js';
+import { teamSheet } from './teamPicker.js';
 import { trainerArt, CHAMP_LINES } from './trainerArt.js';
 import { limitReached } from '../core/playtime.js';
 import { startMusic, stopMusic, setPinch } from '../core/music.js';
@@ -24,7 +25,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1 } = {}) {
   setSound(p.settings.sound);
   unlock();
   const opp = opponent(p, kind, table);
-  const mine = myTeam(p);
+  let mine = myTeam(p);
   const pool = factsForTables(opp.tables);
   const useVoice = p.settings.voice && voiceSupported();
   const S = {
@@ -64,7 +65,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1 } = {}) {
               <h2>${esc(opp.name)}</h2>
               <p class="speech intro-speech">${esc(introLine)}</p>
               <div class="intro-teams">
-                <span class="team-row">${mine.map((m) => `<span class="mini">${creatureArt(m.species)}</span>`).join('')}</span>
+                <button class="team-row team-change" data-team aria-label="Your team. Tap to change it.">${mine.map((m) => `<span class="mini">${creatureArt(m.species)}</span>`).join('')}<span class="tc-label">Change team</span></button>
                 <span class="vs">VS</span>
                 <span class="team-row">${opp.team.map((m) => `<span class="mini">${creatureArt(m.species, { mode: 'seen' })}</span>`).join('')}</span>
               </div>
@@ -334,6 +335,16 @@ export function renderBattle(root, go, { kind = 'champ', table = 1 } = {}) {
     next();
   });
   // Back out before the battle starts: X, Not now, tapping outside the card, or Esc.
+  on(root, 'click', '[data-team]', () => {
+    if (S.phase !== 'intro') return;
+    sfx.tap();
+    teamSheet(p, () => {
+      mine = myTeam(p);
+      const row = root.querySelector('.team-change');
+      if (row) row.innerHTML = mine.map((m) => `<span class="mini">${creatureArt(m.species)}</span>`).join('') + '<span class="tc-label">Change team</span>';
+      drawMons();
+    });
+  });
   on(root, 'click', '[data-leave]', () => { sfx.tap(); go('home'); });
   el.intro.addEventListener('click', (e) => { if (e.target === el.intro) go('home'); });
   on(root, 'click', '[data-k]', (e, k) => {
