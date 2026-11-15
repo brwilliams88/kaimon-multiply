@@ -968,9 +968,9 @@ button.balls-row:hover { background: #EDF2F9; }
 
 /* v0.3.24 no ghosting on the flip: the face turning away is hidden once the card is edge-on.
    (Animated children get their own layers, which can ignore backface-visibility.) */
-.card-inner .face { transition: visibility 0s linear 0s; }
-.card-inner.flipped .face.front { visibility: hidden; transition-delay: .16s; }
-.card-inner:not(.flipped) .face.back { visibility: hidden; transition-delay: .16s; }
+/* v0.3.29: the faces swap in code just before the card is edge-on (see flip() in play.js). */
+.card-inner.back-up .face.front { visibility: hidden; }
+.card-inner:not(.back-up) .face.back { visibility: hidden; }
 .beta-tag { display: inline-block; font-size: 12px; font-weight: 700; color: #7A4FD0; background: #F1EAFF; border-radius: 99px; padding: 1px 8px; vertical-align: 2px; }
 
 /* v0.3.26 shiny Kaimon sparkle */

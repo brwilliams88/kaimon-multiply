@@ -64,6 +64,17 @@ export function renderPlay(root, go, { table }) {
     fly: $('.mythic-fly', root),
   };
 
+  // Flip the card. The flip eases out fast and is edge-on after about 70 ms, so the
+  // faces swap at 60 ms: the face turning away is never seen backwards, even when
+  // its animated pieces sit on their own layers (which can ignore backface-visibility).
+  let flipTimer = 0;
+  function flip(toBack, ...extra) {
+    clearTimeout(flipTimer);
+    if (toBack) el.inner.classList.add('flipped', ...extra);
+    else el.inner.classList.remove('flipped', 'wrong');
+    flipTimer = setTimeout(() => el.inner.classList.toggle('back-up', toBack), 60);
+  }
+
   function setInput(v) {
     S.input = v;
     el.val.textContent = v || '';
@@ -115,7 +126,7 @@ export function renderPlay(root, go, { table }) {
       ${beltHTML(species)}`;
     el.front.classList.toggle('has-belt', !!el.front.querySelector('.belt'));
     el.back.innerHTML = '';
-    el.inner.classList.remove('flipped', 'wrong');
+    flip(false);
     setInput('');
     el.hint.textContent = '';
     el.val.dataset.ph = '?';
@@ -199,7 +210,7 @@ export function renderPlay(root, go, { table }) {
           <div class="throw-ball">${ballIcon(ball)}</div>
         </div>
         <p class="catch-msg" aria-live="polite">${powerLabel(pw)} throw! ${BALLS[ball].name}!</p>`;
-      el.inner.classList.add('flipped');
+      flip(true);
       await animateCatch(roll, result, pw);
       if (S.levelUps.length && S.levelUps[S.levelUps.length - 1].id === S.fact) {
         const l = S.levelUps[S.levelUps.length - 1];
@@ -233,7 +244,7 @@ export function renderPlay(root, go, { table }) {
         <div class="card-q answer-reveal"><span>${a}</span><span class="times">×</span><span>${b}</span><span class="eq">=</span><span class="ans">${ans}</span></div>
         <div class="hint-scroll"><p>Count by ${a}s</p><div class="ladder">${hintLadder(S.fact).map((v, i, arr) => `<span class="${i === arr.length - 1 ? 'last' : ''}">${v}</span>`).join('')}</div><p class="trick"><span class="trick-tag">Trick</span> ${esc(trickFor(S.fact))}</p></div>
         <p class="catch-msg learn-msg">Learn it, and the next one won't get away!</p>`;
-      el.inner.classList.add('flipped', 'wrong');
+      flip(true, 'wrong');
       S.phase = 'learn';
       S.mustType = ans;
       setInput('');
