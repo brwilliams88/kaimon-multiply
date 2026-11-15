@@ -1,7 +1,15 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.3.38';
+export const VERSION = '0.3.39';
 
 export const CHANGELOG = [
+  {
+    version: '0.3.39',
+    date: '2026-11-15',
+    title: 'Kaizo fix',
+    items: [
+      'Fixed v0.3.38: renaming Kaimo to Kaizo briefly broke the start screen on new devices and Kaizo Buddies. Kaizo now keeps all its progress.',
+    ],
+  },
   {
     version: '0.3.38',
     date: '2026-11-15',

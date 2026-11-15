@@ -48,6 +48,16 @@ function blank() {
 let state = load();
 
 function migrate(p) {
+  // v0.3.38 briefly gave Kaizo the id 'kaizo'. Fold anything saved under it back into 'kaimo'.
+  if (p.starter === 'kaizo') p.starter = 'kaimo';
+  if (p.dex?.kaizo) {
+    const a = p.dex.kaimo || (p.dex.kaimo = { seen: 0, caught: 0, shiny: 0 });
+    for (const k of ['seen', 'caught', 'shiny', 'esc']) if (p.dex.kaizo[k]) a[k] = (a[k] || 0) + p.dex.kaizo[k];
+    for (const k of ['first', 'firstSeen']) if (p.dex.kaizo[k] && !(a[k] < p.dex.kaizo[k])) a[k] = p.dex.kaizo[k];
+    if (p.dex.kaizo.last) a.last = Math.max(a.last || 0, p.dex.kaizo.last);
+    delete p.dex.kaizo;
+  }
+  if (Array.isArray(p.team)) p.team = p.team.map((x) => (x === 'kaizo' ? 'kaimo' : x));
   p.settings = { ...defaultSettings(), ...(p.settings || {}) };
   p.balls = { super: 0, mega: 0, legend: 0, ...(p.balls || {}) };
   p.items = { snack: 0, ...(p.items || {}) };

@@ -107,9 +107,12 @@ const RAW = [
   ['???', 'mythic', 'mythic', 'mythic', 1, 'Nobody has ever caught it. Some say it was dreamed up by a trainer named Kai.'],
 ];
 
+// Species ids come from the original names and must never change: saves, the Kaidex
+// and family sync are keyed by them. A renamed Kaimon keeps its old id here.
+const KEEP_ID = { Kaizo: 'kaimo' };
 export const SPECIES = RAW.map(([name, type, region, line, stage, desc, mega], i) => ({
   num: i + 1, name, type, region, line, stage, desc,
-  id: name === '???' ? 'mythic' : name.toLowerCase(),
+  id: name === '???' ? 'mythic' : KEEP_ID[name] || name.toLowerCase(),
   mega: mega ? { name: mega[0], desc: mega[1] } : null,
 }));
 
