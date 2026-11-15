@@ -2,6 +2,14 @@
 
 All notable changes. Versioning: `0.MINOR.0` marks a roadmap phase, `0.x.PATCH` is any shipped change a player or parent can notice, and `1.0.0` is the public launch. See "Versioning" in CLAUDE.md. The in-app version history (Grown-ups > What's new) reads from `js/data/changelog.js`; keep both in sync. Each release is tagged in git as `vX.Y.Z`.
 
+## v0.5.6 (2026-11-15) Mic mode
+
+- New Mic mode: tap the mic once to turn it on, then just say each answer. No more tapping the mic for every card.
+- The mic only listens while a card is waiting for an answer, and stops the moment it hears a number.
+- Mic mode turns itself off after 2 minutes without a spoken answer, when the app is closed or hidden, and when you leave practice or a battle.
+- The mic button shows its state: crossed out when off, yellow when on, red and pulsing while listening.
+- Grown-ups explains what Mic mode does with the microphone. Kaimon never records or saves audio.
+
 ## v0.5.5 (2026-11-15) Sounds stay loud after the mic
 
 - Sounds after using the mic play at normal volume again. The game now switches the iPhone out of its quieter mic mode before the "correct" sound plays.

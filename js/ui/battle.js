@@ -9,7 +9,8 @@ import { myTeam, opponent, attack, powerFor, powerLabel, moveName, HIT_BACK, rew
 import { BALLS } from '../core/game.js';
 import { syncNow } from '../core/sync.js';
 import { dadJoke } from '../data/dadjokes.js';
-import { voiceSupported, listen, stop as stopVoice } from '../core/voice.js';
+import { voiceSupported, stop as stopVoice } from '../core/voice.js';
+import { micMode, micButton } from './micMode.js';
 import { sfx, setSound, unlock } from '../core/sound.js';
 import { ballIcon } from './home.js';
 import { teamSheet } from './teamPicker.js';
@@ -91,7 +92,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt } = {}
             <button class="key" data-k="0">0</button>
             <button class="key key-go" data-k="go" aria-label="Attack with this answer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5 L10 17.5 L19 7" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
           </div>
-          ${useVoice ? `<button class="mic btn-chunky" data-mic><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3" fill="currentColor"/><path d="M5.5 11 a6.5 6.5 0 0 0 13 0 M12 17.5 V21" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg><span>Say it</span></button>` : ''}
+          ${useVoice ? micButton() : ''}
         </div>
       </div>
     </section>`;
@@ -194,6 +195,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt } = {}
     S.mustType = null;
     S.shownAt = performance.now();
     startPower();
+    S.mic?.ready();
   }
 
   async function submit(via = 'pad') {
@@ -280,6 +282,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt } = {}
       S.mustType = ans;
       setInput('');
       el.val.dataset.ph = `Type ${ans}`;
+      S.mic?.ready();
     }
   }
 
@@ -296,6 +299,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt } = {}
   async function finish(won) {
     S.phase = 'over';
     cancelAnimationFrame(S.raf);
+    S.mic?.destroy();
     stopVoice();
     stopMusic(0.25);
     const reward = won ? rewardFor(p, kind, opp.table) : null;
@@ -400,24 +404,17 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt } = {}
     if (S.phase === 'over') return go('home');
     const sh = sheet(`<h2>Leave the battle?</h2><p>Your answers still count for practice.</p><div class="sheet-actions"><button class="btn-chunky btn-primary" data-stop>Leave</button><button class="btn-chunky" data-close>Keep battling</button></div>`);
     sh.el.querySelector('[data-stop]').addEventListener('click', () => {
-      sh.close(); stopVoice(); stopMusic(); cancelAnimationFrame(S.raf);
+      sh.close(); S.mic?.destroy(); stopVoice(); stopMusic(); cancelAnimationFrame(S.raf);
       if (S.answered) { session(p, Date.now() - S.startedAt, S.best); save(); syncNow(); }
       go('home');
     });
   });
   if (el.mic) {
-    el.mic.addEventListener('click', () => {
-      if (S.listening) { stopVoice(); return; }
-      if (S.phase !== 'ask' && S.phase !== 'learn') return;
-      S.listening = true;
-      el.mic.classList.add('on');
-      el.hint.textContent = 'Listening...';
-      listen({
-        onPartial: (n) => setInput(String(n)),
-        onResult: (n) => { setInput(String(n)); el.hint.textContent = ''; if (S.phase === 'learn') checkRetype(); else submit('voice'); },
-        onError: (msg) => { el.hint.textContent = msg; },
-        onEnd: () => { S.listening = false; el.mic.classList.remove('on'); if (el.hint.textContent === 'Listening...') el.hint.textContent = ''; },
-      });
+    S.mic = micMode({
+      btn: el.mic, profile: p, say: (m) => { el.hint.textContent = m; },
+      waiting: () => S.phase === 'ask' || S.phase === 'learn',
+      onPartial: (n) => setInput(String(n)),
+      onResult: (n) => { setInput(String(n)); el.hint.textContent = ''; if (S.phase === 'learn') checkRetype(); else if (S.phase === 'ask') submit('voice'); },
     });
   }
   const onKey = (e) => {

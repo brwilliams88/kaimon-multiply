@@ -1,7 +1,19 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.5.5';
+export const VERSION = '0.5.6';
 
 export const CHANGELOG = [
+  {
+    version: '0.5.6',
+    date: '2026-11-15',
+    title: "Mic mode",
+    items: [
+      "New Mic mode: tap the mic once to turn it on, then just say each answer. No more tapping the mic for every card.",
+      "The mic only listens while a card is waiting for an answer, and stops the moment it hears a number.",
+      "Mic mode turns itself off after 2 minutes without a spoken answer, when the app is closed or hidden, and when you leave practice or a battle.",
+      "The mic button shows its state: crossed out when off, yellow when on, red and pulsing while listening.",
+      "Grown-ups explains what Mic mode does with the microphone. Kaimon never records or saves audio.",
+    ],
+  },
   {
     version: '0.5.5',
     date: '2026-11-15',

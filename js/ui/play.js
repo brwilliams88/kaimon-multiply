@@ -10,7 +10,8 @@ import { dadJoke } from '../data/dadjokes.js';
 import { trainerArt } from './trainerArt.js';
 import { limitReached } from '../core/playtime.js';
 import { partnerOf } from '../core/game.js';
-import { voiceSupported, listen, stop as stopVoice } from '../core/voice.js';
+import { voiceSupported, stop as stopVoice } from '../core/voice.js';
+import { micMode, micButton } from './micMode.js';
 import { sfx, setSound } from '../core/sound.js';
 import { ballIcon, medal } from './home.js';
 import { avatarSVG, trainerLook } from './avatars.js';
@@ -56,7 +57,7 @@ export function renderPlay(root, go, { table }) {
             <button class="key" data-k="0">0</button>
             <button class="key key-go" data-k="go" aria-label="Check answer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5 L10 17.5 L19 7" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
           </div>
-          ${useVoice ? `<button class="mic btn-chunky" data-mic><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3" fill="currentColor"/><path d="M5.5 11 a6.5 6.5 0 0 0 13 0 M12 17.5 V21" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg><span>Say it</span></button>` : ''}
+          ${useVoice ? micButton() : ''}
         </div>
       </div>
     </section>`;
@@ -161,6 +162,7 @@ export function renderPlay(root, go, { table }) {
     S.mustType = null;
     S.shownAt = performance.now();
     runPower();
+    S.mic?.ready();
     el.pips.forEach((pip, i) => pip.className = i < S.n ? (S.results?.[i] ? 'done ok' : 'done') : i === S.n ? 'now' : '');
     maybeMythic();
   }
@@ -290,6 +292,7 @@ export function renderPlay(root, go, { table }) {
       setInput('');
       el.val.dataset.ph = `Type ${ans}`;
       setInput('');
+      S.mic?.ready();
     }
   }
 
@@ -357,6 +360,7 @@ export function renderPlay(root, go, { table }) {
   }
 
   function finish() {
+    S.mic?.destroy();
     stopVoice();
     session(p, Date.now() - S.startedAt, S.best);
     const newBadges = [];
@@ -427,10 +431,9 @@ export function renderPlay(root, go, { table }) {
   });
   on(root, 'click', '[data-exit]', () => {
     const sh = sheet(`<h2>Stop practicing?</h2><p>Your catches and progress are saved.</p><div class="sheet-actions"><button class="btn-chunky btn-primary" data-stop>Stop</button><button class="btn-chunky" data-close>Keep going</button></div>`);
-    sh.el.querySelector('[data-stop]').addEventListener('click', () => { sh.close(); stopVoice(); session(p, Date.now() - S.startedAt, S.best); save(); syncNow(); go('home'); });
+    sh.el.querySelector('[data-stop]').addEventListener('click', () => { sh.close(); S.mic?.destroy(); stopVoice(); session(p, Date.now() - S.startedAt, S.best); save(); syncNow(); go('home'); });
   });
   if (el.mic) {
-    const label = el.mic.querySelector('span');
     let bubbleTimer = 0;
     const bubble = (msg) => {
       let b = root.querySelector('.voice-bubble');
@@ -440,20 +443,13 @@ export function renderPlay(root, go, { table }) {
       clearTimeout(bubbleTimer);
       bubbleTimer = setTimeout(() => b.classList.remove('show'), 3200);
     };
-    el.mic.addEventListener('click', () => {
-      if (S.phase === 'done') return advance();
-      if (S.listening) { stopVoice(); return; }
-      S.listening = true;
-      el.mic.classList.add('on');
-      label.textContent = 'Listening…';
-      root.querySelector('.voice-bubble')?.classList.remove('show');
-      listen({
-        onPartial: (n) => setInput(String(n)),
-        onResult: (n) => { setInput(String(n)); if (S.phase === 'learn') checkRetype(); else submit('voice'); },
-        onError: (msg, code) => bubble(code === 'not-allowed' || code === 'service-not-allowed' ? 'The mic is blocked. Use the number pad.' : code === 'no-speech' ? 'I didn’t hear a number. Try again!' : msg.startsWith('I didn’t catch') ? 'I didn’t catch a number. Try again.' : 'Voice didn’t work. Use the number pad.'),
-        onEnd: () => { S.listening = false; el.mic.classList.remove('on'); label.textContent = 'Say it'; },
-      });
+    S.mic = micMode({
+      btn: el.mic, profile: p, say: bubble,
+      waiting: () => S.phase === 'ask' || S.phase === 'learn',
+      onPartial: (n) => setInput(String(n)),
+      onResult: (n) => { setInput(String(n)); if (S.phase === 'learn') checkRetype(); else if (S.phase === 'ask') submit('voice'); },
     });
+    S.mic.ready();
   }
   const onKey = (e) => {
     if (!document.body.contains(root.querySelector('.play'))) { document.removeEventListener('keydown', onKey); return; }

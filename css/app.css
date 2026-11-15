@@ -1720,3 +1720,11 @@ html.lock-screen #app { height: 100%; }
 .lock-screen .title-panel { touch-action: pan-x pan-y; }
 .title-logo { top: calc(var(--safe-t) + 22px); }
 .title-hero::after { height: calc(var(--safe-t) + 18px); background: linear-gradient(180deg, var(--sky) 0%, rgba(207, 232, 255, .4) 60%, rgba(207, 232, 255, 0) 100%); }
+/* v0.5.6 Mic mode: off (white, crossed out), on (sun), listening (coral, pulsing ring) */
+.play-top .mic { position: relative; background: var(--paper); color: var(--ink); transition: background .15s, color .15s; }
+.play-top .mic:not(.mode-on)::after { content: ''; position: absolute; left: 9px; right: 9px; top: 50%; height: 3px; border-radius: 3px; background: var(--ink); transform: rotate(-45deg); box-shadow: 0 0 0 2px var(--paper); }
+.play-top .mic.mode-on { background: var(--sun); }
+.play-top .mic.on { background: var(--coral); color: #fff; animation: none; }
+.play-top .mic.on::before { content: ''; position: absolute; inset: -6px; border-radius: 18px; border: 3px solid var(--coral); opacity: 0; animation: mic-ring 1.2s ease-out infinite; }
+@keyframes mic-ring { 0% { opacity: .8; transform: scale(.9); } 100% { opacity: 0; transform: scale(1.25); } }
+@media (prefers-reduced-motion: reduce) { .play-top .mic.on::before { animation: none; opacity: .6; } }
