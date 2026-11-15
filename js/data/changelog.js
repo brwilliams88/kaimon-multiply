@@ -1,7 +1,17 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.3.25';
+export const VERSION = '0.3.26';
 
 export const CHANGELOG = [
+  {
+    version: '0.3.26',
+    date: '2026-11-14',
+    title: 'Shiny Kaimon sparkle',
+    items: [
+      'Shiny Kaimon now glow and twinkle with sparkles, not just a different color.',
+      'Catching a shiny gets a burst of light and its own sparkly sound.',
+      'In the Kaidex, shiny Kaimon get a bright sparkle badge and a gold edge, and the shiny count glows when you have one.',
+    ],
+  },
   {
     version: '0.3.25',
     date: '2026-11-14',

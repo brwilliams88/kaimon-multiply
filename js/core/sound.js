@@ -119,5 +119,6 @@ export const sfx = {
   faint: () => play(() => { [500, 400, 300, 200].forEach((f, i) => tone(f, i * 0.08, 0.14, 'triangle', 0.09)); }),
   win: () => play(() => { [523, 659, 784, 659, 784, 1047].forEach((f, i) => tone(f, i * 0.11, 0.24, 'triangle', 0.14)); }),
   lose: () => play(() => { [392, 349, 330, 262].forEach((f, i) => tone(f, i * 0.16, 0.3, 'sine', 0.1)); }),
+  shiny: () => play(() => { [1568, 2093, 2637, 3136, 2637, 3136].forEach((f, i) => tone(f, 0.05 + i * 0.07, 0.3, 'sine', 0.06)); }),
   mythic: () => play(() => { [1318, 1568, 1760, 2093, 1760].forEach((f, i) => tone(f, i * 0.12, 0.4, 'sine', 0.07)); }),
 };

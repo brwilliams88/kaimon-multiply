@@ -136,10 +136,14 @@ function placeholder(s) {
 }
 
 // mode: 'full' | 'seen' (dark silhouette) | 'unknown' (faded silhouette)
+// Shiny Kaimon get twinkling sparkles on top of their art (shown only with .kart-shiny,
+// so the Kaidex can flip between normal and shiny colors).
+const SPARKLES = '<span class="sparkles" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>';
 export function creatureArt(s, { mode = 'full', shiny = false } = {}) {
   const cls = ['kart', 'kart-' + mode, shiny ? 'kart-shiny' : ''].join(' ');
+  const sp = mode === 'full' ? SPARKLES : '';
   if (REAL_ART.has(s.num)) {
-    return `<span class="${cls}"><img src="assets/kaimon/${String(s.num).padStart(3, '0')}.webp" alt="" draggable="false"></span>`;
+    return `<span class="${cls}"><img src="assets/kaimon/${String(s.num).padStart(3, '0')}.webp" alt="" draggable="false">${sp}</span>`;
   }
-  return `<span class="${cls}">${placeholder(s)}</span>`;
+  return `<span class="${cls}">${placeholder(s)}${sp}</span>`;
 }

@@ -260,15 +260,16 @@ export function renderPlay(root, go, { table }) {
     await wait(roll.shakes ? 360 : 200);
     if (caught) {
       zone.classList.add('caught');
+      if (result.shiny) { zone.classList.add('shiny-catch'); setTimeout(() => sfx.shiny(), 700); }
       const s = S.species;
       if (result.isNew) {
         sfx.newCatch();
         const hard = s.rarity === 'rare' || s.rarity === 'legendary';
         zone.insertAdjacentHTML('beforeend', `<div class="new-banner" aria-hidden="true"><span class="nb-rays"></span><strong>New Kaimon!</strong><small>${hard ? 'A rare find! ' : ''}#${String(s.num).padStart(3, '0')} added to your Kaidex</small></div>`);
-        msg.innerHTML = `You caught ${esc(s.name)}!${result.shiny ? '<span class="tags"><span class="new-tag shiny-tag">✦ Shiny! Rare sparkly color</span></span>' : ''}`;
+        msg.innerHTML = `You caught ${esc(s.name)}!${result.shiny ? '<span class="tags"><span class="new-tag shiny-tag"><span class="tw">✦</span> Shiny! A rare sparkly one!</span></span>' : ''}`;
       } else {
         sfx.caught();
-        msg.innerHTML = `Caught ${esc(s.name)}!${result.shiny ? '<span class="tags"><span class="new-tag shiny-tag">✦ Shiny! Rare sparkly color</span></span>' : ''}`;
+        msg.innerHTML = `Caught ${esc(s.name)}!${result.shiny ? '<span class="tags"><span class="new-tag shiny-tag"><span class="tw">✦</span> Shiny! A rare sparkly one!</span></span>' : ''}`;
       }
     } else {
       zone.classList.add('escaped');

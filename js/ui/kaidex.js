@@ -48,7 +48,7 @@ export function renderKaidex(root, go) {
         <header class="topbar">
           <button class="icon-btn" data-back aria-label="Back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 L8 12 L15 19" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
           <h1 class="screen-title">Kaidex</h1>
-          <p class="dex-count"><span class="dc-main"><strong>${c.caught}</strong> of ${c.total} caught</span><span class="dc-sub">${c.seen} seen<button class="dc-shiny" data-shinyhelp aria-label="${shinyTotal} shiny. What is shiny?">✦ ${shinyTotal} shiny</button></span></p>
+          <p class="dex-count"><span class="dc-main"><strong>${c.caught}</strong> of ${c.total} caught</span><span class="dc-sub"><span>${c.seen} seen</span><button class="dc-shiny${shinyTotal ? ' has' : ''}" data-shinyhelp aria-label="${shinyTotal} shiny. What is shiny?"><span class="tw" aria-hidden="true">✦</span>${shinyTotal} shiny</button></span></p>
         </header>
         <div class="chips" role="tablist" aria-label="Filter">
           <button class="chip${filter === 'all' ? ' on' : ''}" data-f="all">All</button>
@@ -62,11 +62,11 @@ export function renderKaidex(root, go) {
             const e = p.dex[s.id];
             const mythic = s.id === MYTHIC_ID;
             const name = st === 'unknown' ? '???' : s.name;
-            return `<button class="dex-tile dex-${st}${mythic ? ' dex-mythic' : ''}" data-n="${s.id}" style="--rc:${TYPES[s.type].color};--rl:${TYPES[s.type].light}" aria-label="${num3(s.num)} ${esc(name)}">
+            return `<button class="dex-tile dex-${st}${mythic ? ' dex-mythic' : ''}${e?.shiny ? ' dex-has-shiny' : ''}" data-n="${s.id}" style="--rc:${TYPES[s.type].color};--rl:${TYPES[s.type].light}" aria-label="${num3(s.num)} ${esc(name)}">
               <span class="dex-num">${num3(s.num)}</span>
               ${creatureArt(s, { mode: st === 'caught' ? 'full' : st, shiny: false })}
               <span class="dex-name">${esc(name)}</span>
-              ${e?.shiny ? '<span class="dex-shiny" aria-label="Shiny caught">✦</span>' : ''}
+              ${e?.shiny ? '<span class="dex-shiny" aria-label="Shiny caught"><span class="tw">✦</span></span>' : ''}
             </button>`;
           }).join('')}
         </div>

@@ -972,3 +972,34 @@ button.balls-row:hover { background: #EDF2F9; }
 .card-inner.flipped .face.front { visibility: hidden; transition-delay: .16s; }
 .card-inner:not(.flipped) .face.back { visibility: hidden; transition-delay: .16s; }
 .beta-tag { display: inline-block; font-size: 12px; font-weight: 700; color: #7A4FD0; background: #F1EAFF; border-radius: 99px; padding: 1px 8px; vertical-align: 2px; }
+
+/* v0.3.26 shiny Kaimon sparkle */
+.kart { position: relative; }
+.sparkles { display: none; position: absolute; inset: -6%; pointer-events: none; }
+.kart-shiny .sparkles { display: block; }
+.kart-shiny svg, .kart-shiny img { filter: hue-rotate(150deg) saturate(1.35) brightness(1.05) drop-shadow(0 0 6px rgba(255, 214, 90, .75)); animation: shinyGlow 2.4s ease-in-out infinite; }
+.sparkles i { position: absolute; width: 18%; aspect-ratio: 1; background: radial-gradient(circle, #fff 0 22%, #FFE27A 40%, #FFC93C 70%); clip-path: polygon(50% 0, 61% 39%, 100% 50%, 61% 61%, 50% 100%, 39% 61%, 0 50%, 39% 39%); filter: drop-shadow(0 0 3px #FFD23F); opacity: 0; animation: twinkle 1.8s ease-in-out infinite; }
+.sparkles i:nth-child(1) { left: 6%; top: 10%; animation-delay: 0s; }
+.sparkles i:nth-child(2) { right: 4%; top: 22%; width: 13%; animation-delay: .45s; }
+.sparkles i:nth-child(3) { left: 16%; bottom: 10%; width: 11%; animation-delay: .9s; }
+.sparkles i:nth-child(4) { right: 12%; bottom: 4%; width: 16%; animation-delay: 1.25s; }
+.sparkles i:nth-child(5) { left: 46%; top: -2%; width: 10%; animation-delay: .65s; }
+@keyframes twinkle { 0%, 100% { opacity: 0; transform: scale(.2) rotate(0deg); } 45% { opacity: 1; transform: scale(1) rotate(45deg); } 70% { opacity: .9; transform: scale(.8) rotate(70deg); } }
+@keyframes shinyGlow { 0%, 100% { filter: hue-rotate(150deg) saturate(1.35) brightness(1.05) drop-shadow(0 0 4px rgba(255, 214, 90, .55)); } 50% { filter: hue-rotate(150deg) saturate(1.45) brightness(1.12) drop-shadow(0 0 12px rgba(255, 214, 90, .95)); } }
+.tw { display: inline-block; animation: twStar 1.6s ease-in-out infinite; }
+@keyframes twStar { 0%, 100% { transform: scale(1) rotate(0); } 50% { transform: scale(1.35) rotate(25deg); } }
+
+/* Kaidex: shiny marker and header */
+.dex-shiny { top: 4px; right: 6px; width: 28px; height: 28px; display: grid; place-items: center; border-radius: 50%; font-size: 16px; color: #fff; background: linear-gradient(135deg, #B07CFF, #FF7AC6); border: 2px solid var(--ink); box-shadow: 0 0 10px rgba(255, 122, 198, .55); }
+.dex-has-shiny { box-shadow: 0 4px 0 var(--ink), 0 0 0 3px #FFE27A inset; }
+.dc-sub { gap: 10px; }
+.dc-shiny { display: inline-flex; align-items: center; gap: 5px; font-size: 15px; padding: 4px 11px; color: #7A4FD0; background: #F1EAFF; }
+.dc-shiny.has { color: #fff; background: linear-gradient(135deg, #9C6BFF, #FF6FB9); box-shadow: 0 0 12px rgba(255, 111, 185, .45); }
+.dc-shiny .tw { font-size: 16px; }
+
+/* Catching a shiny: a burst of sparkles */
+.shiny-catch .catch-art { position: relative; }
+.shiny-catch .catch-art::after { content: ''; position: absolute; inset: -20%; border-radius: 50%; background: radial-gradient(circle, rgba(255, 226, 122, .7), rgba(255, 226, 122, 0) 65%); opacity: 0; animation: shinyBurst 1.2s ease-out .6s both; pointer-events: none; }
+@keyframes shinyBurst { 0% { opacity: 0; transform: scale(.4); } 30% { opacity: 1; } 100% { opacity: 0; transform: scale(1.4); } }
+.shiny-tag { background: linear-gradient(135deg, #9C6BFF, #FF6FB9); color: #fff; }
+@media (prefers-reduced-motion: reduce) { .sparkles i { animation: none; opacity: .9; transform: none; } .kart-shiny svg, .kart-shiny img, .tw { animation: none; } }
