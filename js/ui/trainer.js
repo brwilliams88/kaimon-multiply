@@ -91,6 +91,7 @@ export function renderTrainer(root, go) {
     wireLookPicker(sh.el.querySelector('.tr-lp'), look, (L) => { look = L; });
     sh.el.querySelector('[data-save]').addEventListener('click', () => {
       p.look = look;
+      p.lookAt = Date.now();
       touch(p); save(); syncNow();
       sh.close(); draw();
       toast('Looking good!', 1400);

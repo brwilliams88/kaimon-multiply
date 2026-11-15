@@ -30,7 +30,7 @@ export function teamSheet(p, onSave, opts = {}) {
   if (!picks.length) picks = myTeam(p).slice(1).map((m) => m.species.id);
   const draw = () => `
     <h2>Battle team</h2>
-    <p class="team-help">${esc(buddy.name)} leads. Pick 2 more to battle with. If one faints, the next one jumps in.</p>
+    <p class="team-help">${esc(buddy.name)} leads. Tap 2 more to battle with. Your team saves as you pick.</p>
     <div class="team-picked">
       <div class="team-slot lead"><div class="ts-art">${creatureArt(buddy)}</div><span>${esc(buddy.name)}</span><small>Buddy</small></div>
       ${[0, 1].map((i) => { const s = SPECIES.find((x) => x.id === picks[i]); return s ? `<button class="team-slot" data-unpick="${s.id}" aria-label="Remove ${esc(s.name)}"><div class="ts-art">${creatureArt(s)}</div><span>${esc(s.name)}</span><small>Tap to remove</small></button>` : `<div class="team-slot empty"><div class="ts-art"></div><span>Pick one</span></div>`; }).join('')}
@@ -41,21 +41,23 @@ export function teamSheet(p, onSave, opts = {}) {
       <span class="to-info"><span class="to-top"><span class="to-num">#${String(s.num).padStart(3, '0')}</span><span class="to-type">${t.name}</span></span><span class="to-name">${esc(s.name)}</span>${stars(s)}<span class="to-move">${esc(moveName(s))} · caught ${e.caught}×</span></span>
       ${on ? '<span class="to-check" aria-hidden="true">✓</span>' : ''}</button>`; }).join('')}</div>
     <p class="team-note">★ Strength: evolved Kaimon hit harder.</p>` : '<p class="note">Catch some Kaimon in Practice or Regions, then pick your team here.</p>'}
-    <div class="sheet-actions"><button class="btn-chunky btn-primary" data-saveteam>Save team</button><button class="btn-chunky" data-close>Cancel</button></div>`;
-  const sh = sheet(`<div class="team-sheet">${draw()}</div>`, { cls: 'team-sheet-wrap', ...opts });
+    <div class="sheet-actions"><button class="btn-chunky btn-primary" data-close>Done</button></div>`;
+  // Every pick saves right away, so closing the sheet any way keeps the team.
+  let changed = false;
+  const commit = () => {
+    p.team = picks.slice(0, 2);
+    p.teamAt = Date.now();
+    touch(p); save();
+    changed = true;
+  };
+  const sh = sheet(`<div class="team-sheet">${draw()}</div>`, { cls: 'team-sheet-wrap', ...opts,
+    onClose: () => { if (changed) { syncNow(); onSave?.(); toast('Team saved!', 1400); } opts.onClose?.(); } });
   const box = sh.el.querySelector('.team-sheet');
   box.addEventListener('click', (e) => {
     const pick = e.target.closest('[data-pick]')?.dataset.pick;
     const un = e.target.closest('[data-unpick]')?.dataset.unpick;
     const so = e.target.closest('[data-sort]')?.dataset.sort;
     if (so) { sfx.tap(); sort = so; box.innerHTML = draw(); return; }
-    if (e.target.closest('[data-saveteam]')) {
-      p.team = picks.slice(0, 2);
-      touch(p); save(); syncNow();
-      sh.close(); onSave?.();
-      toast('Team saved!', 1400);
-      return;
-    }
     if (pick) {
       sfx.tap();
       if (picks.includes(pick)) picks = picks.filter((x) => x !== pick);
@@ -63,6 +65,7 @@ export function teamSheet(p, onSave, opts = {}) {
       else picks = [picks[1], pick]; // full: the oldest pick steps out
     } else if (un) { sfx.tap(); picks = picks.filter((x) => x !== un); }
     else return;
+    commit();
     const scroll = box.querySelector('.team-grid')?.scrollTop || 0;
     box.innerHTML = draw();
     const g = box.querySelector('.team-grid'); if (g) g.scrollTop = scroll;

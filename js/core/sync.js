@@ -83,20 +83,29 @@ async function token() {
 
 const profileRow = (p) => ({
   id: p.id, name: p.name, avatar: p.avatar,
-  settings: { ...p.settings, starter: p.starter, look: p.look || null, team: p.team || null },
+  settings: { ...p.settings, starter: p.starter, look: p.look || null, team: p.team || null, lookAt: p.lookAt || 0, teamAt: p.teamAt || 0 },
   created_at: p.createdAt, updated_at: p.updatedAt, deleted: false,
 });
+
+// Team and look each carry the time they were last changed, so the newest pick wins
+// on every device, even if another device saved some other setting later.
+function mergePicks(p, r, remoteNewer) {
+  const st = r.settings || {};
+  for (const f of ['team', 'look']) {
+    const rt = st[f + 'At'] || 0, lt = p[f + 'At'] || 0;
+    if (rt > lt || (!rt && !lt && remoteNewer)) { if (st[f]) p[f] = st[f]; if (rt) p[f + 'At'] = rt; }
+  }
+}
 
 function profileFromRow(r) {
   const p = newProfile(r.name, r.avatar, r.id);
   p.family = true;
   p.createdAt = r.created_at;
   p.updatedAt = r.updated_at;
-  const { starter, look, team, ...rest } = r.settings || {};
+  const { starter, look, team, lookAt, teamAt, ...rest } = r.settings || {};
   p.settings = { ...p.settings, ...rest };
   p.starter = starter || 'kaimo';
-  if (look) p.look = look;
-  if (team) p.team = team;
+  mergePicks(p, r, true);
   return p;
 }
 
@@ -204,6 +213,7 @@ export function syncNow() {
       const toUpsert = [];
       for (const p of allProfiles().filter((x) => x.family)) {
         const r = remoteById[p.id];
+        if (r) mergePicks(p, r, false); // never push an older team or look over a newer one
         if (!r || p.updatedAt > r.updated_at) toUpsert.push(profileRow(p));
       }
       if (toUpsert.length) {
@@ -216,11 +226,10 @@ export function syncNow() {
           putProfile(profileFromRow(r));
         } else if (p.family && r.updated_at > p.updatedAt) {
           p.name = r.name; p.avatar = r.avatar; p.updatedAt = r.updated_at;
-          const { starter, look, team, ...rest } = r.settings || {};
+          const { starter, look, team, lookAt, teamAt, ...rest } = r.settings || {};
           p.settings = { ...p.settings, ...rest };
           if (starter) p.starter = starter;
-          if (look) p.look = look;
-          if (team) p.team = team;
+          mergePicks(p, r, true);
         }
       }
 

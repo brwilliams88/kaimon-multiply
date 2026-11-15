@@ -1,7 +1,17 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.5.6';
+export const VERSION = '0.5.7';
 
 export const CHANGELOG = [
+  {
+    version: '0.5.7',
+    date: '2026-11-15',
+    title: "Team changes save",
+    items: [
+      "Fixed: changing your battle team now saves. Before, closing the team picker any way other than the Save button at the very bottom threw your picks away.",
+      "Your team saves the moment you tap a Kaimon, and the picker has one Done button.",
+      "Fixed: on a family with more than one device, an older team or trainer look from another device could come back after syncing. The newest pick now always wins.",
+    ],
+  },
   {
     version: '0.5.6',
     date: '2026-11-15',
