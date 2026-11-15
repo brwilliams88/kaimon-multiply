@@ -1003,3 +1003,27 @@ button.balls-row:hover { background: #EDF2F9; }
 @keyframes shinyBurst { 0% { opacity: 0; transform: scale(.4); } 30% { opacity: 1; } 100% { opacity: 0; transform: scale(1.4); } }
 .shiny-tag { background: linear-gradient(135deg, #9C6BFF, #FF6FB9); color: #fff; }
 @media (prefers-reduced-motion: reduce) { .sparkles i { animation: none; opacity: .9; transform: none; } .kart-shiny svg, .kart-shiny img, .tw { animation: none; } }
+
+/* v0.3.28 How to play */
+.how { text-align: left; display: flex; flex-direction: column; gap: 4px; }
+.how-hero { text-align: center; padding: 4px 4px 12px; margin-bottom: 4px; border-bottom: 2px solid #EEF2F8; }
+.how-hero-art { width: 112px; height: 112px; margin: 0 auto 2px; background: radial-gradient(circle at 50% 60%, #FFF2C2, rgba(255, 242, 194, 0) 70%); border-radius: 50%; }
+.how-hero h2 { margin: 2px 0 6px; font-size: 28px; }
+.how-hero p { margin: 0 auto 6px; font-size: 17px; line-height: 1.4; color: var(--ink-2); max-width: 36ch; }
+.how-hero strong { color: var(--ink); }
+.how-goal { font-weight: 700; color: var(--ink) !important; }
+.how-sec { display: grid; grid-template-columns: 64px 1fr; gap: 14px; align-items: center; padding: 10px 0; border-top: 2px solid #EEF2F8; }
+.how-sec:first-of-type { border-top: 0; }
+.how-sec h3 { margin: 0 0 2px; font-size: 19px; }
+.how-sec p { margin: 0; font-size: 16px; line-height: 1.38; color: var(--ink-2); }
+.how-pic { width: 64px; height: 64px; display: grid; place-items: center; background: var(--sky); border-radius: 18px; overflow: hidden; }
+.how-pic .kart { width: 56px; height: 56px; }
+.how-pic .ball-svg { width: 28px; height: 28px; margin: 0 -2px; }
+.how-pic:has(.ball-svg) { display: flex; justify-content: center; gap: 0; }
+.how-pic svg:not(.ball-svg) { width: 58px; height: 58px; }
+.how-pic .kdx-ic { width: 46px; height: 46px; }
+.how-card { display: inline-flex; align-items: center; gap: 2px; background: #fff; border: 2.5px solid var(--ink); border-radius: 10px; padding: 6px 7px; font-weight: 700; font-size: 18px; box-shadow: 0 3px 0 var(--ink); }
+.how-card i { font-style: normal; color: var(--coral); font-size: 15px; }
+.how-region { display: inline-flex; align-items: baseline; font-weight: 700; font-size: 34px; color: #1E6FD9; line-height: 1; }
+.how-region small { font-size: 18px; }
+.how-go { margin-top: 10px; align-self: stretch; }

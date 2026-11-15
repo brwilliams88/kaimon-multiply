@@ -184,25 +184,34 @@ function homeMenu(p, go) {
     if (!m) return;
     sfx.tap(); sh.close();
     const back = () => setTimeout(() => homeMenu(p, go), 120);
-    if (m === 'how') setTimeout(() => howItWorks({ back }), 200);
+    if (m === 'how') setTimeout(() => howItWorks(p, { back }), 200);
     if (m === 'balls') setTimeout(() => ballsHelp(p, { back }), 200);
     if (m === 'switch') go('welcome');
   });
   holdButton(sh.el.querySelector('[data-grownups]'), 1200, () => { sh.close(); go('grownups'); });
 }
 
-function howItWorks(opts = {}) {
+// How to play: the adventure first, then each part of the game with a picture.
+function howItWorks(p, opts = {}) {
+  const buddy = partnerOf(p).species;
+  const sec = (pic, title, text) => `<section class="how-sec"><div class="how-pic" aria-hidden="true">${pic}</div><div><h3>${title}</h3><p>${text}</p></div></section>`;
+  const card = '<span class="how-card"><b>7</b><i>×</i><b>8</b></span>';
+  const region = '<span class="how-region"><b>4</b><small>s</small></span>';
   sheet(`<div class="how">
-    <h2>How Kaimon works</h2>
-    <dl>
-      <dt>Your buddy</dt><dd>The Kaimon that travels with you. It earns XP from every right answer, evolves as it levels up, and leads your battle team.</dd>
-      <dt>Practice</dt><dd>A mix of all your times tables. Every right answer can catch a wild Kaimon from any region.</dd>
-      <dt>Regions</dt><dd>One times table at a time. Catch the Kaimon that live in that region, and earn the table's medal: Bronze, Silver, Gold, then Star.</dd>
-      <dt>Gym battles</dt><dd>Your buddy and your two strongest Kaimon battle a Gym Leader. Every right answer is an attack. Win their badge, then take on Boss Papa at Papa's Gym.</dd>
-      <dt>XP</dt><dd>Every right answer gives your buddy XP: 10 XP, plus 5 for a fast answer and 5 for a fact you're still learning. Battle wins give bonus XP. Your buddy evolves at Lv 10 and Lv 20.</dd>
-    </dl>
-    <button class="btn-chunky btn-primary" data-close>Got it</button>
-  </div>`, opts);
+    <div class="how-hero">
+      <div class="how-hero-art">${creatureArt(buddy)}</div>
+      <h2>Welcome, Trainer!</h2>
+      <p>Wild Kaimon are hiding all over the world, and the only way to catch them is with <strong>multiplication</strong>. Every right answer throws a ball. The faster and smarter you get, the more you catch.</p>
+      <p class="how-goal">Can you become a times table master and fill your whole Kaidex?</p>
+    </div>
+    ${sec(creatureArt(buddy), 'Your Buddy', `${esc(buddy.name)} goes everywhere with you. Every right answer gives it XP. Level up and it evolves at Lv 10 and Lv 20!`)}
+    ${sec(card, 'Practice', 'All your times tables, mixed together. A wild Kaimon jumps onto each card. Answer right to throw a ball at it.')}
+    ${sec(`${ballIcon('capture')}${ballIcon('super')}`, 'Balls', 'Fast answers throw harder. Super, Mega and Legend Balls catch rare Kaimon more easily. Win them with streaks and medals.')}
+    ${sec(region, 'Regions', 'Each region is a times table with its own Kaimon. Get its facts right and fast on different days to earn its medal: Bronze, Silver, Gold, then Star.')}
+    ${sec(trainerArt({ kind: 'champ', table: 2 }), 'Gym battles', 'Your Buddy and your two strongest Kaimon battle a Gym Leader. Every right answer is an attack! Win all the badges to face Boss Papa at Papa’s Gym.')}
+    ${sec(kaidexIcon(), 'Kaidex', `Every Kaimon you catch goes in your Kaidex. There are ${dexCounts(p).total} to find, and some are very rare.`)}
+    <button class="btn-chunky btn-primary btn-xl how-go" data-close>Let's go!</button>
+  </div>`, { ...opts, cls: 'how-sheet' });
 }
 
 export const kaidexIcon = () => `<svg class="kdx-ic" viewBox="0 0 48 48" aria-hidden="true">

@@ -2,6 +2,11 @@
 
 All notable changes. Versioning: `0.MINOR.0` marks a roadmap phase, `0.x.PATCH` is any shipped change a player or parent can notice, and `1.0.0` is the public launch. See "Versioning" in CLAUDE.md. The in-app version history (Grown-ups > What's new) reads from `js/data/changelog.js`; keep both in sync. Each release is tagged in git as `vX.Y.Z`.
 
+## v0.3.28 (2026-11-14) A real How to play
+
+- How to play now starts with the adventure: catch wild Kaimon with multiplication, and the better you get, the more you catch.
+- Then each part of the game gets a picture and a short, kid-friendly explanation: your Buddy, Practice, Balls, Regions, Gym battles and the Kaidex.
+
 ## v0.3.27 (2026-11-14) Clearer words
 
 - Clearer wording around times tables, so "pick one times table" no longer reads like the 1s. Regions now say: each region is a times table.

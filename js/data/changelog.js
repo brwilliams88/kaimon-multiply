@@ -1,7 +1,16 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.3.27';
+export const VERSION = '0.3.28';
 
 export const CHANGELOG = [
+  {
+    version: '0.3.28',
+    date: '2026-11-14',
+    title: 'A real How to play',
+    items: [
+      'How to play now starts with the adventure: catch wild Kaimon with multiplication, and the better you get, the more you catch.',
+      'Then each part of the game gets a picture and a short, kid-friendly explanation: your Buddy, Practice, Balls, Regions, Gym battles and the Kaidex.',
+    ],
+  },
   {
     version: '0.3.27',
     date: '2026-11-14',
