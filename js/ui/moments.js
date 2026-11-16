@@ -46,6 +46,7 @@ export const kairoCaught = (m) => `<div class="mythic-arrive caught">${fxImg('ca
 // two wobbles and a click. About 1.9 seconds. Reduced motion skips straight to caught.
 export async function legendThrow(arriveEl) {
   if (!arriveEl || reducedMotion()) return;
+  new Image().src = ballSrc('legend', true); // ready before the ball pops open
   arriveEl.classList.remove('descend');
   arriveEl.insertAdjacentHTML('beforeend', `${fxImg('capture-swirl', 'lt-swirl')}<span class="lt-ball"><img src="${ballSrc('legend')}" alt="" draggable="false"></span>${fxImg('capture-burst', 'lt-burst')}`);
   const ball = arriveEl.querySelector('.lt-ball img');

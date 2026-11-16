@@ -259,7 +259,7 @@ function showEntry(p, s) {
   const hab = unknown ? null : habitatSrc(s.region);
   const sh = sheet(`
     <div class="entry${unknown ? ' entry-unknown' : ''}"${unknown ? '' : ` style="--rc:${t.color};--rl:${t.light}"`}>
-      <div class="entry-art${hab ? ' has-hab' : ''}"${hab ? ` style="--hab:${cssUrl(hab)}"` : ''}>${unknown ? `<span class="entry-big" aria-hidden="true">${String(s.num).padStart(3, '0')}</span>` : creatureArt(s, { mode: st === 'caught' ? 'full' : st, shiny: false })}</div>
+      <div class="entry-art${hab ? ' has-hab' : ''}"${hab ? ` style='--hab:${cssUrl(hab)}'` : ''}>${unknown ? `<span class="entry-big" aria-hidden="true">${String(s.num).padStart(3, '0')}</span>` : creatureArt(s, { mode: st === 'caught' ? 'full' : st, shiny: false })}</div>
       ${e.shiny && st === 'caught' ? `<div class="look-toggle" role="group" aria-label="Colors"><button class="on" data-look="normal" aria-pressed="true">Normal</button><button data-look="shiny" aria-pressed="false">${shinyStar()}Shiny</button></div>` : ''}
       <p class="entry-num">${num3(s.num)}</p>
       <h2 class="entry-name">${esc(shownName(s, st))}</h2>

@@ -1,27 +1,44 @@
 # Art audit (v1.0 roadmap: "New art")
 
-Audited Nov 15, 2026 against `js/`, `css/` and `tools/apps-script/`. File names are only built in
-`js/core/assets.js` and `js/core/art.js` (plus `js/ui/avatars.js` for player trainers), so "used"
-means a helper there is called with that name somewhere in the game.
+First audit Nov 15, 2026; updated Nov 16, 2026 after the big moments pass. Checked against `js/`,
+`css/` and `tools/apps-script/`. File names are only built in `js/core/assets.js` and
+`js/core/art.js` (plus `js/ui/avatars.js` for player trainers), so "used" means a helper there is
+called with that name somewhere in the game.
 
 Legend: **Used** = on screen today. **New** = wired in by this art pass. **Unused** = in `assets/` but
-nothing shows it.
+nothing shows it. No new images were made for this pass.
 
 ## Summary
 
-| Folder | Files | Used | Unused |
-|---|---|---|---|
-| kaimon/ (+ shiny/, mega/) | 60 + 60 + 8 | all | none |
-| trainers/ (Gym Leaders, grunts, Boss Papa) | 5 poses each | talking, won, lost, face | `base` for every NPC |
-| trainers/teacher-k | 9 | face, talking, point, quiz, stamp (new) | base, think, won, lost |
-| trainers/kai, p01 to p14, mix-and-match folders | 5 or 6 each | all (avatars.js, trainer creator) | none |
-| scenes/ | 13 + 13 thumbs | all full size, thumbs 1 to 10 | thumb/papa, thumb/tower, thumb/training |
-| scenes/gyms/ | 11 + 11 thumbs | all | none |
-| fx/ | 21 | all (capture-swirl is new) | none |
-| ui/ | 23 | 18 | banner-ribbon, empty-kaidex, icon-settings, kaidex-b, kaizo-feedback |
-| items/ | 14 | 12 | lucky-clover, time-freeze |
-| badges/, balls/, types/, brand/, title/ | 10, 8, 14, 2, 2 | all | none |
-| email/ | 19 + kaimon/ | used by the weekly report (Apps Script) | see below |
+| Folder | Files | Unused now |
+|---|---|---|
+| kaimon/ (+ shiny/, mega/) | 60 + 60 + 8 | none (Mega art shows in the Kaidex peek; the Mega Evolution screen is on the tower branch) |
+| trainers/ (Gym Leaders, grunts, Boss Papa) | 5 poses each | none (`base` is **new**: badge ceremony and win screens) |
+| trainers/teacher-k | 9 | base, think, lost |
+| trainers/kai, p01 to p14, mix-and-match folders | 5 or 6 each | none |
+| scenes/ | 13 + 13 thumbs | none (`thumb/papa`, `thumb/tower`, `thumb/training` are **new** in the Kaidex) |
+| scenes/gyms/ | 11 + 11 thumbs | none |
+| fx/ | 21 | none |
+| ui/ | 23 | banner-ribbon, empty-kaidex, icon-settings, kaidex-b |
+| items/ | 14 | lucky-clover, time-freeze |
+| badges/, balls/, types/, brand/, title/ | 10, 8, 14, 2, 2 | none |
+| email/ | 19 + kaimon/ | see below |
+
+## Big moments (js/ui/moments.js)
+
+Short animated beats built only from existing frames and fx. Each is about 2 seconds or less, never
+blocks a button, and with reduced motion shows the end picture straight away.
+
+| Moment | What happens | Art used |
+|---|---|---|
+| Badge won | The Gym Leader is dizzy, shakes it off and hands over the badge with a smile; sparkles pop as the badge drops into its slot | leader `lost` then `base`, fx/badge-burst, fx/capture-burst |
+| Any battle win | The other trainer stands tall, then the loss sinks in (Boss Papa laughs with his dumbbell, then drops it) | trainer `base` (Boss Papa `won`) then `lost` |
+| Boss Papa beaten | "Champion!" ribbon with gold wings, a burst behind the winner, extra confetti | fx/levelup-wings, fx/badge-burst |
+| Kairo arrives | Kairo glides down from the sky; the Legend Ball arcs up, opens, a swirl pulls Kairo in, two wobbles and a click; then the swirl turns slowly behind it | kaimon/059, balls/legend-*, fx/capture-swirl, fx/capture-burst |
+| Evolution | The old form flashes white faster and faster, shrinks into light, the new form pops out of a burst and fills in with color, then the words appear (buddy and Kairo to Kairos) | Kaimon art, fx/evolve-glow, fx/capture-burst |
+| First catch | A brand new Kaimon gets a turning burst behind it. A trainer's very first wild catch says "Your first catch!" | fx/badge-burst |
+| Mega and Legend Balls | A sparkling ring spins around the ball as it flies, and around the ball you win on the battle result | fx/shiny-ring |
+| Good Work Stamp | The stamp thunks down on its starburst, then Teacher K jumps for joy | teacher-k `stamp` then `won`, ui/starburst |
 
 ## Teacher K (assets/trainers/teacher-k)
 
@@ -29,100 +46,73 @@ nothing shows it.
 |---|---|---|
 | face | Used | Pop Quiz tile on Home, hint card ("Type it to keep going"), battle chip |
 | talking | Used | How to play hero, onboarding mentor |
-| point | Used | Next up "Start here" / "New region"; **New:** stands beside her trick on the hint card (iPad and landscape); **New:** Pop Quiz result when you lose ("every miss is a fact you're about to learn") |
-| quiz | Used + **New** | Next up Pop Quiz card; **New:** Pop Quiz VS intro (was `talking`) |
-| won | Unused now | Was the Good Work Stamp sheet and the Pop Quiz result when you lost (her cheering after a kid loses read wrong). Fits "Today's goal done!" or the Hundred Hero card |
-| stamp | **New** | Good Work Stamp celebration (was `won`); Pop Quiz result when you win (thumbs-up, was `lost`) |
-| base | Unused | Fits a calm "Teacher K is grading" state or a future Teacher K settings page |
-| think | Unused | Fits the Pop Quiz tile when it is "Opens soon" / "In 3 days", or a "Let's think" step in a future Kaimon Divide lesson |
-| lost | Unused now | Was only used when you beat the Pop Quiz. A teacher looking defeated reads wrong, so the result uses `stamp` |
-
-## Gym buildings (assets/scenes/gyms)
-
-All used: region rows on Home (thumbs), the locked-gym sheet (thumb, greyed with a lock), Papa's Gym row,
-and the Next up "Gym ready!" / "Battle Boss Papa" cards (full size). The badge ceremony keeps the region
-scene as its backdrop on purpose: the leader and badge are the focus.
+| point | Used + **New** | Next up "Start here"; **New:** stands beside her trick on the hint card (iPad and landscape); **New:** Pop Quiz result when you lose |
+| quiz | Used + **New** | Next up Pop Quiz card; **New:** Pop Quiz VS intro |
+| stamp | **New** | Good Work Stamp (first frame); Pop Quiz result when you win (thumbs-up) |
+| won | **New** | Good Work Stamp (second frame: she jumps for joy) |
+| think | Unused | Fits a Pop Quiz "Opens soon" state or a "Let's think" step in Kaimon Divide |
+| base | Unused | Almost the same as `talking`; fits a future Teacher K page |
+| lost | Unused | A teacher looking flustered. Reads wrong when a kid wins, so it stays out |
 
 ## Celebration effects (assets/fx)
 
-| File | Status | Where |
-|---|---|---|
-| attack-* (14) | Used | Battle attacks, by type |
-| badge-burst | Used | Badge ceremony, results mascot, new medal card |
-| capture-beam, capture-burst | Used | Catch animation |
-| capture-swirl | **New** | Catch animation (the Kaimon spins into the ball); behind Kairo when it is caught |
-| evolve-glow | Used + **New** | Results buddy level-up; **New:** behind the new form in the evolution sheet (partner and Kairo to Kairos) |
-| levelup-wings | Used | Results "Medals moving up" heading |
-| shiny-ring | Used | Shiny Kaimon ring (CSS) |
+| File | Where |
+|---|---|
+| attack-* (14) | Battle attacks, by type |
+| badge-burst | Badge ceremony, results mascot, new medal card; **New:** behind a brand new Kaimon, behind the winner after Boss Papa |
+| capture-beam, capture-burst | Catch animation; **New:** badge slot sparkle, evolution pop, Kairo catch |
+| capture-swirl | **New:** catch animation, Legend Ball throw at Kairo, behind Kairo once caught |
+| evolve-glow | Results buddy level-up; **New:** evolution moment |
+| levelup-wings | Results "Medals moving up"; **New:** Champion ribbon after Boss Papa |
+| shiny-ring | Shiny Kaimon ring; **New:** Mega and Legend Ball throws and prizes |
 
 ## Kaizo helpers and UI (assets/ui)
 
 | File | Status | Where / where it would fit |
 |---|---|---|
-| kaizo-badge, kaizo-cheer, kaizo-wave, kaizo-hint, kaizo-search, kaizo-sleep | Used | Next up, results mascot, family sign-in, icon notice, bag, rest states |
-| kaizo-map | **New** | Next up "Keep exploring" / "Power up" when no Kaimon from that region is caught yet (was a second Teacher K pointing) |
-| kaizo-oops | **New** | Results: "No catches this time" |
-| kaizo-think | **New** | Results: "Medals moving up" when nothing moved |
+| kaizo-badge, kaizo-cheer, kaizo-wave, kaizo-hint, kaizo-search, kaizo-sleep, kaizo-feedback | Used | Next up, results, family sign-in, icon notice, bag, rest, feedback |
+| kaizo-map | **New** | Next up "Keep exploring" when nothing from that region is caught yet |
+| kaizo-oops, kaizo-think | **New** | Results: "No catches this time" and "Medals moving up" when nothing moved |
 | starburst | **New** | Behind the Good Work Stamp |
-| kaizo-feedback | Unused | Mic mode intro or a "Tell us what you think" row (Kaizo with a mic and a speech bubble) |
-| empty-kaidex | Unused | Kaidex empty filter / "none found" state (js/ui/kaidex.js, owned by another agent right now) |
-| kaidex-b | Unused | Alternate Kaidex icon (book). Could mark the binder view in the Kaidex |
-| icon-settings | Unused | Grown-ups settings section header (js/ui/grownups.js, owned by another agent right now) |
-| banner-ribbon | Unused | Results or battle result title ribbon. The current CSS ribbon already matches it and scales with text, so it stays CSS |
-| icon-* (sound, quick, howto, trainers, grownups), kaidex-a, trainer-license, empty-bag | Used | Menu, Home Kaidex tile, trainer page, ball guide |
+| empty-kaidex | Unused | The Kaidex has no empty state today (every filter has sleeves). Keep for a future search |
+| kaidex-b | Unused | Alternate Kaidex book icon |
+| icon-settings | Unused | Grown-ups tabs are text only; one icon on one tab would look odd |
+| banner-ribbon | Unused | The CSS ribbon matches it and stretches with any text, so it stays CSS |
 
-## Items (assets/items)
+## Scenes, items, email
 
-Used: bag, evolution-crystal, good-work-stamp, hint-lamp, medal-*, power-snack, sparkle-charm,
-streak-flame, xp-star. Unused: **lucky-clover** and **time-freeze**. There is no matching game item, so
-they wait for a future item (a "Lucky Clover" rare-encounter boost, a "Time Freeze" that pauses the power
-meter once).
+- Scenes: all full size used. **New:** the Kaidex page shows each Kaimon in its home scene (region
+  thumbs, the training field for starters, Papa's Gym for Papazilla, the Hundred Tower for
+  legendaries; Kairo and Kairos get none, nobody knows where they live).
+- Items: **lucky-clover** and **time-freeze** have no game item yet. They wait for a future item.
+- Email art (`assets/email`) is used by `tools/apps-script/Code.gs`. balls.png, header.jpg,
+  header-news.jpg, header-signin.jpg, header-stats.jpg and kaizo.png are not referenced in this repo;
+  they are likely for the Supabase emails, so keep them.
 
-## Scenes (assets/scenes)
+## Missing art, for Blair to approve (would be made offline, never at run time)
 
-Full size: all used (practice and battle backdrops, Next up cards). Thumbs: 1 to 10 used (region rows,
-How to play). `thumb/papa`, `thumb/tower`, `thumb/training` are unused; they would fit a Kaidex region
-filter or a "Where it lives" chip on legendary and Papazilla entries.
+In priority order. Each assumes the locked style: friendly anime, soft rounded vinyl-toy shapes, cel
+shading with one hard shadow tone and a glossy highlight, clean navy (#14213D) line art, transparent
+background, WebP.
 
-## Card frames
-
-There are none in `assets/`. The practice card is drawn in CSS (navy outline, region color rim). See
-"Missing art" below.
-
-## Email art (assets/email)
-
-Used by `tools/apps-script/Code.gs` (weekly report and invite): ball, header-invite, header-quiet,
-header-report, kaizo-sleep, star, streak, teacher-k, trainer-kai, medal-* (by name), kaimon/NNN.
-Not referenced in this repo: balls.png, header.jpg, header-news.jpg, header-signin.jpg,
-header-stats.jpg, kaizo.png. They are likely for the Supabase news and sign-in emails; keep them.
-
-## Missing art (would need to be generated offline)
-
-Each prompt assumes the locked style: friendly anime, soft rounded vinyl-toy shapes, cel shading with one
-hard shadow tone and a glossy highlight, clean navy (#14213D) line art, transparent background, WebP.
-
-1. **Practice card frames** (`ui/frame-<type>.webp`, 11 types plus legend and mythic): "Trading-card
-   style border frame, rounded corners, thick navy outline, inner rim in <type color> with small
-   <type symbol> corner gems, glossy highlight along the top edge, empty transparent center."
-2. **Teacher K: holding a quiz paper with an A+** (`teacher-k/aplus.webp`): "Teacher K, same outfit
-   and face as reference, smiling, holding up a paper with a big red A+ and a star, one hand giving a
-   thumbs-up." For the Pop Quiz win screen.
-3. **Teacher K: waving goodbye / see you tomorrow** (`teacher-k/wave.webp`): for the daily limit and
-   "Kaimon nap time" states, so she is part of the quiet moments too.
-4. **Teacher K: reading at her desk** (`teacher-k/desk.webp`): "Teacher K sitting at a small wooden
-   desk with a stack of papers and an apple, calm smile." For "Pop Quiz opens in N days".
-5. **Gym building: Hundred Tower exterior** (`scenes/gyms/tower.webp`): "Tall white-and-gold tower with
-   100 small glowing windows, rainbow crystal on top, rounded toy-like shapes." For legendary
-   encounters and a Hundred Tower tile.
-6. **Gym interiors / leader arenas** (`scenes/gyms/inside-N.webp`, 10): for the badge ceremony backdrop,
-   each the gym's interior in its type colors with its badge emblem on the back wall.
-7. **Level-up burst for medals** (`fx/medal-up-<tier>.webp`, 4): "Burst of light in bronze / silver /
-   gold / star-blue with sparkles and small laurel leaves." For the medal level-up moment on a card.
-8. **Confetti sheet** (`fx/confetti.webp`): "Scatter of chunky rounded confetti pieces and stars in the
-   app palette." To replace the CSS confetti in battle results with drawn pieces.
-9. **Kaizo helpers**: `ui/kaizo-offline.webp` ("Kaizo holding a paper airplane, cheerful") for the
-   offline chip and sheet; `ui/kaizo-stamp.webp` ("Kaizo pressing a red star stamp") for the Grown-ups
-   Good Work Stamp page; `ui/kaizo-quiz.webp` ("Kaizo in a tiny graduation cap holding a pencil") for
-   the Pop Quiz tile.
-10. **Empty-state art for the trainer bag and badge case**: `ui/empty-badges.webp` ("an open badge case
-    with soft glowing empty slots and one sparkle").
+1. **Practice card frames** (`ui/frame-<type>.webp`, 11 types plus legend and mythic). The card a kid
+   looks at 90% of the time is drawn in CSS today. "Trading-card style border frame, rounded corners,
+   thick navy outline, inner rim in the type color with small type-symbol corner gems, glossy
+   highlight along the top edge, empty transparent center."
+2. **Teacher K waving** (`teacher-k/wave.webp`). For the daily limit, "see you tomorrow" and Kaimon nap
+   time, so the mentor is part of the quiet moments too. "Teacher K, same outfit and face, smiling,
+   one hand waving goodbye, book under the other arm."
+3. **Hundred Tower exterior** (`scenes/gyms/tower.webp` plus thumb). The only place in the story with
+   no building art; it would give legendaries and the Tower a tile like the other gyms. "Tall
+   white-and-gold tower with 100 small glowing windows, a rainbow crystal on top, rounded toy-like
+   shapes, sky background."
+4. **Gym interiors** (`scenes/gyms/inside-N.webp`, 10, plus Papa's Gym). Backdrops for battles and
+   the badge ceremony so each gym feels like its own place. "The gym's arena in its type colors with
+   its badge emblem on the back wall."
+5. **Medal level-up bursts** (`fx/medal-up-<tier>.webp`, 4): bronze, silver, gold and star-blue bursts
+   with small laurel leaves, for the moment a fact moves up.
+6. **Kaizo helpers**: `ui/kaizo-offline.webp` (holding a paper airplane) for the offline chip;
+   `ui/kaizo-quiz.webp` (tiny graduation cap and pencil) for the Pop Quiz tile.
+7. **Drawn confetti** (`fx/confetti.webp`): chunky rounded pieces and stars in the app palette, to
+   replace the CSS confetti on win screens.
+8. **Empty badge case** (`ui/empty-badges.webp`): an open case with soft glowing empty slots.
