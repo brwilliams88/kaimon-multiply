@@ -22,6 +22,7 @@
     <div><h1>Put Kaimon on your Home Screen</h1><p>Then it opens like an app, full screen, and works without internet. It's free and takes a few seconds.</p></div>
   </header>
 
+  <section class="card" id="inapp" hidden></section>
   <section class="card" id="installed" hidden><h2>All set!</h2><p>Kaimon is already installed on this device. Open it from your Home Screen.</p></section>
   <section class="card" id="quick" hidden>
     <h2>One tap</h2>
@@ -45,7 +46,7 @@
   <p class="foot"><a href="privacy.html">Privacy</a></p>
 </main>
 <script type="module">
-import { platform, browser, steps, isInstalled, canPromptInstall, promptInstall } from './js/ui/install.js';
+import { platform, browser, steps, isInstalled, canPromptInstall, promptInstall, inAppBrowser, outsideSteps, openOutsideURL } from './js/ui/install.js';
 
 const TABS = [
   { id: 'iphone', label: 'iPhone', main: 'safari', alt: ['chrome', 'In Chrome on iPhone:'] },
@@ -79,6 +80,18 @@ tabs.addEventListener('keydown', (e) => {
 pick(TABS.some((t) => t.id === mine) ? mine : 'iphone');
 
 if (isInstalled()) document.getElementById('installed').hidden = false;
+
+// Opened from Facebook, Instagram and the like: first step is getting to a real browser.
+const app = inAppBrowser();
+if (app && !isInstalled()) {
+  const real = mine === 'iphone' || mine === 'ipad' ? 'Safari' : 'Chrome';
+  const box = document.getElementById('inapp');
+  box.hidden = false;
+  box.innerHTML = `<h2>First, open this in ${real}</h2>
+    <p>You're in ${app}'s browser. It can't add Kaimon to your Home Screen.</p>
+    <p><a class="btn" href="${openOutsideURL(mine, location.href.replace(/install\.html.*$/, ''))}">Open Kaimon in ${real}</a></p>
+    <p>Didn't open? Do it yourself:</p>${list(outsideSteps(app, mine))}`;
+}
 const quick = document.getElementById('quick');
 const offer = () => { if (canPromptInstall() && !isInstalled()) quick.hidden = false; };
 window.addEventListener('beforeinstallprompt', () => setTimeout(offer, 0));

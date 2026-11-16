@@ -1,7 +1,16 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '1.0.1';
+export const VERSION = '1.0.2';
 
 export const CHANGELOG = [
+  {
+    version: '1.0.2',
+    date: '2026-11-16',
+    title: "Open from Facebook",
+    items: [
+      "Opened Kaimon from Facebook, Instagram or Messenger? Those apps use their own browser, which can't add Kaimon to your Home Screen. Kaimon now spots this and shows an Open in Safari (or Open in Chrome) button, plus easy steps and a Copy link button if the button doesn't work.",
+      "The install help page and Grown-ups show the same steps when you're inside one of those apps.",
+    ],
+  },
   {
     version: '1.0.1',
     date: '2026-11-16',
