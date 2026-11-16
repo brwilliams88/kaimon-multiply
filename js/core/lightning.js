@@ -40,7 +40,7 @@ export const boltBest = (p) => p.bolt?.best || 0;
 
 // Rewards for a round: nothing unless it beats the old best. A new best gives a
 // Super Ball; passing 10, 20, 30, 40 or 50 for the first time adds a bigger prize.
-export const BOLT_STEPS = [[10, ['i', 'lantern', 1]], [20, ['i', 'charm', 1]], [30, ['i', 'crystal', 1]], [40, ['b', 'mega', 1]], [50, ['b', 'legend', 1]]];
+export const BOLT_STEPS = [[10, ['i', 'lantern', 1]], [20, ['i', 'charm', 1]], [30, ['i', 'evolve', 1]], [40, ['b', 'mega', 1]], [50, ['b', 'legend', 1]]];
 export function boltRewards(prevBest, score) {
   if (!(score > prevBest) || score <= 0) return [];
   const gives = [['b', 'super', 1]];

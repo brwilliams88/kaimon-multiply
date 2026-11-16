@@ -26,7 +26,7 @@ const KEYPAD = `<div class="pad" role="group" aria-label="Number pad">
 </div>`;
 
 // Grown-ups hook: the Calm mode switch (saved by Grown-ups' own data-set handler).
-export const calmModeRow = (s) => `<label class="row"><span>Calm mode<small class="row-note">Hides the 60-second Lightning Round and its timer. Practice, quests and battles stay the same.</small></span><input type="checkbox" class="switch" data-set="calm" ${s.calm ? 'checked' : ''}></label>`;
+export const calmModeRow = (s) => `<label class="row"><span>Calm mode<small class="row-note">Hides the 60-second Lightning Round and the speed meter on practice cards. Everything else stays the same.</small></span><input type="checkbox" class="switch" data-set="calm" ${s.calm ? 'checked' : ''}></label>`;
 
 export function renderLightning(root, go) {
   const p = active();

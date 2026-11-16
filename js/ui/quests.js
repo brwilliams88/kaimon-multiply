@@ -1,17 +1,18 @@
-// Daily quests on screen: a calm card for Home (with the Lightning Round tile and
-// your items), and the rewards strip at the end of a practice round.
+// Daily quests on screen: a compact card for Home (with a slim Lightning Round
+// row), and the rewards strip at the end of a practice round. Items are used
+// from the Bag on the trainer page (openItem in items.js).
 // Rules live in js/core/quests.js. Nothing here nags: no timers, no "don't lose
 // your streak", and an unfinished quest just quietly goes away at midnight.
 import { save, active } from '../core/store.js';
 import { syncNow } from '../core/sync.js';
 import { questStatus, claimRewards } from '../core/quests.js';
-import { ITEM_KEYS, itemCount, lanternLeft } from '../core/items.js';
-import { boltUnlocked, boltToGo, boltFactsToGo, boltBest, calmMode, BOLT_UNLOCK, BOLT_MIN_FACTS } from '../core/lightning.js';
+import { lanternLeft } from '../core/items.js';
+import { boltUnlocked, boltToGo, boltFactsToGo, boltBest, calmMode } from '../core/lightning.js';
 import { regionOf } from '../data/creatures.js';
 import { itemImg, ballImg, typeIcon, trainerFace } from '../core/assets.js';
 import { limitReached } from '../core/playtime.js';
 import { sfx, unlock } from '../core/sound.js';
-import { itemIcon, rewardIcon, rewardName, rewardChip, openItem } from './items.js';
+import { itemIcon, rewardIcon, rewardName, rewardChip } from './items.js';
 import { esc, on, reducedMotion } from './dom.js';
 
 const CARD = '<svg viewBox="0 0 32 32" aria-hidden="true"><rect x="5" y="3" width="22" height="26" rx="5" fill="#fff" stroke="#14213D" stroke-width="2.6"/><path d="M11.5 12.5 L20.5 21.5 M20.5 12.5 L11.5 21.5" stroke="#FF6B4A" stroke-width="3" stroke-linecap="round"/></svg>';
@@ -34,58 +35,64 @@ function questIcon(q) {
 }
 
 function questRow(q) {
-  const pct = Math.round((q.n / q.goal) * 100);
   const go = !q.done && q.kind === 'table' ? `<button class="qx-go" data-qgo="${q.t}" aria-label="Practice the ${q.t}s">Go</button>` : '';
+  const prize = q.reward.map(rewardName).join(', ');
   return `<li class="qx-q${q.done ? ' done' : ''}" data-qkey="${q.key}">
     <span class="qx-ic" aria-hidden="true">${questIcon(q)}</span>
-    <span class="qx-main"><span class="qx-text">${esc(q.text)}</span>
-      ${q.done ? '<span class="qx-meta"><span class="qx-done">Done!</span></span>' : `<span class="qx-meta"><span class="qx-bar" role="progressbar" aria-label="${esc(q.text)}" aria-valuemin="0" aria-valuemax="${q.goal}" aria-valuenow="${q.n}"><i style="width:${pct}%"></i></span><small class="qx-num">${q.n}/${q.goal}</small>${go}</span>`}</span>
-    <span class="qx-prize${q.done ? ' got' : ''}" title="Reward: ${esc(q.reward.map(rewardName).join(', '))}"><span class="sr-only">Reward: ${esc(q.reward.map(rewardName).join(', '))}</span>${rewardIcon(q.reward[0], 'qx-rw')}${q.done ? `<span class="qx-check">${CHECK}</span>` : ''}</span>
+    <span class="qx-text">${esc(q.text)}</span>
+    ${go}
+    <span class="qx-n${q.done ? ' ok' : ''}">${q.done ? CHECK + '<span class="sr-only">Done</span>' : `${q.n}/${q.goal}`}</span>
+    <span class="qx-prize" title="Reward: ${esc(prize)}">${rewardIcon(q.reward[0], 'qx-rw')}<span class="sr-only">Reward: ${esc(prize)}</span></span>
   </li>`;
 }
 
-// Home hook: the quests card, the Lightning Round tile and your items.
+// Open or folded, remembered on this device. Folds itself once all 3 are done.
+const OPEN_KEY = 'kaimon.questsOpen';
+// Phones start folded (one line: the next quest) so the regions stay close.
+const roomy = () => !window.matchMedia?.('(max-width: 599px)').matches;
+const isOpen = (done) => { try { const v = localStorage.getItem(OPEN_KEY); return v ? v === '1' : done < 3 && roomy(); } catch { return done < 3 && roomy(); } };
+
+// Home hook: a compact quests card (one line per quest) with a slim Lightning Round row.
 export function questsCard(p) {
   const qs = questStatus(p);
   const done = qs.filter((q) => q.done).length;
-  const bag = ITEM_KEYS.filter((k) => itemCount(p, k) > 0);
-  const lit = lanternLeft(p);
-  const tile = boltTile(p);
-  return `<div class="sx-row${tile ? '' : ' solo'}">
-    <section class="qx${done === 3 ? ' all-done' : ''}" aria-labelledby="qx-h">
-      <header class="qx-head">
-        <span class="qx-badge" aria-hidden="true">${trainerFace('teacher-k', 'qx-face')}</span>
-        <span class="qx-title"><h2 id="qx-h">Today's quests</h2><small>${done === 3 ? 'All done! New quests tomorrow.' : 'From Teacher K. Answer cards to finish them.'}</small></span>
-        ${questStars(done)}
-      </header>
-      <ul class="qx-list">${qs.map(questRow).join('')}</ul>
-      ${bag.length || lit ? `<div class="qx-bag"><span class="qx-bag-label">Your items</span><span class="qx-items">${bag.map((k) => `<button class="qx-item${k === 'lantern' && lit ? ' lit' : ''}" data-item="${k}" aria-label="${esc(rewardName(['i', k, 1]))}, ${itemCount(p, k)}">${itemIcon(k, 'qx-item-img')}<b>${itemCount(p, k)}</b></button>`).join('')}${lit && !bag.includes('lantern') ? `<button class="qx-item lit" data-item="lantern" aria-label="Lucky Lantern, lit">${itemIcon('lantern', 'qx-item-img')}<b>lit</b></button>` : ''}</span></div>` : ''}
-    </section>
-    ${tile}
-  </div>`;
+  const next = qs.find((q) => !q.done);
+  const open = isOpen(done);
+  return `<section class="qx${done === 3 ? ' all-done' : ''}${open ? ' open' : ''}" aria-label="Today's quests">
+    <button class="qx-head" data-qtoggle aria-expanded="${open}" aria-controls="qx-list">
+      <span class="qx-badge" aria-hidden="true">${trainerFace('teacher-k', 'qx-face')}</span>
+      <span class="qx-title"><strong>Today's quests</strong><small>${done === 3 ? 'All done! New quests tomorrow.' : open ? 'Answer cards to finish them.' : esc(next.text) + ` · ${next.n}/${next.goal}`}</small></span>
+      ${questStars(done)}
+      <span class="qx-chev" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 9.5 L12 15.5 L18 9.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+    </button>
+    <ul class="qx-list" id="qx-list"${open ? '' : ' hidden'}>${qs.map(questRow).join('')}</ul>
+    ${boltRow(p)}
+  </section>`;
 }
 
-// The Lightning Round tile. Hidden in Calm mode. Optional: nothing needs it.
-function boltTile(p) {
+// The Lightning Round row. Hidden in Calm mode. Optional: nothing needs it.
+function boltRow(p) {
   if (calmMode(p)) return '';
   const open = boltUnlocked(p), best = boltBest(p), toGo = boltToGo(p), factsToGo = boltFactsToGo(p);
-  const lockNote = toGo ? `Answer ${toGo} more card${toGo === 1 ? '' : 's'} to open it.` : `Opens when ${factsToGo} more fact${factsToGo === 1 ? ' is' : 's are'} at Bronze.`;
-  const lockPct = toGo ? (BOLT_UNLOCK - toGo) / BOLT_UNLOCK : (BOLT_MIN_FACTS - factsToGo) / BOLT_MIN_FACTS;
-  return `<button class="bolt-tile${open ? '' : ' locked'}" data-bolt ${open ? '' : 'aria-disabled="true"'}>
-      <span class="bt-art" aria-hidden="true"><span class="bt-ring"></span>${itemImg('time-freeze', 'bt-img')}</span>
-      <span class="bt-text"><strong>${BOLT_SVG}Lightning Round</strong>
-        <small>${open ? '60 seconds with facts you know. Beat your own best!' : lockNote}</small>
-        ${open ? `<span class="bt-best">${best ? `Your best: <b>${best}</b>` : 'No best yet. Set one!'}</span>` : `<span class="bar mini bt-bar"><span style="width:${Math.round(lockPct * 100)}%"></span></span>`}
-      </span>
-      <span class="kdx-go" aria-hidden="true">${open ? '›' : ''}</span>
-    </button>`;
+  const note = open ? (best ? `Your best: <b>${best}</b>` : '60 seconds. Set a best!') : toGo ? `Opens after ${toGo} more card${toGo === 1 ? '' : 's'}` : `Opens when ${factsToGo} more fact${factsToGo === 1 ? ' is' : 's are'} at Bronze`;
+  return `<button class="qx-bolt${open ? '' : ' locked'}" data-bolt ${open ? '' : 'aria-disabled="true"'}>
+    <span class="qb-ic" aria-hidden="true">${itemImg('time-freeze', 'qb-img')}</span>
+    <span class="qb-text"><strong>${BOLT_SVG}Lightning Round</strong><small>${note}</small></span>
+    <span class="qb-go" aria-hidden="true">${open ? '›' : ''}</span>
+  </button>`;
 }
 
 // Home hook: taps on the card, and rewards finished elsewhere (like a battle)
 // are given here with a little pop.
 export function bindQuests(root, go) {
   const p = active();
-  if (!p) return;
+  if (!p || !root.querySelector('.qx')) return;
+  on(root, 'click', '[data-qtoggle]', () => {
+    sfx.tap();
+    const card = root.querySelector('.qx'), open = !card.classList.contains('open');
+    try { localStorage.setItem(OPEN_KEY, open ? '1' : '0'); } catch {}
+    refresh(root);
+  });
   on(root, 'click', '[data-qgo]', (e, el) => {
     e.stopPropagation(); unlock(); sfx.tap();
     if (limitReached(p)) return;
@@ -93,13 +100,11 @@ export function bindQuests(root, go) {
   });
   on(root, 'click', '[data-bolt]', () => {
     unlock(); sfx.tap();
-    const tile = root.querySelector('[data-bolt]');
-    if (!tile) return;
-    if (!boltUnlocked(p)) { tile.classList.remove('nudge'); void tile.offsetWidth; tile.classList.add('nudge'); return; }
+    const row = root.querySelector('[data-bolt]');
+    if (!boltUnlocked(p)) { row.classList.remove('nudge'); void row.offsetWidth; row.classList.add('nudge'); return; }
     if (limitReached(p)) return;
     go('lightning');
   });
-  on(root, 'click', '[data-item]', (e, el) => { unlock(); sfx.tap(); openItem(p, el.dataset.item, { go, onUse: () => refresh(root) }); });
   const won = claimRewards(p);
   if (won.length) {
     save(); syncNow();
@@ -109,14 +114,14 @@ export function bindQuests(root, go) {
   }
 }
 
-// Redraw the card in place (after a reward or using an item).
+// Redraw the card in place (after a reward or a fold).
 function refresh(root) {
-  const row = root.querySelector('.sx-row');
+  const card = root.querySelector('.qx');
   const p = active();
-  if (!row || !p) return;
+  if (!card || !p) return;
   const t = document.createElement('div');
   t.innerHTML = questsCard(p);
-  row.replaceWith(t.firstElementChild);
+  card.replaceWith(t.firstElementChild);
 }
 
 // A floating reward card (not a dialog): what you got and why. It lets taps
@@ -156,8 +161,10 @@ export function afterRound(p, root) {
       <span class="sq-next">${next ? `Next: ${esc(next.text)} <b>${next.n}/${next.goal}</b>` : 'All done for today!'}</span></div>
     ${lit ? `<p class="sq-lantern">${itemIcon('lantern', 'sq-ic')}Lucky Lantern: ${lit} lucky Kaimon left</p>` : ''}
   </section>`;
-  const where = root.querySelector('.sum-actions, .bolt-actions');
-  if (where) where.insertAdjacentHTML('beforebegin', html);
+  // The practice results screen: a card at the end of its last column.
+  const cols = root.querySelectorAll('.res-col');
+  if (cols.length) cols[cols.length - 1].insertAdjacentHTML('beforeend', html.replace('class="sum-quests"', 'class="res-card sum-quests"'));
+  else root.querySelector('.sum-actions, .bolt-actions')?.insertAdjacentHTML('beforebegin', html);
   if (won.length) sfx.levelUp();
   return won;
 }

@@ -92,7 +92,7 @@ export function partnerOf(profile) {
   return { species, stage, ...pl, evolveAt };
 }
 
-// Mythic cameo chance per card. Rare at first, more often with badges.
+// Mythic cameo chance per card. Rare at first, more often with table medals.
 // Returns false, 'kairo' or 'kairos'. Six months after a trainer starts, some
 // cameos are Kairos, Kairo's future form, flying past from the future.
 const DAY = 86400000;
@@ -104,10 +104,10 @@ export function trainerSince(profile) {
   return Number.isFinite(t) ? t : Date.now();
 }
 export function mythicCameo(profile) {
-  const badges = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].filter((t) => tableTier(profile, t)).length;
+  const medals = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].filter((t) => tableTier(profile, t)).length;
   const sinceLast = Date.now() - (profile.mythic.lastSeen || 0);
   if (sinceLast < 10 * 60 * 1000) return false; // at most once per 10 minutes
-  const chance = profile.mythic.sightings === 0 ? 1 / 25 : 1 / (60 - badges * 3);
+  const chance = profile.mythic.sightings === 0 ? 1 / 25 : 1 / (60 - medals * 3);
   if (Math.random() >= chance) return false;
   const future = Date.now() - trainerSince(profile) >= 182 * DAY && !profile.dex[FUTURE_ID]?.caught;
   return future && profile.mythic.sightings > 0 && Math.random() < 0.3 ? 'kairos' : 'kairo';
@@ -119,8 +119,9 @@ export function kairoEvolves(profile) {
   return !!(k?.caught && !profile.dex[FUTURE_ID]?.caught && Date.now() - (k.first || Date.now()) >= 365 * DAY);
 }
 
+// Rank on the License and Home. Badges are Gym Leader wins; medals are table levels.
 export function trainerTitle(profile) {
-  const badges = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].filter((t) => tableTier(profile, t)).length;
+  const badges = badgeCount(profile);
   if (countAtLeast(profile, 'star') === 100) return 'Hundred Hero';
   if (badges === 10) return 'Table Master';
   if (badges >= 5) return 'Ace Trainer';
@@ -128,6 +129,7 @@ export function trainerTitle(profile) {
   return 'Rookie';
 }
 
+// Gym badges: one for each Gym Leader beaten.
 export function badgeCount(profile) {
-  return [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].filter((t) => tableTier(profile, t)).length;
+  return [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].filter((t) => profile.battles?.champs?.[t]).length;
 }

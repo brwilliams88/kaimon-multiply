@@ -1,3 +1,5 @@
+import { sfx } from '../core/sound.js';
+
 export const $ = (sel, root = document) => root.querySelector(sel);
 export const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
 
@@ -32,12 +34,14 @@ export function sheet(html, { onClose, cls = '', back = null, backLabel = 'Menu'
   wrap.innerHTML = `<div class="sheet ${cls}" role="dialog" aria-modal="true">${xbar}${top}${html}</div>`;
   document.body.appendChild(wrap);
   requestAnimationFrame(() => wrap.classList.add('open'));
+  sfx.open();
   // While a sheet is open the screen behind it stays still (see the touch guard in app.js).
   openSheets++; document.documentElement.classList.add('sheet-open');
   let done = false;
   const close = (toParent = false) => {
     if (done) return;
     done = true;
+    sfx.close();
     if (--openSheets <= 0) { openSheets = 0; document.documentElement.classList.remove('sheet-open'); }
     wrap.classList.remove('open');
     setTimeout(() => wrap.remove(), 220);
@@ -98,5 +102,18 @@ export const flameTier = (n) => FLAME_STEPS.filter((x) => n >= x).length;
 export function setFlame(box, n) {
   const t = flameTier(n), old = +box.dataset.tier || 0;
   box.dataset.tier = t;
+  if (t > old) sfx.streak(t);
   if (t > old && t >= 3) { box.classList.remove('flare'); void box.offsetWidth; box.classList.add('flare'); setTimeout(() => box.classList.remove('flare'), 700); }
+}
+
+// Shrink a one-line label until it fits its box (down to `min` px), so names
+// are shown in full instead of being cut off with "...".
+export function fitText(el, min = 11) {
+  if (!el) return;
+  el.style.fontSize = '';
+  let size = parseFloat(getComputedStyle(el).fontSize) || 16;
+  while (el.scrollWidth > el.clientWidth + 0.5 && size > min) {
+    size -= 0.5;
+    el.style.fontSize = size + 'px';
+  }
 }

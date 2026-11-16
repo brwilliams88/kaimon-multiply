@@ -16,17 +16,21 @@ const { partnerOf, pickEncounter } = await import('../js/core/game.js');
 const { applySnapshot } = await import('../js/core/sync.js');
 const { xpForLevel } = await import('../js/core/xp.js');
 const { SPECIES } = await import('../js/data/creatures.js');
+const { itemInfo } = await import('../js/core/extras.js');
 
 const fresh = (id = 'pTest') => { const p = newProfile('Kai', 0, id); p.starter = 'kaimo'; return p; };
 const ev = (k, d, t = Date.now()) => ({ id: Math.random().toString(36), t, k, d });
 
-test('ITEM_INFO has a name, art and kid line for every item, no em dashes', () => {
+test('every item gets its name, art and kid line from extras.js, no em dashes', () => {
   for (const k of items.ITEM_KEYS) {
-    const i = items.ITEM_INFO[k];
-    assert.ok(i.name && i.art && i.line, k);
-    assert.ok(!/\u2014/.test(i.name + i.line), k);
+    const i = itemInfo(k);
+    assert.ok(i.name && i.art && i.does && i.earn, k);
+    assert.ok(!/\u2014/.test(i.name + i.does + i.earn), k);
+    assert.equal(items.itemName(k), i.name);
   }
-  assert.deepEqual(items.ITEM_KEYS, ['snack', 'charm', 'lantern', 'crystal', 'megacrystal']);
+  assert.deepEqual(items.ITEM_KEYS, ['snack', 'charm', 'lantern', 'evolve', 'megaCrystal']);
+  assert.equal(items.itemName('megaCrystal'), 'Mega Crystal');
+  assert.equal(items.itemName('evolve'), 'Evolve Crystal');
 });
 
 test('itemCount reads p.items safely', () => {
@@ -56,11 +60,41 @@ test('grant emits once and returns null after', () => {
   assert.ok(!items.claimed(p, 'm:other'));
 });
 
-test('grantMegaCrystal gives a Mega Crystal once per key', () => {
+test('grantMegaCrystal gives a Mega Crystal (p.items.megaCrystal) once per key', () => {
   const p = fresh();
   items.grantMegaCrystal(p, 'tower:10');
   items.grantMegaCrystal(p, 'tower:10');
-  assert.equal(p.items.megacrystal, 1);
+  items.grantMegaCrystal(p, 'tower:20', 2);
+  assert.equal(p.items.megaCrystal, 3);
+});
+
+test('old megacrystal key folds into megaCrystal everywhere', () => {
+  assert.equal(items.itemKey('megacrystal'), 'megaCrystal');
+  assert.equal(items.itemKey('charm'), 'charm');
+  const p = fresh(); p.items.megacrystal = 2; p.items.megaCrystal = 1;
+  items.fixItemKeys(p);
+  assert.equal(p.items.megaCrystal, 3); assert.ok(!('megacrystal' in p.items));
+  apply(p, ev('got', { r: 'old:1', g: [['i', 'megacrystal', 1]] }));
+  apply(p, ev('use', { i: 'megacrystal' }));
+  assert.equal(p.items.megaCrystal, 3); assert.ok(!('megacrystal' in p.items));
+  const b = fresh('pB');
+  applySnapshot(b, { facts: {}, dex: {}, stats: {}, play: {}, items: { megacrystal: 4 } });
+  assert.equal(b.items.megaCrystal, 4); assert.ok(!('megacrystal' in b.items));
+});
+
+test('a save with the old megacrystal key loads as megaCrystal', async () => {
+  const { importBackup } = await import('../js/core/store.js');
+  const old = fresh('pOld'); old.items = { snack: 1, megacrystal: 2 };
+  const code = Buffer.from(JSON.stringify(old)).toString('base64');
+  const p = importBackup(code);
+  assert.equal(p.items.megaCrystal, 2); assert.ok(!('megacrystal' in p.items));
+});
+
+test('got event can give Buddy XP', () => {
+  const p = fresh(); p.xp = 10;
+  apply(p, ev('got', { r: 'q:x:0', g: [['x', 'xp', 50]] }));
+  assert.equal(p.xp, 60);
+  assert.equal(p.items.xp, undefined);
 });
 
 test('use event spends one item and never goes below zero', () => {
@@ -150,16 +184,16 @@ test('pickEncounter still only picks from the region while lit', () => {
 });
 
 test('Evolve Crystal: works only within 3 levels of evolving', () => {
-  const p = fresh(); p.items.crystal = 1;
+  const p = fresh(); p.items.evolve = 1;
   p.xp = xpForLevel(5); assert.equal(items.crystalTarget(p), 0); assert.ok(!items.canCrystal(p));
   p.xp = xpForLevel(7); assert.equal(items.crystalTarget(p), 2); assert.ok(items.canCrystal(p));
   assert.equal(partnerOf(p).stage, 1);
   assert.ok(items.useCrystal(p));
   assert.equal(partnerOf(p).stage, 2);
   assert.equal(partnerOf(p).evolveAt, 20);
-  assert.equal(p.items.crystal, 0);
+  assert.equal(p.items.evolve, 0);
   assert.equal(items.useCrystal(p), null);
-  p.items.crystal = 1; p.xp = xpForLevel(17);
+  p.items.evolve = 1; p.xp = xpForLevel(17);
   assert.equal(items.crystalTarget(p), 3);
   items.useCrystal(p);
   assert.equal(partnerOf(p).stage, 3);
@@ -223,6 +257,23 @@ test('questsFor: same trainer and day gives the same 3 quests; days differ', () 
   for (const q of a) { assert.ok(q.text && !/\u2014/.test(q.text)); assert.ok(q.reward.length); assert.ok(q.key.startsWith('q:2026-11-15:')); }
 });
 
+test('quest rewards: a Super Ball about 1 day in 3, Buddy XP most days', () => {
+  const p = fresh();
+  let superDays = 0, xp = 0, charm = 0, lantern = 0, days = 0;
+  for (let m = 1; m <= 12; m++) for (let d = 1; d <= 28; d++) {
+    const qs = quests.questsFor(p, `2027-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`);
+    const g = qs.flatMap((q) => q.reward);
+    days++;
+    if (g.some(([k, id]) => k === 'b' && id === 'super')) superDays++;
+    xp += g.filter(([k]) => k === 'x').length;
+    charm += g.filter(([, id]) => id === 'charm').length;
+    lantern += g.filter(([, id]) => id === 'lantern').length;
+  }
+  assert.ok(superDays / days > 0.25 && superDays / days < 0.42, `super days ${superDays / days}`);
+  assert.ok(xp / days > 1.2, `xp rewards per day ${xp / days}`);
+  assert.ok(charm / days < 0.22 && lantern / days < 0.22);
+});
+
 test('questsFor: table quests use the tables being practiced', () => {
   const p = fresh(); p.settings.tables = [7];
   for (let d = 1; d <= 28; d++) for (const q of quests.questsFor(p, `2026-10-${String(d).padStart(2, '0')}`)) if (q.kind === 'table') assert.equal(q.t, 7);
@@ -270,7 +321,8 @@ test('claimRewards: gives finished quests once, and quests come from answering',
   for (let i = 0; i < 40; i++) emit(p, 'a', { f: '2x3', ok: 1, ms: 2000 });
   const won = quests.claimRewards(p, day);
   assert.ok(won.find((w) => w.key === q1.key));
-  assert.equal(p.balls.super >= 1, true);
+  const [kind, id, n] = q1.reward[0];
+  if (kind === 'b') assert.equal(p.balls[id], n); else assert.ok(p.xp >= n);
   assert.deepEqual(quests.claimRewards(p, day).filter((w) => w.key === q1.key), []);
   const st = quests.questStatus(p, day);
   assert.ok(st[0].done && st[0].claimed);
@@ -280,9 +332,9 @@ test('catchUp gives the best few different rewards and skips the rest', () => {
   const m = (k, i) => ({ key: k, gives: [['i', i, 1]] });
   const few = [m('a', 'lantern'), m('b', 'charm')];
   assert.deepEqual(quests.catchUp(few), { give: few, skip: [] });
-  const many = [m('a', 'lantern'), m('b', 'lantern'), m('c', 'charm'), m('d', 'crystal'), m('e', 'snack'), m('f', 'charm')];
+  const many = [m('a', 'lantern'), m('b', 'lantern'), m('c', 'charm'), m('d', 'evolve'), m('e', 'snack'), m('f', 'charm')];
   const r = quests.catchUp(many);
-  assert.deepEqual(r.give.map((x) => x.gives[0][1]), ['crystal', 'charm', 'lantern']);
+  assert.deepEqual(r.give.map((x) => x.gives[0][1]), ['evolve', 'charm', 'lantern']);
   assert.equal(r.skip.length, 3);
   const same = [m('a', 'snack'), m('b', 'snack'), m('c', 'snack'), m('d', 'snack')];
   assert.equal(quests.catchUp(same).give.length, 3);
@@ -307,7 +359,7 @@ test('milestones: right answers, streaks, gym wins and medals', () => {
   assert.deepEqual(ok, ['m:gym:3', 'm:right:100', 'm:right:200', 'm:streak:10']);
   const won = quests.claimRewards(p, '2026-01-01');
   assert.equal(won.length, 3); // catch-up: the best three, all different
-  assert.equal(p.items.crystal, 1); assert.equal(p.items.charm, 1); assert.equal(p.items.lantern, 1); assert.equal(p.items.snack, 0);
+  assert.equal(p.items.evolve, 1); assert.equal(p.items.charm, 1); assert.equal(p.items.lantern, 1); assert.equal(p.items.snack, 0);
   assert.equal(quests.claimRewards(p, '2026-01-01').length, 0);
   for (const m of quests.milestones(p)) assert.ok(!/\u2014/.test(m.text));
 });

@@ -74,13 +74,13 @@ export function questsFor(p, day = today()) {
   const q2 = make(1, pick(rng, ['streak', 'catch', 'table']));
   const third = ['streak', 'catch', 'table', ...(veteran ? ['battle'] : [])].filter((k) => k !== q2.kind);
   const q3 = make(2, pick(rng, third));
-  // Rewards: a Super Ball, then a snack or a ball, then sometimes an item.
-  // Tuned with tools/pacing-sim.mjs: a daily player gets about one charm and one
-  // lantern a week from quests, so items stay special.
-  const r2 = rng(), r3 = rng();
-  q1.reward = [['b', 'super', 1]];
-  q2.reward = [r2 < 0.3 ? ['i', 'snack', 1] : ['b', 'super', 1]];
-  q3.reward = [r3 < 0.15 ? ['i', 'charm', 1] : r3 < 0.3 ? ['i', 'lantern', 1] : r3 < 0.7 ? ['b', 'mega', 1] : ['b', 'super', 1]];
+  // Rewards, tuned with tools/pacing-sim.mjs: Buddy XP most days, a Super Ball
+  // about 1 day in 3, and about one charm and one lantern a week, so balls and
+  // items stay special.
+  const r1 = rng(), r2 = rng(), r3 = rng();
+  q1.reward = [r1 < 1 / 3 ? ['b', 'super', 1] : ['x', 'xp', 50]];
+  q2.reward = [r2 < 0.3 ? ['i', 'snack', 1] : ['x', 'xp', 60]];
+  q3.reward = [r3 < 0.15 ? ['i', 'charm', 1] : r3 < 0.3 ? ['i', 'lantern', 1] : r3 < 0.5 ? ['b', 'mega', 1] : ['x', 'xp', 100]];
   return [q1, q2, q3];
 }
 
@@ -99,7 +99,7 @@ export function questStatus(p, day = today()) {
 
 // One-time rewards for long-term answering. Each: key, a test, what it gives and a line.
 const RIGHT_STEPS = [
-  [100, 'lantern'], [200, 'crystal'], [400, 'charm'], [700, 'crystal'], [1000, 'lantern'],
+  [100, 'lantern'], [200, 'evolve'], [400, 'charm'], [700, 'evolve'], [1000, 'lantern'],
   [1500, 'charm'], [2000, 'lantern'], [3000, 'charm'], [4000, 'lantern'], [5000, 'charm'],
 ];
 const STREAK_STEPS = [[10, 'charm'], [20, 'lantern'], [30, 'charm'], [50, 'lantern']];
@@ -123,7 +123,7 @@ export function milestones(p) {
 // get the best few (MAX_CATCH_UP, all different) and the rest are marked done,
 // so items stay special.
 export const MAX_CATCH_UP = 3;
-const VALUE = { crystal: 4, charm: 3, lantern: 2, snack: 1 };
+const VALUE = { evolve: 4, charm: 3, lantern: 2, snack: 1 };
 export function catchUp(ready, max = MAX_CATCH_UP) {
   if (ready.length <= max) return { give: ready, skip: [] };
   const sorted = [...ready].sort((a, b) => (VALUE[b.gives[0][1]] || 0) - (VALUE[a.gives[0][1]] || 0));

@@ -162,7 +162,7 @@ function simulate(kid, s) {
     playDays++;
     // Kids use items when they have them.
     if (!BASE && I.canLight(p)) { I.lightLantern(p); used.lantern = (used.lantern || 0) + 1; }
-    if (!BASE && I.canCrystal(p)) { I.useCrystal(p); used.crystal = (used.crystal || 0) + 1; mark('Evolve Crystal used'); }
+    if (!BASE && I.canCrystal(p)) { I.useCrystal(p); used.evolve = (used.evolve || 0) + 1; mark('Evolve Crystal used'); }
     let budget = 0.8 * kid.minutes * 60000 * (0.7 + rand() * 0.6); // about 80% of app time is answering
     // One battle a day when something is ready (about a minute or two of answers).
     const ready = TABLES.find((t) => G.badgeCount && F.tableTier(p, t) && !p.battles.champs[t]);
@@ -216,15 +216,15 @@ for (const [key, kid] of Object.entries(PROFILES)) {
   console.log(`== ${kid.label} (${kid.minutes} min, acc ${kid.acc}, ${kid.ms / 1000}s)`);
   for (const k of ORDER) console.log(`  ${k.padEnd(34)}${base ? fmt(med(base.map((r) => r.log[k]))) + '  |' : ''} ${fmt(med(runs.map((r) => r.log[k])))}`);
   const { avg, months } = stats(runs);
-  const items = ['super', 'mega', 'legend', 'snack', 'charm', 'lantern', 'crystal'];
+  const items = ['xp', 'super', 'mega', 'legend', 'snack', 'charm', 'lantern', 'evolve'];
   const all = avg((r) => r.cards + r.battleCards + r.boltCards);
   console.log(`  play days ${avg((r) => r.playDays).toFixed(0)}; cards ${avg((r) => r.cards).toFixed(0)} practice, ${avg((r) => r.battleCards).toFixed(0)} battle, ${avg((r) => r.boltCards).toFixed(0)} Lightning (${(100 * avg((r) => r.boltCards) / all).toFixed(0)}%)`);
   console.log(`  quests done per play day: ${(avg((r) => r.questsDone) / avg((r) => r.playDays)).toFixed(2)} of 3`);
   console.log(`  new rewards per month: ${items.map((i) => `${i} ${(avg((r) => r.earned[i] || 0) / months).toFixed(1)}`).join(', ')}`);
-  console.log(`  items used per month: ${['charm', 'lantern', 'crystal'].map((i) => `${i} ${(avg((r) => r.used[i] || 0) / months).toFixed(1)}`).join(', ')}`);
+  console.log(`  items used per month: ${['charm', 'lantern', 'evolve'].map((i) => `${i} ${(avg((r) => r.used[i] || 0) / months).toFixed(1)}`).join(', ')}`);
   for (const m of [30, 90, 180, 365]) {
     const s = runs[0].stock[m];
-    if (s) console.log(`  day ${String(m).padStart(3)} (seed 1): super ${s.super}, mega ${s.mega}, legend ${s.legend}, snack ${s.snack}, charm ${s.charm || 0}, lantern ${s.lantern || 0}, crystal ${s.crystal || 0}; Buddy Lv ${s.lv}; Lightning best ${s.best}`);
+    if (s) console.log(`  day ${String(m).padStart(3)} (seed 1): super ${s.super}, mega ${s.mega}, legend ${s.legend}, snack ${s.snack}, charm ${s.charm || 0}, lantern ${s.lantern || 0}, evolve ${s.evolve || 0}; Buddy Lv ${s.lv}; Lightning best ${s.best}`);
   }
   console.log('');
 }

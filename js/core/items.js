@@ -5,23 +5,34 @@
 //
 // Every change is an event (see actions.js), so family devices merge cleanly:
 //   'use'  { i, ... }   spends one item (and does what it does)
-//   'got'  { r, g }     claims reward r once and gives g: [['b', ball, n] | ['i', item, n]]
+//   'got'  { r, g }     claims reward r once and gives g: [['b', ball, n] | ['i', item, n] | ['x', 'xp', n]]
 //                       Claims are keyed, so two devices can never claim one twice.
+//
+// Names, art and kid lines come from ITEM_INFO in extras.js (one source of truth).
+// Saved item keys: snack, charm, lantern, evolve (Evolve Crystal) and
+// megaCrystal (the Tower's Mega Crystal; extras.js maps it to its 'mega' row).
 import { emit } from './actions.js';
 import { partnerOf } from './game.js';
 import { dayRec } from './playtime.js';
 import { today } from './store.js';
+import { itemInfo } from './extras.js';
 
-// Item art lives in assets/items (see ITEMS in assets.js). The Mega Crystal reuses
-// the crystal art with a gold tint (css: .item-mega).
-export const ITEM_INFO = {
-  snack:       { name: 'Power Snack',         art: 'power-snack',       line: 'Heals your Kaimon in a battle.' },
-  charm:       { name: 'Second Chance Charm', art: 'sparkle-charm',     line: 'Miss a card while you are on a streak? Try it once more and keep your streak.' },
-  lantern:     { name: 'Lucky Lantern',       art: 'hint-lamp',         line: 'Light it, then practice. Rare and shiny Kaimon show up more for 15 cards.' },
-  crystal:     { name: 'Evolve Crystal',      art: 'evolution-crystal', line: 'Evolves your Buddy right now, when it is 3 levels or less from evolving.' },
-  megacrystal: { name: 'Mega Crystal',        art: 'evolution-crystal', tint: 'mega', line: 'A glowing crystal from the Hundred Tower. Keep it safe.' },
-};
-export const ITEM_KEYS = Object.keys(ITEM_INFO);
+export const ITEM_KEYS = ['snack', 'charm', 'lantern', 'evolve', 'megaCrystal'];
+export const MEGA_KEY = 'megaCrystal';
+// Older spellings of saved item keys. The Mega Crystal is always megaCrystal.
+const OLD_KEYS = { megacrystal: MEGA_KEY };
+export const itemKey = (k) => OLD_KEYS[k] || k;
+// Fold old item keys into the current ones (used when a save loads and when a snapshot merges).
+export function fixItemKeys(p) {
+  const items = p.items || {};
+  for (const [old, key] of Object.entries(OLD_KEYS)) {
+    if (!(old in items)) continue;
+    items[key] = (items[key] || 0) + (+items[old] || 0);
+    delete items[old];
+  }
+  return p;
+}
+export const itemName = (key) => itemInfo(key).name;
 
 export const SNACK_HEAL = 0.5;      // a Power Snack heals half of a Kaimon's HP
 export const CHARM_MIN_STREAK = 3;  // a Second Chance Charm is offered on a streak of 3 or more
@@ -39,9 +50,10 @@ export const itemCount = (p, i) => (p.items && p.items[i]) || 0;
 export function applySystems(p, ev) {
   const d = ev.d || {};
   if (ev.k === 'use') {
-    p.items[d.i] = Math.max(0, (p.items[d.i] || 0) - 1);
+    const k = itemKey(d.i);
+    p.items[k] = Math.max(0, (p.items[k] || 0) - 1);
     if (d.i === 'lantern') p.lantern = Math.min(LANTERN_CARDS * 2, (p.lantern || 0) + LANTERN_CARDS);
-    if (d.i === 'crystal') p.evo = Math.min(3, Math.max(p.evo || 0, d.st | 0));
+    if (d.i === 'evolve') p.evo = Math.min(3, Math.max(p.evo || 0, d.st | 0));
     return true;
   }
   if (ev.k === 'got') {
@@ -49,8 +61,10 @@ export function applySystems(p, ev) {
     if (got[d.r]) return true; // already claimed, maybe on another device
     got[d.r] = ev.t;
     for (const [kind, id, n] of d.g || []) {
+      if (kind === 'x') { p.xp = (p.xp || 0) + n; continue; } // XP for the Buddy
       const bag = kind === 'b' ? p.balls : p.items;
-      bag[id] = Math.max(0, (bag[id] || 0) + n);
+      const k = kind === 'b' ? id : itemKey(id);
+      bag[k] = Math.max(0, (bag[k] || 0) + n);
     }
     return true;
   }
@@ -80,6 +94,7 @@ export const systemsSnap = (p) => ({ got: p.got || {}, lantern: p.lantern || 0, 
 
 // Merge another device's snapshot (see applySnapshot in sync.js).
 export function mergeSystems(p, d) {
+  fixItemKeys(p); // a snapshot from an older device may carry old item keys
   const got = p.got || (p.got = {});
   for (const [k, t] of Object.entries(d.got || {})) got[k] = got[k] ? Math.min(got[k], t) : t;
   p.lantern = Math.max(p.lantern || 0, d.lantern || 0);
@@ -110,7 +125,7 @@ export function grant(p, key, gives) {
 }
 
 // The Tower and Mega agent's way to hand out Mega Crystals.
-export const grantMegaCrystal = (p, key, n = 1) => grant(p, key, [['i', 'megacrystal', n]]);
+export const grantMegaCrystal = (p, key, n = 1) => grant(p, key, [['i', MEGA_KEY, n]]);
 
 // ---- Power Snack (battles) ----------------------------------------------------------
 
@@ -153,11 +168,11 @@ export function crystalTarget(p) {
   if (!pl.evolveAt || pl.stage >= 3) return 0;
   return pl.evolveAt - pl.level <= CRYSTAL_RANGE ? pl.stage + 1 : 0;
 }
-export const canCrystal = (p) => itemCount(p, 'crystal') > 0 && crystalTarget(p) > 0;
+export const canCrystal = (p) => itemCount(p, 'evolve') > 0 && crystalTarget(p) > 0;
 export function useCrystal(p) {
   const st = crystalTarget(p);
-  if (!st || !itemCount(p, 'crystal')) return null;
-  return emit(p, 'use', { i: 'crystal', st });
+  if (!st || !itemCount(p, 'evolve')) return null;
+  return emit(p, 'use', { i: 'evolve', st });
 }
 // Used by partnerOf in game.js: the stage a crystal pushed the Buddy to.
 export const crystalStage = (p) => Math.min(3, p.evo || 0);
