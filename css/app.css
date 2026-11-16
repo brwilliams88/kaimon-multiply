@@ -2086,7 +2086,7 @@ body[data-screen="play"] #toast.show, body[data-screen="battle"] #toast.show { t
 .buddy { display: grid; grid-template-columns: 76px minmax(0, 1fr) auto; grid-template-areas: 'art info today' 'balls balls balls'; gap: 10px 12px; align-items: center; background: var(--paper); border: 3px solid var(--ink); border-radius: 24px; padding: 12px 14px; box-shadow: 0 5px 0 var(--ink); }
 .buddy-art { grid-area: art; width: 76px; height: 76px; background: #D5F4F0; border: 3px solid var(--ink); border-radius: 20px; padding: 4px; display: block; }
 .buddy-info { grid-area: info; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
-.buddy-name { font-size: 21px; font-weight: 700; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 2px; line-height: 1.1; }
+.buddy-name { font-size: 21px; font-weight: 700; display: flex; align-items: center; gap: 2px; line-height: 1.1; }
 .buddy-note { font-size: 14px; color: var(--ink-2); line-height: 1.25; }
 .buddy .xp-bar { height: 12px; }
 .buddy button.balls-row { grid-area: balls; }
@@ -3521,7 +3521,7 @@ button.buddy-art:active { transform: translateY(2px); }
   .hd-art { height: 260px; }
   .hd-copy h3 { font-size: 27px; }
 }
-@media (max-height: 760px) and (orientation: landscape) {
+@media (max-height: 860px) and (orientation: landscape) {
   .hd-art { height: 200px; }
   .sheet.hd-sheet { padding-top: 14px; }
 }
