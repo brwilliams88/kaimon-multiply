@@ -12,7 +12,9 @@ import { bonusTime } from '../core/actions.js';
 import { active, save, exportBackup, importBackup, deleteProfile, allProfiles, hasPin, setPin, checkPin, clearPin } from '../core/store.js';
 import { status as syncStatus, requestCode, verifyCode, signOut, syncNow, joinFamily, leaveFamily, onSyncChange, ensureUpdates, setUpdates } from '../core/sync.js';
 import { goodWorkStamp } from '../core/actions.js';
-import { levelOf, factId, LEVEL_LABEL, RULES, countAtLeast } from '../core/facts.js';
+import { levelOf, factId, LEVEL_LABEL, LEVELS, RULES, countAtLeast, trickFor } from '../core/facts.js';
+import { insights, tipText, headText, tableNotes, factInfo, isCheer } from '../core/insights.js';
+import { REGIONS, TYPES } from '../data/creatures.js';
 import { voiceSupported } from '../core/voice.js';
 import { CHANGELOG, VERSION } from '../data/changelog.js';
 import { esc, on, sheet, toast, $, busy, cleanCode, codeOk } from './dom.js';
@@ -116,6 +118,201 @@ function resizePhoto(file) {
   });
 }
 
+// ---------------------------------------------------------------- progress
+// The trainer's progress panel: Insights (what to practice next), lifetime
+// numbers and the times table grid. Tapping a fact shows its details.
+
+const typeVars = (t) => { const ty = TYPES[REGIONS[t - 1]?.type] || TYPES.water; return `--tc:${ty.color};--tl:${ty.light};--ti:${ty.ink}`; };
+const PIPS = { bronze: 1, silver: 2, gold: 3 };
+const levelMark = (lvl) => (lvl === 'star'
+  ? '<svg class="tg-star" viewBox="0 0 12 12" aria-hidden="true"><path d="M6 .8l1.55 3.3 3.6.45-2.65 2.5.7 3.55L6 8.85 2.8 10.6l.7-3.55L.85 4.55l3.6-.45z"/></svg>'
+  : PIPS[lvl] ? `<i class="tg-pips" aria-hidden="true">${'<b></b>'.repeat(PIPS[lvl])}</i>` : '');
+const LEVEL_NOTE = { new: 'Not tried yet', learning: 'Started', bronze: 'Right on 2 days', silver: 'Fast on 5 days', gold: 'Fast on 10 days', star: 'Fast on 20 days' };
+
+function playLabel(tip) {
+  if (!tip.t || isCheer(tip) || tip.k === 'keep') return tip.k === 'comeback' ? 'Play a round' : '';
+  return `Play the ${tip.t}s`;
+}
+
+function insightsHTML(p, ins) {
+  const head = headText(ins.head, ins.period);
+  const [acc, accPrev] = ins.trend.acc, [min, minPrev] = ins.trend.min;
+  const arrow = (d, unit, what) => (d ? `<em class="nx-d ${d > 0 ? 'up' : 'down'}"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="${d > 0 ? 'M6 2 L10.5 8.5 H1.5 Z' : 'M6 10 L10.5 3.5 H1.5 Z'}" fill="currentColor"/></svg>${Math.abs(d)}${unit}<span class="sr"> ${d > 0 ? 'more' : 'less'} ${what} than the 7 days before</span></em>` : '');
+  const trend = [];
+  if (acc != null) trend.push(`<span class="nx-chip"><b>${acc}%</b> right${accPrev != null ? arrow(acc - accPrev, '%', 'right') : ''}</span>`);
+  if (min || minPrev) trend.push(`<span class="nx-chip"><b>${min}</b> min${minPrev ? arrow(min - minPrev, '', 'minutes') : ''}</span>`);
+  if (ins.trend.up.length) trend.push(`<span class="nx-chip good">Stronger: ${ins.trend.up.slice(0, 3).map((t) => `<i class="nx-t" style="${typeVars(t)}">${t}s</i>`).join('')}</span>`);
+  return `
+    <section class="nx" aria-labelledby="nx-h-${esc(p.id)}">
+      <header class="nx-head">
+        <span class="nx-ic">${itemImg('hint-lamp')}</span>
+        <div class="nx-ht">
+          <p class="nx-kicker">Insights<span> · last 7 days</span></p>
+          <h3 id="nx-h-${esc(p.id)}">${esc(head?.title || 'Insights')}</h3>
+          ${head?.sub ? `<p class="nx-sub">${esc(head.sub)}</p>` : ''}
+        </div>
+      </header>
+      <ol class="nx-tips">
+        ${ins.tips.map((tip, i) => {
+          const w = tipText(tip, ins.period);
+          if (!w) return '';
+          const good = isCheer(tip);
+          const label = playLabel(tip);
+          const badge = tip.t
+            ? `<span class="nx-badge" style="${typeVars(tip.t)}">${tip.t}s</span>`
+            : `<span class="nx-badge ${good ? 'cheer' : 'plain'}">${itemImg(good ? 'xp-star' : 'streak-flame')}</span>`;
+          return `<li class="nx-tip ${good ? 'good' : 'focus'}" style="--i:${i}"${tip.f ? ` data-nx-fact="${esc(tip.f)}"` : ''}>
+            ${badge}
+            <div class="nx-body">
+              <p class="nx-title">${esc(w.title)}${good ? '<span class="nx-tag">Good news</span>' : ''}</p>
+              <p class="nx-why">${esc(w.why)}</p>
+              <p class="nx-act">${esc(w.act)}</p>
+              ${label ? `<button class="btn-chunky btn-sm nx-go" data-nx-play="${tip.t || ''}">${label}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5 L16 12 L9 19" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>` : ''}
+            </div>
+          </li>`;
+        }).join('')}
+      </ol>
+      ${trend.length ? `<div class="nx-trend" aria-label="Trends">${trend.join('')}</div>` : ''}
+    </section>`;
+}
+
+function gridHTML(p, notes, now) {
+  const rows = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+  const info = {};
+  for (const a of rows) for (const b of rows) info[factId(a, b)] = factInfo(p, factId(a, b), now);
+  const all = Object.values(info);
+  const bronze = all.filter((x) => levelRankOf(x.level) >= 2).length, lately = all.filter((x) => x.missedLately).length;
+  const cell = (a, b) => {
+    const x = info[factId(a, b)];
+    const label = `${a} times ${b} is ${a * b}. ${LEVEL_LABEL[x.level]}.${x.missedLately ? ' Missed in the last 7 days.' : ''}`;
+    return `<td><button class="tg-cell lv-${x.level}${x.missedLately ? ' miss' : ''}" data-fact="${a}x${b}" tabindex="${a === 1 && b === 1 ? 0 : -1}" aria-label="${label}" style="--d:${(a + b) * 14}ms"><span class="tg-n">${a * b}</span>${levelMark(x.level)}</button></td>`;
+  };
+  const tone = { focus: 'Worth practice', good: 'Going well', plain: '' };
+  return `
+    <section class="tg" aria-labelledby="tg-h-${esc(p.id)}">
+      <div class="tg-top">
+        <h3 id="tg-h-${esc(p.id)}">Times table</h3>
+        <p class="tg-sum"><span><b>${bronze}</b> of 100 at Bronze or better</span>${lately ? `<span class="tg-sum-miss"><i aria-hidden="true"></i>${lately} missed lately</span>` : ''}</p>
+      </div>
+      <div class="tg-layout">
+        <div class="tg-main">
+          <table class="tg-grid">
+            <caption class="sr">All 100 facts. Rows are the times tables, columns are what they are multiplied by. Tap a fact for details.</caption>
+            <thead><tr><th class="tg-corner" scope="col"><span aria-hidden="true">×</span><span class="sr">Table</span></th>${rows.map((b) => `<th class="tg-ch" scope="col" data-col="${b}">${b}</th>`).join('')}<th class="tg-nh" scope="col"><span class="sr">Note</span></th></tr></thead>
+            <tbody>${rows.map((a) => { const n = notes[a - 1]; return `<tr data-row="${a}"><th class="tg-rh" scope="row" style="${typeVars(a)}"><span>${a}</span></th>${rows.map((b) => cell(a, b)).join('')}<td class="tg-note ${n.tone}"><span>${n.tone !== 'plain' ? `<i class="sr">${tone[n.tone]}: </i>` : ''}${esc(n.note)}</span></td></tr>`; }).join('')}</tbody>
+          </table>
+          <ul class="tg-legend" aria-label="Levels">
+            ${LEVELS.map((l) => `<li><span class="tg-key tg-cell lv-${l}" aria-hidden="true">${levelMark(l)}</span>${LEVEL_LABEL[l]}</li>`).join('')}
+            <li><span class="tg-key tg-cell lv-learning miss" aria-hidden="true"></span>Missed lately</li>
+          </ul>
+        </div>
+        <div class="tg-side">
+          <div class="tg-detail" data-tg-detail aria-live="polite">${detailHTML(p, null, now)}</div>
+          ${notes.some((n) => n.tried) ? `<div class="tg-notes">
+            <p class="tg-notes-h">By table</p>
+            <ul>${notes.map((n) => `<li class="${n.tone}"><span class="tg-nt" style="${typeVars(n.t)}">${n.t}s</span><span class="tg-bar" aria-hidden="true">${n.counts.map((c, i) => (c ? `<i class="lv-${LEVELS[i]}" style="flex:${c}"></i>` : '')).reverse().join('')}</span><span class="tg-nn">${n.tone !== 'plain' ? `<i class="sr">${tone[n.tone]}: </i>` : ''}${esc(n.note)}</span></li>`).join('')}</ul>
+          </div>` : ''}
+        </div>
+      </div>
+    </section>`;
+}
+const levelRankOf = (lvl) => LEVELS.indexOf(lvl);
+
+function ago(days) {
+  if (days == null) return 'Never';
+  if (days <= 0) return 'Today';
+  if (days === 1) return 'Yesterday';
+  if (days < 14) return `${days} days ago`;
+  if (days < 60) return `${Math.floor(days / 7)} weeks ago`;
+  return 'Over a month ago';
+}
+
+function detailHTML(p, f, now) {
+  if (!f) return `<div class="fd-empty"><span class="fd-empty-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 11V5.5a1.5 1.5 0 0 1 3 0V11m0-1.5V4a1.5 1.5 0 0 1 3 0v6m0-1a1.5 1.5 0 0 1 3 0v4.5a6.5 6.5 0 0 1-6.5 6.5h-.6a6 6 0 0 1-4.8-2.4L4.3 13.6a1.6 1.6 0 0 1 2.4-2.1L9 13.6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><p><strong>Tap any fact</strong><br>See its level, speed and last miss.</p></div>`;
+  const x = factInfo(p, f, now);
+  const sec = (ms) => (ms / 1000).toFixed(1);
+  const medal = ['bronze', 'silver', 'gold', 'star'].includes(x.level) ? itemImg('medal-' + x.level) : '';
+  const nx = x.next;
+  const nextText = !nx ? 'Top level. Amazing!'
+    : nx.what === 'answer' ? 'Answer it once to start.'
+    : nx.what === 'days' ? `Right on ${nx.need - nx.have} more ${nx.need - nx.have === 1 ? 'day' : 'days'} for ${LEVEL_LABEL[nx.lv]}.`
+    : nx.what === 'fast' ? `Fast on ${nx.need - nx.have} more ${nx.need - nx.have === 1 ? 'day' : 'days'} for ${LEVEL_LABEL[nx.lv]}.`
+    : `${nx.need - nx.have} more ${nx.need - nx.have === 1 ? 'day' : 'days'} with no misses for Star.`;
+  const pct = nx ? Math.round((Math.min(nx.have, nx.need) / nx.need) * 100) : 100;
+  const speedNote = x.avgMs == null ? '' : x.avgMs <= x.fastMs ? 'fast' : 'not fast yet';
+  return `
+    <div class="fd" data-f="${x.f}">
+      <div class="fd-top">
+        <p class="fd-eq"><span>${x.a} × ${x.b}</span> = <b>${x.answer}</b></p>
+        <span class="fd-lv lv-${x.level}">${medal}${LEVEL_LABEL[x.level]}</span>
+      </div>
+      <div class="fd-next">
+        <span class="fd-bar lv-${nx ? nx.lv : 'star'}" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}" aria-label="Progress to the next level"><i style="width:${pct}%"></i></span>
+        <span>${nextText}</span>
+      </div>
+      <dl class="fd-stats">
+        <div><dt>Right</dt><dd>${x.tries ? `${x.right}<small> of ${x.tries}</small>` : '-'}</dd></div>
+        <div><dt>Speed</dt><dd>${x.avgMs == null ? '-' : `${sec(x.avgMs)}<small> s, ${speedNote}</small>`}</dd></div>
+        <div><dt>Days right</dt><dd>${x.days}<small>, fast on ${x.fast}</small></dd></div>
+        <div class="${x.missedLately ? 'miss' : ''}"><dt>Last miss</dt><dd>${ago(x.sinceMiss)}</dd></div>
+      </dl>
+      ${x.tries ? `<p class="fd-trick"><b>Teacher K's trick:</b> ${esc(trickFor(x.f))}</p>` : ''}
+    </div>`;
+}
+
+function progressHTML(p, now = Date.now()) {
+  const ins = insights(p, { now });
+  const notes = tableNotes(p, ins, now);
+  const acc = p.stats.answers ? Math.round((p.stats.correct / p.stats.answers) * 100) : 0;
+  return `<h2 class="h-ic">${itemImg('medal-gold')}${esc(p.name)}'s progress</h2>
+    ${insightsHTML(p, ins)}
+    <div class="gu-stats">
+      <div><strong>${p.stats.answers}</strong><span>answers</span></div>
+      <div><strong>${acc}%</strong><span>right</span></div>
+      <div><strong>${mins(p.stats.msPlayed)}</strong><span>minutes</span></div>
+      <div><strong>${countAtLeast(p, 'silver')}</strong><span>at Silver+</span></div>
+    </div>
+    ${gridHTML(p, notes, now)}
+    <p class="note">Levels count separate days. Bronze: right on ${RULES.bronzeDays} days. Silver, Gold and Star: right within ${p.settings.fastMs / 1000} seconds on ${RULES.silverDays}, ${RULES.goldDays} and ${RULES.starDays} days. Star also needs no misses in the last ${RULES.starCleanDays} days.</p>`;
+}
+
+function bindProgress(panel, p, go) {
+  if (!panel) return;
+  const detail = panel.querySelector('[data-tg-detail]');
+  const grid = panel.querySelector('.tg-grid');
+  const cells = [...panel.querySelectorAll('.tg-grid [data-fact]')];
+  const select = (el, focus) => {
+    cells.forEach((c) => { const on = c === el; c.classList.toggle('sel', on); c.setAttribute('aria-pressed', on); c.tabIndex = on ? 0 : -1; });
+    const [a, b] = el.dataset.fact.split('x');
+    grid.querySelectorAll('.hl').forEach((h) => h.classList.remove('hl'));
+    grid.querySelector(`[data-col="${b}"]`)?.classList.add('hl');
+    grid.querySelector(`[data-row="${a}"] .tg-rh`)?.classList.add('hl');
+    detail.innerHTML = detailHTML(p, el.dataset.fact, Date.now());
+    if (focus) el.focus();
+  };
+  cells.forEach((c) => c.setAttribute('aria-pressed', 'false'));
+  on(panel, 'click', '.tg-grid [data-fact]', (e, el) => select(el));
+  // Start on the fact the top insight is about, so the details are useful right away.
+  const first = panel.querySelector('[data-nx-fact]')?.dataset.nxFact;
+  const start = first && panel.querySelector(`.tg-grid [data-fact="${first}"]`);
+  if (start) select(start);
+  grid?.addEventListener('keydown', (e) => {
+    const el = e.target.closest('[data-fact]');
+    if (!el) return;
+    const [a, b] = el.dataset.fact.split('x').map(Number);
+    const mv = { ArrowLeft: [0, -1], ArrowRight: [0, 1], ArrowUp: [-1, 0], ArrowDown: [1, 0], Home: [0, -9], End: [0, 9] }[e.key];
+    if (!mv) return;
+    e.preventDefault();
+    const na = Math.min(10, Math.max(1, a + mv[0])), nb = Math.min(10, Math.max(1, b + mv[1]));
+    const next = grid.querySelector(`[data-fact="${na}x${nb}"]`);
+    if (next) { cells.forEach((c) => { c.tabIndex = c === next ? 0 : -1; }); next.focus(); }
+  });
+  on(panel, 'click', '[data-nx-play]', (e, el) => {
+    const t = +el.dataset.nxPlay;
+    go('play', { table: t >= 1 && t <= 10 ? t : null });
+  });
+}
+
 function renderMain(root, go) {
   // Fresh element on every redraw so button handlers never stack up.
   const fresh = root.cloneNode(false);
@@ -123,13 +320,6 @@ function renderMain(root, go) {
   root = fresh;
   const p = active();
   const s = p.settings;
-  const acc = p.stats.answers ? Math.round((p.stats.correct / p.stats.answers) * 100) : 0;
-  const cell = (a, b) => {
-    const rec = p.facts[factId(a, b)];
-    const lvl = levelOf(rec);
-    const avg = rec && rec.c ? (rec.ms / rec.c / 1000).toFixed(1) + 's' : '';
-    return `<button class="hm-cell hm-${lvl}" data-fact="${a}x${b}" aria-label="${a} times ${b}: ${LEVEL_LABEL[lvl]}"><span>${a * b}</span></button>`;
-  };
   root.innerHTML = `
     <section class="screen grownups">
       <header class="topbar">
@@ -141,22 +331,7 @@ function renderMain(root, go) {
       <div class="gu-offline">${offlineChipHTML(p)}</div>
 
       <div class="gu-grid">
-        <div class="panel">
-          <h2>${esc(p.name)}'s facts</h2>
-          <div class="gu-stats">
-            <div><strong>${p.stats.answers}</strong><span>answers</span></div>
-            <div><strong>${acc}%</strong><span>right</span></div>
-            <div><strong>${mins(p.stats.msPlayed)}</strong><span>minutes</span></div>
-            <div><strong>${countAtLeast(p, 'silver')}</strong><span>at Silver+</span></div>
-          </div>
-          <div class="heatmap" role="grid" aria-label="All 100 facts by level">
-            <span class="hm-corner" aria-hidden="true">×</span>
-            ${Array.from({ length: 10 }, (_, i) => `<span class="hm-h">${i + 1}</span>`).join('')}
-            ${Array.from({ length: 10 }, (_, i) => `<span class="hm-h">${i + 1}</span>${Array.from({ length: 10 }, (_, j) => cell(i + 1, j + 1)).join('')}`).join('')}
-          </div>
-          <div class="hm-legend">${['new', 'learning', 'bronze', 'silver', 'gold', 'star'].map((l) => `<span><i class="hm-${l}"></i>${LEVEL_LABEL[l]}</span>`).join('')}</div>
-          <p class="note">Levels count separate days. Bronze: right on ${RULES.bronzeDays} days. Silver, Gold and Star: right within ${s.fastMs / 1000} seconds on ${RULES.silverDays}, ${RULES.goldDays} and ${RULES.starDays} days. Star also needs no misses in the last ${RULES.starCleanDays} days.</p>
-        </div>
+        <div class="panel gu-progress" data-progress>${progressHTML(p)}</div>
 
         <div class="panel">
           <h2>Settings</h2>
@@ -406,14 +581,7 @@ function renderMain(root, go) {
   }));
   on(root, 'change', '[data-limit]', (e, el) => { setSetting(p, 'dailyLimit', +el.value); syncNow(); toast(s.dailyLimit ? `Daily limit: ${s.dailyLimit} minutes` : 'Daily limit off'); renderMain(root, go); });
   on(root, 'click', '[data-bonus]', () => { bonusTime(p, 15); save(); toast('Added 15 minutes for today'); renderMain(root, go); });
-  on(root, 'click', '[data-fact]', (e, el) => {
-    const rec = p.facts[el.dataset.fact];
-    const [a, b] = el.dataset.fact.split('x');
-    const lvl = levelOf(rec);
-    sheet(`<h2>${a} × ${b} = ${a * b}</h2><p><strong>${LEVEL_LABEL[lvl]}</strong></p>
-      ${rec ? `<p>Answered ${rec.a} times, right ${rec.c}. Average ${rec.c ? (rec.ms / rec.c / 1000).toFixed(1) : '-'} seconds.</p><p>Right on ${rec.days.length} days, fast on ${rec.fastDays.length} days.</p>${rec.lastMiss ? `<p>Last missed ${new Date(rec.lastMiss).toLocaleDateString()}.</p>` : ''}` : '<p>Not tried yet.</p>'}
-      <div class="sheet-actions"><button class="btn-chunky" data-close>Close</button></div>`);
-  });
+  bindProgress(root.querySelector('[data-progress]'), p, go);
   on(root, 'click', '[data-backup]', async () => {
     const code = exportBackup();
     try { await navigator.clipboard.writeText(code); toast('Backup code copied. Paste it somewhere safe.'); }
