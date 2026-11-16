@@ -10,7 +10,7 @@
 --
 -- Privacy (see CLAUDE.md): usage rows hold a random device id made only for
 -- analytics (not the sync device id), trainer names, device and browser type,
--- the app version, a share-link tag, play counts and a rough place (city,
+-- the app version, a share-link tag or the referring site's host, play counts and a rough place (city,
 -- region, country) that the device looks up once a day. No emails, real names,
 -- photos or IP addresses are stored.
 
@@ -73,6 +73,8 @@ create table if not exists public.usage_events (
   n integer not null default 1 check (n between 0 and 10000),
   d jsonb not null default '{}'::jsonb check (jsonb_typeof(d) = 'object' and pg_column_size(d) <= 400),
   ref text check (ref is null or ref ~ '^[a-z0-9_-]{1,24}$'),
+  -- The referring site's host (never a full address), when the source came from document.referrer.
+  ref_host text check (ref_host is null or ref_host ~ '^[a-z0-9.-]{1,80}$'),
   v text check (v is null or v ~ '^[0-9.]{1,12}$'),
   os text check (os is null or os in ('iphone', 'ipad', 'android', 'chromebook', 'mac', 'windows', 'linux', 'computer')),
   browser text check (browser is null or browser in ('safari', 'chrome', 'edge', 'firefox', 'samsung', 'other')),
@@ -219,7 +221,9 @@ returns jsonb language sql stable security definer set search_path = '' as $$
     group by kv.key
   ),
   top as (
-    select 'refs' as what, x.ref as name, count(distinct x.device) as devices from w x where x.ref is not null group by x.ref
+    -- Sources: a ?ref tag or a known site by name; other sites by host.
+    select 'refs' as what, case when x.ref = 'other' and x.ref_host is not null then x.ref_host else x.ref end as name, count(distinct x.device) as devices
+    from w x where x.ref is not null group by 1, 2
     union all select 'os', coalesce(x.os, 'unknown'), count(distinct x.device) from w x group by 1, 2
     union all select 'browsers', coalesce(x.browser, 'unknown'), count(distinct x.device) from w x group by 1, 2
     union all select 'versions', coalesce(x.v, 'unknown'), count(distinct x.device) from w x group by 1, 2

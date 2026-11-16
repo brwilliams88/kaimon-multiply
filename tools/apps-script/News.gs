@@ -485,7 +485,8 @@ function usageData_() {
 
 var USAGE_NAMES = { iphone: 'iPhone', ipad: 'iPad', android: 'Android', chromebook: 'Chromebook', mac: 'Mac', windows: 'Windows', linux: 'Linux', computer: 'Computer',
   safari: 'Safari', chrome: 'Chrome', edge: 'Edge', firefox: 'Firefox', samsung: 'Samsung', other: 'Other', unknown: 'Unknown',
-  share: 'Share menu', link: 'Copied link', email: 'Email', text: 'Text', whatsapp: 'WhatsApp', news: 'News email', device: 'Another device (QR)', facebook: 'Facebook', linkedin: 'LinkedIn' };
+  share: 'Share menu', link: 'Copied link', email: 'Email', text: 'Text', whatsapp: 'WhatsApp', news: 'News email', device: 'Another device (QR)', facebook: 'Facebook', linkedin: 'LinkedIn',
+  google: 'Google', instagram: 'Instagram', x: 'X (Twitter)', reddit: 'Reddit', bing: 'Bing', duckduckgo: 'DuckDuckGo', direct: 'Direct/unknown' };
 var N_GRASS = '#3FA34D', N_PINK = '#E5487A';
 var N_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 function usageDay_(iso) { var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso || '')); return m ? N_MONTHS[+m[2] - 1] + ' ' + (+m[3]) : ''; }
@@ -631,7 +632,7 @@ function renderUsageEmail_(d, opt) {
   // Where players are and how they found the game
   rows.push(newsCard_(usageH2_('Places')
     + usageBars_((s.places || []).map(function (p) { return { name: [p.city, p.region].filter(function (x) { return x; }).join(', ') || p.country, devices: p.devices }; }), 190)
-    + '<div style="font-family:' + N_FONT + ';font-size:16px;font-weight:700;padding:16px 0 6px 0;">Install source (shared links)</div>' + usageBars_(s.refs, 190, N_PINK)
+    + '<div style="font-family:' + N_FONT + ';font-size:16px;font-weight:700;padding:16px 0 6px 0;">Sources (shared links and sites)</div>' + usageBars_(s.refs, 190, N_PINK)
     + '<div style="font-family:' + N_FONT + ';font-size:16px;font-weight:700;padding:16px 0 6px 0;">Devices</div>' + usageBars_(s.os, 190)));
 
   // Ratings
@@ -737,7 +738,7 @@ function usageSample_() {
   }
   var week = { days: 7, totals: { devices: 14, new_devices: 6, came_back: 4, returning: 9, minutes: 520, rounds: 96, cards: 1450, right: 1320, opens: 61, battles: 22, wins: 17, catches: 74, installed_all: 8, devices_all: 31 },
     daily: days.slice(-7), active: active.slice(-7),
-    refs: [{ name: 'whatsapp', devices: 4 }, { name: 'link', devices: 3 }, { name: 'device', devices: 2 }, { name: 'news', devices: 1 }],
+    refs: [{ name: 'linkedin', devices: 5 }, { name: 'direct', devices: 4 }, { name: 'whatsapp', devices: 3 }, { name: 'facebook', devices: 2 }, { name: 'device', devices: 2 }, { name: 'news.example.org', devices: 1 }],
     os: [{ name: 'ipad', devices: 7 }, { name: 'iphone', devices: 4 }, { name: 'chromebook', devices: 3 }],
     places: [{ city: 'Mountain View', region: 'California', country: 'US', devices: 6 }, { city: 'Brooklyn', region: 'New York', country: 'US', devices: 3 }, { city: 'Toronto', region: 'Ontario', country: 'CA', devices: 2 }],
     tables: [{ table: 7, answers: 320 }, { table: 8, answers: 260 }, { table: 6, answers: 210 }, { table: 9, answers: 150 }],

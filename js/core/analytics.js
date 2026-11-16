@@ -51,7 +51,7 @@ export const COLLECTED = [
   'Kind of device and browser, and whether the game is installed',
   'Rough place: city, region and country (looked up once a day; the internet address is never kept)',
   'App opens, rounds, battles, catches and minutes played',
-  'Which shared link the game was first opened from',
+  'Where the game was first opened from: a shared link tag, or the site name only (like linkedin.com)',
 ];
 
 export function analyticsId() {
@@ -149,7 +149,7 @@ export function track(k, n = 1, d = {}, extra = {}) {
   const row = {
     device: analyticsId(), k, t: new Date().toISOString(),
     trainer: cleanTrainer(extra.trainer ?? p?.name), n: Math.max(0, Math.min(10000, Math.round(n) || 0)), d,
-    ref: extra.ref || null, v: ver, os: deviceKind(), browser: browserKind(), installed: installed(),
+    ref: extra.ref || null, ref_host: extra.refHost || null, v: ver, os: deviceKind(), browser: browserKind(), installed: installed(),
     ...placeFields(),
   };
   const q = queued(); q.push(row); writeQueue(q);
@@ -249,26 +249,53 @@ export function tickTime(now = Date.now()) {
 
 // ------------------------------------------------------------------ share links
 
-// A share link looks like .../?ref=whatsapp. Read the tag on the first open, keep
-// it until it is sent once, and take it off the address bar either way.
-export function readRef(loc = location) {
+// Where a new device came from. A share link looks like .../?ref=whatsapp: that
+// tag wins. Otherwise, on the very first visit, the referring site, host only
+// (never the full address), mapped to a short name. Our own site or no referrer
+// is 'direct' (in-app browsers often drop the referrer, so expect plenty).
+const SITES = [
+  [/(^|\.)(linkedin\.com|lnkd\.in)$/, 'linkedin'],
+  [/(^|\.)(facebook\.com|fb\.com|fb\.me|messenger\.com)$/, 'facebook'],
+  [/(^|\.)(instagram\.com)$/, 'instagram'],
+  [/^(mail\.google\.com|outlook\.live\.com|outlook\.office\.com|mail\.yahoo\.com)$/, 'email'],
+  [/(^|\.)google\.[a-z.]{2,8}$/, 'google'],
+  [/(^|\.)(bing\.com)$/, 'bing'],
+  [/(^|\.)(duckduckgo\.com)$/, 'duckduckgo'],
+  [/(^|\.)(t\.co|x\.com|twitter\.com)$/, 'x'],
+  [/(^|\.)(reddit\.com)$/, 'reddit'],
+  [/(^|\.)(whatsapp\.com)$/, 'whatsapp'],
+];
+export function sourceOf(referrer, ownHost = (typeof location !== 'undefined' ? location.host : '')) {
+  let host = '';
+  try { host = new URL(String(referrer || '')).hostname.toLowerCase().replace(/^www\./, ''); } catch { host = ''; }
+  if (!host || !/^[a-z0-9.-]{1,80}$/.test(host) || host === String(ownHost).toLowerCase().replace(/^www\./, '').replace(/:\d+$/, '')) return { ref: 'direct', host: null };
+  for (const [re, name] of SITES) if (re.test(host)) return { ref: name, host };
+  return { ref: 'other', host };
+}
+
+export function readRef(loc = location, referrer = (typeof document !== 'undefined' ? document.referrer : '')) {
   let ref = null;
   try {
     const u = new URL(loc.href);
-    if (!u.searchParams.has('ref')) return null;
-    ref = cleanRef(u.searchParams.get('ref'));
-    u.searchParams.delete('ref');
-    history.replaceState(history.state, '', u.pathname + u.search + u.hash);
-  } catch { return null; }
-  if (ref && isOn() && !ls.get(REF_KEY) && !ls.get(ID_KEY)) ls.set(REF_KEY, JSON.stringify({ ref, sent: 0 }));
-  return ref;
+    if (u.searchParams.has('ref')) {
+      ref = cleanRef(u.searchParams.get('ref'));
+      u.searchParams.delete('ref');
+      history.replaceState(history.state, '', u.pathname + u.search + u.hash);
+    }
+  } catch { /* keep going */ }
+  // First visit only: a device that already has an id was counted before.
+  if (!isOn() || ls.get(REF_KEY) || ls.get(ID_KEY)) return ref;
+  const src = ref ? { ref, host: null } : sourceOf(referrer, loc.host);
+  ls.set(REF_KEY, JSON.stringify({ ref: src.ref, host: src.host, sent: 0 }));
+  return src.ref;
 }
 
 function trackOpen() {
   const r = ls.json(REF_KEY, null);
   const ref = r && !r.sent ? cleanRef(r.ref) : null;
-  track('open', 1, {}, ref ? { ref } : {});
-  if (ref) ls.set(REF_KEY, JSON.stringify({ ref, sent: 1 }));
+  const host = ref && /^[a-z0-9.-]{1,80}$/.test(r.host || '') ? r.host : null;
+  track('open', 1, {}, ref ? { ref, refHost: host } : {});
+  if (ref) ls.set(REF_KEY, JSON.stringify({ ...r, sent: 1 }));
 }
 
 // ------------------------------------------------------------------ start
