@@ -384,11 +384,11 @@ function render(s, fb) {
   </section>
 
   <section class="grid">
-    <div class="card panel" id="ratings"><h2>Ratings</h2><p class="sub">All time, from Rate Kaimon Multiply</p>
+    <div class="card panel" id="ratings"><h2>Ratings</h2><p class="sub">All time, from Rate Kaimon Multiply${r.raters != null ? '. Each device counts once, with its latest rating.' : ''}</p>
       ${r.count ? `<div class="rate">
-        <div class="avg"><div class="n" data-kpi="avg">${(+r.avg).toFixed(1)}</div><div class="stars" aria-hidden="true">${starStr(r.avg)}</div><div class="c">${fmt(r.count)} rating${r.count === 1 ? '' : 's'}</div></div>
+        <div class="avg"><div class="n" data-kpi="avg">${(+r.avg).toFixed(1)}</div><div class="stars" aria-hidden="true">${starStr(r.avg)}</div><div class="c">${r.raters != null ? `${fmt(r.raters)} device${r.raters === 1 ? '' : 's'}${r.count > r.raters ? `, ${fmt(r.count)} ratings in all` : ''}` : `${fmt(r.count)} rating${r.count === 1 ? '' : 's'}`}</div></div>
         <div><div class="dist">${[5, 4, 3, 2, 1].map((k) => `<div class="row"><span>${k}★</span><span class="track"><span class="fill${dist[k - 1] ? '' : ' z'}" style="display:block;width:${(100 * dist[k - 1]) / dmax}%"></span></span><span class="v">${fmt(dist[k - 1])}</span></div>`).join('')}</div>
-        <span class="csat" title="Share of ratings with 4 or 5 stars"><b data-kpi="csat">${r.csat ?? 0}%</b> 4 or 5 stars</span></div>
+        <span class="csat" title="Share of devices whose latest rating is 4 or 5 stars"><b data-kpi="csat">${r.csat ?? 0}%</b> 4 or 5 stars</span></div>
       </div>
       <h2 style="font-size:16px;margin:16px 0 4px">Average by week</h2>${lineChart('c-rate', r.weekly || [], { label: 'Average rating by week' })}` : '<p class="empty">No ratings yet.</p>'}
       <p class="sub" style="margin-top:10px">${fmt(r.new)} new in the last ${days} days${r.new_avg ? ', averaging ' + (+r.new_avg).toFixed(1) : ''}. News list: ${fmt((s.news || {}).list)} grown-ups.</p>

@@ -10,7 +10,7 @@ import { itemImg, uiImg } from '../core/assets.js';
 import { howToPlay } from './howToPlay.js';
 import { installHelpHTML, canPromptInstall, promptInstall, isInstalled } from './install.js';
 import { openPlayElsewhere } from './playElsewhere.js';
-import { openFeedback, openRate, queuedFeedback } from './feedback.js';
+import { openFeedback, openRate, queuedFeedback, myRating } from './feedback.js';
 import { COLLECTED, isOn as analyticsOn, setOn as setAnalytics, startAnalytics } from '../core/analytics.js';
 import { lastDays, partsOfDay, usedToday } from '../core/playtime.js';
 import { bonusTime } from '../core/actions.js';
@@ -494,8 +494,8 @@ function drawMain(root, go) {
         <div class="panel gu-feedback">
           <h2>Feedback</h2>
           <p class="note">Notes and ratings go only to the maker of Kaimon Multiply. What doesn’t work helps the most.</p>
-          <div class="row"><span class="note">Something you love, something you don\u2019t, an idea or a bug. Add your email if you want a reply.</span><button class="btn-chunky btn-sm" data-feedback>Send feedback</button></div>
-          <div class="row"><span class="note">1 to 5 stars, and a comment if you like.</span><button class="btn-chunky btn-sm" data-rate>Rate the game</button></div>
+          <div class="row"><span class="note">What you love, and what should be better or is broken. Fill in one or both. Add your email if you want a reply.</span><button class="btn-chunky btn-sm" data-feedback>Send feedback</button></div>
+          <div class="row">${((r) => `<span class="note">${r?.stars ? `This device gave ${r.stars} star${r.stars === 1 ? '' : 's'}. You can change it any time.` : r ? 'You rated the game on this device. You can change it any time.' : '1 to 5 stars, and a comment if you like.'}</span><button class="btn-chunky btn-sm" data-rate>${r ? 'Update rating' : 'Rate the game'}</button>`)(myRating())}</div>
           ${queuedFeedback().length ? `<p class="note" data-fb-wait>${queuedFeedback().length === 1 ? 'One note is' : queuedFeedback().length + ' notes are'} waiting to send. ${queuedFeedback().length === 1 ? 'It goes by itself' : 'They go by themselves'} when the device is back online.</p>` : ''}
         </div>
 

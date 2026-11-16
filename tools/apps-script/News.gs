@@ -658,7 +658,7 @@ function renderUsageEmail_(d, opt) {
   rows.push(newsCard_(usageH2_('Ratings')
     + (r.count ? '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>'
       + '<td class="kcol" width="150" valign="top" align="center" style="font-family:' + N_FONT + ';padding-right:14px;"><div style="font-size:52px;font-weight:700;line-height:56px;color:' + N_INK + ';">' + (+r.avg).toFixed(1) + '</div><div style="font-size:24px;letter-spacing:2px;">' + stars + '</div>'
-      + '<div style="font-size:13px;color:' + N_INK2 + ';">' + usageFmt_(r.count) + ' ratings</div>'
+      + '<div style="font-size:13px;color:' + N_INK2 + ';">' + (r.raters != null ? usageFmt_(r.raters) + (r.raters === 1 ? ' device' : ' devices') + (r.count > r.raters ? ', ' + usageFmt_(r.count) + ' ratings in all' : '') : usageFmt_(r.count) + ' ratings') + '</div>'
       + '<div style="display:inline-block;margin-top:8px;padding:3px 10px;border:2px solid ' + N_INK + ';border-radius:99px;background:#DDF3E0;color:#1E5E28;font-size:14px;font-weight:700;">' + (r.csat || 0) + '% 4 or 5 stars</div></td>'
       + '<td valign="top"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">' + distRows + '</table>'
       + '<div style="font-family:' + N_FONT + ';font-size:13px;color:' + N_INK2 + ';padding-top:8px;">' + usageFmt_(rw.new) + ' new this week' + (rw.new_avg ? ', averaging ' + (+rw.new_avg).toFixed(1) : '') + '.</div></td></tr></table>'
@@ -691,7 +691,7 @@ function usageText_(d) {
     'Players (devices): ' + (t.devices || 0), 'Weekly active: ' + (last.wau || 0), 'Monthly active: ' + (last.mau || 0),
     'New devices: ' + (t.new_devices || 0), 'Minutes played: ' + (t.minutes || 0),
     'Rounds: ' + (t.rounds || 0), 'Cards: ' + (t.cards || 0), 'Came back 2+ days: ' + (t.returning || 0),
-    'Average rating: ' + (r.avg === null || r.avg === undefined ? 'none yet' : r.avg + ' (' + (r.count || 0) + ' ratings)'), 'New comments: ' + (f.new_comments || 0),
+    'Average rating: ' + (r.avg === null || r.avg === undefined ? 'none yet' : r.avg + ' (' + (r.raters != null ? r.raters + ' devices, latest rating each' : (r.count || 0) + ' ratings') + ')'), 'New comments: ' + (f.new_comments || 0),
     '', 'Dashboard: ' + NEWS_APP + 'admin.html'].join('\n');
 }
 
@@ -759,8 +759,8 @@ function usageSample_() {
     comments: [{ kind: 'idea', text: 'Can the Kaidex show where each Kaimon lives?', name: 'Mia', created_at: days[55].day, city: 'Brooklyn' },
       { kind: 'bug', text: 'The music kept playing after I closed the game.', created_at: days[54].day, city: 'Mountain View' },
       { kind: 'rating', stars: 5, text: 'Kai plays every morning before school!', created_at: days[53].day }],
-    ratings: { count: 12, avg: 4.58, csat: 92, dist: [0, 0, 1, 3, 8], new: 4, new_avg: 4.75 } };
-  var trend = { daily: days, active: active, ratings: { count: 12, avg: 4.58, csat: 92, dist: [0, 0, 1, 3, 8],
+    ratings: { count: 14, raters: 12, avg: 4.58, csat: 92, dist: [0, 0, 1, 3, 8], new: 4, new_avg: 4.75 } };
+  var trend = { daily: days, active: active, ratings: { count: 14, raters: 12, avg: 4.58, csat: 92, dist: [0, 0, 1, 3, 8],
     weekly: [{ week: days[13].day, avg: 4.2, count: 2 }, { week: days[27].day, avg: 4.5, count: 3 }, { week: days[41].day, avg: 4.4, count: 3 }, { week: days[55].day, avg: 4.75, count: 4 }] } };
   return { week: week, trend: trend };
 }

@@ -1715,6 +1715,7 @@ img.ball-svg, img.ball-img { object-fit: contain; }
 /* v0.5.3 Menu: one icon family, drawn art */
 .menu-ic { width: 46px; height: 46px; border-radius: 0; background: none; }
 .menu-grown .menu-ic { background: none; }
+.menu-ic .rate-ic { width: 100%; height: 100%; padding: 2px; filter: drop-shadow(0 2px 0 rgba(20, 33, 61, .2)); }
 .menu-ic .ui-img, .menu-ic .ball-svg { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 2px 0 rgba(20, 33, 61, .2)); }
 /* Drawn menu icons (Play on another device) fill the same 46px square as the art ones.
    device.css only loads with its sheet, so this lives here. */
