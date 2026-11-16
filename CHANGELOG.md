@@ -2,6 +2,12 @@
 
 All notable changes. Versioning: `0.MINOR.0` marks a roadmap phase, `0.x.PATCH` is any shipped change a player or parent can notice, and `1.0.0` is the public launch. See "Versioning" in CLAUDE.md. The in-app version history (Grown-ups > What's new) reads from `js/data/changelog.js`; keep both in sync. Each release is tagged in git as `vX.Y.Z`.
 
+## v0.6.4 (2026-11-16) A guided first game with Teacher K
+
+- New trainers now play a short first game with Teacher K: four easy cards, a first catch, and a quick look around Home. Skip any time. It only happens once.
+- How to play is now a set of swipeable cards. Swipe, tap the arrows, or use the arrow keys.
+- Grown-ups can open How to play from the Help tab.
+
 ## v0.6.3 (2026-11-16) Feedback, sharing and usage counts
 
 - Send feedback from the Menu: tell us what you love, an idea or a bug. Grown-ups can also rate the game and leave an email for a reply.

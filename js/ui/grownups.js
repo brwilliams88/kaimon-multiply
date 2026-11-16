@@ -1,11 +1,13 @@
-import { touch, setSetting, switchProfile, renameProfile, hideProfile, hiddenProfiles } from '../core/store.js';
+import { touch, setSetting, switchProfile, hideProfile, hiddenProfiles } from '../core/store.js';
+import { renameSheet } from './renameSheet.js';
 import { deleteEverywhere, addBackFromFamily } from '../core/sync.js';
 import { avatarSVG, trainerLook } from './avatars.js';
 import { dexCounts } from '../core/game.js';
 import { checkNow } from '../core/update.js';
 import { showIconNotice } from './iconNotice.js';
 import { sfx, soundOn, soundStatus } from '../core/sound.js';
-import { itemImg } from '../core/assets.js';
+import { itemImg, uiImg } from '../core/assets.js';
+import { howToPlay } from './howToPlay.js';
 import { installHelpHTML, canPromptInstall, promptInstall, isInstalled } from './install.js';
 import { openPlayElsewhere } from './playElsewhere.js';
 import { openFeedback, openRate, queuedFeedback } from './feedback.js';
@@ -434,11 +436,10 @@ function renderMain(root, go) {
         <div class="panel wr-panel" data-wrpanel>${reportPanelHTML(p)}</div>
       </div>
       <div class="gu-pane gu-grid gu-pane-help" role="tabpanel" id="gu-pane-help" aria-labelledby="gu-tab-help" data-gu-pane="help"${guTab === 'help' ? '' : ' hidden'}>
-        <div class="panel">
-          <h2 class="h-ic">${itemImg('hint-lamp')}How to play</h2>
-          <p class="note">Kids answer times table cards to catch Kaimon, earn badges from each Gym Leader and battle with answers. Teacher K explains it all under <b>Menu, How to play</b> on the Home screen.</p>
-          <!-- a "How to play" button can open the same sheet here once home.js exports it -->
-          <div class="gu-slot" data-slot="howto"></div>
+        <div class="panel gu-howto">
+          <h2 class="h-ic">${uiImg('icon-howto')}How to play</h2>
+          <p class="note">Kids answer times table cards to catch Kaimon, earn badges from each Gym Leader and battle with answers. Teacher K explains it all in a few quick cards, also under <b>Menu, How to play</b> on Home.</p>
+          <div class="row"><span class="note">Catching, streaks, balls, gyms, battles and the Kaidex. Great to look at together.</span><button class="btn-chunky btn-sm" data-howto>Show cards</button></div>
         </div>
 
         <div class="panel">
@@ -493,6 +494,7 @@ function renderMain(root, go) {
     showTab(GU_TABS[(j + GU_TABS.length) % GU_TABS.length][0], true);
   });
   on(root, 'click', '[data-newicon]', () => showIconNotice());
+  on(root, 'click', '[data-howto]', () => { sfx.tap(); howToPlay(p, {}); });
   on(root, 'click', '[data-soundtest]', () => {
     const msg = root.querySelector('[data-soundmsg]');
     if (!soundOn()) { msg.textContent = 'Sound is off for this trainer. Turn on Sound above first.'; return; }
@@ -649,11 +651,7 @@ function renderMain(root, go) {
   on(root, 'click', '[data-tm-switch]', (e, el) => { switchProfile(el.dataset.tmSwitch); guTab = 'progress'; renderMain(root, go); window.scrollTo(0, 0); });
   on(root, 'click', '[data-tm-rename]', (e, el) => {
     const x = allProfiles().find((y) => y.id === el.dataset.tmRename);
-    const sh = sheet(`<h2>Rename ${esc(x.name)}</h2><input class="field" maxlength="16" value="${esc(x.name)}" data-newname><p class="note">${x.family ? 'The new name shows on every family device.' : 'Only on this device.'}</p><div class="sheet-actions"><button class="btn-chunky btn-primary" data-do>Save</button><button class="btn-chunky" data-close>Cancel</button></div>`);
-    const inp = sh.el.querySelector('[data-newname]'); inp.focus(); inp.select();
-    const doIt = () => { const v = inp.value.trim(); if (!v) return toast('Type a name.'); renameProfile(x.id, v); if (x.family) syncNow(); sh.close(); toast(`Renamed to ${v}`); renderMain(root, go); };
-    sh.el.querySelector('[data-do]').addEventListener('click', doIt);
-    inp.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') doIt(); });
+    renameSheet(x, { onDone: () => renderMain(root, go) });
   });
   on(root, 'click', '[data-tm-delete]', (e, el) => {
     const x = allProfiles().find((y) => y.id === el.dataset.tmDelete);

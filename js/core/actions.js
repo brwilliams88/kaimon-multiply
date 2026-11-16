@@ -81,6 +81,11 @@ export function apply(p, ev) {
       dayRec(p, today(ev.t)).bonus += d.m || 0;
       break;
     case 'mega': applyMega(p, d, ev.t); break; // Mega hook
+    case 'tip':
+      // d.n: a one-time guide this trainer finished or skipped (like 'first', the guided first game).
+      p.tips = p.tips || {};
+      if (!p.tips[d.n] || ev.t < p.tips[d.n]) p.tips[d.n] = ev.t;
+      break;
     case 'stamp':
       p.stats.stars = (p.stats.stars || 0) + 1;
       break;
@@ -140,6 +145,14 @@ export const battle = (p, kind, table, won) => emit(p, 'battle', { o: kind, tb: 
 // Mega Evolution: use a Mega Crystal on a Kaimon (u), or switch its Mega form on or off.
 export const megaEvolve = (p, id) => emit(p, 'mega', { n: id, u: 1 });
 export const megaSwitch = (p, id, on) => emit(p, 'mega', { n: id, on: on ? 1 : 0 });
+
+// One-time guides (the guided first game): done or skipped once, never shown again.
+export const tipSeen = (p, name) => !!p.tips?.[name];
+export function tipDone(p, name) {
+  if (tipSeen(p, name)) return;
+  emit(p, 'tip', { n: name });
+  save();
+}
 
 export function goodWorkStamp(p) {
   emit(p, 'stamp', {});

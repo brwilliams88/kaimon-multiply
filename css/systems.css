@@ -284,3 +284,12 @@
 @keyframes sx-pulse { 0%, 100% { transform: none; } 50% { transform: scale(1.06); } }
 .dmg.heal { color: #3BC46B; }
 @media (prefers-reduced-motion: reduce) { .snack-btn.armed { animation: none; } }
+
+/* How to play cards: quests and items, and the Lightning Round */
+.hd-art > .hd-row { inset: 0; display: flex; align-items: center; justify-content: center; gap: 4%; padding: 0 6%; }
+.hd-it { position: relative; width: clamp(54px, 19%, 84px); aspect-ratio: 1; transform: translateY(calc((var(--i, 0) - 1.5) * (var(--i, 0) - 1.5) * 4px)); }
+.hd-it img, .hd-it svg { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 3px 0 rgba(20, 33, 61, .2)); }
+.hd-it.hd-big { width: clamp(110px, 38%, 160px); transform: rotate(-6deg); }
+.hd-bolt-n { display: grid; place-items: center; width: clamp(96px, 30%, 130px); aspect-ratio: 1; border-radius: 50%; border: 3px solid var(--ink); background: var(--paper); box-shadow: 0 4px 0 var(--ink); line-height: 1; }
+.hd-bolt-n b { font-size: clamp(36px, 11vw, 52px); }
+.hd-bolt-n small { font-size: 14px; font-weight: 700; margin-top: -18px; }

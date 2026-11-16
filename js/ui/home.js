@@ -7,7 +7,6 @@ import { bossUnlocked, quizReady, quizNextIn, champReady, gymOpen } from '../cor
 import { limitReached, cardsToday, roundSize, roundsToday, GOAL_ROUNDS } from '../core/playtime.js';
 import { nextUp, quizUseful } from '../core/nextup.js';
 import { VERSION } from '../data/changelog.js';
-import { trainerArt } from './trainerArt.js';
 import { ballImg, itemImg, sceneSrc, gymSrc, gymImg, badgeImg, cssUrl, uiImg, trainerFace, trainerBody, trainerKey, CARD_BACK, LOGO } from '../core/assets.js';
 import { kairoEvolves } from '../core/game.js';
 import { evolveKairo, ball as giveBall, caught as catchIt } from '../core/actions.js';
@@ -24,6 +23,8 @@ import { trainerChipSheet } from './onboarding.js';
 import { towerTile } from './tower.js'; // Hundred Tower hook
 import { questsCard, bindQuests, boltLockedNote } from './quests.js'; // [systems] daily quests, Lightning Round
 import { boltUnlocked, boltBest, calmMode } from '../core/lightning.js'; // [systems] Lightning Round in the Menu
+import { homeTour } from './firstGame.js';
+import { howToPlay } from './howToPlay.js';
 
 export const medal = (tier) => tier
   ? `<span class="medal medal-${tier}" title="${LEVEL_LABEL[tier]} medal">${itemImg('medal-' + tier)}</span>`
@@ -293,6 +294,9 @@ export function renderHome(root, go, params = {}) {
     }
   } catch {}
 
+  // Right after the guided first game: Teacher K shows where things are.
+  if (params.guide === 'next') homeTour();
+
   if (params.celebrate === 'stamp') {
     sfx.levelUp();
     sheet(`<div class="celebrate">
@@ -381,7 +385,7 @@ function homeMenu(p, go) {
     if (!m) return;
     sfx.tap(); sh.close();
     const back = () => setTimeout(() => homeMenu(p, go), 120);
-    if (m === 'how') setTimeout(() => howItWorks(p, { back }), 200);
+    if (m === 'how') setTimeout(() => howToPlay(p, { back }), 200);
     if (m === 'balls') setTimeout(() => ballsHelp(p, { back }), 200);
     if (m === 'device') setTimeout(() => openPlayElsewhere({ back }), 200);
     if (m === 'feedback') setTimeout(() => openFeedback({ place: 'menu', back }), 200);
@@ -395,32 +399,6 @@ function homeMenu(p, go) {
     sfx.tap();
     shareGame({ back: () => setTimeout(() => homeMenu(p, go), 120) }).then((s) => { if (s) sh.close(); });
   });
-}
-
-// How to play: the adventure first, then each part of the game with a picture.
-function howItWorks(p, opts = {}) {
-  const buddy = partnerOf(p).species;
-  const sec = (pic, title, text) => `<section class="how-sec"><div class="how-pic" aria-hidden="true">${pic}</div><div><h3>${title}</h3><p>${text}</p></div></section>`;
-  const card = `<span class="how-card how-scene" style="--scene:${esc(cssUrl(sceneSrc('2', true)))}"><b>7</b><i>×</i><b>8</b></span>`;
-  const region = `<span class="how-region how-scene" style="--scene:${esc(cssUrl(sceneSrc('4', true)))}"><b>4</b><small>s</small></span>`;
-  sheet(`<div class="how">
-    <div class="how-hero">
-      <div class="how-hero-row"><div class="how-teacher">${trainerBody('teacher-k', 'talking')}</div><div class="how-hero-art">${creatureArt(buddy)}</div></div>
-      <p class="speech-who">Teacher K says</p>
-      <h2>Welcome, Trainer!</h2>
-      <p>Wild Kaimon are hiding all over the world, and the only way to catch them is with <strong>multiplication</strong>. Every right answer throws a ball. The faster and smarter you get, the more you catch.</p>
-      <p class="how-goal">Can you become a times table master and fill your whole Kaidex?</p>
-    </div>
-    ${sec(creatureArt(buddy), 'Your Buddy', `${esc(buddy.name)} goes everywhere with you. Every right answer gives it XP. Level up and it evolves at Lv 10 and Lv 20!`)}
-    ${sec(card, 'Practice', 'All your times tables, mixed together. A wild Kaimon jumps onto each card. Answer right to throw a ball at it.')}
-    ${sec(`${ballIcon('capture')}${ballIcon('super')}`, 'Balls', 'Fast answers throw harder. Super, Mega and Legend Balls catch rare Kaimon more easily. Win them with streaks and medals.')}
-    ${sec(region, 'Regions', 'Each region is a times table with its own Kaimon. Get its facts right and fast on different days to earn its medal: Bronze, Silver, Gold, then Star.')}
-    ${sec(trainerArt({ kind: 'champ', table: 2 }), 'Gym battles', 'Your Buddy and your two strongest Kaimon battle a Gym Leader. Every right answer is an attack! The little balls by each name show how many Kaimon each side has left. Win all the badges to face Boss Papa at Papa’s Gym.')}
-    ${sec(itemImg('bag'), 'Quests and items', 'Three small quests every day, all done by answering. They give XP, balls and items like the Hint Scroll and the Lucky Lantern. Find your items in the Bag on your trainer page.') /* [systems] */}
-    ${calmMode(p) ? '' : sec(itemImg('time-freeze'), 'Lightning Round', 'Warm up with one practice round, then try it: 60 seconds with facts you know. Beat your own best for a prize. Grown-ups can play too! It’s in the Menu and on Home.') /* [systems] */}
-    ${sec(kaidexIcon(), 'Kaidex', `Every Kaimon you catch goes in your Kaidex. There are ${dexCounts(p).total} to find, and some are very rare.`)}
-    <button class="btn-chunky btn-primary btn-xl how-go" data-close>Let's go!</button>
-  </div>`, { ...opts, cls: 'how-sheet', x: true });
 }
 
 export const kaidexIcon = () => uiImg('kaidex-a', 'kdx-ic');
