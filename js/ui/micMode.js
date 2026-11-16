@@ -111,6 +111,8 @@ export function micMode(opts) {
   }
 
   render();
+  // Started with no internet while Mic mode is on: say why the mic is resting.
+  if (on && !net) setTimeout(() => { if (alive && !net) say('No internet, so the mic is resting. Use the number pad.'); }, 700);
   return {
     // A new card (or the retype step) is waiting: listen if Mic mode is on.
     ready() { tries = 0; clearTimeout(startTimer); startTimer = setTimeout(start, 280); },
