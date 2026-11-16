@@ -7,6 +7,15 @@ import { partnerOf } from './game.js';
 export const MY_HP = 40;      // each of your Kaimon
 export const HIT_BACK = 12;   // damage you take on a wrong answer
 
+// Kai's mythic line is the strongest in the game, by a lot. Kairo and Kairos have
+// huge HP (a normal Kaimon has 40, Papazilla 80). Their attack comes from how well
+// the trainer answers: a quick right answer hits very hard, and every right answer
+// in a row adds more (up to +60%). A slow answer hits about like anyone else.
+const MYTHIC = { 1: { hp: 120, base: 4, perPower: 46 }, 2: { hp: 200, base: 4, perPower: 62 } };
+const COMBO_STEP = 0.12, COMBO_MAX = 0.6; // mythic bonus per right answer in a row
+const mythicStats = (sp) => sp.type === 'mythic' ? MYTHIC[sp.stage] || MYTHIC[1] : null;
+export const maxHpFor = (sp) => mythicStats(sp)?.hp || MY_HP;
+
 // Power meter: full for a quick answer, slowly drains, never runs out.
 // 1.0 at 1.5 seconds or faster, about 0.5 at 5 seconds, floor 0.15.
 export function powerFor(ms) {
@@ -43,7 +52,7 @@ export function myTeam(profile) {
     lines.add(s.line);
     team.push(s);
   }
-  return team.map((s) => ({ species: s, hp: MY_HP, max: MY_HP }));
+  return team.map((s) => ({ species: s, hp: maxHpFor(s), max: maxHpFor(s) }));
 }
 
 // Opponents. kind: 'champ' (one table), 'grunt' (Team Papa ambush), 'boss' (Boss Papa).
@@ -109,7 +118,8 @@ export const GRUNTS = ['Grunt Squat Sam', 'Grunt Jump Rope Jo', 'Grunt Deadlift 
 export function attack(mine, power, streak) {
   const crit = power >= 0.9;
   const special = streak > 0 && streak % 3 === 0;
-  let dmg = 8 + 10 * power + 2 * (mine.species.stage - 1);
+  const my = mythicStats(mine.species);
+  let dmg = my ? (my.base + my.perPower * power) * (1 + Math.min(COMBO_MAX, COMBO_STEP * Math.max(0, streak - 1))) : 8 + 10 * power + 2 * (mine.species.stage - 1);
   if (crit) dmg *= 1.5;
   if (special) dmg *= 1.5;
   return { dmg: Math.round(dmg), crit, special };

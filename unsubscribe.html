@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
 <title>Unsubscribe · Kaimon</title>
+<link rel="icon" href="icons/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="icons/favicon-32.png" sizes="32x32" type="image/png">
 <style>
 @font-face { font-family: 'Fredoka'; font-weight: 600; font-display: swap; src: url(fonts/fredoka-latin-600-normal.woff2) format('woff2'); }
 @font-face { font-family: 'Fredoka'; font-weight: 700; font-display: swap; src: url(fonts/fredoka-latin-700-normal.woff2) format('woff2'); }
@@ -34,9 +36,9 @@ const URL = 'https://qabevoqmalqjvesqzuse.supabase.co';
 const KEY = 'sb_publishable_6VwJkmR4SMSCs7WXQKjbnA_R0hK8OUW';
 const t = new URLSearchParams(location.search).get('t') || '';
 const box = document.getElementById('box');
-const show = (img, title, text) => { box.innerHTML = `<img src="assets/ui/${img}.webp" alt=""><h1>${title}</h1><p>${text}</p><a class="btn" href="./">Play Kaimon</a>`; };
+const show = (img, title, text) => { box.innerHTML = `<img src="assets/ui/${img}.webp" alt=""><h1>${title}</h1><p>${text}</p><a class="btn" href="./">Play Kaimon Multiply</a>`; };
 if (!/^[0-9a-f-]{36}$/i.test(t)) {
-  show('kaizo-think', 'This link looks broken', 'Try the link in the email again. A grown-up can also turn off news emails in the game under Grown-ups.');
+  show('kaizo-think', 'This link looks broken', 'Try the link in the email again. A grown-up can also turn off news emails in Kaimon Multiply under Grown-ups.');
 } else {
   document.getElementById('go').addEventListener('click', async (e) => {
     e.currentTarget.disabled = true; e.currentTarget.textContent = 'Removing...';

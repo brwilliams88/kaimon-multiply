@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Weekly reports · Kaimon Multiply</title>
+<link rel="icon" href="icons/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="icons/favicon-32.png" sizes="32x32" type="image/png">
+<style>
+@font-face { font-family: 'Fredoka'; font-weight: 600; font-display: swap; src: url(fonts/fredoka-latin-600-normal.woff2) format('woff2'); }
+@font-face { font-family: 'Fredoka'; font-weight: 700; font-display: swap; src: url(fonts/fredoka-latin-700-normal.woff2) format('woff2'); }
+:root { --ink: #14213D; --ink-2: #44506b; --sky: #CFE8FF; --paper: #fff; --gold: #FFC93C; }
+* { box-sizing: border-box; }
+body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 24px; background: var(--sky); font-family: 'Fredoka', system-ui, sans-serif; color: var(--ink); }
+.card { width: 100%; max-width: 440px; background: var(--paper); border: 3px solid var(--ink); border-radius: 26px; box-shadow: 0 6px 0 var(--ink); padding: 28px 26px 26px; text-align: center; }
+img { width: 150px; height: 150px; object-fit: contain; margin: -6px auto 6px; display: block; }
+h1 { font-size: 28px; margin: 0 0 8px; line-height: 1.15; }
+p { font-size: 18px; line-height: 1.4; margin: 0 0 18px; color: var(--ink-2); font-weight: 600; }
+p b { color: var(--ink); }
+button, a.btn { display: inline-block; font: 700 20px 'Fredoka', system-ui, sans-serif; color: var(--ink); background: var(--gold); border: 3px solid var(--ink); border-radius: 18px; box-shadow: 0 5px 0 var(--ink); padding: 12px 26px; cursor: pointer; text-decoration: none; }
+button.soft { background: var(--paper); }
+button:active, a.btn:active { transform: translateY(4px); box-shadow: 0 1px 0 var(--ink); }
+button:disabled { opacity: .6; cursor: wait; }
+button:focus-visible, a.btn:focus-visible { outline: 3px solid #2E6BFF; outline-offset: 3px; }
+</style>
+</head>
+<body>
+<main class="card" id="box"><img src="assets/ui/kaizo-think.webp" alt=""><h1>One moment...</h1></main>
+<script>
+// The Yes and Stop links in Kaimon Multiply report emails open this page. A tap on
+// the button sends the answer to the Kaimon mailer. Opening the page alone does
+// nothing, so email link checkers can't say yes or stop for you.
+const MAILER = 'https://script.google.com/macros/s/AKfycbwKPSCF8wmDgn9KPxz0-YkBUCEYjqv3PjD_ynytTcLiyS0colGFhqKhLJxZ7IUuxou5bA/exec';
+const q = new URLSearchParams(location.search);
+const box = document.getElementById('box');
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const post = async (body) => {
+  const r = await fetch(MAILER, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(body) });
+  if (!r.ok) throw new Error();
+  return r.json();
+};
+const show = (img, title, text, button) => {
+  box.innerHTML = `<img src="assets/ui/${img}.webp" alt=""><h1>${title}</h1><p>${text}</p>${button || '<a class="btn" href="./">Play Kaimon Multiply</a>'}`;
+};
+const offline = () => show('kaizo-oops', 'Couldn’t reach the server', 'Check the internet and tap the link in the email again.');
+const ask = (img, title, text, label, body, done) => {
+  show(img, title, text, `<button id="go">${label}</button>`);
+  document.getElementById('go').addEventListener('click', async (e) => {
+    e.currentTarget.disabled = true; e.currentTarget.textContent = 'One moment...';
+    try { const r = await post(body); r.ok ? done() : show('kaizo-think', 'This link has run out', 'Ask the grown-up who added you to tap Resend in Kaimon Multiply, under Grown-ups.'); }
+    catch { offline(); }
+  });
+};
+
+(async () => {
+  const a = q.get('a');
+  if (a === 'yes' && /^[a-f0-9]{40}$/.test(q.get('t') || '')) {
+    const t = q.get('t');
+    let who = null;
+    try { who = await post({ type: 'who', t }); } catch { return offline(); }
+    if (!who.ok) return show('kaizo-think', 'This link has run out', 'Ask the grown-up who added you to tap Resend in Kaimon Multiply, under Grown-ups.');
+    const name = who.trainer ? `<b>${esc(who.trainer)}</b>` : 'a trainer';
+    ask('kaizo-wave', 'Say yes to weekly reports', `Get a short email each Sunday morning about how ${name} is doing with times tables in Kaimon Multiply.`, 'Yes, send me reports', { type: 'confirm', t },
+      () => show('kaizo-cheer', 'You’re all set', 'The first report comes next Sunday morning. Every report has a link to stop them.'));
+  } else if (a === 'stop' && q.get('e') && q.get('p') && q.get('s')) {
+    ask('kaizo-think', 'Stop weekly reports?', 'You won’t get Kaimon Multiply weekly reports for this trainer anymore.', 'Stop these emails', { type: 'stop', e: q.get('e'), p: q.get('p'), s: q.get('s') },
+      () => show('kaizo-cheer', 'Done', 'No more weekly reports will come for this trainer.'));
+  } else {
+    show('kaizo-think', 'This link looks broken', 'Try the link in the email again.');
+  }
+})();
+</script>
+</body>
+</html>

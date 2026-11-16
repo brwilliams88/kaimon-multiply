@@ -35,21 +35,25 @@ export function startUpdates({ isBusy, showBar }) {
       const w = r.installing;
       w?.addEventListener('statechange', () => { if (w.state === 'installed') handleWaiting(); });
     });
-    // Check when the app opens, when it comes back to the front, and every 30 minutes.
-    r.update().catch(() => {});
-    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') r.update().catch(() => {}); });
-    setInterval(() => r.update().catch(() => {}), 30 * 60 * 1000);
+    // Check when the app opens, when it comes back to the front or back online,
+    // and every 30 minutes. Never while offline: the running version keeps working.
+    const check = () => { if (navigator.onLine !== false) r.update().catch(() => {}); };
+    check();
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') check(); });
+    window.addEventListener('online', check);
+    setInterval(check, 30 * 60 * 1000);
   }).catch((e) => console.warn('Service worker not registered', e));
-  // Once the app is idle, let the service worker download the rest of the art so
-  // every Kaimon, place and trainer works offline.
-  navigator.serviceWorker.ready.then((r) => setTimeout(() => r.active?.postMessage('warmArt'), 5000)).catch(() => {});
-  let reloaded = false;
-  navigator.serviceWorker.addEventListener('controllerchange', () => { if (!reloaded) { reloaded = true; location.reload(); } });
+  // The rest of the art downloads in the background: see startOffline() in offline.js.
+  // A new version took over: reload into it. On the very first visit the service
+  // worker only starts looking after the page, so there is nothing to reload.
+  let reloaded = !navigator.serviceWorker.controller;
+  navigator.serviceWorker.addEventListener('controllerchange', () => { if (!reloaded) { reloaded = true; location.reload(); } else reloaded = false; });
 }
 
 // Grown-ups "Check for updates". Returns a short message for the screen.
 export async function checkNow(onStatus = () => {}) {
   let latest;
+  if (navigator.onLine === false) return { msg: 'No internet right now. Kaimon still plays offline. Check again when online.' };
   try { latest = await latestVersion(); } catch { return { msg: 'Couldn’t check right now. Make sure the device is online.' }; }
   if (!newer(latest, VERSION)) return { msg: `You have the newest version, v${VERSION}.` };
   onStatus(`Getting v${latest}...`);

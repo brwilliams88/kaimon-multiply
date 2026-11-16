@@ -72,6 +72,8 @@ export async function completeLinkSignIn() {
 
 // Opt-in news emails about Kaimon games. Off unless a grown-up turns it on.
 export async function getUpdates() { return !!(await api('/rest/v1/rpc/get_updates', { method: 'POST', body: {}, token: await token() })); }
+// On by default: adds a signed-in grown-up who never turned news off. Returns on/off.
+export async function ensureUpdates() { return !!(await api('/rest/v1/rpc/ensure_updates', { method: 'POST', body: {}, token: await token() })); }
 export async function setUpdates(want) { return api('/rest/v1/rpc/set_updates', { method: 'POST', body: { want: !!want }, token: await token() }); }
 
 export function signOut() {

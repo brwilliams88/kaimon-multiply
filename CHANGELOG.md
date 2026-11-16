@@ -2,6 +2,66 @@
 
 All notable changes. Versioning: `0.MINOR.0` marks a roadmap phase, `0.x.PATCH` is any shipped change a player or parent can notice, and `1.0.0` is the public launch. See "Versioning" in CLAUDE.md. The in-app version history (Grown-ups > What's new) reads from `js/data/changelog.js`; keep both in sync. Each release is tagged in git as `vX.Y.Z`.
 
+## v0.5.27 (2026-11-15) The Menu stays put
+
+- Fixed: scrolling while the Menu or another sheet was open could move the screen behind it. Now only the sheet scrolls.
+
+## v0.5.26 (2026-11-15) Simpler sharing
+
+- Share the game is one tap now (no press and hold). It opens the device's share menu and sends just the link, which shows as a picture card in Messages, WhatsApp, Slack and Mail. Add your own words if you like.
+- Where there is no share menu, a small sheet offers Copy link, Email and WhatsApp, without the repeated link box.
+- Grown-ups opens with one tap too. It still needs the grown-up PIN.
+
+## v0.5.25 (2026-11-15) Kairo and Kairos HP
+
+- Kairo now has 120 HP and Kairos 200. Their attacks still grow with quick right answers and every right answer in a row.
+
+## v0.5.24 (2026-11-15) News emails on by default
+
+- The News emails switch in Grown-ups is now on by default for a signed-in grown-up. Turn it off to opt out. Unsubscribing from an email turns it off in the game too, and it stays off.
+
+## v0.5.23 (2026-11-15) Weekly reports on Sunday mornings
+
+- Weekly reports now cover Sunday to Saturday and go out on Sunday mornings, from a family device the first time the game is open after 7 am.
+- Fixed: the "Yes, send me reports" button in the email could show a Google error for people signed in to several Google accounts. The Yes and Stop links now open a page on the game's own site.
+- Fixed: Resend now really sends another "Say yes" email (after a few minutes, up to 3 times a day), and says so if it has to wait.
+
+## v0.5.22 (2026-11-15) Sharper browser tab icon
+
+- New tab icon: a bold Capture Ball drawn to stay clear and easy to spot even at the tiny size of a browser tab.
+
+## v0.5.21 (2026-11-15) Kairo and Kairos power up
+
+- Kairo and Kairos are now by far the strongest Kaimon. Kairo has 160 HP and Kairos 240 (most Kaimon have 40).
+- Their attacks depend on how well you answer: a quick right answer hits really hard, and every right answer in a row makes the next hit stronger. A slow answer hits like any other Kaimon.
+
+## v0.5.20 (2026-11-15) Music comes back after the mic
+
+- Fixed: after turning Mic mode off, the music could stay quiet. It now comes straight back to full volume when you tap the Mic button off or leave the round.
+
+## v0.5.19 (2026-11-15) News emails
+
+- When a grown-up turns on family sync, a checked box adds their email to occasional news about Kaimon games. They can uncheck it, turn it off any time with the News emails switch in Grown-ups, or tap Unsubscribe in any news email to delete it from the list.
+- The unsubscribe page now says Play Kaimon Multiply.
+
+## v0.5.18 (2026-11-15) Play offline
+
+- After one visit online, the whole game plays with no internet, including all 620 pictures. Grown-ups shows a "Ready to play offline" meter while pictures download.
+- When the internet drops, a message says you are offline and a no-signal chip shows on Home. When it comes back, a message says you are back online, syncs your progress, and says when it is done.
+- The mic needs the internet, so with no signal the Mic button rests and the number pad works as usual. Mic mode comes back by itself when the internet does.
+- The game asks the browser to keep your progress safe, and Grown-ups shows whether it is protected.
+
+## v0.5.17 (2026-11-15) Share the game
+
+- New in the Menu: Share the game. A grown-up presses and holds, then can share the link with the device share menu, Copy link, Email or WhatsApp. Only the link is shared, never anything about your trainers.
+- Links to the game now show a nice preview card in iMessage, WhatsApp and other apps.
+
+## v0.5.16 (2026-11-15) Weekly report emails
+
+- New in Grown-ups: a Weekly report for each trainer, with minutes played, cards, right answers, each times table, strongest and trickiest facts, medals and catches, compared with the week before.
+- Grown-ups can have it emailed every Monday to up to 5 people. Each person gets one "Say yes" email first, and every report has a "Stop these emails" link. Emails come from the Kaimon Gmail and cost nothing to send.
+- Reports and invites made with no internet wait on the device and send when it is back online.
+
 ## v0.5.15 (2026-11-15) Family sync for every family
 
 - Family sync now works for any family, not just ours. A grown-up turns it on in Grown-ups with their email and a code, then uses the same email on each device (phone, iPad, Chromebook) to keep progress in step. Each family only ever sees its own trainers.

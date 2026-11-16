@@ -3,7 +3,7 @@
 import { setSetting, save } from '../core/store.js';
 import { syncNow } from '../core/sync.js';
 import { weeklyReport, reportText, thisWeek, weekLabel, dayKey } from '../core/report.js';
-import { senderReady, invite, recipientStatus, sendReport, errorText, cleanEmail, validEmail, MAX_RECIPIENTS } from '../core/mailer.js';
+import { senderReady, invite, recipientStatus, sendReport, errorText, cleanEmail, validEmail, MAX_RECIPIENTS, queuedInvites } from '../core/mailer.js';
 import { REGIONS, TYPES } from '../data/creatures.js';
 import { kaimonSrc } from '../core/art.js';
 import { itemImg, ballImg, uiImg } from '../core/assets.js';
@@ -90,22 +90,24 @@ const STATE = {
   invited: ['wait', 'Waiting for a yes'],
   stopped: ['no', 'Said no thanks'],
   unsent: ['no', 'Yes email not sent'],
+  queued: ['wait', 'Sends when online'],
 };
 const statusCache = {}; // pid -> { email: state }
 
 function mailHTML(p) {
   const s = p.settings;
   const to = s.reportTo || [];
-  const st = statusCache[p.id] || {};
+  const st = { ...(statusCache[p.id] || {}) };
+  for (const e of queuedInvites(p.id)) st[e] = 'queued';
   const ready = senderReady();
   const tag = (e) => { const k = STATE[st[e]]; return ready && k ? `<span class="wr-tag ${k[0]}">${k[1]}</span>` : ''; };
   return `
-    <label class="row wr-onrow"><span>Email a weekly report<small class="row-note">Every Monday, the first time Kaimon opens, last week's report goes to the grown-ups below.</small></span><input type="checkbox" class="switch" data-wr-on ${s.reportOn ? 'checked' : ''} aria-label="Email a weekly report"></label>
+    <label class="row wr-onrow"><span>Email a weekly report<small class="row-note">Sunday mornings, last week's report goes to the grown-ups below. It sends from a family device the first time the game is opened after 7 am.</small></span><input type="checkbox" class="switch" data-wr-on ${s.reportOn ? 'checked' : ''} aria-label="Email a weekly report"></label>
     ${p.family
       ? `<p class="note">${esc(p.name)} syncs with your family, so this list is on every family device. Only one device sends each week.</p>`
       : '<p class="note">Turning this on sends this week’s summary from this device to be emailed. The summary is not kept on a server. Only the email addresses are kept, so we know who said yes.</p>'}
     <div class="wr-to-list">
-      ${to.map((e) => `<div class="wr-to"><span class="wr-to-who"><span class="wr-to-e">${esc(e)}</span>${tag(e)}</span><span class="wr-to-act">${ready && st[e] && st[e] !== 'confirmed' && st[e] !== 'stopped' ? `<button class="btn-chunky btn-sm" data-wr-resend="${esc(e)}">Resend</button>` : ''}<button class="btn-chunky btn-sm btn-danger-soft" data-wr-del="${esc(e)}" aria-label="Remove ${esc(e)}">Remove</button></span></div>`).join('')}
+      ${to.map((e) => `<div class="wr-to"><span class="wr-to-who"><span class="wr-to-e">${esc(e)}</span>${tag(e)}</span><span class="wr-to-act">${ready && st[e] && !['confirmed', 'stopped', 'queued'].includes(st[e]) ? `<button class="btn-chunky btn-sm" data-wr-resend="${esc(e)}">Resend</button>` : ''}<button class="btn-chunky btn-sm btn-danger-soft" data-wr-del="${esc(e)}" aria-label="Remove ${esc(e)}">Remove</button></span></div>`).join('')}
     </div>
     ${to.length < MAX_RECIPIENTS ? `<form class="wr-add" data-wr-form novalidate><input class="field" type="email" inputmode="email" autocomplete="email" maxlength="254" placeholder="Grown-up's email" aria-label="Grown-up's email" data-wr-email><button class="btn-chunky btn-primary" data-wr-add>Add</button></form>` : ''}
     <p class="note">${to.length ? `${to.length} of ${MAX_RECIPIENTS} emails.` : `Add up to ${MAX_RECIPIENTS} emails.`} Each person first gets one email and taps Yes before any report comes.</p>
@@ -150,9 +152,12 @@ export function bindReportPanel(panel, p) {
     } catch { /* offline: keep what we know */ }
   };
   refresh();
+  // Invites that waited for the internet went out: show their new state.
+  const onSent = () => { if (!panel.isConnected) { window.removeEventListener('kaimon:mailsent', onSent); return; } draw(); refresh(); };
+  window.addEventListener('kaimon:mailsent', onSent);
 
-  const sendInvite = async (e) => {
-    try { const r = await invite(p, e); setStates({ [e]: r.state || 'invited' }); return r.state || 'invited'; }
+  const sendInvite = async (e, opts) => {
+    try { const r = await invite(p, e, opts); if (r.state !== 'queued') setStates({ [e]: r.state || 'invited' }); return opts?.resend ? r : r.state || 'invited'; }
     catch (err) { setStates({ [e]: 'unsent' }); throw err; }
   };
 
@@ -183,7 +188,7 @@ export function bindReportPanel(panel, p) {
     await busy(btn, 'Adding...', async () => {
       try {
         const st = await sendInvite(e);
-        toast(st === 'confirmed' ? `${e} already said yes.` : st === 'stopped' ? `${e} asked not to get these emails.` : `Added. We emailed ${e} to say yes.`, 3400);
+        toast(st === 'queued' ? `Added. The email to ${e} goes out when this device is back online.` : st === 'confirmed' ? `${e} already said yes.` : st === 'stopped' ? `${e} asked not to get these emails.` : `Added. We emailed ${e} to say yes.`, 3400);
       } catch (err) { toast('Added. ' + errorText(err) + ' Tap Resend later.', 3600); }
     });
     draw();
@@ -200,7 +205,15 @@ export function bindReportPanel(panel, p) {
 
   on(mail, 'click', '[data-wr-resend]', (ev, el) => busy(el, 'Sending...', async () => {
     const e = el.dataset.wrResend;
-    try { const st = await sendInvite(e); toast(st === 'confirmed' ? `${e} already said yes.` : `We emailed ${e} again. It can take a minute.`); }
+    try {
+      const r = await sendInvite(e, { resend: true });
+      toast(r.state === 'queued' ? 'No internet right now. It goes out when this device is back online.'
+        : r.state === 'confirmed' ? `${e} already said yes.`
+        : r.state === 'stopped' ? `${e} asked to stop these emails.`
+        : r.sent ? `We emailed ${e} again. It can take a minute. Check Spam too.`
+        : r.wait === 'tomorrow' ? `We've emailed ${e} a few times today. Try again tomorrow, and check Spam.`
+        : `We just emailed ${e}. Check Spam, or try again in ${r.wait || 3} minute${r.wait === 1 ? '' : 's'}.`, 4000);
+    }
     catch (err) { toast(errorText(err)); }
     draw();
   }));

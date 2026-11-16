@@ -7,7 +7,7 @@ import { weeklyReport, lastFullWeek, mondayOf } from './report.js';
 
 // The web app URL from Deploy > Manage deployments in Apps Script. Empty means
 // the sender is not set up yet: Grown-ups then offers "Copy report" instead.
-export const REPORT_ENDPOINT = '';
+export const REPORT_ENDPOINT = 'https://script.google.com/macros/s/AKfycbwKPSCF8wmDgn9KPxz0-YkBUCEYjqv3PjD_ynytTcLiyS0colGFhqKhLJxZ7IUuxou5bA/exec';
 export const MAX_RECIPIENTS = 5;
 export const senderReady = () => !!REPORT_ENDPOINT;
 
@@ -32,7 +32,54 @@ async function post(body, ms = 20000) {
 }
 
 // A one-time "say yes" email to a new grown-up. Returns { state }.
-export const invite = (p, to) => post({ type: 'invite', to: cleanEmail(to), trainer: p.name, pid: p.id });
+// With no internet the invite waits in a small outbox on this device and goes
+// out by itself when the device is back online: returns { state: 'queued' }.
+export async function invite(p, to, { resend = false } = {}) {
+  const e = cleanEmail(to);
+  try {
+    return await post({ type: 'invite', to: e, trainer: p.name, pid: p.id, ...(resend ? { resend: true } : {}) });
+  } catch (err) {
+    if (err.message !== 'offline') throw err;
+    queueInvite(p, e);
+    return { state: 'queued' };
+  }
+}
+
+const OUTBOX = 'kaimon.mailOutbox';
+function readOutbox() { try { return JSON.parse(localStorage.getItem(OUTBOX) || '[]'); } catch { return []; } }
+function writeOutbox(list) { try { if (list.length) localStorage.setItem(OUTBOX, JSON.stringify(list)); else localStorage.removeItem(OUTBOX); } catch { /* private mode */ } }
+function queueInvite(p, to) {
+  const list = readOutbox().filter((x) => !(x.pid === p.id && x.to === to));
+  list.push({ pid: p.id, to, t: Date.now() });
+  writeOutbox(list);
+}
+// Emails waiting for the internet, for one trainer (or all).
+export const queuedInvites = (pid) => readOutbox().filter((x) => !pid || x.pid === pid).map((x) => x.to);
+
+// Send invites that waited for the internet. Quietly keeps any that still can't go.
+let flushing = null;
+export function flushMailOutbox() {
+  if (flushing || !senderReady() || (typeof navigator !== 'undefined' && navigator.onLine === false)) return flushing || Promise.resolve([]);
+  flushing = (async () => {
+    const out = [];
+    for (const x of readOutbox()) {
+      const p = allProfiles().find((y) => y.id === x.pid);
+      // Trainer gone, or the email was taken off the list: nothing to send.
+      if (!p || !(p.settings.reportTo || []).includes(x.to)) { writeOutbox(readOutbox().filter((y) => !(y.pid === x.pid && y.to === x.to))); continue; }
+      try {
+        const r = await post({ type: 'invite', to: x.to, trainer: p.name, pid: p.id });
+        out.push({ pid: p.id, to: x.to, state: r.state || 'invited' });
+      } catch (err) {
+        if (err.message === 'offline' || err.message === 'timeout') break; // try again later
+        out.push({ pid: p.id, to: x.to, error: err.message });
+      }
+      writeOutbox(readOutbox().filter((y) => !(y.pid === x.pid && y.to === x.to)));
+    }
+    if (out.length && typeof window !== 'undefined') window.dispatchEvent(new Event('kaimon:mailsent'));
+    return out;
+  })().finally(() => { flushing = null; });
+  return flushing;
+}
 // Which emails said yes. Returns { confirmed: [], pending: [], stopped: [] }.
 export const recipientStatus = (p) => post({ type: 'status', to: p.settings.reportTo || [], pid: p.id });
 
@@ -59,7 +106,7 @@ const tried = new Set();
 const TRY_KEY = 'kaimon.reportTry';
 const RETRY_MS = 6 * 3600 * 1000;
 function lastTry(pid) { try { return JSON.parse(localStorage.getItem(TRY_KEY) || '{}')[pid] || 0; } catch { return 0; } }
-function markTry(pid) { try { const o = JSON.parse(localStorage.getItem(TRY_KEY) || '{}'); o[pid] = Date.now(); localStorage.setItem(TRY_KEY, JSON.stringify(o)); } catch { /* private mode */ } }
+function markTry(pid, t = Date.now()) { try { const o = JSON.parse(localStorage.getItem(TRY_KEY) || '{}'); if (t) o[pid] = t; else delete o[pid]; localStorage.setItem(TRY_KEY, JSON.stringify(o)); } catch { /* private mode */ } }
 
 export function reportDue(p, now = Date.now()) {
   const s = p.settings;
@@ -96,6 +143,8 @@ export async function autoSendReports({ imageFor, syncFirst } = {}) {
       if (r.sent > 0 || r.dup) setSetting(p, 'reportSent', week);
       out.push({ id: p.id, week, ...r });
     } catch (e) {
+      // No internet after all: not a real try. It goes when the device is back online.
+      if (e.message === 'offline') { tried.delete(p.id + ':' + week); markTry(p.id, 0); }
       out.push({ id: p.id, week, error: e.message });
     }
   }

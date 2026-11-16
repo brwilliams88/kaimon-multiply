@@ -10,7 +10,9 @@ import { renderBattle } from './ui/battle.js';
 import { renderTrainer } from './ui/trainer.js';
 import { VERSION } from './data/changelog.js';
 import { startAutoSync, completeLinkSignIn, syncNow } from './core/sync.js';
-import { autoSendReports } from './core/mailer.js';
+import { autoSendReports, flushMailOutbox } from './core/mailer.js';
+import { startOffline } from './core/offline.js';
+import { startOfflineUI, afterScreen } from './ui/offline.js';
 import { trainerPNG } from './ui/reportPanel.js';
 import { toast, soundIcon } from './ui/dom.js';
 import { openTime } from './core/actions.js';
@@ -52,14 +54,24 @@ function go(name, params = {}) {
   root.firstElementChild?.classList.add('screen-in');
   window.scrollTo(0, 0);
   if (name === 'welcome' || name === 'home') maybeIconNotice();
+  afterScreen(name, root); // offline chip, storage protection, a waiting "Back online" note
   // The title screen is one fixed screen: no rubber-band scrolling on iPhone.
   document.documentElement.classList.toggle('lock-screen', name === 'welcome');
 }
 // Images fade in as they arrive instead of popping in.
 document.addEventListener('load', (e) => { const t = e.target; if (t.tagName === 'IMG') t.classList.add('ld'); }, true);
 // iOS can still nudge a fixed page; stop drags on the title screen unless they're inside a sheet.
+// The same while a sheet (like the Menu) is open: only the sheet itself scrolls.
 document.addEventListener('touchmove', (e) => {
-  if (!document.documentElement.classList.contains('lock-screen')) return;
+  const html = document.documentElement;
+  if (html.classList.contains('sheet-open')) {
+    const sh = e.target.closest?.('.sheet');
+    if (sh && sh.scrollHeight > sh.clientHeight + 1) return;
+    if (sh) for (let el = e.target; el && el !== sh; el = el.parentElement) if (el.scrollHeight > el.clientHeight + 1 && /auto|scroll/.test(getComputedStyle(el).overflowY)) return;
+    e.preventDefault();
+    return;
+  }
+  if (!html.classList.contains('lock-screen')) return;
   if (e.target.closest?.('.sheet, .overlay, .fs-sheet, input, textarea')) return;
   for (let el = e.target; el && el !== document.body; el = el.parentElement) {
     if (el.scrollHeight > el.clientHeight + 1 && /auto|scroll/.test(getComputedStyle(el).overflowY)) return;
@@ -67,6 +79,10 @@ document.addEventListener('touchmove', (e) => {
   }
   e.preventDefault();
 }, { passive: false });
+
+// Offline play: online/offline state, saving pictures for offline, the offline chip.
+startOffline();
+startOfflineUI();
 
 // Several trainers on one device: start on "Who's playing?". One trainer: straight in.
 go(!active() || allProfiles().length > 1 ? 'welcome' : (active().starter ? 'home' : 'meetPartner'));
@@ -85,6 +101,12 @@ function sendWeeklyReports() {
 }
 setTimeout(sendWeeklyReports, 5000);
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') setTimeout(sendWeeklyReports, 3000); });
+// A device left open across Sunday morning still sends on time.
+setInterval(() => { if (document.visibilityState === 'visible') sendWeeklyReports(); }, 20 * 60 * 1000);
+// Emails tried with no internet wait on the device and go out once back online.
+const sendWaitingMail = () => { flushMailOutbox().catch(() => {}); sendWeeklyReports(); };
+window.addEventListener('online', () => setTimeout(sendWaitingMail, 3000));
+setTimeout(() => flushMailOutbox().catch(() => {}), 6000);
 
 // Sound button in the top bars (home, practice, battles).
 document.addEventListener('click', (e) => {
