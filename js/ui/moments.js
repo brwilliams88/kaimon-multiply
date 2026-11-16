@@ -80,14 +80,11 @@ export function unlockCardHTML(p, items, { close = false, cls = '' } = {}) {
   const L = lookOf(p), kai = isKai(L), one = items.length === 1, it = items[0];
   let art, kicker, title, text, btn, lic = false;
   if (one && it.kind === 'hat') {
-    const maker = L.char === 'm';
-    art = maker ? `<span class="wn-face">${itemDot(L, it, 'wn-hatdot', false)}</span>`
-      : `<span class="wn-face">${poseSwap(trainerImg(L, 'face'), trainerImg({ ...L, hat: it.id }, 'face'), 'wn-swap')}</span>`;
+    art = `<span class="wn-face">${poseSwap(trainerImg(L, 'face'), trainerImg({ ...L, hat: it.id }, 'face'), 'wn-swap')}</span>`;
     kicker = 'New hat!';
     title = `The ${esc(it.name)} is yours!`;
     text = `${esc(gotText(it))}. ${esc(HAT_BLURB[it.id] || '')}`;
-    btn = maker ? '<button class="btn-chunky btn-primary wn-btn" data-wn-open>Open Wardrobe</button>'
-      : `<button class="btn-chunky btn-primary wn-btn" data-wn-hat="${it.id}">Wear it!</button>`;
+    btn = `<button class="btn-chunky btn-primary wn-btn" data-wn-hat="${it.id}">Wear it!</button>`;
   } else if (one) {
     const after = kai ? { ...L, card: it.id } : { ...L, color: it.id };
     lic = kai;

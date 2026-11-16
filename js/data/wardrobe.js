@@ -12,7 +12,9 @@
 // Hats come from the game's world. A hat shows where the trainer stands still (Home,
 // the Trainer page and License, Who's playing, the Wardrobe); battles keep the hatless
 // poses. Hat art: assets/trainers/<id>/base-<hat>.webp and face-<hat>.webp (js/core/assets.js).
-// Only the 15 drawn trainers have hat art. An item with ready: false is hidden from earning and wearing.
+// Every trainer can wear every hat: the 15 drawn trainers and all 36 make-your-own looks
+// (whose hat is its own layer, see js/core/assets.js). An item with ready: false is hidden
+// from earning and wearing.
 
 export const STARTER_COLORS = ['green', 'blue', 'red'];
 

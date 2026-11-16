@@ -1,7 +1,7 @@
 // Trainer looks. A look is { skin, hair, hairColor, outfit, hat } and draws as a
 // sticker-style portrait. Old trainers saved a number (0 to 5); that still works.
 // These are stand-ins until the real trainer art is made from family photos.
-import { playerSrc } from '../core/assets.js';
+import { playerSrc, playerHatSrc } from '../core/assets.js';
 import { HAT_IDS } from '../data/wardrobe.js';
 
 const INK = '#14213D';
@@ -128,7 +128,7 @@ export const charLook = (x) => {
   if (!x || typeof x !== 'object') return { char: 'kai', color: 'green' };
   const L = migrateLook(x.char ? x : lookOf(x));
   if (x.card && JACKETS[x.card]) L.card = x.card;
-  if (x.char && L.char !== 'm' && HAT_IDS.includes(x.hat)) L.hat = x.hat; // hats fit the drawn trainers
+  if (x.char && HAT_IDS.includes(x.hat)) L.hat = x.hat; // every trainer can wear every hat
   return L;
 };
 export const randomLook = () => {
@@ -153,7 +153,8 @@ const toRGB = (h, s, v) => {
   return [(R + m) * 255, (G + m) * 255, (B + m) * 255];
 };
 // key: "char|pose|jacket|hair|skin|hat" (hair and skin only for make-your-own trainers,
-// hat only for drawn trainers in a standing pose)
+// hat only in a standing pose). A make-your-own trainer's hat is its own layer: the hatted
+// art (hair trimmed) is repainted first, then the hat is drawn on top as it is.
 function paint(key) {
   if (painted.has(key)) return Promise.resolve(painted.get(key));
   if (waiting.has(key)) return waiting.get(key);
@@ -162,9 +163,11 @@ function paint(key) {
   const hairT = hair ? hsv(HAIR_TONES[hair] || HAIR_TONES.brown) : null;
   const skin = skinS === '' || skinS == null ? SKIN_KEY : +skinS;
   const skinT = skin !== SKIN_KEY ? hsv(SKIN_TONES[skin]) : null;
+  const layer = hat && char.startsWith('m:') ? playerHatSrc(folder(char), pose, hat) : '';
+  const top = layer ? new Promise((ok) => { const t = new Image(); t.onload = () => ok(t); t.onerror = () => ok(null); t.src = layer; }) : Promise.resolve(null);
   const job = new Promise((resolve) => {
     const im = new Image();
-    im.onload = () => {
+    im.onload = async () => {
       try {
         const c = document.createElement('canvas');
         c.width = im.naturalWidth; c.height = im.naturalHeight;
@@ -187,12 +190,15 @@ function paint(key) {
             // Hair: the magenta placeholder becomes the chosen color, keeping its shading.
             out = toRGB(hairT[0] + (h - 300) * 0.25, hairT[1] * Math.min(1.25, sat / 0.72), hairT[2] * Math.min(1.25, mx / 0.82));
           } else if (skinT && (h <= 45 || h >= 345) && sat >= 0.12 && sat <= 0.85 && mx >= 0.35) {
-            // Skin: the tan placeholder becomes the chosen tone, keeping its shading.
-            out = toRGB(skinT[0] + (h - 24) * 0.5, skinT[1] * Math.min(1.4, sat / 0.55), skinT[2] * Math.min(1.08, mx / 0.97));
+            // Skin: the tan placeholder becomes the chosen tone, keeping its shading. The hue
+            // step is signed (lips, tongue and blush sit just under 360, so they stay pink).
+            out = toRGB(skinT[0] + ((((h - 24 + 540) % 360) - 180) * 0.5), skinT[1] * Math.min(1.4, sat / 0.55), skinT[2] * Math.min(1.08, mx / 0.97));
           }
           if (out) { px[i] = out[0]; px[i + 1] = out[1]; px[i + 2] = out[2]; }
         }
         g.putImageData(d, 0, 0);
+        const t = await top;
+        if (t) g.drawImage(t, 0, 0, c.width, c.height);
         const url = c.toDataURL('image/webp', 0.9);
         painted.set(key, url);
         resolve(url);
@@ -216,7 +222,7 @@ const poseOf = (L, pose) => {
 export function paintKey(x, pose) {
   const L = charLook(x);
   const [ps, hat] = poseOf(L, pose);
-  if (L.char === 'm') return `m:${L.head}-${L.outfit}|${ps}|${L.color}|${L.hair}|${L.skin}|`;
+  if (L.char === 'm') return `m:${L.head}-${L.outfit}|${ps}|${L.color}|${L.hair}|${L.skin}|${hat}`;
   if (L.char === 'kai' || L.color === 'green') return null;
   return `${L.char}|${ps}|${L.color}|||${hat}`;
 }
