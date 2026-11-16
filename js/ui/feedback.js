@@ -201,10 +201,19 @@ function loadCss() {
   return cssReady;
 }
 
+// A note typed but not sent waits here (only while the app is open), so tapping
+// Back, the X or outside the sheet by mistake doesn't lose it.
+const drafts = {};
 async function open(mode, { place = '', prompt = false, back = null, backLabel } = {}) {
   await loadCss();
   const rate = mode === 'rate';
-  const sh = sheet(formHTML(mode, prompt), { cls: 'fb-sheet', x: true, back, backLabel });
+  let sent = false;
+  const sh = sheet(formHTML(mode, prompt), { cls: 'fb-sheet', x: true, back, backLabel,
+    onClose: () => {
+      if (sent) return;
+      const d = { stars: st.stars, kind: st.kind, text: text.value, name: el.querySelector('[data-name]').value, email: el.querySelector('[data-email]')?.value || '' };
+      drafts[mode] = d.stars || d.text.trim() || d.name.trim() || d.email.trim() ? d : null;
+    } });
   const el = sh.el;
   const form = el.querySelector('form');
   const send = el.querySelector('[data-send]');
@@ -213,19 +222,25 @@ async function open(mode, { place = '', prompt = false, back = null, backLabel }
   const st = { stars: 0, kind: '' };
   const ready = () => { send.disabled = rate ? !st.stars : !(st.kind && text.value.trim()); };
 
+  let pickStar = () => {}, pickKind = () => {};
   if (rate) {
     const label = el.querySelector('[data-star-label]');
     const paint = (n) => el.querySelectorAll('.fb-star').forEach((b) => b.classList.toggle('on', +b.dataset.star <= n));
+    pickStar = (n) => {
+      const b = el.querySelector(`.fb-star[data-star="${n}"]`);
+      if (!b) return;
+      st.stars = n;
+      el.querySelectorAll('.fb-star').forEach((x) => { x.setAttribute('aria-checked', String(x === b)); x.classList.remove('pop'); });
+      paint(st.stars);
+      label.textContent = STAR_LABELS[st.stars - 1];
+      label.classList.add('set');
+      ready();
+    };
     el.querySelectorAll('.fb-star').forEach((b) => {
       b.addEventListener('click', () => {
-        st.stars = +b.dataset.star;
         sfx.tap();
-        el.querySelectorAll('.fb-star').forEach((x) => { x.setAttribute('aria-checked', String(x === b)); x.classList.remove('pop'); });
-        paint(st.stars);
+        pickStar(+b.dataset.star);
         void b.offsetWidth; b.classList.add('pop');
-        label.textContent = STAR_LABELS[st.stars - 1];
-        label.classList.add('set');
-        ready();
       });
       b.addEventListener('pointerenter', () => { if (matchMedia('(hover: hover)').matches) paint(+b.dataset.star); });
       b.addEventListener('pointerleave', () => paint(st.stars));
@@ -239,15 +254,25 @@ async function open(mode, { place = '', prompt = false, back = null, backLabel }
       const b = el.querySelector(`[data-star="${n}"]`); b.click(); b.focus();
     });
   } else {
-    el.querySelectorAll('.fb-kind').forEach((b) => b.addEventListener('click', () => {
-      st.kind = b.dataset.kind;
-      sfx.tap();
-      el.querySelectorAll('.fb-kind').forEach((x) => { const on = x === b; x.classList.toggle('on', on); x.setAttribute('aria-checked', String(on)); });
+    pickKind = (kind) => {
+      if (!KINDS.some((k) => k.id === kind)) return;
+      st.kind = kind;
+      el.querySelectorAll('.fb-kind').forEach((x) => { const on = x.dataset.kind === kind; x.classList.toggle('on', on); x.setAttribute('aria-checked', String(on)); });
       text.placeholder = KINDS.find((k) => k.id === st.kind).ph;
       ready();
-    }));
+    };
+    el.querySelectorAll('.fb-kind').forEach((b) => b.addEventListener('click', () => { sfx.tap(); pickKind(b.dataset.kind); }));
   }
   text.addEventListener('input', ready);
+  // Put back a note that was typed earlier and not sent.
+  const d = drafts[mode];
+  if (d) {
+    text.value = d.text; el.querySelector('[data-name]').value = d.name;
+    if (el.querySelector('[data-email]')) el.querySelector('[data-email]').value = d.email;
+    if (rate && d.stars) pickStar(d.stars);
+    if (!rate && d.kind) pickKind(d.kind);
+    ready();
+  }
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -266,6 +291,7 @@ async function open(mode, { place = '', prompt = false, back = null, backLabel }
     try {
       state = await submitNote({ kind: rate ? 'rating' : st.kind, stars: st.stars, text: text.value, name: el.querySelector('[data-name]').value, email, place: place || (prompt ? 'prompt' : '') });
     } catch { state = 'queued'; }
+    sent = true; drafts[mode] = null;
     sfx.correct?.();
     form.outerHTML = thanksHTML(rate, state === 'queued', st.stars);
     el.querySelector('.fb-thanks [data-close]')?.focus();

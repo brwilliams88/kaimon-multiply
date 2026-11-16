@@ -336,6 +336,7 @@ button { font: inherit; color: inherit; cursor: pointer; touch-action: manipulat
 /* Sheets, toast, update bar */
 .sheet-wrap { position: fixed; inset: 0; background: rgba(20, 33, 61, .45); display: grid; place-items: end center; z-index: 50; opacity: 0; transition: opacity .2s; padding: 16px; padding-bottom: calc(16px + var(--safe-b)); }
 .sheet-wrap.open { opacity: 1; }
+.sheet-wrap.closing { pointer-events: none; } /* taps go to the page while a sheet fades away */
 @media (min-width: 700px) { .sheet-wrap { place-items: center; } }
 .sheet { background: var(--paper); border: 3px solid var(--ink); border-radius: 28px; padding: 22px; width: min(100%, 520px); max-height: 88dvh; overflow: auto; box-shadow: 0 8px 0 var(--ink); transform: translateY(30px); transition: transform .22s cubic-bezier(.3, 1.4, .5, 1); }
 .sheet-wrap.open .sheet { transform: none; }
@@ -2391,7 +2392,7 @@ body:has(.res) #toast:not(.show) { visibility: hidden; }
 .play-top .mic.no-net::after { box-shadow: 0 0 0 2px #E9EEF5; background: #7B86A0; }
 .mic.no-net::before { content: ''; position: absolute; top: -9px; right: -9px; width: 22px; height: 22px; border-radius: 50%; border: 2.5px solid var(--ink); background: var(--sky-2) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2314213D' stroke-width='2.6' stroke-linecap='round'%3E%3Cpath d='M2.5 9a14 14 0 0 1 19 0'/%3E%3Cpath d='M5.8 12.6a9 9 0 0 1 12.4 0'/%3E%3Cpath d='M9.1 16.1a4.4 4.4 0 0 1 5.8 0'/%3E%3Ccircle cx='12' cy='19.6' r='1.5' fill='%2314213D' stroke='none'/%3E%3Cpath d='M4 3.5 20 20.5' stroke-width='3'/%3E%3C/svg%3E") center / 15px no-repeat; }
 /* v0.5.27 The screen behind an open sheet stays still */
-html.sheet-open, html.sheet-open body { overflow: hidden; overscroll-behavior: none; }
+html.sheet-open { overflow: hidden; overscroll-behavior: none; }
 .sheet { overscroll-behavior: contain; }
 
 /* Who's playing? A swipe carousel of trainer cards (portrait), a list (landscape).
@@ -2614,7 +2615,7 @@ html.sheet-open, html.sheet-open body { overflow: hidden; overscroll-behavior: n
   @keyframes fl-flare { 0% { scale: 1; } 40% { scale: 1.5; } 100% { scale: 1; } }
 }
 /* v0.5.28 A hidden message never peeks out at the bottom of the screen */
-#toast { opacity: 0; visibility: hidden; transition: transform .25s cubic-bezier(.3, 1.4, .5, 1), opacity .2s, visibility 0s .25s; }
+#toast { pointer-events: none; opacity: 0; visibility: hidden; transition: transform .25s cubic-bezier(.3, 1.4, .5, 1), opacity .2s, visibility 0s .25s; }
 #toast.show { opacity: 1; visibility: visible; transition: transform .25s cubic-bezier(.3, 1.4, .5, 1), opacity .15s, visibility 0s; }
 
 /* ===== Collect: Kaidex binder, Trainer License, Badge case, Bag, simpler team picker ===== */
