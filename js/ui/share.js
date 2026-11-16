@@ -1,6 +1,5 @@
-// Share the game with another family. Opened from the Menu after a grown-up
-// press-and-hold. Only the public link and a fixed message are shared: never a
-// trainer's name, progress or anything else from this device.
+// Share the game with another family, from the Menu. Only the public link is
+// shared: never a trainer's name, progress or anything else from this device.
 import { esc, sheet, toast } from './dom.js';
 import { sfx } from '../core/sound.js';
 
@@ -9,8 +8,8 @@ const PUBLIC_URL = 'https://brwilliams88.github.io/kaimon-multiply/';
 export const shareUrl = () => document.querySelector('link[rel="canonical"]')?.href || PUBLIC_URL;
 
 export const SHARE_TITLE = 'Kaimon Multiply';
-export const SHARE_TEXT = 'Kaimon Multiply is a free times tables game. Answer cards, catch creatures and beat the gyms. Made by a dad and his son Kai. Want to play?';
-const MAIL_SUBJECT = 'A times tables game for you';
+export const SHARE_TEXT = 'Try Kaimon Multiply, a free times tables game.'; // kept for reference; shares send only the link
+const MAIL_SUBJECT = 'Kaimon Multiply';
 
 const hasNativeShare = () => typeof navigator.share === 'function';
 const canText = () => window.matchMedia('(pointer: coarse)').matches;
@@ -48,31 +47,36 @@ async function copyText(text) {
   return ok;
 }
 
-// The share sheet. A real tap on its Share button opens the device's own share menu
-// (that menu needs a fresh tap, so it can't open straight from the press-and-hold).
+// Share the game. Only the link goes out: chat and mail apps turn it into a
+// preview card with the picture, so no extra words are needed (the person sharing
+// can add their own). On phones, tablets and most computers the tap opens the
+// device's own share menu straight away. Elsewhere a small sheet offers the same.
+export async function shareGame(opts = {}) {
+  const url = shareUrl();
+  if (hasNativeShare()) {
+    try { await navigator.share({ title: SHARE_TITLE, url }); toast('Thanks for sharing!'); return null; }
+    catch (e) { if (e?.name === 'AbortError') return null; }
+  }
+  return shareSheet(opts);
+}
+
 export function shareSheet(opts = {}) {
   const url = shareUrl();
-  const message = `${SHARE_TEXT} ${url}`;
-  const native = hasNativeShare();
   const host = url.replace(/^https?:\/\//, '').replace(/\/$/, '');
-  const mail = `mailto:?subject=${encodeURIComponent(MAIL_SUBJECT)}&body=${encodeURIComponent(`${SHARE_TEXT}\n\n${url}\n\nIt's free, with no sign-up, and it works offline.`)}`;
+  const mail = `mailto:?subject=${encodeURIComponent(MAIL_SUBJECT)}&body=${encodeURIComponent(url)}`;
   const quick = [
     `<a class="share-quick" href="${esc(mail)}" data-quick="email">${ICON.mail}<span>Email</span></a>`,
-    canText() ? `<a class="share-quick" href="sms:?&amp;body=${esc(encodeURIComponent(message))}" data-quick="text">${ICON.text}<span>Text</span></a>` : '',
-    `<a class="share-quick" href="https://wa.me/?text=${esc(encodeURIComponent(message))}" target="_blank" rel="noopener noreferrer" data-quick="whatsapp">${ICON.chat}<span>WhatsApp</span></a>`,
+    canText() ? `<a class="share-quick" href="sms:?&amp;body=${esc(encodeURIComponent(url))}" data-quick="text">${ICON.text}<span>Text</span></a>` : '',
+    `<a class="share-quick" href="https://wa.me/?text=${esc(encodeURIComponent(url))}" target="_blank" rel="noopener noreferrer" data-quick="whatsapp">${ICON.chat}<span>WhatsApp</span></a>`,
   ].join('');
   const sh = sheet(`<div class="share">
     <h2>Share the game</h2>
-    <p class="share-sub">Send a friend's family the link. It opens the game's title screen.</p>
     <figure class="share-preview">
       <img src="share/card.jpg" alt="Kaimon Multiply: Answer times tables. Catch Kaimon." width="1200" height="630" draggable="false" onerror="this.parentNode.classList.add('no-img')">
-      <figcaption><strong>${esc(SHARE_TITLE)}</strong><span>${esc(SHARE_TEXT)}</span><small>${esc(host)}</small></figcaption>
+      <figcaption><strong>${esc(SHARE_TITLE)}</strong><small>${esc(host)}</small></figcaption>
     </figure>
-    <div class="share-link">
-      <input type="text" readonly value="${esc(url)}" aria-label="Game link" data-link>
-      <button class="btn-chunky share-copy" data-copy aria-live="polite">${ICON.copy}<span>Copy link</span></button>
-    </div>
-    ${native ? `<button class="btn-chunky btn-primary btn-xl share-go" data-native>${ICON.share}<span>Share</span></button>` : `<div class="share-quicks">${quick}</div>`}
+    <button class="btn-chunky btn-primary btn-xl share-copy" data-copy aria-live="polite">${ICON.copy}<span>Copy link</span></button>
+    <div class="share-quicks">${quick}</div>
     <p class="share-note">Only the link is shared. Nothing about your trainers leaves this device.</p>
   </div>`, { ...opts, cls: 'share-sheet', x: true });
 
@@ -86,21 +90,7 @@ export function shareSheet(opts = {}) {
       clearTimeout(reset);
       reset = setTimeout(() => { copyBtn.classList.remove('copied'); copyBtn.innerHTML = `${ICON.copy}<span>Copy link</span>`; }, 2000);
     } else {
-      const field = sh.el.querySelector('[data-link]');
-      field.focus(); field.select();
-      toast('Couldn’t copy. The link is selected, so you can copy it yourself.');
-    }
-  });
-  sh.el.querySelector('[data-link]').addEventListener('focus', (e) => e.target.select());
-  sh.el.querySelector('[data-native]')?.addEventListener('click', async () => {
-    sfx.tap();
-    try {
-      await navigator.share({ title: SHARE_TITLE, text: SHARE_TEXT, url });
-      sh.close();
-      toast('Thanks for sharing!');
-    } catch (e) {
-      if (e?.name === 'AbortError') return; // The grown-up closed the share menu.
-      toast('Sharing didn’t work here. Copy the link instead.');
+      toast(`Couldn’t copy. The link is ${host}`, 4000);
     }
   });
   sh.el.addEventListener('click', (e) => { if (e.target.closest('[data-quick]')) sfx.tap(); });

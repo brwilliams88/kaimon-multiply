@@ -43,14 +43,14 @@
 /* Wide, short screens (iPad landscape, Chromebook): preview on the left, buttons on the right, so nothing scrolls. */
 @media (min-width: 900px) and (max-height: 900px) {
   .share-sheet { width: min(100%, 820px); }
-  .share { display: grid; grid-template-columns: minmax(0, 1fr) 300px; grid-template-rows: auto auto auto auto 1fr; grid-template-areas: "h h" "sub sub" "pre link" "pre act" "pre note"; column-gap: 20px; row-gap: 14px; align-items: start; }
+  .share { display: grid; grid-template-columns: minmax(0, 1fr) 300px; grid-template-rows: auto auto auto 1fr; grid-template-areas: "h h" "pre copy" "pre act" "pre note"; column-gap: 20px; row-gap: 14px; align-items: start; }
   .share h2 { grid-area: h; }
-  .share-sub { grid-area: sub; }
   .share-preview { grid-area: pre; }
-  .share-link { grid-area: link; flex-direction: column; }
-  .share-link input { flex: none; }
-  .share-copy { min-height: 52px; }
-  .share-go, .share-quicks { grid-area: act; }
+  .share-copy { grid-area: copy; min-height: 56px; }
+  .share-quicks { grid-area: act; }
   .share-note { grid-area: note; }
   .sheet .share-note { text-align: left; }
 }
+/* Copy link is the main button now; full width with room to breathe. */
+.share > .share-copy { width: 100%; margin: 4px 0 12px; }
+.share-preview figcaption small { display: block; }

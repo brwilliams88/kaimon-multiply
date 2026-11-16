@@ -2,6 +2,12 @@
 
 All notable changes. Versioning: `0.MINOR.0` marks a roadmap phase, `0.x.PATCH` is any shipped change a player or parent can notice, and `1.0.0` is the public launch. See "Versioning" in CLAUDE.md. The in-app version history (Grown-ups > What's new) reads from `js/data/changelog.js`; keep both in sync. Each release is tagged in git as `vX.Y.Z`.
 
+## v0.5.26 (2026-11-15) Simpler sharing
+
+- Share the game is one tap now (no press and hold). It opens the device's share menu and sends just the link, which shows as a picture card in Messages, WhatsApp, Slack and Mail. Add your own words if you like.
+- Where there is no share menu, a small sheet offers Copy link, Email and WhatsApp, without the repeated link box.
+- Grown-ups opens with one tap too. It still needs the grown-up PIN.
+
 ## v0.5.25 (2026-11-15) Kairo and Kairos HP
 
 - Kairo now has 120 HP and Kairos 200. Their attacks still grow with quick right answers and every right answer in a row.

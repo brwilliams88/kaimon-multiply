@@ -1,7 +1,17 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.5.25';
+export const VERSION = '0.5.26';
 
 export const CHANGELOG = [
+  {
+    version: '0.5.26',
+    date: '2026-11-15',
+    title: "Simpler sharing",
+    items: [
+      "Share the game is one tap now (no press and hold). It opens the device's share menu and sends just the link, which shows as a picture card in Messages, WhatsApp, Slack and Mail. Add your own words if you like.",
+      "Where there is no share menu, a small sheet offers Copy link, Email and WhatsApp, without the repeated link box.",
+      "Grown-ups opens with one tap too. It still needs the grown-up PIN.",
+    ],
+  },
   {
     version: '0.5.25',
     date: '2026-11-15',
