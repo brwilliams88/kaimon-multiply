@@ -306,7 +306,7 @@ function renderMain(root, go) {
         <p class="note">As <strong>${esc(st.email)}</strong>. ${st.busy ? 'Syncing now...' : st.lastSync ? 'Last synced ' + new Date(st.lastSync).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) + '.' : 'Not synced yet.'}${st.error && isOnline() ? ' Last problem: ' + esc(st.error) : ''}</p>
         ${pendingNote() ? `<p class="sync-wait" data-syncwait>${esc(pendingNote())}</p>` : ''}
         <div class="btn-row"><button class="btn-chunky btn-sm" data-syncnow ${isOnline() ? '' : 'disabled'}>Sync now</button><button class="btn-chunky btn-sm" data-signout>Sign out on this device</button></div>
-        <label class="trow news-row"><span class="sync-who"><span class="trow-name">News emails</span><small>A few times a year about Kaimon games. On unless you turn it off.</small></span><input type="checkbox" class="switch" data-newsrow ${newsOn ? 'checked' : ''} aria-label="News emails"></label>
+        <label class="trow news-row"><span class="sync-who"><span class="trow-name">News emails</span><small>News about Kaimon games: weekly for the first few weeks after launch, then about once a month. On unless you turn it off.</small></span><input type="checkbox" class="switch" data-newsrow ${newsOn ? 'checked' : ''} aria-label="News emails"></label>
       </div></div>`
     : pendingEmail ? `
       <div class="step">${check(false)}<div class="step-body">
@@ -320,7 +320,7 @@ function renderMain(root, go) {
         <p class="step-title">1. Sign in this device</p>
         <p class="note">Use a grown-up's email, and the same one on every device you want to sync: phones, tablets, Chromebooks. We'll email a code to type here. Your email is only used to sign in.</p>
         <input class="field" type="email" autocomplete="email" placeholder="Grown-up's email" data-email>
-        <label class="news-opt"><input type="checkbox" data-news checked> <span>Email me news about Kaimon games, a few times a year. Uncheck to skip. Every news email has an unsubscribe button.</span></label>
+        <label class="news-opt"><input type="checkbox" data-news checked> <span>Email me news about Kaimon games: weekly for the first few weeks after launch, then about once a month. Uncheck to skip. Every news email has an unsubscribe button.</span></label>
         <button class="btn-chunky btn-primary" data-send>Email me a code</button>
       </div></div>`;
     const people = allProfiles();

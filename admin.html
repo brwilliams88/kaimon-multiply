@@ -81,6 +81,7 @@ table.data th:first-child, table.data td:first-child { text-align: left; }
 table.data th { color: var(--ink-2); font-weight: 600; }
 .rank { display: flex; flex-direction: column; gap: 8px; }
 .rank .row { display: grid; grid-template-columns: 110px minmax(0, 1fr) 44px; align-items: center; gap: 10px; font-size: 15px; }
+.rank.wide .row { grid-template-columns: minmax(120px, 46%) minmax(0, 1fr) 44px; }
 .rank .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
 .rank .track { height: 14px; background: var(--tint); border-radius: 4px; overflow: hidden; }
 .rank .fill { height: 100%; background: var(--blue); border-radius: 0 4px 4px 0; transform-origin: left; animation: grow .5s cubic-bezier(.2, .8, .3, 1) both; }
@@ -148,6 +149,10 @@ const dayLabel = (d) => { const x = new Date(d + 'T12:00:00Z'); return MON[x.get
 const NAMES = { iphone: 'iPhone', ipad: 'iPad', android: 'Android', chromebook: 'Chromebook', mac: 'Mac', windows: 'Windows', linux: 'Linux', computer: 'Computer', safari: 'Safari', chrome: 'Chrome', edge: 'Edge', firefox: 'Firefox', samsung: 'Samsung', other: 'Other', unknown: 'Unknown',
   share: 'Share menu', link: 'Copied link', email: 'Email', text: 'Text', whatsapp: 'WhatsApp', news: 'News email', facebook: 'Facebook', linkedin: 'LinkedIn' };
 const nice = (s) => NAMES[s] || s;
+let regionNames = null;
+try { regionNames = new Intl.DisplayNames(['en'], { type: 'region' }); } catch {}
+const countryName = (cc) => { try { return (regionNames && regionNames.of(cc)) || cc; } catch { return cc; } };
+const placeName = (p) => [p.city, p.region].filter(Boolean).join(', ') || countryName(p.country);
 
 // ---------------------------------------------------------------- session
 const session = {
@@ -279,10 +284,10 @@ function lineChart(id, rows, { label = '' } = {}) {
   });
   return `<div class="chart" id="${id}">${s}</svg></div>`;
 }
-function ranked(list, empty = 'None yet.') {
+function ranked(list, empty = 'None yet.', wide = false) {
   if (!list || !list.length) return `<p class="empty">${esc(empty)}</p>`;
   const max = Math.max(1, ...list.map((x) => x.devices || 0));
-  return `<div class="rank">${list.map((x) => `<div class="row"><span class="name" title="${esc(nice(x.name))}">${esc(nice(x.name))}</span><span class="track"><span class="fill" style="display:block;width:${Math.max(2, (100 * x.devices) / max)}%"></span></span><span class="v">${fmt(x.devices)}</span></div>`).join('')}</div>`;
+  return `<div class="rank${wide ? ' wide' : ''}">${list.map((x) => `<div class="row"><span class="name" title="${esc(nice(x.name))}">${esc(nice(x.name))}</span><span class="track"><span class="fill" style="display:block;width:${Math.max(2, (100 * x.devices) / max)}%"></span></span><span class="v">${fmt(x.devices)}</span></div>`).join('')}</div>`;
 }
 const starStr = (n) => '★'.repeat(Math.round(n || 0)) + '☆'.repeat(5 - Math.round(n || 0));
 
@@ -335,6 +340,11 @@ function render(s, fb) {
     <div class="card panel"><h2>Versions</h2><p class="sub">Players by app version</p>${ranked(s.versions)}</div>
   </section>
 
+  <section class="grid" id="places">
+    <div class="card panel"><h2>Places</h2><p class="sub">Rough city and region, from a once-a-day lookup. No addresses are kept.</p>${ranked((s.places || []).map((p) => ({ name: placeName(p) + (p.country && (p.city || p.region) ? ' \u00b7 ' + p.country : ''), devices: p.devices })), 'No places yet.', true)}</div>
+    <div class="card panel"><h2>Countries</h2><p class="sub">Players by country</p>${ranked((s.countries || []).map((c) => ({ name: countryName(c.name), devices: c.devices })), 'No places yet.', true)}</div>
+  </section>
+
   <section class="grid">
     <div class="card panel" id="ratings"><h2>Ratings</h2><p class="sub">All time, from Rate Kaimon Multiply</p>
       ${r.count ? `<div class="rate">
@@ -350,7 +360,7 @@ function render(s, fb) {
       ${fb.length ? `<ul class="fbl">${fb.map((x) => `<li data-kind="${esc(x.kind)}"><div class="meta"><span class="kind k-${esc(x.kind)}">${esc({ rating: 'Rating', love: 'Love', idea: 'Idea', bug: 'Bug' }[x.kind] || x.kind)}</span>${x.stars ? `<span class="st" aria-label="${x.stars} stars">${starStr(x.stars)}</span>` : ''}${x.name ? `<span class="who">${esc(x.name)}</span>` : ''}<span>${esc(new Date(x.created_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }))}</span>${x.version ? `<span>v${esc(x.version)}</span>` : ''}${x.place ? `<span>${esc(x.place)}</span>` : ''}${x.reply_email ? `<a href="mailto:${esc(x.reply_email)}">${esc(x.reply_email)}</a>` : ''}</div>${x.text ? `<p class="txt">${esc(x.text)}</p>` : ''}</li>`).join('')}</ul>` : '<p class="empty">Nothing here yet.</p>'}
     </div>
   </section>
-  <p class="foot">Usage counts hold no emails, real names, photos or locations. Feedback shows only what people chose to send. <a href="privacy.html">Privacy</a></p>`;
+  <p class="foot">Usage counts hold no emails, real names, photos or exact locations. Feedback shows only what people chose to send. <a href="privacy.html">Privacy</a></p>`;
 
   wireChart('c-players', daily, 'players');
   wireChart('c-minutes', daily, 'minutes');

@@ -10,7 +10,7 @@
  *   { type: 'invite', to, trainer, pid, device }   one "say yes" email
  *   { type: 'status', to: [..], pid, device }       who said yes
  *   { type: 'report', to: [..], trainer, pid, device, week, test, report, image }
- *   { type: 'feedback', kind, text, stars, from, version, device }  to the maker
+ *   { type: 'feedback', kind, text, stars, name, from, version, device }  to the maker
  * Replies are JSON: { ok: true, ... } or { ok: false, error }.
  *
  * Saved in Script Properties (no progress is ever saved):
@@ -137,6 +137,8 @@ function feedback_(b) {
   var stars = int_(b.stars, 5, 0);
   if (!text && !stars) return { ok: false, error: 'empty' };
   var from = cleanEmail_(b.from || '');
+  // A name they chose to give (optional). Plain text only.
+  var who = String(b.name || '').replace(/[\u0000-\u001f\u007f<>]/g, '').replace(/\s+/g, ' ').trim().slice(0, 40);
   var version = /^[0-9.]{1,12}$/.test(String(b.version || '')) ? String(b.version) : '?';
   var place = String(b.where || '').replace(/[^A-Za-z0-9 _-]/g, '').slice(0, 30);
   var ok = locked_(function (P) {
@@ -147,9 +149,9 @@ function feedback_(b) {
     return true;
   });
   if (!ok) return { ok: false, error: 'daily-limit' };
-  var lines = [kinds[kind] + (stars ? ' (' + stars + ' of 5 stars)' : ''), '', text || '(no words, just stars)', '',
+  var lines = [kinds[kind] + (stars ? ' (' + stars + ' of 5 stars)' : '') + (who ? ' from ' + who : ''), '', text || '(no words, just stars)', '',
     '---', 'Version ' + version + (place ? ', from ' + place : ''), from ? 'They\u2019d like a reply: ' + from : 'No reply address given.'];
-  var msg = { to: to, name: 'Kaimon Multiply feedback', subject: 'Kaimon Multiply: ' + kinds[kind] + (stars ? ' ' + new Array(stars + 1).join('\u2605') : ''), body: lines.join('\n') };
+  var msg = { to: to, name: 'Kaimon Multiply feedback', subject: 'Kaimon Multiply: ' + kinds[kind] + (stars ? ' ' + new Array(stars + 1).join('\u2605') : '') + (who ? ' from ' + who : ''), body: lines.join('\n') };
   if (from) msg.replyTo = from;
   MailApp.sendEmail(msg);
   return { ok: true };
@@ -704,6 +706,6 @@ function sendTestEmails() {
   var stamp = ' (' + sentStamp_() + ')';
   mails.forEach(function (m) { MailApp.sendEmail({ to: to, subject: m.subject + stamp, htmlBody: m.htmlBody, body: 'Sample email from Kaimon Multiply.', name: 'Kaimon Multiply' }); });
   // The feedback relay, as it arrives from the game.
-  MailApp.sendEmail({ to: to, name: 'Kaimon Multiply feedback', subject: '[Test] Kaimon Multiply: An idea ★★★★★', body: 'An idea (5 of 5 stars)\n\nCan the Kaidex show which region each Kaimon lives in?\n\n---\nVersion 0.5.31, from menu\nNo reply address given.' });
+  MailApp.sendEmail({ to: to, name: 'Kaimon Multiply feedback', subject: '[Test] Kaimon Multiply: An idea ★★★★★ from Mia', body: 'An idea (5 of 5 stars) from Mia\n\nCan the Kaidex show which region each Kaimon lives in?\n\n---\nVersion 0.5.31, from menu\nNo reply address given.' });
   Logger.log('Sent ' + (mails.length + 1) + ' sample emails to ' + to);
 }

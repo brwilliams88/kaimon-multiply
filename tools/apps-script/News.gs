@@ -54,15 +54,15 @@ function previewNews() {
     : 'Nothing new since v' + (newsProps_().getProperty('NEWS_LAST') || '?') + '.');
   var due = newsDue_(Date.now(), newsLaunch_(plan.log), +newsProps_().getProperty('NEWS_LAST_AT') || 0);
   Logger.log('Cadence: ' + (due.due ? 'due now' : 'next ' + new Date(due.next).toDateString()) + ' (' + due.every + ').');
-  return plan.entries.length ? renderNewsEmail_(plan.entries, { token: '00000000-0000-0000-0000-000000000000', more: plan.more }) : '';
+  return plan.entries.length ? renderNewsEmail_(plan.entries, { token: '00000000-0000-0000-0000-000000000000', more: plan.more, first: plan.first }) : '';
 }
 
 function sendNewsTest(to) {
   to = newsEmail_(to || newsProps_().getProperty('FEEDBACK_TO') || '');
   if (!to) throw new Error('Add Script Property FEEDBACK_TO first, or pass an address.');
   var plan = newsPlan_({ cadence: false, test: true });
-  var html = renderNewsEmail_(plan.entries, { token: '00000000-0000-0000-0000-000000000000', more: plan.more, test: true });
-  MailApp.sendEmail({ to: to, subject: '[Test] ' + plan.subject, htmlBody: html, body: newsText_(plan.entries, '00000000-0000-0000-0000-000000000000'), name: 'Kaimon Multiply' });
+  var html = renderNewsEmail_(plan.entries, { token: '00000000-0000-0000-0000-000000000000', more: plan.more, first: plan.first, test: true });
+  MailApp.sendEmail({ to: to, subject: '[Test] ' + plan.subject, htmlBody: html, body: newsText_(plan.entries, '00000000-0000-0000-0000-000000000000', plan.first), name: 'Kaimon Multiply' });
   Logger.log('Sent a test news email to ' + to + ' (' + plan.entries.length + ' updates).');
   return plan.entries.length;
 }
@@ -130,7 +130,7 @@ function newsRun_(opt) {
       var r = todo[i];
       try {
         MailApp.sendEmail({ to: r.email, subject: plan.subject, name: 'Kaimon Multiply',
-          htmlBody: renderNewsEmail_(plan.entries, { token: r.token, more: plan.more }), body: newsText_(plan.entries, r.token) });
+          htmlBody: renderNewsEmail_(plan.entries, { token: r.token, more: plan.more, first: plan.first }), body: newsText_(plan.entries, r.token, plan.first) });
       } catch (e) {
         console.error(e);
         if (/quota|limit|too many/i.test(String(e && e.message))) break; // try again tomorrow
@@ -197,7 +197,7 @@ function newsPlan_(opt) {
   var entries = newsSince_(log, since, Date.now());
   // A test always shows something: the last three updates.
   if (!entries.length && opt && opt.test) entries = log.slice(0, 3);
-  var p = newsPlanFor_(log, null, null, null, entries);
+  var p = newsPlanFor_(log, since || null, null, null, entries);
   p.log = log;
   return p;
 }
@@ -210,7 +210,10 @@ function newsPlanFor_(log, from, to, started, entries) {
   var subject = entries.length
     ? 'New in Kaimon Multiply: ' + entries[0].title + (entries.length > 1 ? ', and ' + (entries.length - 1) + ' more update' + (entries.length > 2 ? 's' : '') : '')
     : 'Kaimon Multiply news';
-  return { entries: entries, subject: subject, more: Math.max(0, entries.length - NEWS_FULL - NEWS_LIST) };
+  // The very first email (nothing sent before): the top highlights and "lots more", no long list.
+  var first = !from && entries.length > NEWS_FULL;
+  if (first) subject = 'New in Kaimon Multiply: ' + entries[0].title + ', and lots more';
+  return { entries: entries, subject: subject, first: first, more: first ? 0 : Math.max(0, entries.length - NEWS_FULL - NEWS_LIST) };
 }
 
 // Versions newer than `since`, newest first. With no `since` (the first email
@@ -364,12 +367,13 @@ function newsPill_(text, bg, fg) {
   return '<span style="display:inline-block;padding:2px 10px;border:2px solid ' + N_INK + ';border-radius:99px;background:' + bg + ';color:' + fg + ';font-family:' + N_FONT + ';font-size:13px;font-weight:700;line-height:18px;white-space:nowrap;">' + text + '</span>';
 }
 
-// entries: newest first. opt: { token, more, test, base, appUrl }
+// entries: newest first. opt: { token, more, first, test, base, playUrl }
+// first: the very first news email. It shows the top highlights and "lots more", not a long list.
 function renderNewsEmail_(entries, opt) {
   opt = opt || {};
   var img = opt.base || NEWS_IMG, play = opt.playUrl || NEWS_PLAY;
   var unsub = NEWS_UNSUB + encodeURIComponent(opt.token || '');
-  var full = entries.slice(0, NEWS_FULL), listed = entries.slice(NEWS_FULL, NEWS_FULL + NEWS_LIST);
+  var full = entries.slice(0, NEWS_FULL), listed = opt.first ? [] : entries.slice(NEWS_FULL, NEWS_FULL + NEWS_LIST);
   var newest = entries[0] || { version: '', title: '' };
   var oldest = entries[entries.length - 1] || newest;
   var rows = [];
@@ -380,7 +384,7 @@ function renderNewsEmail_(entries, opt) {
     + '<div style="font-size:13px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:' + N_BLUE + ';line-height:18px;">' + (opt.test ? 'Test &middot; ' : '') + 'What\u2019s new &middot; v' + newsEsc_(newest.version) + '</div>'
     + '<div style="font-size:30px;font-weight:700;line-height:36px;margin:4px 0 6px 0;">New in Kaimon Multiply</div>'
     + '<div style="font-size:17px;line-height:25px;color:' + N_INK2 + ';">'
-    + (entries.length > 1 ? entries.length + ' updates since our last note, from v' + newsEsc_(oldest.version) + ' to v' + newsEsc_(newest.version) + '.' : 'One new update.')
+    + (opt.first ? 'Here are the newest updates, and there are lots more.' : entries.length > 1 ? entries.length + ' updates since our last note, from v' + newsEsc_(oldest.version) + ' to v' + newsEsc_(newest.version) + '.' : 'One new update.')
     + ' The game updates by itself: just open it and the new version loads.</div>'
     + '</td></tr></table></td></tr>');
 
@@ -406,6 +410,10 @@ function renderNewsEmail_(entries, opt) {
     rows.push(newsCard_('<div style="font-size:19px;font-weight:700;line-height:24px;padding-bottom:8px;">More updates</div><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">' + li + '</table>' + more, { bg: '#F4FAFF' }));
   }
 
+  if (opt.first && entries.length > full.length) {
+    rows.push(newsCard_('<div style="font-size:19px;font-weight:700;line-height:24px;">And lots more</div>'
+      + '<div style="font-size:16px;line-height:23px;color:' + N_INK2 + ';padding-top:4px;">New Kaimon, battles, sounds and fixes. See every update in the game under Grown-ups, What\u2019s new.</div>', { bg: '#F4FAFF' }));
+  }
   rows.push('<tr><td align="center" style="padding:24px 0 6px 0;">' + newsBtn_(play, 'Play Kaimon Multiply', N_CORAL, '#FFFFFF') + '</td></tr>');
 
   rows.push('<tr><td align="center" class="np" style="padding:22px 20px 6px 20px;font-family:' + N_FONT + ';font-size:14px;line-height:21px;color:' + N_INK2 + ';">'
@@ -416,15 +424,16 @@ function renderNewsEmail_(entries, opt) {
   rows.push('<tr><td align="center" style="padding:10px 16px 8px 16px;font-family:' + N_FONT + ';font-size:13px;line-height:19px;color:' + N_INK2 + ';">'
     + 'Or turn off news emails in the game\u2019s Grown-ups area.<br><a href="' + NEWS_APP + 'privacy.html" style="color:' + N_INK2 + ';">Privacy</a> &middot; <a href="' + newsEsc_(play) + '" style="color:' + N_INK2 + ';">brwilliams88.github.io/kaimon-multiply</a></td></tr>');
 
-  return newsShell_('New in Kaimon Multiply', newest.title ? newest.title + (entries.length > 1 ? ' and ' + (entries.length - 1) + ' more updates.' : '.') : '', rows.join(''));
+  return newsShell_('New in Kaimon Multiply', newest.title ? newest.title + (opt.first ? ', and lots more.' : entries.length > 1 ? ' and ' + (entries.length - 1) + ' more updates.' : '.') : '', rows.join(''));
 }
 
-function newsText_(entries, token) {
+function newsText_(entries, token, first) {
   var L = ['New in Kaimon Multiply', ''];
-  entries.slice(0, NEWS_FULL + NEWS_LIST).forEach(function (e) {
+  entries.slice(0, first ? NEWS_FULL : NEWS_FULL + NEWS_LIST).forEach(function (e) {
     L.push('v' + e.version + ': ' + e.title);
     entries.indexOf(e) < NEWS_FULL && e.items.slice(0, NEWS_ITEMS).forEach(function (x) { L.push('  - ' + x); });
   });
+  if (first && entries.length > NEWS_FULL) L.push('', 'And lots more. See every update in the game under Grown-ups, What\u2019s new.');
   L.push('', 'Play: ' + NEWS_PLAY, '', 'Unsubscribe: ' + NEWS_UNSUB + encodeURIComponent(token || ''));
   return L.join('\n');
 }
@@ -466,12 +475,12 @@ function usageTile_(big, label) {
 var USAGE_NAMES = { iphone: 'iPhone', ipad: 'iPad', android: 'Android', chromebook: 'Chromebook', mac: 'Mac', windows: 'Windows', linux: 'Linux', computer: 'Computer',
   safari: 'Safari', chrome: 'Chrome', edge: 'Edge', firefox: 'Firefox', samsung: 'Samsung', other: 'Other', unknown: 'Unknown',
   share: 'Share menu', link: 'Copied link', email: 'Email', text: 'Text', whatsapp: 'WhatsApp', news: 'News email', facebook: 'Facebook', linkedin: 'LinkedIn' };
-function usageBars_(list) {
+function usageBars_(list, nameWidth) {
   if (!list || !list.length) return '<div style="font-size:15px;color:' + N_INK2 + ';">None yet.</div>';
   var max = Math.max.apply(null, list.map(function (x) { return x.devices || 0; })) || 1;
   return '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">' + list.slice(0, 6).map(function (x) {
     var w = Math.max(3, Math.round((x.devices / max) * 100));
-    return '<tr><td width="96" style="padding:4px 8px 4px 0;font-family:' + N_FONT + ';font-size:15px;color:' + N_INK + ';white-space:nowrap;">' + newsEsc_(USAGE_NAMES[x.name] || x.name) + '</td>'
+    return '<tr><td width="' + (nameWidth || 96) + '" style="padding:4px 8px 4px 0;font-family:' + N_FONT + ';font-size:15px;color:' + N_INK + ';white-space:nowrap;">' + newsEsc_(USAGE_NAMES[x.name] || x.name) + '</td>'
       + '<td style="padding:4px 0;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td width="' + w + '%" style="background:' + N_BLUE + ';height:12px;line-height:12px;font-size:0;border-radius:4px;">&nbsp;</td>' + (w < 100 ? '<td style="font-size:0;">&nbsp;</td>' : '') + '</tr></table></td>'
       + '<td width="44" align="right" style="padding:4px 0 4px 8px;font-family:' + N_FONT + ';font-size:15px;font-weight:700;color:' + N_INK + ';">' + (x.devices || 0) + '</td></tr>';
   }).join('') + '</table>';
@@ -506,7 +515,10 @@ function renderUsageEmail_(s, opt) {
   rows.push(newsCard_('<div style="font-size:19px;font-weight:700;padding-bottom:12px;">Players each day</div><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>' + bars + '</tr></table>'));
   rows.push(newsCard_('<div style="font-size:19px;font-weight:700;padding-bottom:8px;">Where new players came from</div>' + usageBars_(s.refs)
     + '<div style="font-size:19px;font-weight:700;padding:16px 0 8px 0;">Devices</div>' + usageBars_(s.os)
-    + '<div style="font-size:19px;font-weight:700;padding:16px 0 8px 0;">Browsers</div>' + usageBars_(s.browsers)));
+    + '<div style="font-size:19px;font-weight:700;padding:16px 0 8px 0;">Browsers</div>' + usageBars_(s.browsers)
+    + '<div style="font-size:19px;font-weight:700;padding:16px 0 8px 0;">Places</div>' + usageBars_((s.places || []).map(function (p) {
+      return { name: [p.city, p.region].filter(function (x) { return x; }).join(', ') || p.country, devices: p.devices };
+    }), 150)));
   rows.push(newsCard_('<div style="font-size:16px;line-height:24px;">'
     + 'All time: <b>' + (t.devices_all || 0) + '</b> devices, <b>' + (t.installed_all || 0) + '</b> installed. '
     + 'News list: <b>' + ((s.news || {}).list || 0) + '</b>. Battles: <b>' + (t.battles || 0) + '</b>, catches: <b>' + (t.catches || 0) + '</b>.</div>', { bg: '#F4FAFF' }));

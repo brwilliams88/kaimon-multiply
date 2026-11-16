@@ -3,8 +3,10 @@
 // What goes out: a random id made only for this (not the family sync id), the
 // trainer's name, the kind of device and browser, whether the app is installed,
 // the app version, the share-link tag the game was first opened from, and play
-// counts (app opens, rounds, battles, catches, minutes). Never emails, real
-// names, photos or locations. Rows wait on the device and go out in small
+// counts (app opens, rounds, battles, catches, minutes), and a rough place
+// (city, region, country) looked up from the internet address once a day. The
+// address itself is never kept or sent to us. Never emails, real names or
+// photos. Rows wait on the device and go out in small
 // batches when online. Off switch: setOn(false), saved as 'kaimon.analytics' = 'off'.
 import { active, allProfiles } from './store.js';
 import { VERSION } from '../data/changelog.js';
@@ -18,6 +20,9 @@ const ID_KEY = 'kaimon.analyticsId';     // the random id
 const Q_KEY = 'kaimon.analyticsQueue';   // rows waiting to go out
 const BASE_KEY = 'kaimon.analyticsBase'; // last counters seen, per trainer
 const REF_KEY = 'kaimon.ref';            // first share-link tag ({ ref, sent })
+const PLACE_KEY = 'kaimon.analyticsPlace'; // { day, city, region, country }: no address
+// Free lookups that need no key. Only city, region and country are kept.
+export const GEO_URLS = ['https://get.geojs.io/v1/ip/geo.json', 'https://ipapi.co/json/'];
 export const MAX_QUEUE = 400;
 export const BATCH = 100;
 const SEND_EVERY = 60 * 1000;
@@ -36,7 +41,7 @@ export const isOn = () => ls.get(OFF_KEY) !== 'off';
 export function setOn(on) {
   if (on) { ls.del(OFF_KEY); baseline(); return; }
   ls.set(OFF_KEY, 'off');
-  [ID_KEY, Q_KEY, BASE_KEY, REF_KEY].forEach((k) => ls.del(k));
+  [ID_KEY, Q_KEY, BASE_KEY, REF_KEY, PLACE_KEY].forEach((k) => ls.del(k));
 }
 
 // What Grown-ups can show under the switch.
@@ -44,6 +49,7 @@ export const COLLECTED = [
   'A random number for this device (not linked to your email or family sync)',
   'Trainer names',
   'Kind of device and browser, and whether the game is installed',
+  'Rough place: city, region and country (looked up once a day; the internet address is never kept)',
   'App opens, rounds, battles, catches and minutes played',
   'Which shared link the game was first opened from',
 ];
@@ -91,6 +97,44 @@ export const cleanRef = (s) => {
 };
 const ver = /^[0-9.]{1,12}$/.test(VERSION) ? VERSION : null;
 
+// ------------------------------------------------------------------ rough place
+
+const localDay = (t = Date.now()) => { const d = new Date(t); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+const cleanPart = (s, n = 60) => { const t = String(s ?? '').replace(/[\u0000-\u001f<>]/g, '').replace(/\s+/g, ' ').trim().slice(0, n); return t || null; };
+// Keeps only city, region and a 2-letter country code from a lookup answer.
+export function cleanPlace(j) {
+  if (!j || typeof j !== 'object') return null;
+  const cc = String(j.country_code || (String(j.country || '').length === 2 ? j.country : '') || '').toUpperCase();
+  const place = { city: cleanPart(j.city), region: cleanPart(j.region), country: /^[A-Z]{2}$/.test(cc) ? cc : null };
+  return place.city || place.region || place.country ? place : null;
+}
+const placeFields = () => {
+  const p = ls.json(PLACE_KEY, null);
+  return { city: p?.city || null, region: p?.region || null, country: p?.country || null };
+};
+let looking = null;
+// Once a day per device, and only while usage counts are on.
+export function lookupPlace(now = Date.now()) {
+  if (!isOn()) return Promise.resolve(null);
+  const have = ls.json(PLACE_KEY, null);
+  if (have && have.day === localDay(now)) return Promise.resolve(have);
+  if (looking || (typeof navigator !== 'undefined' && navigator.onLine === false)) return looking || Promise.resolve(have);
+  looking = (async () => {
+    for (const url of GEO_URLS) {
+      const ctl = new AbortController();
+      const timer = setTimeout(() => ctl.abort(), 6000);
+      try {
+        const res = await fetch(url, { signal: ctl.signal, credentials: 'omit', referrerPolicy: 'no-referrer' });
+        const j = res.ok ? await res.json() : null;
+        const place = cleanPlace(j);
+        if (place && isOn()) { const out = { day: localDay(now), ...place }; ls.set(PLACE_KEY, JSON.stringify(out)); return out; }
+      } catch { /* try the next one */ } finally { clearTimeout(timer); }
+    }
+    return have;
+  })().finally(() => { looking = null; });
+  return looking;
+}
+
 // ------------------------------------------------------------------ queue
 
 export const queued = () => { const q = ls.json(Q_KEY, []); return Array.isArray(q) ? q : []; };
@@ -104,6 +148,7 @@ export function track(k, n = 1, d = {}, extra = {}) {
     device: analyticsId(), k, t: new Date().toISOString(),
     trainer: cleanTrainer(extra.trainer ?? p?.name), n: Math.max(0, Math.min(10000, Math.round(n) || 0)), d,
     ref: extra.ref || null, v: ver, os: deviceKind(), browser: browserKind(), installed: installed(),
+    ...placeFields(),
   };
   const q = queued(); q.push(row); writeQueue(q);
   return row;
@@ -117,7 +162,8 @@ export function flush({ keepalive = false } = {}) {
   sending = (async () => {
     let sent = 0;
     for (let i = 0; i < 5; i++) {
-      const batch = queued().slice(0, BATCH);
+      const place = placeFields();
+      const batch = queued().slice(0, BATCH).map((r) => (r.country || r.city || !place.country ? r : { ...r, ...place }));
       if (!batch.length) break;
       let res;
       try {
@@ -228,12 +274,13 @@ export function startAnalytics() {
   let hiddenAt = document.visibilityState === 'visible' ? 0 : Date.now();
   // While family sync is pulling other devices' play, counters are left alone.
   const tick = () => { if (!isOn()) return; if (!syncing()) collect(); tickTime(); };
+  setTimeout(() => lookupPlace().catch(() => {}), 2500);
   setTimeout(() => flush(), 8000);
   setInterval(() => { tick(); flush(); }, SEND_EVERY);
   document.addEventListener('visibilitychange', () => {
     if (!isOn()) return;
     if (document.visibilityState === 'hidden') { tick(); hiddenAt = Date.now(); flush({ keepalive: true }); }
-    else { if (hiddenAt && Date.now() - hiddenAt > REOPEN_GAP) trackOpen(); hiddenAt = 0; since = Date.now(); setTimeout(() => flush(), 4000); }
+    else { if (hiddenAt && Date.now() - hiddenAt > REOPEN_GAP) trackOpen(); hiddenAt = 0; since = Date.now(); lookupPlace().catch(() => {}); setTimeout(() => flush(), 4000); }
   });
   window.addEventListener('pagehide', () => { if (isOn()) { tick(); flush({ keepalive: true }); } });
   window.addEventListener('online', () => setTimeout(() => flush(), 5000));

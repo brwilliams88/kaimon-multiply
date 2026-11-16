@@ -56,8 +56,8 @@ export function buildNote({ kind, stars = 0, text = '', name = '', email = '', p
   const dev = deviceId();
   const v = /^[0-9.]{1,12}$/.test(VERSION) ? VERSION : null;
   const row = { kind, stars: s || null, text: t || null, name: n || null, reply_email: e && validEmail(e) ? e : null, version: v, device: dev, place: where || null };
-  // The mailer only knows love, idea, bug and review. A name rides at the top of the note.
-  const mail = { type: 'feedback', kind: kind === 'rating' ? 'review' : kind, stars: s, text: (n ? 'From: ' + n + '\n\n' : '') + t, from: row.reply_email || '', version: VERSION, where, device: dev, v: 1 };
+  // The mailer knows love, idea, bug and review (a rating goes as a review).
+  const mail = { type: 'feedback', kind: kind === 'rating' ? 'review' : kind, stars: s, text: t, name: n, from: row.reply_email || '', version: VERSION, where, device: dev, v: 1 };
   return { id: dev + '-' + Date.now().toString(36), t: Date.now(), row, mail, db: false, mailed: false };
 }
 

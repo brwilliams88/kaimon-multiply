@@ -10,8 +10,9 @@
 --
 -- Privacy (see CLAUDE.md): usage rows hold a random device id made only for
 -- analytics (not the sync device id), trainer names, device and browser type,
--- the app version, a share-link tag and play counts. No emails, real names,
--- photos, IP addresses or locations are stored.
+-- the app version, a share-link tag, play counts and a rough place (city,
+-- region, country) that the device looks up once a day. No emails, real names,
+-- photos or IP addresses are stored.
 
 -- ------------------------------------------------------------------ secrets
 
@@ -75,7 +76,10 @@ create table if not exists public.usage_events (
   v text check (v is null or v ~ '^[0-9.]{1,12}$'),
   os text check (os is null or os in ('iphone', 'ipad', 'android', 'chromebook', 'mac', 'windows', 'linux', 'computer')),
   browser text check (browser is null or browser in ('safari', 'chrome', 'edge', 'firefox', 'samsung', 'other')),
-  installed boolean not null default false
+  installed boolean not null default false,
+  city text check (city is null or char_length(city) between 1 and 60),
+  region text check (region is null or char_length(region) between 1 and 60),
+  country text check (country is null or country ~ '^[A-Z]{2}$')
 );
 create index if not exists usage_events_t on public.usage_events (t);
 create index if not exists usage_events_device on public.usage_events (device, received_at);
@@ -197,6 +201,13 @@ returns jsonb language sql stable security definer set search_path = '' as $$
     union all select 'os', coalesce(x.os, 'unknown'), count(distinct x.device) from w x group by 1, 2
     union all select 'browsers', coalesce(x.browser, 'unknown'), count(distinct x.device) from w x group by 1, 2
     union all select 'versions', coalesce(x.v, 'unknown'), count(distinct x.device) from w x group by 1, 2
+    union all select 'countries', x.country, count(distinct x.device) from w x where x.country is not null group by 1, 2
+  ),
+  -- Devices seen in each place (a device that travels counts in each place).
+  places as (
+    select x.city, x.region, x.country, count(distinct x.device) as devices
+    from w x where x.country is not null
+    group by x.city, x.region, x.country
   )
   select jsonb_build_object(
     'days', (select n from p),
@@ -225,6 +236,9 @@ returns jsonb language sql stable security definer set search_path = '' as $$
     'os', (select coalesce(jsonb_agg(jsonb_build_object('name', t.name, 'devices', t.devices) order by t.devices desc, t.name), '[]'::jsonb) from (select * from top where what = 'os' order by devices desc, name limit 10) t),
     'browsers', (select coalesce(jsonb_agg(jsonb_build_object('name', t.name, 'devices', t.devices) order by t.devices desc, t.name), '[]'::jsonb) from (select * from top where what = 'browsers' order by devices desc, name limit 10) t),
     'versions', (select coalesce(jsonb_agg(jsonb_build_object('name', t.name, 'devices', t.devices) order by t.devices desc, t.name), '[]'::jsonb) from (select * from top where what = 'versions' order by devices desc, name limit 8) t),
+    'countries', (select coalesce(jsonb_agg(jsonb_build_object('name', t.name, 'devices', t.devices) order by t.devices desc, t.name), '[]'::jsonb) from (select * from top where what = 'countries' order by devices desc, name limit 12) t),
+    'places', (select coalesce(jsonb_agg(jsonb_build_object('city', pl.city, 'region', pl.region, 'country', pl.country, 'devices', pl.devices) order by pl.devices desc, pl.country, pl.region, pl.city), '[]'::jsonb)
+      from (select * from places order by devices desc, country, region nulls last, city nulls last limit 15) pl),
     'news', jsonb_build_object('list', (select count(*) from public.updates_list)),
     'ratings', (
       with r as (select f.stars, f.created_at from public.feedback f where f.kind = 'rating' and f.stars is not null)
