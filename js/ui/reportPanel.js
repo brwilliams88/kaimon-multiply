@@ -102,7 +102,7 @@ function mailHTML(p) {
   const ready = senderReady();
   const tag = (e) => { const k = STATE[st[e]]; return ready && k ? `<span class="wr-tag ${k[0]}">${k[1]}</span>` : ''; };
   return `
-    <label class="row wr-onrow"><span>Email a weekly report<small class="row-note">Every Monday, the first time Kaimon opens, last week's report goes to the grown-ups below.</small></span><input type="checkbox" class="switch" data-wr-on ${s.reportOn ? 'checked' : ''} aria-label="Email a weekly report"></label>
+    <label class="row wr-onrow"><span>Email a weekly report<small class="row-note">Sunday mornings, last week's report goes to the grown-ups below. It sends from a family device the first time the game is opened after 7 am.</small></span><input type="checkbox" class="switch" data-wr-on ${s.reportOn ? 'checked' : ''} aria-label="Email a weekly report"></label>
     ${p.family
       ? `<p class="note">${esc(p.name)} syncs with your family, so this list is on every family device. Only one device sends each week.</p>`
       : '<p class="note">Turning this on sends this week’s summary from this device to be emailed. The summary is not kept on a server. Only the email addresses are kept, so we know who said yes.</p>'}
@@ -156,8 +156,8 @@ export function bindReportPanel(panel, p) {
   const onSent = () => { if (!panel.isConnected) { window.removeEventListener('kaimon:mailsent', onSent); return; } draw(); refresh(); };
   window.addEventListener('kaimon:mailsent', onSent);
 
-  const sendInvite = async (e) => {
-    try { const r = await invite(p, e); if (r.state !== 'queued') setStates({ [e]: r.state || 'invited' }); return r.state || 'invited'; }
+  const sendInvite = async (e, opts) => {
+    try { const r = await invite(p, e, opts); if (r.state !== 'queued') setStates({ [e]: r.state || 'invited' }); return opts?.resend ? r : r.state || 'invited'; }
     catch (err) { setStates({ [e]: 'unsent' }); throw err; }
   };
 
@@ -205,7 +205,15 @@ export function bindReportPanel(panel, p) {
 
   on(mail, 'click', '[data-wr-resend]', (ev, el) => busy(el, 'Sending...', async () => {
     const e = el.dataset.wrResend;
-    try { const st = await sendInvite(e); toast(st === 'queued' ? `No internet right now. It goes out when this device is back online.` : st === 'confirmed' ? `${e} already said yes.` : `We emailed ${e} again. It can take a minute.`); }
+    try {
+      const r = await sendInvite(e, { resend: true });
+      toast(r.state === 'queued' ? 'No internet right now. It goes out when this device is back online.'
+        : r.state === 'confirmed' ? `${e} already said yes.`
+        : r.state === 'stopped' ? `${e} asked to stop these emails.`
+        : r.sent ? `We emailed ${e} again. It can take a minute. Check Spam too.`
+        : r.wait === 'tomorrow' ? `We've emailed ${e} a few times today. Try again tomorrow, and check Spam.`
+        : `We just emailed ${e}. Check Spam, or try again in ${r.wait || 3} minute${r.wait === 1 ? '' : 's'}.`, 4000);
+    }
     catch (err) { toast(errorText(err)); }
     draw();
   }));

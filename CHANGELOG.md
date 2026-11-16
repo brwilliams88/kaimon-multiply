@@ -2,6 +2,12 @@
 
 All notable changes. Versioning: `0.MINOR.0` marks a roadmap phase, `0.x.PATCH` is any shipped change a player or parent can notice, and `1.0.0` is the public launch. See "Versioning" in CLAUDE.md. The in-app version history (Grown-ups > What's new) reads from `js/data/changelog.js`; keep both in sync. Each release is tagged in git as `vX.Y.Z`.
 
+## v0.5.23 (2026-11-15) Weekly reports on Sunday mornings
+
+- Weekly reports now cover Sunday to Saturday and go out on Sunday mornings, from a family device the first time the game is open after 7 am.
+- Fixed: the "Yes, send me reports" button in the email could show a Google error for people signed in to several Google accounts. The Yes and Stop links now open a page on the game's own site.
+- Fixed: Resend now really sends another "Say yes" email (after a few minutes, up to 3 times a day), and says so if it has to wait.
+
 ## v0.5.22 (2026-11-15) Sharper browser tab icon
 
 - New tab icon: a bold Capture Ball drawn to stay clear and easy to spot even at the tiny size of a browser tab.

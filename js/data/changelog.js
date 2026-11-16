@@ -1,7 +1,17 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.5.22';
+export const VERSION = '0.5.23';
 
 export const CHANGELOG = [
+  {
+    version: '0.5.23',
+    date: '2026-11-15',
+    title: "Weekly reports on Sunday mornings",
+    items: [
+      "Weekly reports now cover Sunday to Saturday and go out on Sunday mornings, from a family device the first time the game is open after 7 am.",
+      "Fixed: the \"Yes, send me reports\" button in the email could show a Google error for people signed in to several Google accounts. The Yes and Stop links now open a page on the game's own site.",
+      "Fixed: Resend now really sends another \"Say yes\" email (after a few minutes, up to 3 times a day), and says so if it has to wait.",
+    ],
+  },
   {
     version: '0.5.22',
     date: '2026-11-15',

@@ -22,12 +22,17 @@
 
 var APP_URL = 'https://brwilliams88.github.io/kaimon-multiply/';
 var ASSET_BASE = APP_URL + 'assets/email/';
+// Yes and Stop links open this page on the game's own site. It posts back here.
+// (Links straight to this script fail for people signed in to several Google accounts.)
+var PAGE_URL = APP_URL + 'reports.html';
 var MAX_TO = 5;               // grown-ups per trainer
 var DEVICE_DAILY = 20;        // emails a device can cause per day
 var DAILY_ALL = 80;           // emails per day in total (Gmail allows 100)
 var INVITES_DAILY = 25;       // "say yes" emails per day in total
 var INVITE_GAP_MS = 20 * 3600 * 1000; // one "say yes" email per address per day
 var TOKEN_DAYS = 14;
+var RESEND_GAP_MS = 3 * 60 * 1000; // Resend: at most every 3 minutes
+var RESENDS_DAILY = 3;            // and 3 extra times a day per address
 var IMAGE_MAX_BYTES = 140000; // trainer picture (PNG)
 var BODY_MAX = 400000;
 var FEEDBACK_DEVICE_DAILY = 5; // feedback notes a device can send per day
@@ -45,6 +50,9 @@ function doPost(e) {
     else if (b.type === 'status') out = status_(b);
     else if (b.type === 'report') out = report_(b);
     else if (b.type === 'feedback') out = feedback_(b);
+    else if (b.type === 'confirm') out = { ok: confirmYes(b.t) };
+    else if (b.type === 'stop') out = { ok: stopReports([b.e, b.p, b.s].join('\n')) };
+    else if (b.type === 'who') out = who_(b.t);
     else out = { ok: false, error: 'bad-request' };
   } catch (err) {
     console.error(err);
@@ -61,7 +69,7 @@ function doGet(e) {
     var pend = props_().getProperty('t:' + q.t);
     var who = pend ? JSON.parse(pend) : null;
     return page_(who
-      ? { title: 'Say yes to weekly reports', body: 'Get a short email each Monday about how <b>' + esc_(who.tr) + '</b> is doing with times tables in Kaimon Multiply.', button: 'Yes, send me reports', call: 'confirmYes', arg: q.t, done: 'You\u2019re all set. The first report comes next Monday.' }
+      ? { title: 'Say yes to weekly reports', body: 'Get a short email each Sunday morning about how <b>' + esc_(who.tr) + '</b> is doing with times tables in Kaimon Multiply.', button: 'Yes, send me reports', call: 'confirmYes', arg: q.t, done: 'You\u2019re all set. The first report comes next Sunday morning.' }
       : { title: 'This link has run out', body: 'Ask the grown-up who added you to tap Resend in Kaimon\u2019s Grown-ups area.' });
   }
   if (q.a === 'stop' && q.e && q.p && q.s) {
@@ -70,7 +78,15 @@ function doGet(e) {
   return page_({ title: 'Kaimon Multiply', body: 'Times tables practice with Kaimon. <a href="' + APP_URL + '">Open the game</a>.' });
 }
 
-// Called from the buttons on the doGet pages.
+// Who a yes link is for, so the page can name the trainer. Nothing else is shared.
+function who_(token) {
+  if (!/^[a-f0-9]{40}$/.test(String(token))) return { ok: false };
+  var pend = props_().getProperty('t:' + token);
+  if (!pend) return { ok: false };
+  return { ok: true, trainer: JSON.parse(pend).tr || '' };
+}
+
+// Called from the buttons on the doGet pages and from reports.html.
 function confirmYes(token) {
   if (!/^[a-f0-9]{40}$/.test(String(token))) return false;
   return locked_(function (P) {
@@ -147,7 +163,15 @@ function invite_(b) {
     if (P.getProperty('c:' + to + '|' + pid)) return { state: 'confirmed' };
     if (P.getProperty('x:' + to + '|' + pid)) return { state: 'stopped' };
     var last = +P.getProperty('i:' + to) || 0;
-    if (Date.now() - last < INVITE_GAP_MS) return { state: 'invited' };
+    // A first invite goes once a day per address. A grown-up tapping Resend can
+    // send again after a few minutes, up to RESENDS_DAILY times a day.
+    var rk = 'ir:' + day_() + ':' + to, resends = +P.getProperty(rk) || 0;
+    if (Date.now() - last < INVITE_GAP_MS) {
+      if (!b.resend) return { state: 'invited', sent: false };
+      if (Date.now() - last < RESEND_GAP_MS) return { state: 'invited', sent: false, wait: Math.ceil((RESEND_GAP_MS - (Date.now() - last)) / 60000) };
+      if (resends >= RESENDS_DAILY) return { state: 'invited', sent: false, wait: 'tomorrow' };
+      P.setProperty(rk, String(resends + 1));
+    }
     if (!spend_(P, device, 1, true)) return { error: 'daily-limit' };
     var token = Utilities.getUuid().replace(/-/g, '') + Utilities.getUuid().replace(/-/g, '').slice(0, 8);
     P.setProperty('t:' + token, JSON.stringify({ e: to, pid: pid, tr: trainer, at: Date.now() }));
@@ -156,7 +180,7 @@ function invite_(b) {
   });
   if (send.error) return { ok: false, error: send.error };
   if (send.token) {
-    var url = ScriptApp.getService().getUrl() + '?a=yes&t=' + send.token;
+    var url = PAGE_URL + '?a=yes&t=' + send.token;
     MailApp.sendEmail({
       to: to,
       subject: 'Say yes to ' + possessive_(trainer) + ' weekly Kaimon report',
@@ -165,7 +189,7 @@ function invite_(b) {
       name: 'Kaimon Multiply',
     });
   }
-  return { ok: true, state: send.state };
+  return { ok: true, state: send.state, sent: !!send.token, wait: send.wait || null };
 }
 
 function status_(b) {
@@ -202,7 +226,7 @@ function report_(b) {
   if (plan.dup) return { ok: true, sent: 0, dup: true, confirmed: plan.confirmed, pending: plan.pending };
   var sent = 0;
   plan.send.forEach(function (email) {
-    var stop = ScriptApp.getService().getUrl() + '?a=stop&e=' + encodeURIComponent(email) + '&p=' + encodeURIComponent(pid) + '&s=' + sign_(email + '|' + pid);
+    var stop = PAGE_URL + '?a=stop&e=' + encodeURIComponent(email) + '&p=' + encodeURIComponent(pid) + '&s=' + sign_(email + '|' + pid);
     var html = renderReportEmail_(d, { image: img ? 'cid:trainer' : null, stopUrl: stop, test: test });
     var msg = {
       to: email,
@@ -248,7 +272,7 @@ function tidy_(P) {
   var all = P.getProperties();
   Object.keys(all).forEach(function (k) {
     var v = all[k];
-    if (/^(n|g|gi|f):/.test(k) && k.indexOf(day) < 0) P.deleteProperty(k);
+    if (/^(n|g|gi|f|ir):/.test(k) && k.indexOf(day) < 0) P.deleteProperty(k);
     else if (k.indexOf('t:') === 0) { try { if (now - JSON.parse(v).at > TOKEN_DAYS * 86400000) P.deleteProperty(k); } catch (e) { P.deleteProperty(k); } }
     else if (/^(w|i):/.test(k) && now - (+v || 0) > 60 * 86400000) P.deleteProperty(k);
   });
@@ -588,7 +612,7 @@ function renderInviteEmail_(trainer, url, opt) {
     + '<tr><td style="padding:0;line-height:0;font-size:0;"><img src="' + base + 'header.jpg" width="594" alt="Kaimon Multiply" style="display:block;width:100%;max-width:594px;height:auto;border:0;border-radius:21px 21px 0 0;"></td></tr>'
     + '<tr><td class="kp" style="padding:24px 26px 26px 26px;border-top:3px solid ' + INK + ';font-family:' + FONT + ';color:' + INK + ';">'
     + '<div style="font-size:26px;font-weight:700;line-height:32px;">Weekly reports for ' + name + '?</div>'
-    + '<div style="font-size:17px;line-height:25px;padding-top:10px;">A grown-up wants to email you <b>' + esc_(possessive_(trainer)) + '</b> times tables report from Kaimon Multiply each Monday: minutes played, cards answered, tricky facts and new Kaimon.</div>'
+    + '<div style="font-size:17px;line-height:25px;padding-top:10px;">A grown-up wants to email you <b>' + esc_(possessive_(trainer)) + '</b> times tables report from Kaimon Multiply each Sunday morning: minutes played, cards answered, tricky facts and new Kaimon.</div>'
     + '<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate;margin-top:20px;"><tr><td align="center" style="background:' + GRASS + ';border:3px solid ' + INK + ';border-radius:18px;box-shadow:0 4px 0 ' + INK + ';">'
     + '<a href="' + esc_(url) + '" style="display:inline-block;padding:13px 28px;font-family:' + FONT + ';font-size:18px;font-weight:700;color:#FFFFFF;text-decoration:none;">Yes, send me reports</a></td></tr></table>'
     + '<div style="font-size:15px;line-height:22px;color:' + INK2 + ';padding-top:18px;">Not expecting this? Just ignore it. Nothing else will come.</div>'

@@ -34,10 +34,10 @@ async function post(body, ms = 20000) {
 // A one-time "say yes" email to a new grown-up. Returns { state }.
 // With no internet the invite waits in a small outbox on this device and goes
 // out by itself when the device is back online: returns { state: 'queued' }.
-export async function invite(p, to) {
+export async function invite(p, to, { resend = false } = {}) {
   const e = cleanEmail(to);
   try {
-    return await post({ type: 'invite', to: e, trainer: p.name, pid: p.id });
+    return await post({ type: 'invite', to: e, trainer: p.name, pid: p.id, ...(resend ? { resend: true } : {}) });
   } catch (err) {
     if (err.message !== 'offline') throw err;
     queueInvite(p, e);

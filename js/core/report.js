@@ -1,4 +1,4 @@
-// Weekly report for grown-ups: a plain summary of one Monday to Sunday week in
+// Weekly report for grown-ups: a plain summary of one Sunday to Saturday week in
 // local time. Pure functions of the trainer's saved progress, so every family
 // device builds the same report. Used by the Grown-ups panel and the email.
 import { SPECIES, byId } from '../data/creatures.js';
@@ -9,20 +9,23 @@ export const dayKey = (d) => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-'
 const fromKey = (k) => { const [y, m, d] = k.split('-').map(Number); return new Date(y, m - 1, d); };
 const LEVEL_NAMES = ['new', 'learning', 'bronze', 'silver', 'gold', 'star'];
 const MEDAL_DAY = [[5, 'fastDays', 19], [4, 'fastDays', 9], [3, 'fastDays', 4], [2, 'days', 1]];
-const DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+export const SEND_HOUR = 7; // reports go out Sunday morning, from 7 am local time
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-// Midnight on the Monday of the week holding t (a Date, ms or "YYYY-MM-DD").
-export function mondayOf(t = Date.now()) {
+// Midnight on the Sunday that starts the week holding t (a Date, ms or "YYYY-MM-DD").
+export function weekStartOf(t = Date.now()) {
   const d = typeof t === 'string' ? fromKey(t) : new Date(t);
   d.setHours(0, 0, 0, 0);
-  d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+  d.setDate(d.getDate() - d.getDay());
   return d;
 }
-export const weekKey = (t) => dayKey(mondayOf(t));
-// The Monday key of the last week that has fully ended.
+export const mondayOf = weekStartOf; // old name
+export const weekKey = (t) => dayKey(weekStartOf(t));
+// The key of the last week that is ready to send: a week ends Saturday night and
+// its report is due from SEND_HOUR on Sunday morning.
 export function lastFullWeek(now = Date.now()) {
-  const d = mondayOf(now);
+  const d = weekStartOf(new Date(now).getTime() - SEND_HOUR * 3600000);
   d.setDate(d.getDate() - 7);
   return dayKey(d);
 }
@@ -50,7 +53,7 @@ function basics(p, days) {
     const m = r ? Math.max(r.open || 0, r.ms || 0) : 0;
     ms += m; cards += r?.a || 0; right += r?.c || 0;
     if (m > 0 || r?.a) played++;
-    return { key: dayKey(d), name: DAY_NAMES[(d.getDay() + 6) % 7], minutes: Math.round(m / 60000), cards: r?.a || 0, right: r?.c || 0 };
+    return { key: dayKey(d), name: DAY_NAMES[d.getDay()], minutes: Math.round(m / 60000), cards: r?.a || 0, right: r?.c || 0 };
   });
   return { minutes: Math.round(ms / 60000), cards, right, accuracy: pct(right, cards), daysPlayed: played, daily };
 }
