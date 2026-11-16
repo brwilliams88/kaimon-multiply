@@ -2,6 +2,18 @@
 
 All notable changes. Versioning: `0.MINOR.0` marks a roadmap phase, `0.x.PATCH` is any shipped change a player or parent can notice, and `1.0.0` is the public launch. See "Versioning" in CLAUDE.md. The in-app version history (Grown-ups > What's new) reads from `js/data/changelog.js`; keep both in sync. Each release is tagged in git as `vX.Y.Z`.
 
+## v1.1.0 (2026-11-16) Types and Lightning Round
+
+- Types now matter in battles! When your Kaimon's type is strong against the other Kaimon, right answers hit harder: Super effective! When it's weak, they hit a bit softer.
+- New Types guide in the Menu shows what each type is strong and weak against, and why. For example, Water puts out fire.
+- The VS screen gives a type tip before each battle. Tap it to open the Types guide.
+- Picking your battle team? Small up and down arrows show which Kaimon are strong or weak against the next gym.
+- Tower legendaries battle as a type too: Multiplix as Rock, Aurorix as Cosmic, Hundragon as Dragon.
+- Lightning Round has a new electric look, and your Buddy cheers you on.
+- Lightning Round now shows your top 5 runs, with a big New record! moment when you beat your best.
+- Every 5 right in a row in Lightning Round lights up a combo and gives your Buddy bonus XP.
+- Lightning Round results list everything you earned and what to aim for next.
+
 ## v1.0.5 (2026-11-16) Fun hats
 
 - New hats in the Wardrobe: the Kaizo Hood, the Papa Cap and the Kairo Crown!
