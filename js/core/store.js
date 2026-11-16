@@ -37,6 +37,7 @@ export function newProfile(name, avatar, id) {
     xp: 0,
     mons: {}, evos: {}, bud: null, // Kaimon levels (levels.js)
     trophies: [],
+    tips: {},
     outbox: [],
   };
 }
@@ -72,6 +73,7 @@ function migrate(p) {
   if (!p.mons) { p.mons = legacyMons(p.dex, p.xp, p.starter); p.evos = p.evos || {}; p.bud = p.bud || null; }
   p.evos = p.evos || {};
   p.trophies = p.trophies || [];
+  p.tips = p.tips || {};
   p.outbox = p.outbox || [];
   p.updatedAt = p.updatedAt || p.createdAt || Date.now();
   if (p.family === undefined) p.family = false;

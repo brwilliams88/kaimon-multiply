@@ -9,7 +9,7 @@ import { bossUnlocked, quizReady, quizNextIn, champReady, gymOpen } from '../cor
 import { limitReached, cardsToday, roundSize, roundsToday, GOAL_ROUNDS } from '../core/playtime.js';
 import { nextUp, quizUseful } from '../core/nextup.js';
 import { VERSION } from '../data/changelog.js';
-import { trainerArt } from './trainerArt.js';
+import { evolveMoment, poseSwap, kairoArrive, kairoCaught, legendThrow } from './moments.js';
 import { ballImg, itemImg, sceneSrc, gymSrc, gymImg, badgeImg, cssUrl, uiImg, trainerFace, trainerBody, trainerKey, CARD_BACK, LOGO } from '../core/assets.js';
 import { evolveReady, boostLeft, ball as giveBall, caught as catchIt } from '../core/actions.js';
 import { BOOST } from '../core/levels.js';
@@ -23,6 +23,8 @@ import { shareGame, shareIcon } from './share.js';
 import { openPlayElsewhere, deviceIcon } from './playElsewhere.js';
 import { openFeedback } from './feedback.js';
 import { trainerChipSheet } from './onboarding.js';
+import { homeTour } from './firstGame.js';
+import { howToPlay } from './howToPlay.js';
 
 // Daily boost: the first right answers each day give triple XP. Say how many are
 // left, so the extra XP is never a surprise (and its end isn't either).
@@ -42,10 +44,10 @@ const LOCK = '<span class="rg-lock" aria-hidden="true"><svg viewBox="0 0 24 24">
 const ARROW = '<svg class="nu-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12 H18 M13 6.5 L18.5 12 L13 17.5" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
 // A region's star Kaimon for the Next up card: the most evolved one this trainer
-// has caught there. None caught yet: Teacher K points the way.
+// has caught there. None caught yet: Kaizo gets out the map.
 function regionStar(p, table) {
   const caught = SPECIES.filter((s) => s.region === table && p.dex[s.id]?.caught).sort((a, b) => b.stage - a.stage);
-  return caught.length ? `<span class="nu-mon">${creatureArt(caught[0])}</span>` : trainerBody('teacher-k', 'point', 'nu-trainer');
+  return caught.length ? `<span class="nu-mon">${creatureArt(caught[0])}</span>` : uiImg('kaizo-map', 'nu-kaizo');
 }
 
 // Up to four facts as little chips, then "+3" for the rest.
@@ -290,10 +292,13 @@ export function renderHome(root, go, params = {}) {
     }
   } catch {}
 
+  // Right after the guided first game: Teacher K shows where things are.
+  if (params.guide === 'next') homeTour();
+
   if (params.celebrate === 'stamp') {
     sfx.levelUp();
     sheet(`<div class="celebrate">
-      <div class="stamp-row" aria-hidden="true"><span class="stamp-teacher">${trainerBody('teacher-k', 'won')}</span><span class="celebrate-stamp">${itemImg('good-work-stamp')}</span></div>
+      <div class="stamp-row" aria-hidden="true"><span class="stamp-teacher">${poseSwap(trainerBody('teacher-k', 'stamp'), trainerBody('teacher-k', 'won'), 'stamp-swap')}</span><span class="celebrate-stamp">${uiImg('starburst', 'cs-burst')}${itemImg('good-work-stamp')}</span></div>
       <h2>Good Work Stamp!</h2>
       <p>${esc(p.name)}, your grown-up says you did great on real math work. Teacher K is proud of you! Here's a reward:</p>
       <div class="celebrate-row"><span>${ballIcon('mega')} Mega Ball</span><span>${snackIcon()} 3 Power Snacks</span><span class="stars">★ Gold star</span></div>
@@ -323,19 +328,21 @@ function kairoWaiting(p, go) {
   const m = byId(MYTHIC_ID);
   sfx.mythic();
   const sh = sheet(`<div class="celebrate kairo-wait">
-    <div class="mythic-arrive">${creatureArt(m)}</div>
+    ${kairoArrive(m)}
     <h2>Kairo is waiting for you!</h2>
     <p>The Kaimon that watched you beat Boss Papa came back. It wants to join your team.</p>
     <button class="btn-chunky btn-primary btn-xl" data-throw>${ballIcon('legend')} Throw a Legend Ball</button></div>`);
   let thrown = false;
-  sh.el.querySelector('[data-throw]').addEventListener('click', () => {
+  sh.el.querySelector('[data-throw]').addEventListener('click', async (e) => {
     if (thrown) return;
     thrown = true;
+    e.currentTarget.disabled = true;
     if ((p.balls.legend || 0) > 0) giveBall(p, 'legend', -1);
     catchIt(p, MYTHIC_ID);
     save(); syncNow();
+    await legendThrow(sh.el.querySelector('.mythic-arrive'));
     sfx.caught();
-    sh.el.querySelector('.celebrate').innerHTML = `<div class="mythic-arrive caught">${creatureArt(m)}</div>
+    sh.el.querySelector('.celebrate').innerHTML = `${kairoCaught(m)}
       <h2>You caught Kairo!</h2>
       <p>The mythic Kaimon, Kaidex #${String(m.num).padStart(3, '0')}. Some say a trainer named Kai dreamed it up.</p>
       <button class="btn-chunky btn-primary" data-dex>See it in the Kaidex</button>`;
@@ -377,7 +384,7 @@ function homeMenu(p, go) {
     if (!m) return;
     sfx.tap(); sh.close();
     const back = () => setTimeout(() => homeMenu(p, go), 120);
-    if (m === 'how') setTimeout(() => howItWorks(p, { back }), 200);
+    if (m === 'how') setTimeout(() => howToPlay(p, { back }), 200);
     if (m === 'balls') setTimeout(() => ballsHelp(p, { back }), 200);
     if (m === 'device') setTimeout(() => openPlayElsewhere({ back }), 200);
     if (m === 'feedback') setTimeout(() => openFeedback({ place: 'menu', back }), 200);
@@ -390,6 +397,22 @@ function homeMenu(p, go) {
     sfx.tap();
     shareGame({ back: () => setTimeout(() => homeMenu(p, go), 120) }).then((s) => { if (s) sh.close(); });
   });
+}
+
+export const kaidexIcon = () => uiImg('kaidex-a', 'kdx-ic');
+
+export function ballsHelp(p, opts = {}) {
+  const row = (k, name, count, text) => `<div class="bh-row">${ballIcon(k)}<div><strong>${name} <span class="bh-count">${count}</span></strong><p>${text}</p></div></div>`;
+  sheet(`<div class="balls-help">
+    <h2>Your balls</h2>
+    ${!(p.balls.super || p.balls.mega || p.balls.legend) ? `<div class="bh-empty">${uiImg('empty-bag')}<p>No special balls yet. Win them in Gym battles, with streaks and with medals!</p></div>` : ''}
+    <p class="bh-how">When a wild Kaimon appears, tap the ball you want to throw. It gets a gold ring. Then answer: a right answer throws it.</p>
+    ${row('capture', 'Capture Ball', '∞', 'Free, and you never run out. Good for most Kaimon.')}
+    ${row('super', 'Super Ball', '×' + p.balls.super, 'Much better at catching. Win one from Gym Leaders. A 5-answer streak also gives you a free Super throw.')}
+    ${row('mega', 'Mega Ball', '×' + p.balls.mega, 'Even better, for rare Kaimon. Win one by beating a Gym Leader the first time or with a Good Work Stamp. A 10-answer streak gives a free Mega throw.')}
+    ${row('legend', 'Legend Ball', '×' + p.balls.legend, 'Never misses. Earn one each time a times table gets a new medal. Save it for a Kaimon you really want!')}
+    <button class="btn-chunky btn-primary" data-close>Got it</button>
+  </div>`, { ...opts, x: true });
 }
 
 // Every evolution not yet shown on this device, one after another. The first time
@@ -409,53 +432,14 @@ function evolutionMoments(p) {
     const x = shows[i];
     if (!x) return;
     const kairo = x.from.id === MYTHIC_ID;
-    sfx.evolve();
-    sheet(`<div class="celebrate evolve">
-      <p class="evo-kicker">${kairo ? 'A whole year with Kairo... and it&#8217;s glowing!' : `What? ${esc(x.from.name)} is evolving!`}</p>
-      <div class="evo-row"><div class="partner-art">${creatureArt(x.from)}</div><span class="evo-arrow">›</span><div class="partner-art evo-new">${creatureArt(x.to.species)}</div></div>
-      <h2>${esc(x.from.name)} evolved into ${esc(x.to.species.name)}!</h2>
-      <p>${kairo ? `Kaidex #060, the very last page. Kairo grew up right alongside you. Lv ${x.to.level}!` : `All those right answers paid off. Lv ${x.to.level}!`}</p>
-      <button class="btn-chunky btn-primary" data-close>${kairo ? 'Amazing!' : 'Awesome!'}</button></div>`, { onClose: () => setTimeout(() => show(i + 1), 250) });
+    evolveMoment({
+      from: x.from, to: x.to.species,
+      kicker: kairo ? 'A whole year with Kairo... and it&#8217;s glowing!' : `What? ${esc(x.from.name)} is evolving!`,
+      title: `${esc(x.from.name)} evolved into ${esc(x.to.species.name)}!`,
+      text: kairo ? `Kaidex #060, the very last page. Kairo grew up right alongside you. Lv ${x.to.level}!` : `All those right answers paid off. Lv ${x.to.level}!`,
+      btn: kairo ? 'Amazing!' : 'Awesome!',
+      onClose: () => setTimeout(() => show(i + 1), 250),
+    });
   };
   setTimeout(() => show(0), 400);
-}
-
-// How to play: the adventure first, then each part of the game with a picture.
-function howItWorks(p, opts = {}) {
-  const buddy = buddyOf(p).species;
-  const sec = (pic, title, text) => `<section class="how-sec"><div class="how-pic" aria-hidden="true">${pic}</div><div><h3>${title}</h3><p>${text}</p></div></section>`;
-  const card = `<span class="how-card how-scene" style="--scene:${esc(cssUrl(sceneSrc('2', true)))}"><b>7</b><i>×</i><b>8</b></span>`;
-  const region = `<span class="how-region how-scene" style="--scene:${esc(cssUrl(sceneSrc('4', true)))}"><b>4</b><small>s</small></span>`;
-  sheet(`<div class="how">
-    <div class="how-hero">
-      <div class="how-hero-row"><div class="how-teacher">${trainerBody('teacher-k', 'talking')}</div><div class="how-hero-art">${creatureArt(buddy)}</div></div>
-      <p class="speech-who">Teacher K says</p>
-      <h2>Welcome, Trainer!</h2>
-      <p>Wild Kaimon are hiding all over the world, and the only way to catch them is with <strong>multiplication</strong>. Every right answer throws a ball. The faster and smarter you get, the more you catch.</p>
-      <p class="how-goal">Can you become a times table master and fill your whole Kaidex?</p>
-    </div>
-    ${sec(creatureArt(buddy), 'Your Buddy', `${esc(buddy.name)} goes everywhere with you. Every right answer gives your Buddy XP, and your first ${BOOST.n} right answers each day give triple XP. Every Kaimon has a level, and each kind evolves at its own level. Tap a Kaimon and pick Make Buddy to switch.`)}
-    ${sec(card, 'Practice', 'All your times tables, mixed together. A wild Kaimon jumps onto each card. Answer right to throw a ball at it.')}
-    ${sec(`${ballIcon('capture')}${ballIcon('super')}`, 'Balls', 'Fast answers throw harder. Super, Mega and Legend Balls catch rare Kaimon more easily. Win them with streaks and medals.')}
-    ${sec(region, 'Regions', 'Each region is a times table with its own Kaimon. Get its facts right and fast on different days to earn its medal: Bronze, Silver, Gold, then Star.')}
-    ${sec(trainerArt({ kind: 'champ', table: 2 }), 'Gym battles', 'Your Buddy goes first, with two more Kaimon. Every right answer is an attack, and your whole team gets XP! The little balls by each name show how many Kaimon each side has left. Win all the badges to face Boss Papa at Papa’s Gym.')}
-    ${sec(kaidexIcon(), 'Kaidex', `Every Kaimon you catch goes in your Kaidex. There are ${dexCounts(p).total} to find, and some are very rare.`)}
-    <button class="btn-chunky btn-primary btn-xl how-go" data-close>Let's go!</button>
-  </div>`, { ...opts, cls: 'how-sheet', x: true });
-}
-
-export const kaidexIcon = () => uiImg('kaidex-a', 'kdx-ic');
-
-export function ballsHelp(p, opts = {}) {
-  const row = (k, name, count, text) => `<div class="bh-row">${ballIcon(k)}<div><strong>${name} <span class="bh-count">${count}</span></strong><p>${text}</p></div></div>`;
-  sheet(`<div class="balls-help">
-    <h2>Your balls</h2>
-    ${!(p.balls.super || p.balls.mega || p.balls.legend) ? `<div class="bh-empty">${uiImg('empty-bag')}<p>No special balls yet. Win them in Gym battles, with streaks and with medals!</p></div>` : ''}
-    <p class="bh-how">When a wild Kaimon appears, tap the ball you want to throw. It gets a gold ring. Then answer: a right answer throws it.</p>
-    ${row('capture', 'Capture Ball', '∞', 'Free, and you never run out. Good for most Kaimon.')}
-    ${row('super', 'Super Ball', '×' + p.balls.super, 'Much better at catching. Win one from Gym Leaders. A 5-answer streak also gives you a free Super throw.')}
-    ${row('mega', 'Mega Ball', '×' + p.balls.mega, 'Even better, for rare Kaimon. Win one by beating a Gym Leader the first time or with a Good Work Stamp. A 10-answer streak gives a free Mega throw.')}
-    ${row('legend', 'Legend Ball', '×' + p.balls.legend, 'Never misses. Earn one each time a times table gets a new medal. Save it for a Kaimon you really want!')}
-    <button class="btn-chunky btn-primary" data-close>Got it</button>
-  </div>`, { ...opts, x: true });
 }

@@ -86,6 +86,11 @@ export function apply(p, ev) {
       break;
     case 'evo': applyEvo(p, d, ev); break;  // a Kaimon evolved (levels.js)
     case 'bud': applyBud(p, d, ev); break;  // a new Buddy (levels.js)
+    case 'tip':
+      // d.n: a one-time guide this trainer finished or skipped (like 'first', the guided first game).
+      p.tips = p.tips || {};
+      if (!p.tips[d.n] || ev.t < p.tips[d.n]) p.tips[d.n] = ev.t;
+      break;
     case 'stamp':
       p.stats.stars = (p.stats.stars || 0) + 1;
       break;
@@ -182,6 +187,14 @@ export function battle(p, kind, table, won, team) {
   const ev = emit(p, 'battle', d);
   ev.evolved = evolveReady(p);
   return ev;
+}
+
+// One-time guides (the guided first game): done or skipped once, never shown again.
+export const tipSeen = (p, name) => !!p.tips?.[name];
+export function tipDone(p, name) {
+  if (tipSeen(p, name)) return;
+  emit(p, 'tip', { n: name });
+  save();
 }
 
 export function goodWorkStamp(p) {

@@ -16,6 +16,7 @@ import { sfx, setSound, unlock } from '../core/sound.js';
 import { ballIcon } from './home.js';
 import { teamSheet } from './teamPicker.js';
 import { trainerArt, trainerFull, playerArt, CHAMP_LINES } from './trainerArt.js';
+import { fxImg, poseSwap, glowBall, kairoArrive, kairoCaught, legendThrow } from './moments.js';
 import { sceneSrc, cssUrl, sceneKey, fxSrc, typeIcon, badgeImg, ballSrc } from '../core/assets.js';
 import { quick } from '../core/prefs.js';
 import { limitReached } from '../core/playtime.js';
@@ -51,6 +52,15 @@ const PAPAZILLA_LINES = [
   'Papazilla! It\u2019s leg day. Show them your squats!',
   'Time for the heavy lifting. Papazilla, you\u2019re up!',
 ];
+
+// The other side of the result card. Teacher K is on your side either way: she gives
+// a thumbs-up with her stamp when you win and points to the lesson when you don't.
+const duelPose = (kind, won) => kind === 'quiz' ? (won ? 'stamp' : 'point') : won ? 'lost' : 'won';
+// When you win, the other trainer gets a short beat: they stand tall (Boss Papa laughs
+// with his dumbbell), then the loss sinks in. Two existing frames, no new art.
+const duelThem = (opp, kind, won) => won && kind !== 'quiz'
+  ? poseSwap(trainerFull(opp, kind === 'boss' ? 'won' : 'base'), trainerFull(opp, 'lost'), 'duel-swap')
+  : trainerFull(opp, duelPose(kind, won));
 
 // The name gets the whole top line so long names fit; the team balls sit under the bar, beside the HP number.
 const hpBar = (who) => `<div class="hp hp-${who}"><div class="hp-top"><span class="hp-name"></span><span class="hp-lv"></span></div><div class="hp-bar"><span></span></div><div class="hp-bot"><span class="hp-dots"></span><span class="hp-num"></span></div></div>`;
@@ -110,7 +120,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt } = {}
             <div class="vsi">
               <div class="vsi-stake">${stakeHTML()}</div>
               <div class="vsi-side vsi-foe">
-                <div class="vsi-body">${trainerFull(opp, 'talking')}</div>
+                <div class="vsi-body">${trainerFull(opp, kind === 'quiz' ? 'quiz' : 'talking')}</div>
                 <div class="vsi-info">
                   <p class="vsi-speech">${esc(introLine)}</p>
                   <div class="vsi-tag"><small>${esc(opp.kind === 'champ' ? `${opp.table}s Gym Leader` : opp.title)}</small><strong>${esc(opp.name)}</strong></div>
@@ -533,12 +543,12 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt } = {}
             <div class="cer-badge" aria-hidden="true"><img class="cer-burst" src="${fxSrc('badge-burst')}" alt="" draggable="false">${badgeImg(opp.table, 'cer-badge-img')}</div>
             <h2 class="cer-title"><small>You earned the</small><strong>${esc(region.badge)}!</strong></h2>
             <div class="cer-case" role="img" aria-label="Badge case: ${have} of ${REGIONS.length} badges">
-              ${REGIONS.map((r) => `<span class="cer-slot${r.table === opp.table ? ' new' : p.battles.champs[r.table] ? ' won' : ''}">${badgeImg(r.table)}</span>`).join('')}
+              ${REGIONS.map((r) => `<span class="cer-slot${r.table === opp.table ? ' new' : p.battles.champs[r.table] ? ' won' : ''}">${badgeImg(r.table)}${r.table === opp.table ? fxImg('capture-burst', 'cer-slot-fx') : ''}</span>`).join('')}
             </div>
             <p class="cer-count"><strong>${have}</strong> of ${REGIONS.length} badges</p>
           </div>
           <div class="cer-leader">
-            <div class="cer-body">${trainerFull(opp, 'lost')}</div>
+            <div class="cer-body">${poseSwap(trainerFull(opp, 'lost'), trainerFull(opp, 'base'), 'cer-swap')}</div>
             <p class="cer-speech"><small>${esc(opp.name)}</small>${esc(GIFT_LINES[opp.table] || 'You earned it!')} Here is the ${esc(region.badge)}.</p>
           </div>
           <div class="cer-actions"><button class="btn-chunky btn-primary btn-xl" data-continue>Continue</button></div>
@@ -593,17 +603,18 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt } = {}
 
     const rm = reducedMotion();
     const COLORS = ['#FFD23F', '#FF6B4A', '#3FA34D', '#2D7FF9', '#FF6B9A', 'var(--rc)'];
-    const confetti = won && !rm ? `<div class="br-confetti">${Array.from({ length: 22 }, (_, i) => `<i style="--x:${(i * 37) % 100}%;--d:${((i * 53) % 90) / 100}s;--r:${(i * 71) % 360}deg;--s:${0.8 + ((i * 29) % 50) / 100};--c:${COLORS[i % COLORS.length]}"></i>`).join('')}</div>` : '';
+    const bossWin = won && kind === 'boss';
+    const confetti = won && !rm ? `<div class="br-confetti">${Array.from({ length: bossWin ? 36 : 22 }, (_, i) => `<i style="--x:${(i * 37) % 100}%;--d:${((i * 53) % 90) / 100}s;--r:${(i * 71) % 360}deg;--s:${0.8 + ((i * 29) % 50) / 100};--c:${COLORS[i % COLORS.length]}"></i>`).join('')}</div>` : '';
     const ov = document.createElement('div');
-    ov.className = 'overlay result br ' + (won ? 'won' : 'lost');
+    ov.className = 'overlay result br ' + (won ? 'won' : 'lost') + (bossWin ? ' boss-win' : '');
     ov.innerHTML = `
       <div class="br-bg" aria-hidden="true"><span class="${won ? 'br-rays' : 'br-glow'}"></span>${confetti}</div>
       <div class="intro-card br-card">
-        <div class="br-ribbon"><span>${won ? 'Victory!' : 'Good battle!'}</span></div>
+        <div class="br-ribbon">${bossWin ? fxImg('levelup-wings', 'br-wings') : ''}<span>${bossWin ? 'Champion!' : won ? 'Victory!' : 'Good battle!'}</span></div>
         <div class="duel">
-          <figure class="duel-me${won ? ' win' : ''}"><span class="duel-pic">${playerArt(p, won ? 'won' : 'lost')}</span><figcaption>${esc(p.name)}${won ? '<span class="duel-tag">Winner!</span>' : ''}</figcaption></figure>
+          <figure class="duel-me${won ? ' win' : ''}"><span class="duel-pic">${bossWin ? fxImg('badge-burst', 'duel-burst') : ''}${playerArt(p, won ? 'won' : 'lost')}</span><figcaption>${esc(p.name)}${won ? '<span class="duel-tag">Winner!</span>' : ''}</figcaption></figure>
           <span class="duel-vs" aria-hidden="true">VS</span>
-          <figure class="duel-them${won ? '' : ' win'}"><span class="duel-pic">${trainerFull(opp, won ? 'lost' : 'won')}</span><figcaption>${esc(opp.name)}${won ? '' : '<span class="duel-tag">Winner</span>'}</figcaption></figure>
+          <figure class="duel-them${won ? '' : ' win'}"><span class="duel-pic">${duelThem(opp, kind, won)}</span><figcaption>${esc(opp.name)}${won ? '' : '<span class="duel-tag">Winner</span>'}</figcaption></figure>
         </div>
         <h2>${won ? `${esc(p.name)} beat ${esc(opp.name)}!` : `${esc(opp.name)} won this time`}</h2>
         <p class="speech intro-speech">${esc(line)}</p>
@@ -612,7 +623,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt } = {}
           <span class="br-stat"><strong>${S.best}</strong><small>best streak</small></span>
           ${bonusXP ? `<span class="br-stat xp"><strong>+${bonusXP}</strong><small>win bonus XP</small></span>` : ''}
         </div>
-        ${reward ? `<p class="result-reward br-prize"><span class="br-ball">${ballIcon(reward.ball)}</span><span>You got a <strong>${BALLS[reward.ball].name}</strong>!</span></p>` : ''}
+        ${reward ? `<p class="result-reward br-prize"><span class="br-ball">${glowBall(reward.ball) ? fxImg('shiny-ring', 'br-aura') : ''}${ballIcon(reward.ball)}</span><span>You got a <strong>${BALLS[reward.ball].name}</strong>!</span></p>` : ''}
         ${teamLine()}
         ${won ? '' : '<p class="br-kind">Every answer still counts as practice.</p>'}
         <div class="sheet-actions">
@@ -631,22 +642,24 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt } = {}
     ov.className = 'overlay result mythic-moment';
     ov.innerHTML = `
       <div class="intro-card">
-        <div class="mythic-arrive">${creatureArt(m)}</div>
+        ${kairoArrive(m)}
         <h2>It came down from the sky!</h2>
         <p>The Kaimon that has been flying past all this time lands right in front of you. It wants to join your team.</p>
         <button class="btn-chunky btn-primary btn-xl" data-throw>${ballIcon('legend')} Throw a Legend Ball</button>
       </div>`;
     sfx.mythic();
     let thrown = false;
-    on(ov, 'click', '[data-throw]', async () => {
+    on(ov, 'click', '[data-throw]', async (e, btn) => {
       if (thrown) return;
       thrown = true;
+      btn.disabled = true;
       if ((p.balls.legend || 0) > 0) giveBall(p, 'legend', -1);
       catchIt(p, MYTHIC_ID);
       save(); syncNow();
+      await legendThrow(ov.querySelector('.mythic-arrive'));
       sfx.caught();
       ov.querySelector('.intro-card').innerHTML = `
-        <div class="mythic-arrive caught">${creatureArt(m)}</div>
+        ${kairoCaught(m)}
         <h2>You caught Kairo!</h2>
         <p>The mythic Kaimon, Kaidex #${String(m.num).padStart(3, '0')}. Some say a trainer named Kai dreamed it up.</p>
         <button class="btn-chunky btn-primary" data-dex>See it in the Kaidex</button>`;

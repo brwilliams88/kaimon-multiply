@@ -27,7 +27,7 @@ After Mossfawn evolves, it is gone from your collection (it became the Fernbuck)
 - XP for a level: `3 * 50 * L * (L - 1)` (3 times the old Buddy curve). Cap: **Lv 50**.
 - XP per right answer is unchanged: 10, +5 fast, +5 for a fact still being learned. Battle win bonuses unchanged (grunt 30, Gym 60, quiz 80, Boss 150).
 - **Daily boost**: the first 20 right answers each day give triple XP. This is what keeps light players moving (it is most of their XP and a small part of Kai's).
-  It is never hidden: Home's Buddy card shows "Triple XP: 14 left today" (then "Triple XP is back tomorrow"), a boosted answer's XP chip on the card shows "×3", the round's results say when the last one was used, and How to play explains it. Right answers in battles count too. `boostLeft(p)` in actions.js is the one rule both the XP and the chip use.
+  It is never hidden: Home's Buddy card shows "Triple XP: 14 left today" (then "Triple XP is back tomorrow"), a boosted answer's XP chip on the card shows "×3", the round's results say when the last one was used, and How to play has a "Your Buddy grows" card about it. Right answers in battles count too. `boostLeft(p)` in actions.js is the one rule both the XP and the chip use.
 
 ### Evolve levels (per line, in `EVOLVE` in creatures.js)
 
