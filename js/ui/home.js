@@ -16,6 +16,7 @@ import { byId, MYTHIC_ID, FUTURE_ID } from '../data/creatures.js';
 import { avatarSVG, trainerLook } from './avatars.js';
 import { esc, on, $, holdButton, sheet, soundIcon, toast } from './dom.js';
 import { sfx, unlock } from '../core/sound.js';
+import { shareSheet, shareIcon } from './share.js';
 
 export const medal = (tier) => tier
   ? `<span class="medal medal-${tier}" title="${LEVEL_LABEL[tier]} medal">${itemImg('medal-' + tier)}</span>`
@@ -228,6 +229,7 @@ function homeMenu(p, go) {
     ${row('data-m="how"', uiImg('icon-howto'), 'How to play', 'Teacher K explains everything')}
     ${row('data-m="balls"', ballIcon('capture'), 'Ball guide', 'Which ball to throw, and how to earn more')}
     ${row('data-m="switch"', uiImg('icon-trainers'), 'Title screen', 'Switch trainer or add a new one')}
+    <button class="menu-row menu-share hold" data-share aria-label="Share the game. Grown-ups: press and hold"><span class="menu-ic" aria-hidden="true">${shareIcon()}</span><span class="menu-txt"><strong>Share the game</strong><small>Grown-ups: press and hold</small></span><span class="hold-ring" aria-hidden="true"></span></button>
     <button class="menu-row menu-grown hold" data-grownups aria-label="Grown-ups: press and hold"><span class="menu-ic" aria-hidden="true">${uiImg('icon-grownups')}</span><span class="menu-txt"><strong>Grown-ups</strong><small>Press and hold. Needs the grown-up PIN.</small></span><span class="hold-ring" aria-hidden="true"></span></button>
     <p class="menu-ver">Kaimon Multiply v${VERSION}</p>
   </div>`, { cls: 'menu-sheet', x: true });
@@ -247,6 +249,11 @@ function homeMenu(p, go) {
     if (m === 'switch') go('welcome');
   });
   holdButton(sh.el.querySelector('[data-grownups]'), 1200, () => { sh.close(); go('grownups'); });
+  // Sharing sends a link out of the app, so it needs a grown-up's press-and-hold too.
+  const shareRow = sh.el.querySelector('[data-share]');
+  let held = false;
+  holdButton(shareRow, 1200, () => { held = true; sfx.tap(); sh.close(); setTimeout(() => shareSheet({ back: () => setTimeout(() => homeMenu(p, go), 120) }), 200); });
+  shareRow.addEventListener('click', () => { if (!held) toast('Ask a grown-up to press and hold to share.', 2400); });
 }
 
 // How to play: the adventure first, then each part of the game with a picture.

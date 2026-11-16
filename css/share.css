@@ -1,0 +1,56 @@
+/* Share the game: the menu row and the share sheet (js/ui/share.js). */
+.menu-ic .share-ic { width: 100%; height: 100%; filter: drop-shadow(0 2px 0 rgba(20, 33, 61, .2)); }
+.menu-share .hold-ring { inset: 6px auto auto 4px; width: 40px; height: 40px; }
+
+.share-sheet { width: min(100%, 480px); }
+.share { display: flex; flex-direction: column; gap: 14px; text-align: left; }
+.share h2 { margin: 0; font-size: 30px; font-weight: 700; color: #FFFFFF; -webkit-text-stroke: 5px var(--ink); paint-order: stroke fill; letter-spacing: .01em; text-shadow: 0 3px 0 var(--ink), 0 0 14px rgba(70, 160, 255, .45); }
+.sheet .share-sub { margin: -8px 0 0; font-size: 17px; color: var(--ink-2); }
+
+/* Looks like the link preview a friend will see in their messages. */
+.share-preview { margin: 0; border: 3px solid var(--ink); border-radius: 20px; overflow: hidden; background: var(--paper); box-shadow: 0 5px 0 var(--ink); }
+.share-preview img { display: block; width: 100%; height: auto; aspect-ratio: 1200 / 630; object-fit: cover; background: var(--sky); border-bottom: 3px solid var(--ink); }
+.share-preview.no-img img { display: none; }
+.share-preview figcaption { display: flex; flex-direction: column; gap: 2px; padding: 10px 14px 12px; background: #F4F8FD; }
+.share-preview strong { font-size: 18px; font-weight: 700; }
+.share-preview span { font-size: 16px; line-height: 1.3; }
+.share-preview small { font-size: 14px; color: var(--ink-2); }
+
+.share-link { display: flex; gap: 10px; align-items: stretch; }
+.share-link input { flex: 1; min-width: 0; height: 52px; padding: 0 14px; border: 3px solid var(--ink); border-radius: var(--r-md); background: #F4F8FD; font-size: 16px; font-weight: 600; color: var(--ink-2); text-overflow: ellipsis; }
+.share-link input:focus { outline: none; border-color: #1E6FD9; color: var(--ink); }
+.share-copy { display: inline-flex; align-items: center; justify-content: center; gap: 6px; flex-shrink: 0; min-width: 132px; padding: 0 16px; font-size: 18px; transition: transform .06s, box-shadow .06s, background-color .2s; }
+.share-copy svg { width: 22px; height: 22px; }
+.share-copy.copied { background: #D9F4DD; color: #1F6B2A; }
+.share-copy.copied svg { animation: share-pop .35s cubic-bezier(.3, 1.6, .5, 1); }
+@keyframes share-pop { from { transform: scale(.3); } to { transform: none; } }
+
+.share-go { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; }
+.share-go svg { width: 28px; height: 28px; }
+
+.share-quicks { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: 10px; }
+.share-quick { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-height: 76px; padding: 10px 6px; border: 3px solid var(--ink); border-radius: var(--r-md); background: var(--paper); box-shadow: var(--press); color: var(--ink); text-decoration: none; font-weight: 600; font-size: 16px; transition: transform .06s, box-shadow .06s; -webkit-tap-highlight-color: transparent; }
+.share-quick svg { width: 30px; height: 30px; }
+.share-quick[data-quick="email"] svg { color: #1E6FD9; }
+.share-quick[data-quick="text"] svg { color: var(--grass); }
+.share-quick[data-quick="whatsapp"] svg { color: #1FA855; }
+.share-quick:active { transform: translateY(4px); box-shadow: 0 1px 0 var(--ink); }
+
+.sheet .share-note { margin: 0; font-size: 15px; color: var(--ink-2); text-align: center; }
+
+@media (prefers-reduced-motion: reduce) { .share-copy.copied svg { animation: none; } }
+
+/* Wide, short screens (iPad landscape, Chromebook): preview on the left, buttons on the right, so nothing scrolls. */
+@media (min-width: 900px) and (max-height: 900px) {
+  .share-sheet { width: min(100%, 820px); }
+  .share { display: grid; grid-template-columns: minmax(0, 1fr) 300px; grid-template-rows: auto auto auto auto 1fr; grid-template-areas: "h h" "sub sub" "pre link" "pre act" "pre note"; column-gap: 20px; row-gap: 14px; align-items: start; }
+  .share h2 { grid-area: h; }
+  .share-sub { grid-area: sub; }
+  .share-preview { grid-area: pre; }
+  .share-link { grid-area: link; flex-direction: column; }
+  .share-link input { flex: none; }
+  .share-copy { min-height: 52px; }
+  .share-go, .share-quicks { grid-area: act; }
+  .share-note { grid-area: note; }
+  .sheet .share-note { text-align: left; }
+}
