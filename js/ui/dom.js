@@ -12,7 +12,7 @@ export function on(root, event, selector, fn) {
 
 export function toast(msg, ms = 2600) {
   let t = $('#toast');
-  if (!t) { t = document.createElement('div'); t.id = 'toast'; t.setAttribute('role', 'status'); document.body.appendChild(t); }
+  if (!t) { t = document.createElement('div'); t.id = 'toast'; t.setAttribute('role', 'status'); document.body.appendChild(t); void t.offsetWidth; }
   t.textContent = msg;
   t.classList.add('show');
   clearTimeout(t._h);
@@ -88,3 +88,15 @@ export async function busy(btn, label, work) {
 // Sign-in codes are 6 digits; accept 6 to 10 in case the server setting changes.
 export const cleanCode = (v) => (v || '').replace(/\D/g, '');
 export const codeOk = (c) => c.length >= 6 && c.length <= 10;
+
+// Streak flame size and heat. It grows at 1, 3, 5, 10, 15 and 25 in a row:
+// orange, hotter orange, red with a glow (free Super Ball), blue (free Mega Ball),
+// violet, then white-hot rainbow at 25.
+export const FLAME_STEPS = [1, 3, 5, 10, 15, 25];
+export const flameTier = (n) => FLAME_STEPS.filter((x) => n >= x).length;
+// Set the tier on a streak box; a short flare when it moves up a step.
+export function setFlame(box, n) {
+  const t = flameTier(n), old = +box.dataset.tier || 0;
+  box.dataset.tier = t;
+  if (t > old && t >= 3) { box.classList.remove('flare'); void box.offsetWidth; box.classList.add('flare'); setTimeout(() => box.classList.remove('flare'), 700); }
+}

@@ -321,7 +321,7 @@ var TYPE_COLORS = {
   papa: ['#2B2B33', '#F3D6DA', '#111111'], mythic: ['#FF6B9A', '#FFE0EC', '#5C1030'],
 };
 var TABLE_TYPE = ['leaf', 'water', 'fire', 'wind', 'spark', 'stone', 'frost', 'metal', 'shadow', 'cosmic'];
-var DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+var DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']; // weeks run Sunday to Saturday (the device's own time zone)
 var MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 function int_(x, max, min) {
@@ -367,7 +367,7 @@ function cleanReport_(r, trainer, week) {
     cards: cards,
     right: right,
     accuracy: cards ? Math.round((right / cards) * 100) : null,
-    daily: DAY_NAMES.map(function (name, i) { var x = arr(r.daily, 7)[i] || {}; return { name: name, minutes: int_(x.minutes, 1440), cards: int_(x.cards, 100000) }; }),
+    daily: DAY_NAMES.map(function (name, i) { var x = arr(r.daily, 7)[i] || {}; return { name: DAY_NAMES.indexOf(x.name) >= 0 ? x.name : name, minutes: int_(x.minutes, 1440), cards: int_(x.cards, 100000) }; }),
     tables: arr(r.tables, 10).map(function (t) {
       t = t || {}; var a = int_(t.answers, 100000), c = Math.min(int_(t.right, 100000), a);
       return { table: int_(t.table, 10, 1), answers: a, right: c, accuracy: a ? Math.round((c / a) * 100) : 0 };
@@ -664,4 +664,35 @@ function page_(o) {
     + '<img src="' + ASSET_BASE + 'header.jpg" alt="Kaimon Multiply" style="display:block;width:100%;height:auto;border-bottom:3px solid ' + INK + ';">'
     + '<div style="padding:22px 24px 26px;"><h1 style="margin:0;font-size:26px;">' + esc_(o.title) + '</h1><p style="font-size:17px;line-height:25px;">' + o.body + '</p>' + btn + '</div></div></div></body></html>';
   return HtmlService.createHtmlOutput(html).setTitle('Kaimon Multiply').addMetaTag('viewport', 'width=device-width, initial-scale=1');
+}
+
+// ---------------------------------------------------------------- samples
+
+// Run from the editor (pick sendTestEmails, then Run) to get one of every email
+// this script sends, with [Test] in the subject, at the FEEDBACK_TO address.
+function sendTestEmails() {
+  var to = cleanEmail_(props_().getProperty('FEEDBACK_TO') || '');
+  if (!to) throw new Error('Add Script Property FEEDBACK_TO first.');
+  var week = Utilities.formatDate(new Date(Date.now() - 7 * 86400000), 'America/Los_Angeles', 'yyyy-MM-dd');
+  var stop = PAGE_URL + '?a=stop&e=sample&p=sample&s=sample';
+  var full = { cards: 184, right: 163, minutes: 74, daysPlayed: 5,
+    daily: [['Sun', 12, 30], ['Mon', 18, 44], ['Tue', 0, 0], ['Wed', 15, 36], ['Thu', 9, 22], ['Fri', 20, 52], ['Sat', 0, 0]].map(function (x) { return { name: x[0], minutes: x[1], cards: x[2] }; }),
+    tables: [{ table: 7, answers: 60, right: 50 }, { table: 8, answers: 48, right: 44 }, { table: 6, answers: 40, right: 36 }, { table: 2, answers: 36, right: 33 }],
+    topTables: [7, 8], strongest: [{ a: 2, b: 5, fastDays: 4 }, { a: 8, b: 2, fastDays: 3 }, { a: 6, b: 6, fastDays: 3 }],
+    trickiest: [{ a: 7, b: 8, misses: 5 }, { a: 6, b: 9, misses: 3 }, { a: 8, b: 7, misses: 2 }],
+    medals: { bronze: 4, silver: 2, gold: 1, star: 0, total: 7 }, caught: 6,
+    caughtList: [{ id: 'gearpus', num: 37, name: 'Gearpus', type: 'metal', n: 2 }, { id: 'puddlepup', num: 10, name: 'Puddlepup', type: 'water', n: 1 }],
+    newEntries: [{ id: 'puddlepup', num: 10, name: 'Puddlepup', type: 'water' }], dex: { caught: 23, total: 60 },
+    battles: { played: 3, won: 2 }, bestStreak: 14, prev: { minutes: 52, cards: 130, accuracy: 84 }, change: { minutes: 22, cards: 54, accuracy: 5 } };
+  var empty = { cards: 0, right: 0, minutes: 0, daysPlayed: 0, daily: [], tables: [], dex: { caught: 23, total: 60 } };
+  var mails = [];
+  mails.push({ subject: '[Test] Say yes to Kai’s weekly Kaimon report', htmlBody: renderInviteEmail_('Kai', PAGE_URL + '?a=yes&t=' + new Array(41).join('0'), {}) });
+  [['', full], [' (a week with no play)', empty]].forEach(function (x) {
+    var d = cleanReport_(x[1], 'Kai', week);
+    mails.push({ subject: '[Test] ' + possessive_(d.trainer) + ' weekly report: ' + d.label + x[0], htmlBody: renderReportEmail_(d, { image: null, stopUrl: stop, test: false }) });
+  });
+  mails.forEach(function (m) { MailApp.sendEmail({ to: to, subject: m.subject, htmlBody: m.htmlBody, body: 'Sample email from Kaimon Multiply.', name: 'Kaimon Multiply' }); });
+  // The feedback relay, as it arrives from the game.
+  MailApp.sendEmail({ to: to, name: 'Kaimon Multiply feedback', subject: '[Test] Kaimon Multiply: An idea ★★★★★', body: 'An idea (5 of 5 stars)\n\nCan the Kaidex show which region each Kaimon lives in?\n\n---\nVersion 0.5.31, from menu\nNo reply address given.' });
+  Logger.log('Sent ' + (mails.length + 1) + ' sample emails to ' + to);
 }

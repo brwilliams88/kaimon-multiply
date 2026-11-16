@@ -2,6 +2,25 @@
 
 All notable changes. Versioning: `0.MINOR.0` marks a roadmap phase, `0.x.PATCH` is any shipped change a player or parent can notice, and `1.0.0` is the public launch. See "Versioning" in CLAUDE.md. The in-app version history (Grown-ups > What's new) reads from `js/data/changelog.js`; keep both in sync. Each release is tagged in git as `vX.Y.Z`.
 
+## v0.5.31 (2026-11-15) A bigger streak flame
+
+- The streak flame now grows in six steps: 1, 3, 5, 10, 15 and 25 right in a row. Orange, then hotter orange, then red with a glow (your next throw is a free Super Ball), blue at 10 (free Mega Ball), violet at 15, and a white-hot rainbow flame at 25.
+- Each new step gives the flame a quick flare so you notice it.
+
+## v0.5.30 (2026-11-15) Weekly report fixes
+
+- Fixed: the minutes for each day in the report email were labeled one day off (Sunday showed as Monday). Days now match the week, Sunday to Saturday.
+- Every family gets the report on their own Sunday morning: days are counted in each device's own time zone, and the report goes out from 9 am local time, whether you are in California, New York or Japan.
+- The trainer in the report email is now a closer picture of their head and shoulders, so it shows up better in the small circle.
+
+## v0.5.29 (2026-11-15) No more peeking messages
+
+- Fixed: an old message could peek out half hidden at the bottom of the screen (like "Looking good!" on the trainer page) or as a cut-off oval above the prize at the start of a battle. Messages now fully disappear when they are done.
+
+## v0.5.28 (2026-11-15) A real streak flame
+
+- The streak flame in practice and battles is now real fire: orange with a yellow middle. It grows and gets hotter as your streak climbs (3, 5 and 10 in a row), the number glows to match, and at 10 in a row it burns blue.
+
 ## v0.5.27 (2026-11-15) The Menu stays put
 
 - Fixed: scrolling while the Menu or another sheet was open could move the screen behind it. Now only the sheet scrolls.

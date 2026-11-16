@@ -16,9 +16,9 @@ export async function trainerPNG(p, size = 200) {
   const im = await new Promise((resolve, reject) => { const i = new Image(); i.onload = () => resolve(i); i.onerror = reject; i.src = url; });
   const c = document.createElement('canvas');
   c.width = size; c.height = size;
-  const s = Math.min(size / im.naturalWidth, size / im.naturalHeight);
-  const w = im.naturalWidth * s, h = im.naturalHeight * s;
-  c.getContext('2d').drawImage(im, (size - w) / 2, (size - h) / 2, w, h);
+  // Head and upper body, so the trainer reads well in the email's small circle.
+  const W = im.naturalWidth, H = im.naturalHeight, side = Math.round(Math.min(W, H) * 0.6);
+  c.getContext('2d').drawImage(im, Math.round((W - side) / 2), 0, side, side, 0, 0, size, size);
   const png = c.toDataURL('image/png');
   return png.length < 190000 ? png : null; // the server refuses bigger pictures
 }
@@ -102,7 +102,7 @@ function mailHTML(p) {
   const ready = senderReady();
   const tag = (e) => { const k = STATE[st[e]]; return ready && k ? `<span class="wr-tag ${k[0]}">${k[1]}</span>` : ''; };
   return `
-    <label class="row wr-onrow"><span>Email a weekly report<small class="row-note">Sunday mornings, last week's report goes to the grown-ups below. It sends from a family device the first time the game is opened after 7 am.</small></span><input type="checkbox" class="switch" data-wr-on ${s.reportOn ? 'checked' : ''} aria-label="Email a weekly report"></label>
+    <label class="row wr-onrow"><span>Email a weekly report<small class="row-note">Sunday mornings, last week's report goes to the grown-ups below. It sends from a family device the first time the game is open after 9 am, in your own time zone.</small></span><input type="checkbox" class="switch" data-wr-on ${s.reportOn ? 'checked' : ''} aria-label="Email a weekly report"></label>
     ${p.family
       ? `<p class="note">${esc(p.name)} syncs with your family, so this list is on every family device. Only one device sends each week.</p>`
       : '<p class="note">Turning this on sends this week’s summary from this device to be emailed. The summary is not kept on a server. Only the email addresses are kept, so we know who said yes.</p>'}

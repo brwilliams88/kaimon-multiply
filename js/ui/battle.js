@@ -19,7 +19,7 @@ import { sceneSrc, cssUrl, sceneKey, fxSrc, typeIcon, badgeImg } from '../core/a
 import { quick } from '../core/prefs.js';
 import { limitReached } from '../core/playtime.js';
 import { startMusic, stopMusic, setPinch } from '../core/music.js';
-import { $, on, esc, sheet, wait, reducedMotion, soundButton } from './dom.js';
+import { $, on, esc, sheet, wait, reducedMotion, soundButton, setFlame } from './dom.js';
 
 // Special hit-back moves for the big opponents. Papazilla lifts.
 const FOE_MOVES = { papa: 'Dumbbell Drop', legend: 'Hundred Blast', mythic: 'Dream Burst' };
@@ -62,7 +62,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt } = {}
         <button class="icon-btn" data-exit aria-label="Leave battle"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6 L18 18 M18 6 L6 18" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg></button>
         <div class="vs-chip"><span class="vs-av">${trainerArt(opp)}</span><span><strong>${esc(opp.name)}</strong><small>${esc(opp.kind === 'champ' ? `${opp.table}s Gym Leader` : opp.kind === 'boss' ? 'The final gym' : opp.kind === 'quiz' ? 'Pop Quiz' : 'Team Papa')}</small></span></div>
         ${soundButton(p.settings.sound)}
-        <div class="streak" aria-live="polite" title="Streak: right answers in a row" aria-label="Streak"><span class="streak-flame" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 2.5c.6 3-1.4 4.6-2.8 6.4C7.8 10.6 7 12.2 7 14a5 5 0 0 0 10 0c0-2.6-1.4-4.3-2.4-5.6-.3 1.4-1 2.2-1.9 2.6.4-2.8-.2-5.9-.7-8.5z" fill="currentColor" stroke="#14213D" stroke-width="1.6" stroke-linejoin="round"/></svg></span><span class="streak-num">0</span><span class="streak-ball" hidden></span></div>
+        <div class="streak" data-tier="0" aria-live="polite" title="Streak: right answers in a row" aria-label="Streak"><span class="streak-flame" aria-hidden="true"><svg viewBox="0 0 24 24"><path class="fl-out" d="M12 1.8c.9 3.2-1.2 5-2.7 6.8C7.7 10.5 6.6 12.3 6.6 14.6a5.4 5.4 0 0 0 10.8 0c0-2.9-1.5-4.8-2.6-6.2-.3 1.6-1.1 2.5-2.1 3 .5-3.1-.1-6.5-.7-9.6z" stroke="#14213D" stroke-width="1.5" stroke-linejoin="round"/><path class="fl-in" d="M12.1 10.6c.4 1.7-.6 2.6-1.3 3.5-.5.6-.9 1.3-.9 2.1a2.2 2.2 0 0 0 4.4 0c0-1.3-.7-2.1-1.2-2.8-.2.7-.5 1-1 1.2.2-1.4 0-2.7 0-4z"/></svg></span><span class="streak-num">0</span><span class="streak-ball" hidden></span></div>
       </header>
       <div class="play-body">
         <div class="arena">
@@ -146,7 +146,9 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt } = {}
   }
   function updateStreak() {
     el.streak.textContent = S.streak;
-    el.streak.closest('.streak').classList.toggle('hot', S.streak >= 3);
+    const box = el.streak.closest('.streak');
+    box.classList.toggle('hot', S.streak >= 3);
+    setFlame(box, S.streak);
   }
   function popNumber(target, text, cls = '') {
     const r = target.getBoundingClientRect(), a = el.arena.getBoundingClientRect();
