@@ -281,7 +281,19 @@ function bindProgress(panel, p, go) {
     if (focus) el.focus();
   };
   cells.forEach((c) => c.setAttribute('aria-pressed', 'false'));
-  on(panel, 'click', '.tg-grid [data-fact]', (e, el) => select(el));
+  // A tap anywhere in a fact's slot (the gaps too, see .tg-grid td::before) picks it. The
+  // picked fact is drawn 12% bigger and hangs over its neighbors a little: a tap there
+  // goes to the neighbor whose slot it is in.
+  on(panel, 'click', '.tg-grid td', (e, td) => {
+    if (e.detail && td.querySelector('.sel')) {
+      const r = td.getBoundingClientRect(), x = e.clientX, y = e.clientY;
+      if (x < r.left - 1.5 || x > r.right + 1.5 || y < r.top - 1.5 || y > r.bottom + 1.5) {
+        td = document.elementsFromPoint(x, y).map((h) => h.closest('.tg-grid td')).find((t) => t && t !== td) || td;
+      }
+    }
+    const el = td.querySelector('[data-fact]');
+    if (el) select(el);
+  });
   on(panel, 'click', '[data-tg-view]', (e, el) => {
     gridView = el.dataset.tgView;
     panel.querySelector('.tg').dataset.view = gridView;
