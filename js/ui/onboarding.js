@@ -38,12 +38,12 @@ export function renderWelcome(root, go) {
       ${profiles.length ? `
         <h2 class="welcome-q" id="who-q">Who's playing?</h2>
         <div class="who-car">
-          <div class="who-list" role="group" aria-labelledby="who-q">
-            ${profiles.map((p, i) => `<button class="who-card${i === start ? ' sel' : ''}" data-id="${p.id}" data-i="${i}" style="--i:${i}" aria-label="${esc(p.name)}. ${dexCounts(p).caught} Kaimon caught.${p.family ? ' Family trainer.' : ''}" aria-pressed="${i === start}">
+          <div class="who-list" role="radiogroup" aria-labelledby="who-q" tabindex="0">
+            ${profiles.map((p, i) => `<div class="who-card${i === start ? ' sel' : ''}" data-id="${p.id}" data-i="${i}" style="--i:${i}" role="radio" aria-label="${esc(p.name)}. ${dexCounts(p).caught} Kaimon caught.${p.family ? ' Family trainer.' : ''}" aria-checked="${i === start}">
               ${p.id === lastId && profiles.length > 1 ? '<span class="who-last" aria-hidden="true">Last played</span>' : ''}
               <span class="who-av">${avatarSVG(trainerLook(p))}</span>
               <span class="who-text"><span class="who-name">${esc(p.name)}</span><span class="who-meta">${p.family ? `<span class="who-fam" title="Family sync">${cloudIcon()}</span>` : ''}${dexCounts(p).caught} caught</span></span>
-            </button>`).join('')}
+            </div>`).join('')}
             <button class="who-card who-new" data-new data-i="${profiles.length}" style="--i:${profiles.length}" aria-label="New trainer">
               <span class="who-av who-plus">${plusIcon()}</span>
               <span class="who-text"><span class="who-name">New trainer</span><span class="who-meta">Add a friend</span></span>
@@ -70,8 +70,9 @@ export function renderWelcome(root, go) {
   const off = onSyncChange(() => { if (!root.isConnected || root.dataset.screen !== 'welcome') return off(); if (sig() !== before) { off(); go('welcome'); } });
   const enter = (id) => { unlock(); sfx.tap(); switchProfile(id); go(active().starter ? 'home' : 'meetPartner'); };
   const car = profiles.length ? whoCarousel(root, start, profiles) : null;
-  // Tapping a trainer only picks it; the big Play button starts the game.
-  on(root, 'click', '[data-id]', (e, el) => { if (car?.dragged()) return; sfx.tap(); car.pick(+el.dataset.i); });
+  // Trainer cards are not buttons: tapping one only picks it (a side card glides to the
+  // middle). The big Play button is the only way in.
+  on(root, 'click', '[data-id]', (e, el) => { if (car?.dragged() || +el.dataset.i === car.sel()) return; sfx.tap(); car.pick(+el.dataset.i); });
   on(root, 'click', '[data-play]', () => { const p = profiles[car.sel()]; if (p) enter(p.id); else { unlock(); sfx.tap(); go('newTrainer'); } });
   on(root, 'click', '[data-famsignin]', () => { unlock(); sfx.tap(); familySignInSheet(() => go('welcome')); });
   on(root, 'click', '[data-new]', () => { if (car?.dragged()) return; unlock(); sfx.tap(); go('newTrainer'); });
@@ -98,7 +99,7 @@ function whoCarousel(root, start, profiles) {
   const vertical = () => getComputedStyle(list).flexDirection === 'column';
   const setSel = (i) => {
     sel = Math.max(0, Math.min(cards.length - 1, i));
-    cards.forEach((c, k) => { c.classList.toggle('sel', k === sel); if (c.dataset.id) c.setAttribute('aria-pressed', k === sel); });
+    cards.forEach((c, k) => { c.classList.toggle('sel', k === sel); if (c.dataset.id) c.setAttribute('aria-checked', k === sel); });
     dots.forEach((d, k) => d.classList.toggle('on', k === sel));
     nav.querySelector('[data-step="-1"]').disabled = sel === 0;
     nav.querySelector('[data-step="1"]').disabled = sel === cards.length - 1;

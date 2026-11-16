@@ -3038,3 +3038,25 @@ button.tp-slot:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--in
 .hp-bot { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-top: 3px; min-height: 14px; }
 .hp-bot .hp-num { margin-top: 0; }
 .battle .hp-bot .hp-dots i { width: 14px; height: 14px; }
+
+/* Who's playing: trainer cards are picks, not buttons. No press-down; the pick wears a
+   sun ring. The New trainer card stays a real chunky button. */
+.who-card[data-id] { box-shadow: 0 3px 0 rgba(20, 33, 61, .2); cursor: pointer; transition: box-shadow .2s, background-color .2s; }
+.who-card[data-id]:active { transform: none; box-shadow: 0 3px 0 rgba(20, 33, 61, .2); }
+.title-panel .who-card[data-id].sel, .title-panel .who-card[data-id].sel:active { cursor: default; translate: none; transform: none; background: #FFE98F; box-shadow: 0 0 0 4px var(--sun), 0 0 0 6.5px var(--ink); }
+.who-new.sel { box-shadow: 0 5px 0 var(--ink), 0 0 0 4px var(--sun); }
+.who-list:focus { outline: none; }
+.who-list:focus-visible { outline: 4px solid var(--coral); outline-offset: -2px; border-radius: 18px; }
+@media (prefers-reduced-motion: reduce) { .who-card[data-id] { transition: none; } }
+/* Phone: the © line sits at the very bottom with room above it (the panel's shadow is 8px) */
+@media (max-aspect-ratio: 1/1) {
+  .title-copy { margin: 17px 0 calc(8px + var(--safe-b)); line-height: 1.2; }
+}
+
+/* Trainer License: tap your name (pencil) to change it */
+.lic-namebtn { margin: 0; border: 0; background: none; font: inherit; color: var(--ink); text-align: left; cursor: pointer; border-radius: 1.6cqw; -webkit-tap-highlight-color: transparent; transition: background-color .15s; }
+.lic-namebtn:active { background: rgba(255, 210, 63, .35); }
+.lic-namebtn .lic-name { flex: 0 1 auto; }
+.lic-pen { flex: none; display: grid; place-items: center; width: 5.4cqw; height: 5.4cqw; margin-left: .4cqw; border-radius: 50%; background: #fff; border: .45cqw solid var(--ink); color: var(--ink); box-shadow: 0 .5cqw 0 var(--ink); }
+.lic-pen svg { width: 72%; height: 72%; display: block; }
+.rename h2 { margin-top: 0; }
