@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#CFE8FF">
+<title>Dashboard · Kaimon Multiply</title>
+<link rel="icon" href="icons/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="icons/favicon-32.png" sizes="32x32" type="image/png">
+<style>
+@font-face { font-family: 'Fredoka'; font-weight: 500; font-display: swap; src: url(fonts/fredoka-latin-500-normal.woff2) format('woff2'); }
+@font-face { font-family: 'Fredoka'; font-weight: 600; font-display: swap; src: url(fonts/fredoka-latin-600-normal.woff2) format('woff2'); }
+@font-face { font-family: 'Fredoka'; font-weight: 700; font-display: swap; src: url(fonts/fredoka-latin-700-normal.woff2) format('woff2'); }
+:root { --ink: #14213D; --ink-2: #4A5675; --muted: #8A94AA; --sky: #CFE8FF; --paper: #fff; --sun: #FFD23F; --coral: #FF6B4A; --blue: #2D7FF9; --grass: #3FA34D; --grid: #E3EAF4; --tint: #F4F8FD; }
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; min-height: 100vh; background: var(--sky); font-family: 'Fredoka', ui-rounded, system-ui, sans-serif; font-weight: 500; color: var(--ink); font-size: 16px; line-height: 1.4; }
+button, input { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; border-radius: 8px; }
+.wrap { max-width: 1120px; margin: 0 auto; padding: calc(18px + env(safe-area-inset-top)) 16px calc(32px + env(safe-area-inset-bottom)); }
+.card { background: var(--paper); border: 3px solid var(--ink); border-radius: 24px; box-shadow: 0 5px 0 var(--ink); }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 50px; padding: 10px 22px; border: 3px solid var(--ink); border-radius: 16px; background: var(--coral); color: #fff; font-weight: 700; font-size: 18px; box-shadow: 0 4px 0 var(--ink); cursor: pointer; transition: transform .06s, box-shadow .06s; }
+.btn:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--ink); }
+.btn:disabled { opacity: .6; cursor: wait; }
+.btn.ghost { background: var(--paper); color: var(--ink); }
+.btn.small { min-height: 40px; padding: 6px 14px; font-size: 15px; border-width: 2.5px; border-radius: 12px; box-shadow: 0 3px 0 var(--ink); }
+.field { width: 100%; height: 54px; border: 3px solid var(--ink); border-radius: 16px; padding: 0 16px; font-size: 18px; background: var(--tint); }
+.field:focus { outline: none; border-color: var(--blue); background: #fff; }
+.muted { color: var(--ink-2); }
+.err { color: #B83A1D; font-weight: 600; min-height: 1.4em; margin: 8px 0 0; }
+
+/* Sign in */
+.signin { max-width: 460px; margin: 6vh auto 0; overflow: hidden; }
+.signin img { display: block; width: 100%; height: auto; aspect-ratio: 1200 / 520; object-fit: cover; border-bottom: 3px solid var(--ink); background: #BFE0FF; }
+.signin .in { padding: 22px 24px 24px; }
+.signin h1 { margin: 0 0 6px; font-size: 28px; }
+.signin p { margin: 0 0 16px; }
+.signin form { display: flex; flex-direction: column; gap: 12px; }
+
+/* Dashboard */
+.top { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 16px; }
+.top h1 { margin: 0; font-size: clamp(26px, 4vw, 34px); line-height: 1.1; flex: 1 1 260px; }
+.top h1 small { display: block; font-size: 15px; font-weight: 600; color: var(--ink-2); margin-top: 4px; }
+.seg { display: inline-flex; border: 3px solid var(--ink); border-radius: 14px; overflow: hidden; background: var(--paper); box-shadow: 0 3px 0 var(--ink); }
+.seg button { border: 0; background: none; padding: 8px 14px; font-weight: 700; font-size: 15px; cursor: pointer; min-height: 40px; }
+.seg button + button { border-left: 2.5px solid var(--ink); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: #fff; }
+.hero { overflow: hidden; margin-bottom: 18px; display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); }
+.hero img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: 30% 50%; border-right: 3px solid var(--ink); min-height: 180px; background: #BFE0FF; }
+.hero .big { padding: 20px 22px; display: flex; flex-direction: column; justify-content: center; gap: 6px; }
+.hero .k { font-size: 13px; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase; color: var(--blue); }
+.hero .n { font-size: clamp(48px, 7vw, 72px); font-weight: 700; line-height: 1; letter-spacing: -.01em; }
+.hero .s { color: var(--ink-2); font-size: 16px; }
+.tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 18px; }
+.tile { padding: 14px 16px 14px; border-radius: 20px; box-shadow: 0 4px 0 var(--ink); }
+.tile .n { font-size: 30px; font-weight: 700; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.tile .l { font-size: 14px; color: var(--ink-2); font-weight: 600; }
+.tile .x { font-size: 13px; color: var(--muted); margin-top: 2px; }
+.grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; margin-bottom: 18px; }
+.panel { padding: 18px 20px 18px; min-width: 0; }
+.panel h2 { margin: 0 0 2px; font-size: 20px; }
+.panel .sub { margin: 0 0 12px; font-size: 14px; color: var(--ink-2); }
+.panel .head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.linkbtn { border: 0; background: none; color: #1E6FD9; font-weight: 700; font-size: 14px; cursor: pointer; padding: 4px 6px; border-radius: 8px; }
+.chart { position: relative; }
+.chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+.chart .ax { font-size: 11px; fill: var(--muted); font-family: inherit; }
+.chart .gl { stroke: var(--grid); stroke-width: 1; }
+.chart .bl { stroke: var(--ink); stroke-width: 2; }
+.chart .hit { fill: transparent; cursor: default; }
+.chart .bar { transition: opacity .12s; }
+.chart.hovering .bar { opacity: .45; }
+.chart.hovering .bar.on { opacity: 1; }
+.tip { position: absolute; pointer-events: none; background: var(--ink); color: #fff; font-size: 13px; font-weight: 600; padding: 6px 10px; border-radius: 10px; white-space: nowrap; transform: translate(-50%, calc(-100% - 8px)); opacity: 0; transition: opacity .1s; z-index: 2; }
+.tip b { font-size: 15px; }
+.tip.on { opacity: 1; }
+table.data { width: 100%; border-collapse: collapse; font-size: 14px; font-variant-numeric: tabular-nums; }
+table.data th, table.data td { text-align: right; padding: 5px 8px; border-bottom: 1px solid var(--grid); }
+table.data th:first-child, table.data td:first-child { text-align: left; }
+table.data th { color: var(--ink-2); font-weight: 600; }
+.rank { display: flex; flex-direction: column; gap: 8px; }
+.rank .row { display: grid; grid-template-columns: 110px minmax(0, 1fr) 44px; align-items: center; gap: 10px; font-size: 15px; }
+.rank .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.rank .track { height: 14px; background: var(--tint); border-radius: 4px; overflow: hidden; }
+.rank .fill { height: 100%; background: var(--blue); border-radius: 0 4px 4px 0; transform-origin: left; animation: grow .5s cubic-bezier(.2, .8, .3, 1) both; }
+.rank .v { text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
+@keyframes grow { from { transform: scaleX(0); } }
+.empty { color: var(--muted); font-size: 15px; padding: 8px 0; }
+.lists { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; margin-bottom: 18px; }
+
+/* Ratings */
+.rate { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 18px 22px; align-items: center; }
+.avg { text-align: center; }
+.avg .n { font-size: 56px; font-weight: 700; line-height: 1; }
+.avg .stars { color: var(--sun); -webkit-text-stroke: 1.2px var(--ink); font-size: 22px; letter-spacing: 2px; }
+.avg .c { font-size: 14px; color: var(--ink-2); }
+.dist .row { display: grid; grid-template-columns: 28px minmax(0, 1fr) 36px; gap: 8px; align-items: center; font-size: 14px; font-weight: 600; margin: 3px 0; }
+.dist .track { height: 12px; background: var(--tint); border-radius: 4px; overflow: hidden; }
+.dist .fill { height: 100%; background: var(--sun); border-right: 2px solid var(--ink); border-radius: 0 4px 4px 0; }
+.dist .fill.z { border: 0; }
+.dist .v { text-align: right; font-variant-numeric: tabular-nums; color: var(--ink-2); }
+.csat { display: inline-flex; align-items: baseline; gap: 6px; padding: 4px 12px; border: 2.5px solid var(--ink); border-radius: 99px; background: #DDF3E0; color: #1E5E28; font-weight: 700; margin-top: 8px; }
+
+/* Feedback list */
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 12px; }
+.chip { border: 2.5px solid var(--ink); border-radius: 99px; background: var(--paper); padding: 4px 12px; font-weight: 600; font-size: 14px; cursor: pointer; min-height: 34px; }
+.chip[aria-pressed="true"] { background: var(--ink); color: #fff; }
+.fbl { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; max-height: 620px; overflow: auto; }
+.fbl li { border: 2px solid var(--grid); border-radius: 16px; padding: 12px 14px; background: #FBFDFF; }
+.fbl .meta { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; font-size: 13px; color: var(--ink-2); }
+.fbl .kind { font-weight: 700; color: #fff; border-radius: 99px; padding: 1px 9px; font-size: 12px; letter-spacing: .3px; }
+.k-rating { background: #C98A00; } .k-love { background: #E5487A; } .k-idea { background: var(--blue); } .k-bug { background: var(--grass); }
+.fbl .st { color: var(--sun); -webkit-text-stroke: 1px var(--ink); letter-spacing: 1px; }
+.fbl .txt { margin: 6px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 15px; }
+.fbl .who { font-weight: 700; color: var(--ink); }
+.fbl a { color: #1E6FD9; }
+.foot { text-align: center; font-size: 13px; color: var(--ink-2); margin-top: 8px; }
+.loading { opacity: .55; transition: opacity .2s; }
+
+@media (max-width: 900px) {
+  .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .lists { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 700px) {
+  .grid { grid-template-columns: minmax(0, 1fr); }
+  .hero { grid-template-columns: minmax(0, 1fr); }
+  .hero img { border-right: 0; border-bottom: 3px solid var(--ink); min-height: 0; aspect-ratio: 1200 / 520; }
+  .lists { grid-template-columns: minmax(0, 1fr); }
+  .rate { grid-template-columns: minmax(0, 1fr); }
+}
+@media (prefers-reduced-motion: reduce) { .rank .fill { animation: none; } }
+</style>
+</head>
+<body>
+<div class="wrap" id="root"></div>
+<script type="module">
+const SB = 'https://qabevoqmalqjvesqzuse.supabase.co';
+const KEY = 'sb_publishable_6VwJkmR4SMSCs7WXQKjbnA_R0hK8OUW';
+const SESSION = 'kaimon.admin';
+const root = document.getElementById('root');
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const fmt = (n) => (n === null || n === undefined ? '0' : Number(n).toLocaleString('en-US'));
+const pct = (a, b) => (b ? Math.round((100 * a) / b) + '%' : '0%');
+const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const dayLabel = (d) => { const x = new Date(d + 'T12:00:00Z'); return MON[x.getUTCMonth()] + ' ' + x.getUTCDate(); };
+const NAMES = { iphone: 'iPhone', ipad: 'iPad', android: 'Android', chromebook: 'Chromebook', mac: 'Mac', windows: 'Windows', linux: 'Linux', computer: 'Computer', safari: 'Safari', chrome: 'Chrome', edge: 'Edge', firefox: 'Firefox', samsung: 'Samsung', other: 'Other', unknown: 'Unknown',
+  share: 'Share menu', link: 'Copied link', email: 'Email', text: 'Text', whatsapp: 'WhatsApp', news: 'News email', facebook: 'Facebook', linkedin: 'LinkedIn' };
+const nice = (s) => NAMES[s] || s;
+
+// ---------------------------------------------------------------- session
+const session = {
+  get() { try { return JSON.parse(localStorage.getItem(SESSION) || 'null'); } catch { return null; } },
+  set(s) { try { s ? localStorage.setItem(SESSION, JSON.stringify(s)) : localStorage.removeItem(SESSION); } catch {} },
+};
+async function api(path, { method = 'GET', body, token } = {}) {
+  const res = await fetch(SB + path, { method, headers: { apikey: KEY, 'Content-Type': 'application/json', ...(token ? { Authorization: 'Bearer ' + token } : {}) }, body: body ? JSON.stringify(body) : undefined });
+  const text = await res.text();
+  let data = null; try { data = text ? JSON.parse(text) : null; } catch { data = text; }
+  if (!res.ok) { const e = new Error((data && (data.msg || data.message || data.error_description || data.error)) || 'Error ' + res.status); e.status = res.status; throw e; }
+  return data;
+}
+async function token() {
+  const s = session.get();
+  if (!s) throw Object.assign(new Error('signed-out'), { status: 401 });
+  if (Date.now() < s.exp - 60000) return s.access;
+  const r = await api('/auth/v1/token?grant_type=refresh_token', { method: 'POST', body: { refresh_token: s.refresh } });
+  session.set({ ...s, access: r.access_token, refresh: r.refresh_token, exp: Date.now() + (r.expires_in || 3600) * 1000 });
+  return r.access_token;
+}
+const rpc = async (fn, body = {}) => api('/rest/v1/rpc/' + fn, { method: 'POST', body, token: await token() });
+
+// ---------------------------------------------------------------- sign in
+function signIn(msg = '') {
+  document.title = 'Sign in · Kaimon dashboard';
+  root.innerHTML = `<main class="card signin">
+    <img src="assets/email/header-stats.jpg" alt="">
+    <div class="in">
+      <h1>Kaimon dashboard</h1>
+      <p class="muted">For the maker only. Sign in with your admin email and we’ll send a code.</p>
+      <form id="f1"><input class="field" id="email" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com" required aria-label="Email">
+        <button class="btn" id="go">Send code</button></form>
+      <p class="err" id="err" role="alert">${esc(msg)}</p>
+    </div></main>`;
+  const f = document.getElementById('f1'), err = document.getElementById('err');
+  f.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('email').value.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(email)) { err.textContent = 'That email doesn’t look right.'; return; }
+    const b = document.getElementById('go'); b.disabled = true; b.textContent = 'Sending...'; err.textContent = '';
+    try {
+      // create_user: false, so this page never makes new accounts.
+      await api('/auth/v1/otp', { method: 'POST', body: { email, create_user: false } });
+      codeStep(email);
+    } catch (x) {
+      b.disabled = false; b.textContent = 'Send code';
+      err.textContent = x.status === 429 ? 'Too many tries. Wait a minute, then try again.' : 'Couldn’t send a code to that email.';
+    }
+  });
+}
+function codeStep(email) {
+  root.querySelector('.in').innerHTML = `<h1>Type the code</h1><p class="muted">Sent to <b>${esc(email)}</b>. It can take a minute.</p>
+    <form id="f2"><input class="field" id="code" inputmode="numeric" autocomplete="one-time-code" maxlength="10" placeholder="123456" aria-label="Code" required>
+    <button class="btn" id="go">Sign in</button><button type="button" class="btn ghost small" id="back">Use another email</button></form><p class="err" id="err" role="alert"></p>`;
+  document.getElementById('code').focus();
+  document.getElementById('back').addEventListener('click', () => signIn());
+  document.getElementById('f2').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const code = document.getElementById('code').value.replace(/\D/g, '');
+    const b = document.getElementById('go'), err = document.getElementById('err');
+    if (code.length < 6) { err.textContent = 'The code has 6 digits or more.'; return; }
+    b.disabled = true; b.textContent = 'Checking...'; err.textContent = '';
+    try {
+      const r = await api('/auth/v1/verify', { method: 'POST', body: { type: 'email', email, token: code } });
+      session.set({ email, access: r.access_token, refresh: r.refresh_token, exp: Date.now() + (r.expires_in || 3600) * 1000 });
+      start();
+    } catch {
+      b.disabled = false; b.textContent = 'Sign in';
+      err.textContent = 'That code didn’t work. Check it, or send a new one.';
+    }
+  });
+}
+
+// ---------------------------------------------------------------- charts (inline SVG)
+// One series per chart, bars rounded at the top, a quiet grid, hover tooltips.
+function niceMax(v) { if (v <= 4) return 4; const p = 10 ** Math.floor(Math.log10(v)); const m = v / p; return (m <= 1 ? 1 : m <= 2 ? 2 : m <= 5 ? 5 : 10) * p; }
+function barChart(id, rows, key, { color = 'var(--blue)', unit = '', label = '' } = {}) {
+  const W = 560, H = 210, L = 34, R = 6, T = 10, B = 26;
+  const vals = rows.map((r) => +r[key] || 0);
+  const max = niceMax(Math.max(1, ...vals));
+  const n = Math.max(1, rows.length), slot = (W - L - R) / n, bw = Math.max(2, Math.min(28, slot - 2));
+  const y = (v) => T + (H - T - B) * (1 - v / max);
+  const ticks = [0, max / 2, max];
+  const every = Math.ceil(n / 7);
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(label)}">`;
+  s += ticks.map((t) => `<line class="gl" x1="${L}" x2="${W - R}" y1="${y(t)}" y2="${y(t)}"/><text class="ax" x="${L - 6}" y="${y(t) + 4}" text-anchor="end">${fmt(t)}</text>`).join('');
+  rows.forEach((r, i) => {
+    const v = vals[i], x = L + i * slot + (slot - bw) / 2, top = y(v), h = H - B - top;
+    const rr = Math.min(4, bw / 2, h);
+    const path = h > 0 ? `M${x} ${H - B} V${top + rr} Q${x} ${top} ${x + rr} ${top} H${x + bw - rr} Q${x + bw} ${top} ${x + bw} ${top + rr} V${H - B} Z` : '';
+    s += `<path class="bar" data-i="${i}" d="${path}" fill="${color}"/>`;
+    if (i % every === 0 || i === n - 1) {
+      const d = new Date(r.day + 'T12:00:00Z');
+      s += `<text class="ax" x="${x + bw / 2}" y="${H - 8}" text-anchor="middle">${n <= 7 ? DAYS[d.getUTCDay()] : MON[d.getUTCMonth()] + ' ' + d.getUTCDate()}</text>`;
+    }
+    s += `<rect class="hit" data-i="${i}" x="${L + i * slot}" y="${T}" width="${slot}" height="${H - T - B}"><title>${esc(dayLabel(r.day))}: ${fmt(v)} ${esc(unit)}</title></rect>`;
+  });
+  s += `<line class="bl" x1="${L}" x2="${W - R}" y1="${H - B}" y2="${H - B}"/></svg><div class="tip" role="presentation"></div>`;
+  return `<div class="chart" id="${id}" data-unit="${esc(unit)}">${s}</div>`;
+}
+function wireChart(id, rows, key) {
+  const box = document.getElementById(id); if (!box) return;
+  const tip = box.querySelector('.tip'), svg = box.querySelector('svg');
+  box.addEventListener('pointermove', (e) => {
+    const h = e.target.closest('.hit'); if (!h) return;
+    const i = +h.dataset.i, r = rows[i];
+    box.classList.add('hovering');
+    box.querySelectorAll('.bar').forEach((b) => b.classList.toggle('on', +b.dataset.i === i));
+    const bar = box.querySelector(`.bar[data-i="${i}"]`).getBBox(), sc = svg.getBoundingClientRect().width / 560;
+    tip.innerHTML = `${esc(dayLabel(r.day))}<br><b>${fmt(r[key])}</b> ${esc(box.dataset.unit)}`;
+    tip.style.left = Math.min(Math.max((bar.x + bar.width / 2) * sc, 50), svg.getBoundingClientRect().width - 50) + 'px';
+    tip.style.top = Math.min(bar.y, 180) * sc + 'px';
+    tip.classList.add('on');
+  });
+  box.addEventListener('pointerleave', () => { box.classList.remove('hovering'); tip.classList.remove('on'); });
+}
+function lineChart(id, rows, { label = '' } = {}) {
+  // Average rating by week, 1 to 5 scale.
+  const W = 560, H = 150, L = 26, R = 10, T = 12, B = 24;
+  if (!rows.length) return '<p class="empty">No ratings yet.</p>';
+  const n = rows.length, x = (i) => (n === 1 ? (L + W - R) / 2 : L + (i * (W - L - R)) / (n - 1)), y = (v) => T + (H - T - B) * (1 - (v - 1) / 4);
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(label)}">`;
+  s += [1, 3, 5].map((t) => `<line class="gl" x1="${L}" x2="${W - R}" y1="${y(t)}" y2="${y(t)}"/><text class="ax" x="${L - 6}" y="${y(t) + 4}" text-anchor="end">${t}</text>`).join('');
+  s += `<polyline points="${rows.map((r, i) => x(i) + ',' + y(+r.avg)).join(' ')}" fill="none" stroke="var(--ink)" stroke-width="2" stroke-linejoin="round"/>`;
+  rows.forEach((r, i) => {
+    s += `<circle cx="${x(i)}" cy="${y(+r.avg)}" r="6" fill="var(--sun)" stroke="var(--ink)" stroke-width="2"><title>Week of ${esc(dayLabel(r.week))}: ${(+r.avg).toFixed(1)} stars from ${fmt(r.count)}</title></circle>`;
+    if (n <= 6 || i % Math.ceil(n / 6) === 0 || i === n - 1) s += `<text class="ax" x="${x(i)}" y="${H - 6}" text-anchor="middle">${esc(dayLabel(r.week))}</text>`;
+  });
+  return `<div class="chart" id="${id}">${s}</svg></div>`;
+}
+function ranked(list, empty = 'None yet.') {
+  if (!list || !list.length) return `<p class="empty">${esc(empty)}</p>`;
+  const max = Math.max(1, ...list.map((x) => x.devices || 0));
+  return `<div class="rank">${list.map((x) => `<div class="row"><span class="name" title="${esc(nice(x.name))}">${esc(nice(x.name))}</span><span class="track"><span class="fill" style="display:block;width:${Math.max(2, (100 * x.devices) / max)}%"></span></span><span class="v">${fmt(x.devices)}</span></div>`).join('')}</div>`;
+}
+const starStr = (n) => '★'.repeat(Math.round(n || 0)) + '☆'.repeat(5 - Math.round(n || 0));
+
+// ---------------------------------------------------------------- dashboard
+let days = +(sessionStorage.getItem('kaimon.admin.days') || 30);
+let kind = '';
+let tableOpen = false;
+
+function render(s, fb) {
+  const t = s.totals || {}, r = s.ratings || {}, daily = s.daily || [];
+  const me = session.get()?.email || '';
+  document.title = 'Dashboard · Kaimon Multiply';
+  const dist = r.dist || [0, 0, 0, 0, 0], dmax = Math.max(1, ...dist);
+  root.innerHTML = `
+  <header class="top">
+    <h1>Kaimon dashboard<small>Last ${days} days, California time. Updated ${new Date(s.generated_at || Date.now()).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}.</small></h1>
+    <div class="seg" role="group" aria-label="Time range">${[7, 30, 90].map((d) => `<button data-days="${d}" aria-pressed="${d === days}">${d} days</button>`).join('')}</div>
+    <button class="btn ghost small" id="out" title="Signed in as ${esc(me)}">Sign out</button>
+  </header>
+
+  <section class="card hero">
+    <img src="assets/email/header-stats.jpg" alt="">
+    <div class="big"><span class="k">Players</span><span class="n" data-kpi="devices">${fmt(t.devices)}</span>
+      <span class="s">devices played in the last ${days} days. ${fmt(t.new_devices)} new, ${fmt(t.returning)} came back on 2 or more days.</span></div>
+  </section>
+
+  <section class="tiles">
+    ${[
+      ['minutes', 'minutes played', t.devices ? Math.round(t.minutes / t.devices) + ' per player' : ''],
+      ['rounds', 'rounds', fmt(t.cards) + ' cards, ' + pct(t.right, t.cards) + ' right'],
+      ['opens', 'app opens', t.devices ? (t.opens / t.devices).toFixed(1) + ' per player' : ''],
+      ['came_back', 'new players came back', pct(t.came_back, t.new_devices) + ' of ' + fmt(t.new_devices) + ' new'],
+      ['installed', 'installed (home screen)', fmt(t.installed_all) + ' all time'],
+      ['devices_all', 'devices all time', fmt(t.trainers) + ' trainers this range'],
+      ['battles', 'battles', fmt(t.wins) + ' won'],
+      ['catches', 'Kaimon caught', ''],
+    ].map(([k, l, x]) => `<div class="card tile"><div class="n" data-kpi="${k}">${fmt(t[k])}</div><div class="l">${esc(l)}</div><div class="x">${esc(x)}</div></div>`).join('')}
+  </section>
+
+  <section class="grid">
+    <div class="card panel"><div class="head"><h2>Players each day</h2><button class="linkbtn" data-table>${tableOpen ? 'Hide table' : 'Show as table'}</button></div><p class="sub">Devices that opened the game</p>${barChart('c-players', daily, 'players', { unit: 'players', label: 'Players each day' })}</div>
+    <div class="card panel"><h2>Minutes played each day</h2><p class="sub">Time with the game on screen</p>${barChart('c-minutes', daily, 'minutes', { color: 'var(--grass)', unit: 'minutes', label: 'Minutes played each day' })}</div>
+  </section>
+  ${tableOpen ? `<section class="card panel" style="margin-bottom:18px;overflow:auto"><table class="data"><thead><tr><th>Day</th><th>Players</th><th>New</th><th>Opens</th><th>Minutes</th><th>Rounds</th><th>Cards</th></tr></thead><tbody>${daily.slice().reverse().map((d) => `<tr><td>${esc(dayLabel(d.day))}</td><td>${fmt(d.players)}</td><td>${fmt(d.new_devices)}</td><td>${fmt(d.opens)}</td><td>${fmt(d.minutes)}</td><td>${fmt(d.rounds)}</td><td>${fmt(d.cards)}</td></tr>`).join('')}</tbody></table></section>` : ''}
+
+  <section class="lists">
+    <div class="card panel"><h2>Shared links</h2><p class="sub">Where new players came from</p>${ranked(s.refs, 'No shared-link visits yet.')}</div>
+    <div class="card panel"><h2>Devices</h2><p class="sub">Players by device</p>${ranked(s.os)}</div>
+    <div class="card panel"><h2>Browsers</h2><p class="sub">Players by browser</p>${ranked(s.browsers)}</div>
+    <div class="card panel"><h2>Versions</h2><p class="sub">Players by app version</p>${ranked(s.versions)}</div>
+  </section>
+
+  <section class="grid">
+    <div class="card panel" id="ratings"><h2>Ratings</h2><p class="sub">All time, from Rate Kaimon Multiply</p>
+      ${r.count ? `<div class="rate">
+        <div class="avg"><div class="n" data-kpi="avg">${(+r.avg).toFixed(1)}</div><div class="stars" aria-hidden="true">${starStr(r.avg)}</div><div class="c">${fmt(r.count)} rating${r.count === 1 ? '' : 's'}</div></div>
+        <div><div class="dist">${[5, 4, 3, 2, 1].map((k) => `<div class="row"><span>${k}★</span><span class="track"><span class="fill${dist[k - 1] ? '' : ' z'}" style="display:block;width:${(100 * dist[k - 1]) / dmax}%"></span></span><span class="v">${fmt(dist[k - 1])}</span></div>`).join('')}</div>
+        <span class="csat" title="Share of ratings with 4 or 5 stars"><b data-kpi="csat">${r.csat ?? 0}%</b> 4 or 5 stars</span></div>
+      </div>
+      <h2 style="font-size:16px;margin:16px 0 4px">Average by week</h2>${lineChart('c-rate', r.weekly || [], { label: 'Average rating by week' })}` : '<p class="empty">No ratings yet.</p>'}
+      <p class="sub" style="margin-top:10px">${fmt(r.new)} new in the last ${days} days${r.new_avg ? ', averaging ' + (+r.new_avg).toFixed(1) : ''}. News list: ${fmt((s.news || {}).list)} grown-ups.</p>
+    </div>
+    <div class="card panel" id="feedback"><h2>Feedback</h2><p class="sub">Newest first. ${fmt((s.feedback || {}).new_comments)} new notes in the last ${days} days.</p>
+      <div class="chips" role="group" aria-label="Filter">${[['', 'All'], ['rating', 'Ratings'], ['love', 'Loves'], ['idea', 'Ideas'], ['bug', 'Bugs']].map(([k, l]) => `<button class="chip" data-kind="${k}" aria-pressed="${k === kind}">${l}</button>`).join('')}</div>
+      ${fb.length ? `<ul class="fbl">${fb.map((x) => `<li data-kind="${esc(x.kind)}"><div class="meta"><span class="kind k-${esc(x.kind)}">${esc({ rating: 'Rating', love: 'Love', idea: 'Idea', bug: 'Bug' }[x.kind] || x.kind)}</span>${x.stars ? `<span class="st" aria-label="${x.stars} stars">${starStr(x.stars)}</span>` : ''}${x.name ? `<span class="who">${esc(x.name)}</span>` : ''}<span>${esc(new Date(x.created_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }))}</span>${x.version ? `<span>v${esc(x.version)}</span>` : ''}${x.place ? `<span>${esc(x.place)}</span>` : ''}${x.reply_email ? `<a href="mailto:${esc(x.reply_email)}">${esc(x.reply_email)}</a>` : ''}</div>${x.text ? `<p class="txt">${esc(x.text)}</p>` : ''}</li>`).join('')}</ul>` : '<p class="empty">Nothing here yet.</p>'}
+    </div>
+  </section>
+  <p class="foot">Usage counts hold no emails, real names, photos or locations. Feedback shows only what people chose to send. <a href="privacy.html">Privacy</a></p>`;
+
+  wireChart('c-players', daily, 'players');
+  wireChart('c-minutes', daily, 'minutes');
+  root.querySelectorAll('[data-days]').forEach((b) => b.addEventListener('click', () => { days = +b.dataset.days; sessionStorage.setItem('kaimon.admin.days', days); load(); }));
+  root.querySelectorAll('[data-kind]').forEach((b) => b.addEventListener('click', () => { kind = b.dataset.kind; load(); }));
+  root.querySelector('[data-table]').addEventListener('click', () => { tableOpen = !tableOpen; render(s, fb); });
+  root.querySelector('#out').addEventListener('click', () => { session.set(null); signIn('Signed out.'); });
+}
+
+async function load() {
+  root.classList.add('loading');
+  try {
+    const [s, fb] = await Promise.all([rpc('usage_summary', { days }), rpc('feedback_list', { kind_filter: kind || null, max_rows: 200 })]);
+    render(s || {}, Array.isArray(fb) ? fb : []);
+  } catch (e) {
+    if (e.status === 401 || e.message === 'signed-out') { session.set(null); signIn('Please sign in again.'); }
+    else if (/not-admin/.test(e.message) || e.status === 403) { session.set(null); signIn('That email isn’t on the admin list.'); }
+    else root.insertAdjacentHTML('afterbegin', `<p class="err" role="alert">Couldn’t load the numbers. ${esc(e.message)}</p>`);
+  } finally { root.classList.remove('loading'); }
+}
+
+async function start() {
+  if (!session.get()) return signIn();
+  root.innerHTML = '<p class="muted" style="text-align:center;margin-top:20vh">Loading...</p>';
+  try {
+    if (!(await rpc('is_admin'))) { session.set(null); return signIn('That email isn’t on the admin list.'); }
+  } catch (e) { session.set(null); return signIn(e.status === 401 ? 'Please sign in again.' : 'Couldn’t reach the server. Try again.'); }
+  load();
+}
+start();
+</script>
+</body>
+</html>

@@ -113,6 +113,7 @@ export function installSheet({ first = false } = {}) {
       <ol class="ins-steps">${steps(pf).map((s) => `<li>${s}</li>`).join('')}</ol>
       <div class="sheet-actions"><button class="btn-chunky${deferred ? '' : ' btn-primary'}" data-close>${first ? 'Maybe later' : 'Got it'}</button></div>
       ${first ? '<p class="note ins-later">You can find these steps any time in Grown-ups.</p>' : ''}
+      <p class="note ins-more"><a href="install.html" target="_blank" rel="noopener">More help, for every device</a></p>
     </div>`);
   sh.el.querySelector('[data-install]')?.addEventListener('click', async () => { if (await promptInstall()) sh.close(); });
   return sh;

@@ -80,3 +80,21 @@ pictures in `assets/email/` load.
 - To see who said yes or to reset everything: **Project Settings > Script Properties**.
 - Gmail's daily limit for a regular account is 100 recipients. If a send hits the
   limit, the game tries again a few hours later.
+
+## News emails and the usage summary (News.gs)
+
+`News.gs` sits in the same Apps Script project (click **+ > Script**, name it `News`,
+paste in `tools/apps-script/News.gs`). It sends "What's new" emails to the news list
+and a weekly usage summary to you. Setup:
+
+1. Apply `supabase/migrations/20261116120000_growth_usage_and_news.sql`, then in the
+   Supabase SQL editor run `select public.rotate_secret('news');` and copy the result.
+2. In **Project Settings > Script Properties**, add `NEWS_KEY` (that result). `FEEDBACK_TO`
+   is used for test copies and the usage summary (or set `USAGE_TO`). Optional:
+   `NEWS_LAUNCH` (YYYY-MM-DD), otherwise the date of version 1.0.0 in the changelog.
+3. Run `previewNews` (sends nothing), then `sendNewsTest`, then `scheduleNews` once.
+
+`newsDaily` (daily, 10 am) sends only when there are new versions: weekly for the
+first 3 weeks after launch, then monthly. It sends at most 80 a day and always leaves
+20 of Gmail's quota for reports and invites, then carries on the next day.
+`sendNews` sends right away. Every news email has its own Unsubscribe button.
