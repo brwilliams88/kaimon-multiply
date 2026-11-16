@@ -1,7 +1,18 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.5.36';
+export const VERSION = '0.5.37';
 
 export const CHANGELOG = [
+  {
+    version: '0.5.37',
+    date: '2026-11-15',
+    title: "Pick a trainer, then Play",
+    items: [
+      "Who's playing is easier: swipe or tap to pick a trainer, then press the big Play button under the cards.",
+      "The last trainer who played is picked and centered when the game opens, marked \"Last played\".",
+      "The cards no longer get cut off on phones, and the New trainer \"+\" sits right in the middle of its circle.",
+      "Tap your trainer at the top of Home to open your trainer page or switch trainers.",
+    ],
+  },
   {
     version: '0.5.36',
     date: '2026-11-15',

@@ -2,6 +2,13 @@
 
 All notable changes. Versioning: `0.MINOR.0` marks a roadmap phase, `0.x.PATCH` is any shipped change a player or parent can notice, and `1.0.0` is the public launch. See "Versioning" in CLAUDE.md. The in-app version history (Grown-ups > What's new) reads from `js/data/changelog.js`; keep both in sync. Each release is tagged in git as `vX.Y.Z`.
 
+## v0.5.37 (2026-11-15) Pick a trainer, then Play
+
+- Who's playing is easier: swipe or tap to pick a trainer, then press the big Play button under the cards.
+- The last trainer who played is picked and centered when the game opens, marked "Last played".
+- The cards no longer get cut off on phones, and the New trainer "+" sits right in the middle of its circle.
+- Tap your trainer at the top of Home to open your trainer page or switch trainers.
+
 ## v0.5.36 (2026-11-15) Battle polish
 
 - Battles start with a real send-out: your trainer throws a ball, it pops open, and your Kaimon bursts out. Gym Leaders throw Super Balls and Boss Papa throws a Mega Ball.
