@@ -261,16 +261,26 @@
 .menu-ic .menu-bolt-img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 2px 0 rgba(20, 33, 61, .2)); }
 .menu-row[data-m="bolt"][data-locked] .menu-ic { opacity: .55; filter: saturate(.4); }
 
-/* Hint Scroll on a practice card: a small sticker button at the card's left,
-   and Teacher K's trick in a note over the bottom of the Kaimon spot. */
-.scroll-btn { position: absolute; left: 4px; bottom: 4px; z-index: 3; display: inline-flex; align-items: center; gap: 2px; height: 48px; padding: 0 10px 0 5px; border-radius: 99px; border: 2.5px solid var(--ink); background: #FFF4D6; box-shadow: 0 3px 0 var(--ink); font: inherit; font-size: 16px; color: var(--ink); cursor: pointer; }
+/* Teacher K's hint on a practice card (item key 'scroll'). She is not on the card
+   when it is dealt: she pops in at the card's lower left only when a hint can help
+   (play.js armHint), and her trick shows in her speech bubble over the Kaimon spot. */
+.scroll-btn { position: absolute; left: 4px; bottom: 4px; z-index: 3; display: inline-flex; align-items: center; gap: 4px; height: 50px; padding: 0 14px 0 3px; border-radius: 99px; border: 2.5px solid var(--ink); background: var(--paper); box-shadow: 0 3px 0 var(--ink); font: inherit; font-size: 17px; font-weight: 700; color: var(--ink); cursor: pointer; touch-action: manipulation; }
 .scroll-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--ink); }
-.scroll-btn .sb-img { width: 36px; height: 36px; }
-.scroll-hint { position: absolute; left: 6px; right: 6px; bottom: 4px; z-index: 3; padding: 7px 10px; border-radius: 14px; border: 2.5px solid var(--ink); background: #FFF4D6; box-shadow: 0 3px 0 var(--ink); animation: sx-pop .28s ease-out both; }
+.scroll-btn .sb-img { width: 46px; height: 46px; margin: -6px 0 -4px -2px; }
+.scroll-btn .kh-count { position: absolute; top: -8px; right: -8px; min-width: 22px; height: 22px; padding: 0 5px; border-radius: 99px; background: var(--ink); color: #fff; font-size: 12px; line-height: 22px; text-align: center; }
+.scroll-btn.pop-in { transform-origin: 25% 100%; animation: kh-in .5s cubic-bezier(.3, 1.5, .5, 1) backwards; }
+.scroll-btn.pop-in::after { content: ''; position: absolute; inset: -3px; border-radius: inherit; border: 3px solid var(--sun); opacity: 0; animation: kh-ring 1s .35s ease-out 2; pointer-events: none; }
+@keyframes kh-in { 0% { opacity: 0; transform: translateY(10px) scale(.6); } 100% { opacity: 1; transform: none; } }
+@keyframes kh-ring { 0% { opacity: .9; transform: scale(1); } 100% { opacity: 0; transform: scale(1.18, 1.4); } }
+.scroll-hint { position: absolute; left: 6px; right: 6px; bottom: 4px; z-index: 3; padding: 7px 10px; border-radius: 14px; border: 2.5px solid var(--ink); background: var(--paper); box-shadow: 0 3px 0 var(--ink); animation: sx-pop .28s ease-out both; }
+.scroll-hint.k-says { display: flex; align-items: center; gap: 8px; padding: 6px 10px 6px 6px; }
+.scroll-hint .kh-face { flex: none; width: 42px; height: 42px; }
+.scroll-hint .kh-face .face-img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 2.5px solid var(--ink); background: #FFF3D6; display: block; }
+.scroll-hint .kh-text { min-width: 0; flex: 1 1 auto; }
 .scroll-hint .trick { border: 0; background: none; box-shadow: none; padding: 0; width: auto; max-width: none; margin: 0; font-size: 15px; line-height: 1.3; color: var(--ink); text-align: left; }
 .scroll-hint .trick-tag { display: inline-flex; align-items: center; gap: 3px; font-weight: 600; }
 .scroll-hint .trick-tag .item-img { width: 20px; height: 20px; }
-@media (prefers-reduced-motion: reduce) { .scroll-hint { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .scroll-hint, .scroll-btn.pop-in, .scroll-btn.pop-in::after { animation: none; } }
 .item-svg { display: block; }
 
 /* Battle: the Power Snack button under your Kaimon's HP. Tap it, then a right
