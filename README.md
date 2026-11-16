@@ -118,7 +118,6 @@ Then go find the rest. Every times table is a region with its own Kaimon living 
 
 - **No account needed.** Kids pick a trainer name and play. A friend can play as a guest, and guest progress never leaves the device.
 - **Family sync is optional.** Families can sign in with a code to keep progress in step across their devices. Synced data is locked down so only signed-in family members can reach it.
-- **Usage stats can be turned off.** The app may send simple stats (a random device ID, trainer names, device type, rough location and play events) so the maker can see how the game is used. No real names, emails or photos. Grown-ups shows exactly what is collected and has an off switch.
 - **The mic never records.** Mic mode only listens while a card is waiting for an answer, and turns itself off after 2 minutes of quiet. Speech goes to the device's own speech service to become a number. Audio is never recorded or saved.
 
 **The Grown-ups area** is behind a parent PIN (press and hold Grown-ups in the Menu). In it you can:
