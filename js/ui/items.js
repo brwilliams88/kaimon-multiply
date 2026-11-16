@@ -4,9 +4,11 @@
 // The trainer page's Bag opens openItem(p, key) from its [data-bag] rows.
 import { save } from '../core/store.js';
 import { syncNow } from '../core/sync.js';
-import { itemCount, canScroll, useScroll, charmReady, useCharm, canLight, lightLantern, lanternLeft, canCrystal, crystalTarget, useCrystal, LANTERN_CARDS } from '../core/items.js';
+import { CRYSTAL_RANGE, itemCount, canScroll, useScroll, charmReady, useCharm, canLight, lightLantern, lanternLeft, canCrystal, crystalTarget, useCrystal, LANTERN_CARDS } from '../core/items.js';
 import { itemInfo } from '../core/extras.js';
 import { partnerOf, BALLS } from '../core/game.js';
+import { nextForm } from '../core/levels.js';
+import { MYTHIC_ID } from '../data/creatures.js';
 import { ballImg, itemImg } from '../core/assets.js';
 import { SPECIES } from '../data/creatures.js';
 import { sfx } from '../core/sound.js';
@@ -50,7 +52,8 @@ export function itemUse(p, key) {
   if (key === 'evolve') {
     if (canCrystal(p)) return { can: true, label: 'Evolve now' };
     const pl = partnerOf(p);
-    return { can: false, note: pl.stage >= 3 || !pl.evolveAt ? `${pl.species.name} is fully evolved. Keep it for a friend line later.` : `It works at Lv ${pl.evolveAt - 3} or higher. ${pl.species.name} is Lv ${pl.level}.` };
+    if (!nextForm(pl.species) || !pl.species.evolveAt || pl.species.id === MYTHIC_ID) return { can: false, note: `Your Buddy ${pl.species.name} has no next form. Pick a Buddy that can still evolve, then use it.` };
+    return { can: false, note: `It works when your Buddy is Lv ${pl.species.evolveAt - CRYSTAL_RANGE} or higher. ${pl.species.name} is Lv ${pl.level}.` };
   }
   if (key === 'snack') return { can: false, note: 'Use it in a battle when your Kaimon is hurt.' };
   if (key === 'scroll') return { can: false, note: 'Open it on a practice card: tap the scroll on the card before you answer.' };
@@ -78,12 +81,11 @@ export function openItem(p, key, { go, back, onUse } = {}) {
       sh.close();
       toast(`Lucky Lantern lit! The next ${LANTERN_CARDS} wild Kaimon are lucky.`, 3200);
     } else if (key === 'evolve') {
-      const from = partnerOf(p).species, to = crystalTarget(p);
+      const from = partnerOf(p).species, next = crystalTarget(p);
       if (!useCrystal(p)) return;
       save(); syncNow(); sfx.levelUp();
       sh.close();
-      const next = SPECIES.find((s) => s.line === from.line && s.stage === to);
-      // Home shows the evolution moment once it sees the new stage.
+      // Home shows the evolution moment for the new form.
       if (go) go('home');
       else if (next) toast(`${from.name} evolved into ${next.name}!`, 3200);
     }

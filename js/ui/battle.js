@@ -7,6 +7,7 @@ import { factsForTables, pickNext, onAnswer, answerOf, parseFact, hintLadder } f
 import { answer, ball as giveBall, battle as recordBattle, session, caught as catchIt } from '../core/actions.js';
 import { myTeam, opponent, attack, powerFor, powerLabel, moveName, HIT_BACK, rewardFor, gymOpen } from '../core/battle.js';
 import { BALLS } from '../core/game.js';
+import { SHARE } from '../core/levels.js';
 import { syncNow } from '../core/sync.js';
 import { dadJoke, DAD_JOKES } from '../data/dadjokes.js';
 import { voiceSupported, stop as stopVoice } from '../core/voice.js';
@@ -63,7 +64,7 @@ const duelThem = (opp, kind, won) => won && kind !== 'quiz'
   : trainerFull(opp, duelPose(kind, won));
 
 // The name gets the whole top line so long names fit; the team balls sit under the bar, beside the HP number.
-const hpBar = (who) => `<div class="hp hp-${who}"><div class="hp-top"><span class="hp-name"></span></div><div class="hp-bar"><span></span></div><div class="hp-bot"><span class="hp-dots"></span><span class="hp-num"></span></div></div>`;
+const hpBar = (who) => `<div class="hp hp-${who}"><div class="hp-top"><span class="hp-name"></span><span class="hp-lv"></span></div><div class="hp-bar"><span></span></div><div class="hp-bot"><span class="hp-dots"></span><span class="hp-num"></span></div></div>`;
 
 export function renderBattle(root, go, { kind = 'champ', table = 1, grunt } = {}) {
   const p = active();
@@ -172,6 +173,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt } = {}
   function drawHp(box, team, idx, known) {
     const m = team[idx];
     $('.hp-name', box).textContent = known ? m.species.name : (box === el.foeHp && !p.dex[m.species.id]?.caught ? 'Wild ???' : m.species.name);
+    $('.hp-lv', box).textContent = m.lv ? `Lv ${m.lv}` : '';
     fitText($('.hp-name', box), 11);
     // One ball per Kaimon on that side: bright while it can still battle, gray once it's out.
     const left = team.filter((x) => x.hp > 0).length;
@@ -441,7 +443,10 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt } = {}
     const ans = answerOf(S.fact);
     const ok = parseInt(S.input, 10) === ans;
     const [a, b] = parseFact(S.fact);
-    answer(p, S.fact, ok, ms, via);
+    // The Buddy gets the XP; the other two on the team get half (levels.js).
+    const res = answer(p, S.fact, ok, ms, via, mine.slice(1).map((m) => m.key));
+    if (res.xp) S.teamXP = (S.teamXP || 0) + Math.round(res.xp * SHARE);
+    if (res.evolved.length) S.evolved = [...(S.evolved || []), ...res.evolved];
     onAnswer(S, S.fact, ok);
     S.answered++;
     save();
@@ -585,6 +590,16 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt } = {}
     });
   }
 
+  // The team's share of the XP, and any Kaimon that evolved during the battle.
+  function teamLine() {
+    const others = mine.slice(1).map((m) => m.species.name);
+    const lines = [];
+    if (others.length && S.teamXP) lines.push(`${others.join(' and ')} got +${S.teamXP} XP${others.length > 1 ? ' each' : ''}.`);
+    const evo = (S.evolved || [])[0];
+    if (evo) lines.push(`${byId(evo.from.split('.')[0]).name} is evolving! Go Home to see it.`);
+    return lines.length ? `<p class="res-team">${esc(lines.join(' '))}</p>` : '';
+  }
+
   async function finish(won) {
     S.phase = 'over'; drawSnack(); // [systems]
     cancelAnimationFrame(S.raf);
@@ -595,7 +610,9 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt } = {}
     const firstBadge = won && kind === 'champ' && !p.battles.champs[opp.table];
     const reward = won ? rewardFor(p, kind, opp.table) : null;
     const xpBefore = p.xp || 0;
-    recordBattle(p, kind, opp.table, won);
+    const bev = recordBattle(p, kind, opp.table, won, mine.slice(1).map((m) => m.key));
+    if (bev.evolved?.length) S.evolved = [...(S.evolved || []), ...bev.evolved];
+    if (bev.d.x) S.teamXP = (S.teamXP || 0) + Math.round(bev.d.x * SHARE);
     const bonusXP = (p.xp || 0) - xpBefore;
     if (reward) giveBall(p, reward.ball, reward.n);
     endTime();
@@ -632,6 +649,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt } = {}
           ${bonusXP ? `<span class="br-stat xp"><strong>+${bonusXP}</strong><small>win bonus XP</small></span>` : ''}
         </div>
         ${reward ? `<p class="result-reward br-prize"><span class="br-ball">${glowBall(reward.ball) ? fxImg('shiny-ring', 'br-aura') : ''}${ballIcon(reward.ball)}</span><span>You got a <strong>${BALLS[reward.ball].name}</strong>!</span></p>` : ''}
+        ${teamLine()}
         ${won ? '' : '<p class="br-kind">Every answer still counts as practice.</p>'}
         <div class="sheet-actions">
           ${won ? '' : '<button class="btn-chunky btn-primary" data-again>Try again</button>'}

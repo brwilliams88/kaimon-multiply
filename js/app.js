@@ -26,6 +26,7 @@ import './ui/install.js'; // listens for Chrome's install prompt from the start
 import { maybeIconNotice } from './ui/iconNotice.js'; // must load before justUpdated() runs
 import { startAnalytics } from './core/analytics.js'; // anonymous usage counts (off switch in Grown-ups)
 import { maybeAskRating } from './ui/feedback.js';
+import { noteClassVisit } from './core/classBeta.js';
 
 const SCREENS = {
   welcome: renderWelcome,
@@ -91,6 +92,8 @@ document.addEventListener('touchmove', (e) => {
   e.preventDefault();
 }, { passive: false });
 
+// A class link on a brand-new device: a one-time Beta note on the title screen.
+try { noteClassVisit(location.href, allProfiles().length > 0); } catch { /* never block the game */ }
 try { startAnalytics(); } catch { /* usage counts never block the game */ } // also takes ?ref= off the address bar
 
 // Offline play: online/offline state, saving pictures for offline, the offline chip.

@@ -15,6 +15,7 @@ const bolt = await import('../js/core/lightning.js');
 const { partnerOf, pickEncounter } = await import('../js/core/game.js');
 const { applySnapshot } = await import('../js/core/sync.js');
 const { xpForLevel } = await import('../js/core/xp.js');
+const lv = await import('../js/core/levels.js');
 const { SPECIES } = await import('../js/data/creatures.js');
 const { itemInfo } = await import('../js/core/extras.js');
 
@@ -185,22 +186,28 @@ test('pickEncounter still only picks from the region while lit', () => {
   for (let i = 0; i < 50; i++) assert.equal(pickEncounter(p, 7).region, 7);
 });
 
-test('Evolve Crystal: works only within 3 levels of evolving', () => {
-  const p = fresh(); p.items.evolve = 1;
-  p.xp = xpForLevel(5); assert.equal(items.crystalTarget(p), 0); assert.ok(!items.canCrystal(p));
-  p.xp = xpForLevel(7); assert.equal(items.crystalTarget(p), 2); assert.ok(items.canCrystal(p));
-  assert.equal(partnerOf(p).stage, 1);
-  assert.ok(items.useCrystal(p));
-  assert.equal(partnerOf(p).stage, 2);
-  assert.equal(partnerOf(p).evolveAt, 20);
-  assert.equal(p.items.evolve, 0);
-  assert.equal(items.useCrystal(p), null);
-  p.items.evolve = 1; p.xp = xpForLevel(17);
-  assert.equal(items.crystalTarget(p), 3);
-  items.useCrystal(p);
-  assert.equal(partnerOf(p).stage, 3);
-  assert.equal(items.crystalTarget(p), 0); // fully evolved
-  assert.equal(items.crystalStage({ evo: 9 }), 3);
+test('Evolve Crystal: evolves the Buddy through levels.js, only within 3 levels of evolving', () => {
+  const p = fresh(); p.items.evolve = 2;
+  const setLv = (L) => { const r = ((p.mons ||= {})[p.starter] ||= {})[0] ||= { a: 0, e: 0, c: 1 }; r.a = 0; r.e = L.xpFor(L.lv); };
+  const b0 = partnerOf(p).species; const at = b0.evolveAt;
+  assert.ok(at > 4, 'the starter evolves by level');
+  setLv({ xpFor: lv.xpFor, lv: at - 4 }); assert.equal(items.crystalTarget(p), null); assert.ok(!items.canCrystal(p));
+  setLv({ xpFor: lv.xpFor, lv: at - 3 }); assert.equal(items.crystalTarget(p).stage, b0.stage + 1); assert.ok(items.canCrystal(p));
+  const e = items.useCrystal(p);
+  assert.ok(e); assert.equal(e.evolved.length, 1);
+  const b1 = partnerOf(p);
+  assert.equal(b1.species.stage, b0.stage + 1, 'the Buddy is now the next form');
+  assert.equal(b1.level, at - 3, 'it keeps its level');
+  assert.equal(p.items.evolve, 1);
+  assert.ok(p.evos[p.starter], 'recorded as an evo event (levels.js)');
+  assert.ok(p.crys[p.starter]);
+  // Replaying the same events on another device gives the same Buddy.
+  const q = fresh(); q.mons = JSON.parse(JSON.stringify(p.mons)); q.items.evolve = 2;
+  apply(q, { id: 'u1', t: 5, k: 'use', d: { i: 'evolve', n: p.starter } });
+  apply(q, { id: 'v1', t: 6, k: 'evo', d: { n: p.starter, to: p.evos[p.starter].to } });
+  assert.equal(partnerOf(q).species.id, b1.species.id);
+  // At or past its evolve level a Kaimon evolves by itself: no crystal needed.
+  setLv({ xpFor: lv.xpFor, lv: 50 }); assert.equal(items.crystalTarget(p), null);
 });
 
 test('bolt event saves best, runs and the day record', () => {
@@ -214,19 +221,28 @@ test('bolt event saves best, runs and the day record', () => {
 
 test('systemsSnap and mergeSystems carry new fields through family sync', () => {
   const a = fresh('pA');
-  a.got = { 'm:right:100': 5 }; a.lantern = 4; a.evo = 2; a.bolt = { best: 14, runs: 3, last: 9 };
+  a.got = { 'm:right:100': 5 }; a.lantern = 4; a.crys = { kaimo: 7 }; a.bolt = { best: 14, runs: 3, last: 9 };
   a.play['2026-11-10'] = { open: 0, ms: 0, a: 0, c: 0, n: 0, h: {}, bonus: 0, lr: 2, lb: 14 };
   const snap = { facts: {}, dex: {}, balls: {}, items: {}, stats: {}, mythic: {}, battles: null, play: a.play, xp: 0, ...items.systemsSnap(a) };
   const b = fresh('pA');
   b.got = { 'm:right:100': 3, 'q:x': 7 }; b.bolt = { best: 20, runs: 1, last: 1 };
   applySnapshot(b, snap);
   assert.deepEqual(b.got, { 'm:right:100': 3, 'q:x': 7 });
-  assert.equal(b.lantern, 4); assert.equal(b.evo, 2);
+  assert.equal(b.lantern, 4); assert.deepEqual(b.crys, { kaimo: 7 });
   assert.deepEqual(b.bolt, { best: 20, runs: 4, last: 9 });
   assert.equal(b.play['2026-11-10'].lr, 2); assert.equal(b.play['2026-11-10'].lb, 14);
   // An old snapshot without the new fields changes nothing.
   const c = fresh('pC'); applySnapshot(c, { facts: {}, dex: {}, stats: {}, play: {} });
   assert.deepEqual(c.got, {}); assert.equal(c.lantern, 0);
+});
+
+test('quest XP goes to the Buddy of the moment through levels.js', () => {
+  const p = fresh();
+  const before = partnerOf(p).xp;
+  const e = items.grant(p, 'q:test', [['x', 'xp', 75]]);
+  assert.equal(e.d.b, partnerOf(p).key);
+  assert.equal(partnerOf(p).xp, before + 75);
+  assert.equal(items.grant(p, 'q:test', [['x', 'xp', 75]]), null);
 });
 
 test('old saves (no got, bolt, lantern) still work', () => {

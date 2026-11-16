@@ -21,7 +21,7 @@ export const glowBall = (kind) => kind === 'mega' || kind === 'legend';
 // Evolution. The old form flashes white faster and faster, shrinks into light, and the
 // new form pops out of a burst and fills in with color. The words arrive after the pop.
 // Reduced motion: the old and new forms side by side, the new one glowing.
-export function evolveMoment({ from, to, kicker, title, text, btn = 'Awesome!' }) {
+export function evolveMoment({ from, to, kicker, title, text, btn = 'Awesome!', onClose }) {
   const rm = reducedMotion();
   const fromArt = creatureArt(from), toArt = creatureArt(to);
   const stage = rm
@@ -34,7 +34,7 @@ export function evolveMoment({ from, to, kicker, title, text, btn = 'Awesome!' }
     <p class="evo-kicker">${kicker}</p>
     ${stage}
     <div class="evo-reveal"><h2>${title}</h2><p>${text}</p><button class="btn-chunky btn-primary" data-close>${btn}</button></div>
-  </div>`);
+  </div>`, { onClose });
 }
 
 // Kairo arrives: it glides down from the sky, then bobs in place.

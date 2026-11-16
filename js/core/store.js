@@ -1,5 +1,6 @@
 // Local save. One device can hold several trainer profiles.
 // Family profiles (p.family = true) sync through Supabase; guest profiles never leave the device.
+import { legacyMons } from './levels.js';
 import { SPECIES } from '../data/creatures.js';
 
 const KEY = 'kaimon.save.v1';
@@ -34,6 +35,7 @@ export function newProfile(name, avatar, id) {
     battles: newBattles(),
     play: {},
     xp: 0,
+    mons: {}, evos: {}, bud: null, // Kaimon levels (levels.js)
     trophies: [],
     tips: {},
     outbox: [],
@@ -68,6 +70,9 @@ function migrate(p) {
   p.battles = { ...newBattles(), ...(p.battles || {}) };
   p.play = p.play || {};
   if (p.xp == null) p.xp = (p.stats?.correct || 0) * 12; // estimate for saves from before XP
+  // v0.7: every Kaimon gets a level. Old saves start from their Kaidex and Buddy XP.
+  if (!p.mons) { p.mons = legacyMons(p.dex, p.xp, p.starter); p.evos = p.evos || {}; p.bud = p.bud || null; }
+  p.evos = p.evos || {};
   p.trophies = p.trophies || [];
   p.tips = p.tips || {};
   p.outbox = p.outbox || [];

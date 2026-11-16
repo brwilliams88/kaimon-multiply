@@ -11,8 +11,9 @@
 // Names, art and kid lines come from ITEM_INFO in extras.js (one source of truth).
 // Saved item keys: snack (Power Snack), scroll (Hint Scroll), charm, lantern,
 // evolve (Evolve Crystal) and megaCrystal (the Tower's Mega Crystal).
-import { emit } from './actions.js';
-import { partnerOf } from './game.js';
+import { emit, evolveReady } from './actions.js';
+import { buddyOf, nextForm, giveXP } from './levels.js';
+import { MYTHIC_ID } from '../data/creatures.js';
 import { dayRec } from './playtime.js';
 import { today } from './store.js';
 import { itemInfo } from './extras.js';
@@ -56,7 +57,9 @@ export function applySystems(p, ev) {
     const k = itemKey(d.i);
     p.items[k] = Math.max(0, (p.items[k] || 0) - 1);
     if (d.i === 'lantern') p.lantern = Math.min(LANTERN_CARDS * 2, (p.lantern || 0) + LANTERN_CARDS);
-    if (d.i === 'evolve') p.evo = Math.min(3, Math.max(p.evo || 0, d.st | 0));
+    // An Evolve Crystal marks the Kaimon it was used on (d.n, a levels.js key);
+    // readyToEvolve() in levels.js then lets that one evolve now.
+    if (d.i === 'evolve' && d.n) { const C = p.crys || (p.crys = {}); C[d.n] = C[d.n] ? Math.min(C[d.n], ev.t) : ev.t; }
     return true;
   }
   if (ev.k === 'got') {
@@ -64,7 +67,7 @@ export function applySystems(p, ev) {
     if (got[d.r]) return true; // already claimed, maybe on another device
     got[d.r] = ev.t;
     for (const [kind, id, n] of d.g || []) {
-      if (kind === 'x') { p.xp = (p.xp || 0) + n; continue; } // XP for the Buddy
+      if (kind === 'x') { p.xp = (p.xp || 0) + n; giveXP(p, { b: d.b }, n); continue; } // XP for the Buddy (d.b, see levels.js)
       const bag = kind === 'b' ? p.balls : p.items;
       const k = kind === 'b' ? id : itemKey(id);
       bag[k] = Math.max(0, (bag[k] || 0) + n);
@@ -93,7 +96,7 @@ export function onSeen(p) {
 // ---- Family sync -------------------------------------------------------------------
 
 // Extra fields for the first snapshot when a trainer joins family sync.
-export const systemsSnap = (p) => ({ got: p.got || {}, lantern: p.lantern || 0, evo: p.evo || 0, bolt: p.bolt || null });
+export const systemsSnap = (p) => ({ got: p.got || {}, lantern: p.lantern || 0, crys: p.crys || {}, bolt: p.bolt || null });
 
 // Merge another device's snapshot (see applySnapshot in sync.js).
 export function mergeSystems(p, d) {
@@ -101,7 +104,7 @@ export function mergeSystems(p, d) {
   const got = p.got || (p.got = {});
   for (const [k, t] of Object.entries(d.got || {})) got[k] = got[k] ? Math.min(got[k], t) : t;
   p.lantern = Math.max(p.lantern || 0, d.lantern || 0);
-  p.evo = Math.max(p.evo || 0, d.evo || 0);
+  for (const [k, t] of Object.entries(d.crys || {})) { const C = p.crys || (p.crys = {}); C[k] = C[k] ? Math.min(C[k], t) : t; }
   if (d.bolt) {
     const b = p.bolt || (p.bolt = { best: 0, runs: 0, last: 0 });
     b.best = Math.max(b.best, d.bolt.best || 0);
@@ -124,7 +127,12 @@ export const claimed = (p, key) => !!(p.got && p.got[key]);
 // just mark it done. Returns the event, or null if it was already claimed.
 export function grant(p, key, gives) {
   if (claimed(p, key) || !Array.isArray(gives)) return null;
-  return emit(p, 'got', { r: key, g: gives });
+  const d = { r: key, g: gives };
+  const xp = gives.some(([k]) => k === 'x');
+  if (xp) d.b = buddyOf(p).key; // XP goes to the Buddy of the moment, on every device
+  const ev = emit(p, 'got', d);
+  if (xp) ev.evolved = evolveReady(p);
+  return ev;
 }
 
 // The Tower and Mega agent's way to hand out Mega Crystals.
@@ -175,17 +183,24 @@ export const shinyChance = (p) => p.lucky ? LANTERN_SHINY : BASE_SHINY;
 
 // ---- Evolve Crystal (Buddy) -----------------------------------------------------------
 
-// The stage a crystal would evolve the Buddy to now, or 0.
+// The form a crystal would evolve the Buddy into now, or null. It works when the
+// Buddy is 3 levels or less from its evolve level (levels.js decides the rest:
+// a Kaimon you already own in that form teams up, as with any evolution).
+// Kai's mythic line keeps its own rules.
 export function crystalTarget(p) {
-  const pl = partnerOf(p);
-  if (!pl.evolveAt || pl.stage >= 3) return 0;
-  return pl.evolveAt - pl.level <= CRYSTAL_RANGE ? pl.stage + 1 : 0;
+  const b = buddyOf(p);
+  const s = b.species, next = nextForm(s);
+  if (!next || !s.evolveAt || s.id === MYTHIC_ID || b.level >= s.evolveAt) return null;
+  return s.evolveAt - b.level <= CRYSTAL_RANGE ? next : null;
 }
-export const canCrystal = (p) => itemCount(p, 'evolve') > 0 && crystalTarget(p) > 0;
+export const canCrystal = (p) => itemCount(p, 'evolve') > 0 && !!crystalTarget(p);
+// Spend a crystal on the Buddy and record the evolution. Returns the 'use' event
+// (with .evolved: [{ from, to, merge }]), or null.
 export function useCrystal(p) {
-  const st = crystalTarget(p);
-  if (!st || !itemCount(p, 'evolve')) return null;
-  return emit(p, 'use', { i: 'evolve', st });
+  if (!canCrystal(p)) return null;
+  const ev = emit(p, 'use', { i: 'evolve', n: buddyOf(p).key });
+  ev.evolved = evolveReady(p);
+  return ev;
 }
-// Used by partnerOf in game.js: the stage a crystal pushed the Buddy to.
-export const crystalStage = (p) => Math.min(3, p.evo || 0);
+// levels.js readyToEvolve(): a crystal was used on this Kaimon (by its key).
+export const crystalUsed = (p, key) => !!p.crys?.[key];

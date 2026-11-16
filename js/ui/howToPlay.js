@@ -2,6 +2,7 @@
 // Swipe, drag with a mouse, tap the arrows or dots, or use the arrow keys.
 import { creatureArt } from '../core/art.js';
 import { partnerOf, dexCounts } from '../core/game.js';
+import { BOOST } from '../core/levels.js';
 import { byId } from '../data/creatures.js';
 import { ballImg, itemImg, badgeImg, uiImg, trainerFace, trainerBody, sceneSrc, gymSrc, cssUrl } from '../core/assets.js';
 import { esc, sheet, reducedMotion } from './dom.js';
@@ -39,6 +40,15 @@ function cards(p) {
       text: 'Capture, Super, Mega, then Legend. Better balls catch rare Kaimon more easily.',
       art: `<div class="hd-art hd-sky">
         <span class="hd-steps">${['capture', 'super', 'mega', 'legend'].map((k, i) => `<span class="hd-step" style="--i:${i}">${ballImg(k)}<small>${k[0].toUpperCase() + k.slice(1)}</small></span>`).join('')}</span>
+      </div>`,
+    },
+    {
+      key: 'buddy', title: 'Your Buddy grows',
+      text: `Every right answer gives your Buddy XP. Your first ${BOOST.n} each day give triple XP! Tap Switch to pick a new Buddy.`,
+      art: `<div class="hd-art hd-scene" ${scene('1')}>
+        <span class="hd-side hd-me hd-bud">${creatureArt(buddy)}</span>
+        <span class="hd-xp">${itemImg('xp-star')}<b>+45 XP</b><i>×3</i></span>
+        <span class="hd-lv">Lv ${partnerOf(p).level}</span>
       </div>`,
     },
     {
