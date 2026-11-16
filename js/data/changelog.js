@@ -1,7 +1,16 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.5.20';
+export const VERSION = '0.5.21';
 
 export const CHANGELOG = [
+  {
+    version: '0.5.21',
+    date: '2026-11-15',
+    title: "Kairo and Kairos power up",
+    items: [
+      "Kairo and Kairos are now by far the strongest Kaimon. Kairo has 160 HP and Kairos 240 (most Kaimon have 40).",
+      "Their attacks depend on how well you answer: a quick right answer hits really hard, and every right answer in a row makes the next hit stronger. A slow answer hits like any other Kaimon.",
+    ],
+  },
   {
     version: '0.5.20',
     date: '2026-11-15',

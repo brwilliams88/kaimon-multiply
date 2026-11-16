@@ -2,6 +2,11 @@
 
 All notable changes. Versioning: `0.MINOR.0` marks a roadmap phase, `0.x.PATCH` is any shipped change a player or parent can notice, and `1.0.0` is the public launch. See "Versioning" in CLAUDE.md. The in-app version history (Grown-ups > What's new) reads from `js/data/changelog.js`; keep both in sync. Each release is tagged in git as `vX.Y.Z`.
 
+## v0.5.21 (2026-11-15) Kairo and Kairos power up
+
+- Kairo and Kairos are now by far the strongest Kaimon. Kairo has 160 HP and Kairos 240 (most Kaimon have 40).
+- Their attacks depend on how well you answer: a quick right answer hits really hard, and every right answer in a row makes the next hit stronger. A slow answer hits like any other Kaimon.
+
 ## v0.5.20 (2026-11-15) Music comes back after the mic
 
 - Fixed: after turning Mic mode off, the music could stay quiet. It now comes straight back to full volume when you tap the Mic button off or leave the round.
