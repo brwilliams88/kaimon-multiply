@@ -104,6 +104,7 @@ export function wireLookPicker(el, look, onChange, { owned = starterOnly, why = 
       else if (ds.color) L = { ...L, color: ds.color };
       else return;
       if (prev.card && !L.card) L.card = prev.card; // the License color stays put
+      if (prev.hat && !L.hat && L.char !== 'm') L.hat = prev.hat; // so does a Wardrobe hat (drawn trainers only)
       sfx.tap();
       onChange?.(L);
       redraw();
