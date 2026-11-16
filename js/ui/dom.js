@@ -12,7 +12,7 @@ export function on(root, event, selector, fn) {
 
 export function toast(msg, ms = 2600) {
   let t = $('#toast');
-  if (!t) { t = document.createElement('div'); t.id = 'toast'; t.setAttribute('role', 'status'); document.body.appendChild(t); }
+  if (!t) { t = document.createElement('div'); t.id = 'toast'; t.setAttribute('role', 'status'); document.body.appendChild(t); void t.offsetWidth; }
   t.textContent = msg;
   t.classList.add('show');
   clearTimeout(t._h);
@@ -88,3 +88,7 @@ export async function busy(btn, label, work) {
 // Sign-in codes are 6 digits; accept 6 to 10 in case the server setting changes.
 export const cleanCode = (v) => (v || '').replace(/\D/g, '');
 export const codeOk = (c) => c.length >= 6 && c.length <= 10;
+
+// Streak flame size and heat: 0 a small ember, then warmer and bigger as the
+// streak grows (1-2, 3-4, 5-9, 10+). The hottest flame burns blue.
+export const flameTier = (n) => (n >= 10 ? 4 : n >= 5 ? 3 : n >= 3 ? 2 : n >= 1 ? 1 : 0);
