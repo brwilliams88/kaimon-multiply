@@ -241,6 +241,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt } = {}
       const me = mine[S.me], foe = opp.team[S.foe];
       const hit = attack(me, pw, S.streak);
       el.msg.textContent = hit.special ? `${powerLabel(pw)}! ${me.species.name} used ${moveName(me.species)}!` : `${powerLabel(pw)}! ${me.species.name} attacks!`;
+      if (hit.special) sfx.special();
       const lunge = anim(el.meMon, 'lunge', quick(p) ? 200 : 320);
       await wait(quick(p) ? 90 : 150);
       hitFx(el.foeMon, me.species.type, hit.special || hit.crit);
@@ -330,6 +331,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt } = {}
     save();
     syncNow();
     won ? sfx.win() : sfx.lose();
+    if (won && kind === 'champ' && !opp.rematch) setTimeout(() => sfx.badge(), 1700);
 
     const line = kind === 'champ'
       ? (won ? (opp.rematch ? `You won the rematch! ${region.badge} polished.` : `You did it! You earned the ${region.badge}!`) : `Great battle! Practice your ${opp.table}s and come back.`)

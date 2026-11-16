@@ -16,7 +16,7 @@ import { startOfflineUI, afterScreen } from './ui/offline.js';
 import { trainerPNG } from './ui/reportPanel.js';
 import { toast, soundIcon } from './ui/dom.js';
 import { openTime } from './core/actions.js';
-import { stopMusic, startMusic } from './core/music.js';
+import { stopMusic, startMusic, musicFor } from './core/music.js';
 import { save, touch, setSetting } from './core/store.js';
 import { startUpdates, justUpdated } from './core/update.js';
 import './ui/install.js'; // listens for Chrome's install prompt from the start
@@ -38,7 +38,6 @@ const NEEDS_PROFILE = new Set(['home', 'play', 'kaidex', 'grownups', 'meetPartne
 
 function go(name, params = {}) {
   stopVoice();
-  stopMusic(0.2);
   if (NEEDS_PROFILE.has(name) && !active()) name = 'welcome';
   // Fresh element per screen so old listeners go away.
   const old = document.getElementById('app');
@@ -49,6 +48,7 @@ function go(name, params = {}) {
   root.removeAttribute('style');
   const p = active();
   if (p) setSound(p.settings.sound);
+  musicFor(name, p?.settings.music !== false); // menus get music, practice stays quiet
   SCREENS[name](root, go, params);
   // A quick fade-and-rise between screens (none with Reduce Motion).
   root.firstElementChild?.classList.add('screen-in');
