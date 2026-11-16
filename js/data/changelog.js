@@ -1,7 +1,18 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.6.0';
+export const VERSION = '0.6.1';
 
 export const CHANGELOG = [
+  {
+    version: '0.6.1',
+    date: '2026-11-15',
+    title: "A bigger title and a tidier trainer page",
+    items: [
+      "More of the title art shows: the big \"Family sync is on for...\" box is now a small \"Family sync on\" line, so Kai and all three starters fit on screen.",
+      "Badge case: every badge has its name underneath, and the last row is centered.",
+      "The Bag is now an Item Bag that looks like a canvas satchel, with Balls and Items pockets.",
+      "The Kaidex keeps its secrets: Kaimon you haven't met yet show only their number, with no shape to give them away.",
+    ],
+  },
   {
     version: '0.6.0',
     date: '2026-11-15',

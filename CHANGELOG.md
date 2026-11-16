@@ -2,6 +2,13 @@
 
 All notable changes. Versioning: `0.MINOR.0` marks a roadmap phase, `0.x.PATCH` is any shipped change a player or parent can notice, and `1.0.0` is the public launch. See "Versioning" in CLAUDE.md. The in-app version history (Grown-ups > What's new) reads from `js/data/changelog.js`; keep both in sync. Each release is tagged in git as `vX.Y.Z`.
 
+## v0.6.1 (2026-11-15) A bigger title and a tidier trainer page
+
+- More of the title art shows: the big "Family sync is on for..." box is now a small "Family sync on" line, so Kai and all three starters fit on screen.
+- Badge case: every badge has its name underneath, and the last row is centered.
+- The Bag is now an Item Bag that looks like a canvas satchel, with Balls and Items pockets.
+- The Kaidex keeps its secrets: Kaimon you haven't met yet show only their number, with no shape to give them away.
+
 ## v0.6.0 (2026-11-15) Smarter practice
 
 - This starts the polish and share phase on the way to the public launch (v1.0).
