@@ -15,7 +15,7 @@ import { COLLECTED, isOn as analyticsOn, setOn as setAnalytics, startAnalytics }
 import { lastDays, partsOfDay, usedToday } from '../core/playtime.js';
 import { bonusTime } from '../core/actions.js';
 import { active, save, exportBackup, importBackup, deleteProfile, allProfiles, hasPin, setPin, checkPin, clearPin } from '../core/store.js';
-import { status as syncStatus, requestCode, verifyCode, signOut, syncNow, joinFamily, leaveFamily, onSyncChange, ensureUpdates, setUpdates } from '../core/sync.js';
+import { status as syncStatus, requestCode, verifyCode, signOut, syncNow, joinFamily, leaveFamily, onSyncChange, ensureUpdates, setUpdates, amAdmin, amAdminCached, makerSummary, makerPass } from '../core/sync.js';
 import { goodWorkStamp } from '../core/actions.js';
 import { factId, LEVEL_LABEL, trickFor } from '../core/facts.js';
 import { insights, tipText, headLine, heartText, factInfo, isCheer, talkText, TALK_TIP, FLUENCY_LABEL } from '../core/insights.js';
@@ -63,7 +63,7 @@ function runPinPad(root, go, title, sub, onDone, extra) {
 
 export function renderGrownups(root, go, params = {}) {
   // Opening Grown-ups starts on Progress (or the tab asked for).
-  guTab = GU_TABS.some(([id]) => id === params.tab) ? params.tab : 'progress';
+  guTab = guTabs().some(([id]) => id === params.tab) ? params.tab : 'progress';
   if (!hasPin()) {
     let first = null;
     const ask = (sub) => runPinPad(root, go, 'Set a parent PIN', sub, async (v) => {
@@ -310,6 +310,9 @@ function bindProgress(panel, p, go) {
 
 const clHTML = (c) => `<div class="cl"><p class="cl-head"><strong>v${c.version}</strong> ${esc(c.title)}<span>${c.date}</span></p><ul>${c.items.map((i) => `<li>${esc(i)}</li>`).join('')}</ul></div>`;
 const GU_TABS = [['progress', 'Progress'], ['settings', 'Settings'], ['family', 'Family'], ['help', 'Help']];
+// The Maker tab only shows when the family sync email is on the admin list (Blair).
+const MAKER_IC = '<svg class="gu-maker-ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="12" width="4" height="8" rx="1.2" fill="currentColor"/><rect x="10" y="7" width="4" height="13" rx="1.2" fill="currentColor"/><rect x="17" y="3" width="4" height="17" rx="1.2" fill="currentColor"/></svg>';
+const guTabs = () => (amAdminCached() ? [...GU_TABS, ['maker', 'Maker']] : GU_TABS);
 let guTab = 'progress'; // the open tab, kept while the app is open
 
 // Redraws (after a rename, a new daily limit, a sync change...) keep the grown-up's
@@ -347,9 +350,12 @@ function drawMain(root, go) {
       </header>
       <div class="gu-offline">${offlineChipHTML(p)}<span data-gu-waitslot>${outboxPillHTML()}</span></div>
 
-      <nav class="gu-tabs" role="tablist" aria-label="Grown-ups sections">
-        ${GU_TABS.map(([id, label]) => `<button class="gu-tab" role="tab" id="gu-tab-${id}" aria-controls="gu-pane-${id}" aria-selected="${guTab === id}" tabindex="${guTab === id ? 0 : -1}" data-gu-tab="${id}">${label}</button>`).join('')}
+      <nav class="gu-tabs${amAdminCached() ? ' has-maker' : ''}" role="tablist" aria-label="Grown-ups sections">
+        ${guTabs().map(([id, label]) => `<button class="gu-tab${id === 'maker' ? ' gu-tab-maker' : ''}" role="tab" id="gu-tab-${id}" aria-controls="gu-pane-${id}" aria-selected="${guTab === id}" tabindex="${guTab === id ? 0 : -1}" data-gu-tab="${id}"${id === 'maker' ? ' aria-label="Maker dashboard"' : ''}>${id === 'maker' ? MAKER_IC + '<span>Maker</span>' : label}</button>`).join('')}
       </nav>
+      ${amAdminCached() ? `<div class="gu-pane gu-grid gu-pane-maker" role="tabpanel" id="gu-pane-maker" aria-labelledby="gu-tab-maker" data-gu-pane="maker"${guTab === 'maker' ? '' : ' hidden'}>
+        <div class="panel gu-maker" data-maker><p class="note">Loading the numbers...</p></div>
+      </div>` : ''}
       <div class="gu-pane gu-grid gu-pane-progress" role="tabpanel" id="gu-pane-progress" aria-labelledby="gu-tab-progress" data-gu-pane="progress"${guTab === 'progress' ? '' : ' hidden'}>
         <div class="panel gu-progress" data-progress>${progressHTML(p)}</div>
 
@@ -510,12 +516,21 @@ function drawMain(root, go) {
   };
   on(root, 'click', '[data-gu-tab]', (e, el) => showTab(el.dataset.guTab));
   root.querySelector('.gu-tabs')?.addEventListener('keydown', (e) => {
-    const i = GU_TABS.findIndex(([id]) => id === guTab);
-    const j = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: GU_TABS.length - 1 }[e.key];
+    const T = guTabs();
+    const i = T.findIndex(([id]) => id === guTab);
+    const j = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: T.length - 1 }[e.key];
     if (j === undefined) return;
     e.preventDefault();
-    showTab(GU_TABS[(j + GU_TABS.length) % GU_TABS.length][0], true);
+    showTab(T[(j + T.length) % T.length][0], true);
   });
+  // Maker tab: find out once if this email is an admin, then load numbers when it opens.
+  if (!amAdminCached() && syncStatus().signedIn) amAdmin().then((yes) => { if (yes && root.isConnected) renderMain(root, go); }).catch(() => {});
+  if (amAdminCached()) {
+    const box = root.querySelector('[data-maker]');
+    const load = () => loadMaker(box);
+    if (guTab === 'maker') load();
+    else root.querySelector('[data-gu-tab="maker"]')?.addEventListener('click', load, { once: true });
+  }
   on(root, 'click', '[data-newicon]', () => showIconNotice());
   on(root, 'click', '[data-howto]', () => { sfx.tap(); howToPlay(p, {}); });
   on(root, 'click', '[data-soundtest]', () => {
@@ -714,4 +729,50 @@ function drawMain(root, go) {
   on(root, 'click', '[data-lock]', () => { unlockedUntil = 0; go('home');
   });
   return root;
+}
+
+
+// ---- Maker tab: a quick look at how the game is doing, plus the full dashboard.
+let makerDays = 7;
+async function loadMaker(box) {
+  if (!box) return;
+  const n = (v) => Number(v || 0).toLocaleString('en-US');
+  const pc = (a, b) => (b ? Math.round((100 * a) / b) + '%' : '0%');
+  box.innerHTML = '<p class="note">Loading the numbers...</p>';
+  try {
+    const sm = (await makerSummary(makerDays)) || {};
+    const t = sm.totals || {}, r = sm.ratings || {};
+    const tiles = [
+      [n(t.devices), 'players', n(t.new_devices) + ' new'],
+      [n(t.minutes), 'minutes played', t.devices ? Math.round(t.minutes / t.devices) + ' per player' : ''],
+      [n(t.rounds), 'rounds', pc(t.right, t.cards) + ' right'],
+      [n(t.installed_all), 'on home screens', 'all time'],
+      [n(t.devices_all), 'devices', 'all time'],
+      [r.count ? (+r.avg).toFixed(1) + '★' : '–', 'rating', n(r.count) + ' ratings'],
+    ];
+    const NM = { iphone: 'iPhone', ipad: 'iPad', android: 'Android', chromebook: 'Chromebook', mac: 'Mac', windows: 'Windows', share: 'Share menu', link: 'Copied link', email: 'Email', text: 'Text', whatsapp: 'WhatsApp', news: 'News email', device: 'Another device', class: 'Class link', facebook: 'Facebook', linkedin: 'LinkedIn', google: 'Google', instagram: 'Instagram', direct: 'Direct or unknown', other: 'Other' };
+    const nm = (k) => NM[k] || (/^class-/.test(String(k)) ? 'Class ' + String(k).slice(6) : String(k));
+    const list = (rows, empty) => (rows && rows.length ? `<ol class="mk-list">${rows.slice(0, 5).map((x) => `<li><span>${esc(nm(x.name))}</span><b>${n(x.devices)}</b></li>`).join('')}</ol>` : `<p class="note">${empty}</p>`);
+    box.innerHTML = `
+      <div class="mk-head"><h2 class="h-ic">${MAKER_IC}Maker dashboard</h2>
+        <div class="mk-seg" role="group" aria-label="Time range">${[1, 7, 30].map((d) => `<button type="button" data-mk-days="${d}" aria-pressed="${d === makerDays}">${d === 1 ? 'Today' : d + ' days'}</button>`).join('')}</div></div>
+      <p class="note">Only you see this tab. Updated ${new Date(sm.generated_at || Date.now()).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}.</p>
+      <div class="mk-tiles">${tiles.map(([v, l, x]) => `<div class="mk-tile"><b>${v}</b><span>${l}</span><small>${x}</small></div>`).join('')}</div>
+      <div class="mk-cols">
+        <div><h3>Where new players came from</h3>${list(sm.refs, 'No new players yet.')}</div>
+        <div><h3>Devices</h3>${list(sm.os, 'None yet.')}</div>
+      </div>
+      <div class="row"><button class="btn-chunky btn-sm" type="button" data-mk-refresh>Refresh</button><button class="btn-chunky btn-primary btn-sm" type="button" data-mk-full>Open full dashboard</button></div>`;
+    box.querySelectorAll('[data-mk-days]').forEach((b) => b.addEventListener('click', () => { makerDays = +b.dataset.mkDays; loadMaker(box); }));
+    box.querySelector('[data-mk-refresh]').addEventListener('click', () => loadMaker(box));
+    box.querySelector('[data-mk-full]').addEventListener('click', async () => {
+      // Open the tab first (phones block pop-ups opened after a wait), then hand it a pass.
+      const w = window.open('', '_blank');
+      try { localStorage.setItem('kaimon.admin', JSON.stringify(await makerPass())); } catch {}
+      if (w) w.location.href = 'admin.html'; else location.href = 'admin.html';
+    });
+  } catch (e) {
+    box.innerHTML = `<h2 class="h-ic">${MAKER_IC}Maker dashboard</h2><p class="note">Couldn\u2019t load the numbers. ${esc(e.message || '')}</p><div class="row"><button class="btn-chunky btn-sm" type="button" data-mk-refresh>Try again</button><a class="btn-chunky btn-sm" href="admin.html" target="_blank" rel="noopener">Open full dashboard</a></div>`;
+    box.querySelector('[data-mk-refresh]').addEventListener('click', () => loadMaker(box));
+  }
 }
