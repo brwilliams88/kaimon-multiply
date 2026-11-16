@@ -1,7 +1,18 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.6.4';
+export const VERSION = '0.6.5';
 
 export const CHANGELOG = [
+  {
+    version: '0.6.5',
+    date: '2026-11-16',
+    title: "Pick your trainer, then Play",
+    items: [
+      "Who's playing: tap your trainer, then press the big Play button.",
+      "Keyboard players: arrow keys pick a trainer and Enter plays. Screen readers read the trainers as a list of choices.",
+      "The line at the bottom of Who's playing has more room above the edge of the screen on phones.",
+      "Change your name: tap your name on your Trainer License.",
+    ],
+  },
   {
     version: '0.6.4',
     date: '2026-11-16',

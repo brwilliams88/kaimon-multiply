@@ -2,6 +2,13 @@
 
 All notable changes. Versioning: `0.MINOR.0` marks a roadmap phase, `0.x.PATCH` is any shipped change a player or parent can notice, and `1.0.0` is the public launch. See "Versioning" in CLAUDE.md. The in-app version history (Grown-ups > What's new) reads from `js/data/changelog.js`; keep both in sync. Each release is tagged in git as `vX.Y.Z`.
 
+## v0.6.5 (2026-11-16) Pick your trainer, then Play
+
+- Who's playing: tap your trainer, then press the big Play button.
+- Keyboard players: arrow keys pick a trainer and Enter plays. Screen readers read the trainers as a list of choices.
+- The line at the bottom of Who's playing has more room above the edge of the screen on phones.
+- Change your name: tap your name on your Trainer License.
+
 ## v0.6.4 (2026-11-16) A guided first game with Teacher K
 
 - New trainers now play a short first game with Teacher K: four easy cards, a first catch, and a quick look around Home. Skip any time. It only happens once.
