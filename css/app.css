@@ -1711,6 +1711,9 @@ img.ball-svg, img.ball-img { object-fit: contain; }
 .menu-ic { width: 46px; height: 46px; border-radius: 0; background: none; }
 .menu-grown .menu-ic { background: none; }
 .menu-ic .ui-img, .menu-ic .ball-svg { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 2px 0 rgba(20, 33, 61, .2)); }
+/* Drawn menu icons (Play on another device) fill the same 46px square as the art ones.
+   device.css only loads with its sheet, so this lives here. */
+.menu-ic .dev-ic { width: 100%; height: 100%; filter: drop-shadow(0 2px 0 rgba(20, 33, 61, .2)); }
 .kdx-art { background: none; border: 0; width: 66px; height: 66px; }
 .kdx-art .kdx-ic, .how-pic .kdx-ic { width: 100%; height: 100%; object-fit: contain; }
 .how-pic .kdx-ic { width: 58px; height: 58px; }
@@ -3636,6 +3639,18 @@ button.buddy-art:active { transform: translateY(2px); }
 .mini-lic .ml-k { flex: 0 0 10.5cqw; font-size: 2.6cqw; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #5A6788; }
 .mini-lic .ml-v { font-size: 3.8cqw; font-weight: 600; line-height: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .mini-lic .ml-v b { font-size: 4.6cqw; font-weight: 700; }
+.mini-lic .ml-bar.b4 { top: 55.2%; }
+.mini-lic .ml-stars { margin-left: 1.4cqw; color: #6E5000; font-weight: 700; }
+/* The numbers row and the patches match the real License on the trainer page. */
+.mini-lic .ml-nums { justify-content: space-between; }
+.mini-lic .ml-nums > span { display: inline-flex; align-items: center; gap: .8cqw; font-size: 3.9cqw; line-height: 1; }
+.mini-lic .ml-nums b { font-weight: 700; }
+.mini-lic .ml-nums small { font-size: 2.7cqw; color: var(--ink-2); font-weight: 600; }
+.mini-lic .ml-ic { width: 5.2cqw; height: 5.2cqw; object-fit: contain; display: block; }
+.mini-lic .ml-patches { position: absolute; left: 5.4%; top: 79%; width: 70%; height: 12.5%; display: flex; align-items: center; gap: 1cqw; }
+.mini-lic .ml-patch { width: 6cqw; height: 6cqw; flex-shrink: 0; display: block; }
+.mini-lic .ml-patch svg { width: 100%; height: 100%; display: block; filter: drop-shadow(0 .45cqw 0 rgba(20, 33, 61, .35)); }
+.mini-lic .ml-patch.empty { border-radius: 50%; border: .4cqw dashed rgba(20, 33, 61, .3); background: rgba(255, 255, 255, .35); }
 
 /* The Wardrobe sheet */
 .sheet.wd-sheet { width: min(100%, 540px); padding: 18px 18px 20px; }
@@ -3727,3 +3742,48 @@ button.buddy-art:active { transform: translateY(2px); }
   .wn-dots i, .wd-new { animation: none; }
 }
 .tc-note.tc-unlock { margin-top: 10px; font-size: 14px; font-weight: 600; }
+
+/* A face circle cut from full body art (see FACE_CROP in js/core/assets.js). */
+.face-img.face-crop { object-fit: contain; object-position: 50% 50%; transform: scale(var(--fc-s, 1)) translate(var(--fc-x, 0), var(--fc-y, 0)); }
+
+/* "More below": a soft fade and a small pill at the bottom of a sheet that scrolls
+   (see moreHint in js/ui/dom.js). It never takes taps. */
+.sheet-more { position: sticky; bottom: calc(var(--sm-foot, 0px) - var(--sm-pb, 22px)); height: 0; margin: 0; z-index: 4; pointer-events: none; }
+.sheet-more > span { pointer-events: none; }
+.sheet-more-fade { position: absolute; left: calc(-1 * var(--sm-pl, 22px)); right: calc(-1 * var(--sm-pr, 22px)); bottom: 0; height: 72px; background: linear-gradient(180deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, .86) 62%, var(--paper)); opacity: 0; transition: opacity .2s ease-out; }
+.sheet-more.has-foot .sheet-more-fade { display: none; }
+.sheet-more-pill { position: absolute; left: 50%; bottom: 12px; display: inline-flex; align-items: center; gap: 3px; padding: 4px 8px 4px 13px; border: 2px solid var(--ink); border-radius: 999px; background: var(--paper); color: var(--ink); font-size: 14px; font-weight: 700; line-height: 1.2; letter-spacing: .01em; white-space: nowrap; box-shadow: 0 3px 0 var(--ink); opacity: 0; transform: translate(-50%, 8px); transition: opacity .2s ease-out, transform .25s cubic-bezier(.3, 1.4, .5, 1); }
+.sheet-more-pill svg { width: 17px; height: 17px; flex: none; }
+.sheet-more.show .sheet-more-fade { opacity: 1; }
+.sheet-more.show .sheet-more-pill { opacity: 1; transform: translate(-50%, 0); }
+@media (prefers-reduced-motion: no-preference) {
+  .sheet-more.show .sheet-more-pill svg { animation: moreBob 1.6s ease-in-out infinite; }
+}
+@keyframes moreBob { 0%, 100% { transform: translateY(-1px); } 50% { transform: translateY(2px); } }
+@media (prefers-reduced-motion: reduce) {
+  .sheet-more-fade, .sheet-more-pill { transition: none; }
+}
+/* Maker tab (admins only): gold, with a little chart, so it reads as special. */
+.gu-tabs.has-maker { grid-template-columns: repeat(4, minmax(0, 1fr)) auto; }
+.gu-tab-maker { display: inline-flex; align-items: center; justify-content: center; gap: 5px; padding: 6px 12px; background: #FFE58A; color: var(--ink); box-shadow: inset 0 0 0 2px var(--ink); }
+.gu-tab-maker[aria-selected="true"] { background: #FFD23F; color: var(--ink); box-shadow: inset 0 0 0 3px var(--ink); }
+.gu-maker-ic { width: 18px; height: 18px; flex: none; }
+.h-ic .gu-maker-ic { width: 26px; height: 26px; padding: 4px; border: 2.5px solid var(--ink); border-radius: 10px; background: #FFD23F; box-sizing: content-box; }
+@media (max-width: 420px) { .gu-tab-maker span { display: none; } .gu-tab-maker { padding: 6px 10px; } }
+.mk-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.mk-head h2 { margin: 0; }
+.mk-seg { display: inline-flex; border: 2.5px solid var(--ink); border-radius: 12px; overflow: hidden; background: #fff; }
+.mk-seg button { border: 0; background: none; padding: 6px 10px; min-height: 36px; font: inherit; font-weight: 700; font-size: 14px; color: var(--ink); cursor: pointer; }
+.mk-seg button + button { border-left: 2px solid var(--ink); }
+.mk-seg button[aria-pressed="true"] { background: var(--ink); color: #fff; }
+.mk-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 10px 0 14px; }
+@media (min-width: 600px) { .mk-tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.mk-tile { display: flex; flex-direction: column; padding: 10px 12px; border: 2.5px solid var(--ink); border-radius: 16px; background: #F4F8FD; }
+.mk-tile b { font-size: 28px; line-height: 1.1; color: var(--ink); }
+.mk-tile span { font-weight: 700; font-size: 15px; color: var(--ink); }
+.mk-tile small { font-size: 13px; color: var(--ink-2); min-height: 1em; }
+.mk-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-bottom: 12px; }
+.mk-cols h3 { margin: 0 0 6px; font-size: 16px; }
+.mk-list { list-style: none; margin: 0; padding: 0; }
+.mk-list li { display: flex; justify-content: space-between; gap: 10px; padding: 6px 0; border-bottom: 1.5px solid #E3EAF4; font-size: 15px; }
+.mk-list li:last-child { border-bottom: 0; }

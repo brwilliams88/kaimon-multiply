@@ -30,6 +30,10 @@
 .fb-kind-love.on { background: #E5487A; }
 .fb-kind-idea.on { background: #2D7FF9; }
 .fb-kind-bug.on { background: var(--grass); }
+.fb-kind-dislike.on { background: #7A4FD0; }
+/* Four kinds: two even columns, so a long label wraps inside its own button. */
+.fb-kinds { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.fb-kind { border-radius: 18px; line-height: 1.15; padding: 8px 10px; text-align: center; }
 
 .fb-field { display: flex; flex-direction: column; gap: 6px; font-size: 16px; font-weight: 600; }
 .fb-field em { font-style: normal; font-weight: 500; color: var(--ink-2); }

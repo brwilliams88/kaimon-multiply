@@ -2,6 +2,16 @@
 
 All notable changes. Versioning: `0.MINOR.0` marks a roadmap phase, `0.x.PATCH` is any shipped change a player or parent can notice, and `1.0.0` is the public launch. See "Versioning" in CLAUDE.md. The in-app version history (Grown-ups > What's new) reads from `js/data/changelog.js`; keep both in sync. Each release is tagged in git as `vX.Y.Z`.
 
+## v1.0.3 (2026-11-16) Maker tab
+
+- Grown-ups has a new Maker tab, only for the game's maker. It shows players, minutes, rounds, home screen installs, ratings, where new players came from and their devices, with a button to open the full dashboard.
+- The full dashboard now opens straight from the Maker tab, without signing in again.
+
+## v1.0.2 (2026-11-16) Open from Facebook
+
+- Opened Kaimon from Facebook, Instagram or Messenger? Those apps use their own browser, which can't add Kaimon to your Home Screen. Kaimon now spots this and shows an Open in Safari (or Open in Chrome) button, plus easy steps and a Copy link button if the button doesn't work.
+- The install help page and Grown-ups show the same steps when you're inside one of those apps.
+
 ## v1.0.1 (2026-11-16) Wild battles
 
 - Wild Kaimon now show their level. Catch one and it joins your team at that level.

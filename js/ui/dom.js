@@ -91,6 +91,7 @@ export function sheet(html, { onClose, cls = '', back = null, backLabel = 'Menu'
   // While a sheet is open the screen behind it stays still (see the touch guard in app.js).
   if (openSheets++ === 0) holdPage();
   document.body.appendChild(wrap);
+  const stopHint = moreHint(sh);
   requestAnimationFrame(() => wrap.classList.add('open'));
   // Focus moves into the sheet (unless the sheet already focused a field), so
   // keyboard and screen reader players start inside it.
@@ -109,6 +110,7 @@ export function sheet(html, { onClose, cls = '', back = null, backLabel = 'Menu'
     wrap.classList.add('closing');
     setTimeout(() => wrap.remove(), 220);
     document.removeEventListener('keydown', onKey);
+    stopHint();
     onClose?.();
     if (toParent && back) back();
   };
@@ -128,6 +130,50 @@ export function sheet(html, { onClose, cls = '', back = null, backLabel = 'Menu'
 }
 
 let sheetIds = 0;
+
+// "More below": a sheet taller than the screen gets a soft fade at its bottom edge and
+// a small pill, so players know to scroll. It hides at the end and comes back when
+// they scroll up. It never takes taps (pointer-events: none in CSS), and it sits just
+// above a sheet's own sticky footer (like the team picker's Done bar) if it has one.
+function moreHint(sh) {
+  const hint = document.createElement('div');
+  hint.className = 'sheet-more';
+  hint.setAttribute('aria-hidden', 'true');
+  hint.innerHTML = '<span class="sheet-more-fade"></span><span class="sheet-more-pill">More below<svg viewBox="0 0 24 24"><path d="M6 9.5 L12 15.5 L18 9.5" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>';
+  let raf = 0, alive = true;
+  const update = () => {
+    raf = 0;
+    if (!alive) return;
+    if (hint.parentNode !== sh || sh.lastElementChild !== hint) sh.appendChild(hint); // a redraw can drop or bury it
+    const cs = getComputedStyle(sh);
+    const foot = sh.querySelector('.tp-done, [data-sheet-foot]');
+    hint.style.setProperty('--sm-pb', cs.paddingBottom);
+    hint.style.setProperty('--sm-pl', cs.paddingLeft);
+    hint.style.setProperty('--sm-pr', cs.paddingRight);
+    hint.style.setProperty('--sm-foot', foot ? `${foot.offsetHeight}px` : '0px');
+    hint.classList.toggle('has-foot', !!foot);
+    const more = sh.scrollHeight - sh.clientHeight > 12 && sh.scrollTop + sh.clientHeight < sh.scrollHeight - 12;
+    hint.classList.toggle('show', more);
+  };
+  const soon = () => { if (!raf) raf = requestAnimationFrame(update); };
+  sh.addEventListener('scroll', soon, { passive: true });
+  addEventListener('resize', soon);
+  const ro = typeof ResizeObserver === 'function' ? new ResizeObserver(soon) : null;
+  ro?.observe(sh);
+  const watchKids = () => { if (ro) [...sh.children].forEach((c) => c !== hint && ro.observe(c)); };
+  watchKids();
+  const mo = new MutationObserver(() => { watchKids(); soon(); });
+  mo.observe(sh, { childList: true, subtree: true });
+  update();
+  setTimeout(soon, 260); // after the open animation and late images
+  return () => {
+    alive = false;
+    sh.removeEventListener('scroll', soon);
+    removeEventListener('resize', soon);
+    ro?.disconnect(); mo.disconnect();
+    if (raf) cancelAnimationFrame(raf);
+  };
+}
 // Tab stays inside an open sheet (it is a modal dialog).
 const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 function trapTab(e, box) {
