@@ -69,7 +69,7 @@ export function reportCardHTML(p, r) {
           <div class="wr-tb" style="--tc:${ty.color};--tl:${ty.light};--ti:${ty.ink}">
             <span class="wr-tb-n">${t.table}s</span>
             <span class="wr-tb-bar" aria-hidden="true"><i style="width:${Math.max(4, Math.round((t.answers / maxAns) * 100))}%"></i></span>
-            <span class="wr-tb-v"><b>${t.answers}</b> cards <span class="wr-acc${t.accuracy >= 90 ? ' hi' : t.accuracy < 70 ? ' lo' : ''}">${t.accuracy}%</span></span>
+            <span class="wr-tb-v"><b>${t.answers}</b> ${t.answers === 1 ? 'card' : 'cards'} <span class="wr-acc${t.accuracy >= 90 ? ' hi' : t.accuracy < 70 ? ' lo' : ''}">${t.accuracy}%</span></span>
           </div>`; }).join('')}
       </div>` : ''}
       ${r.strongest.length || r.trickiest.length ? `
