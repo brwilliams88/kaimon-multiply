@@ -22,7 +22,7 @@ import { voiceSupported } from '../core/voice.js';
 import { CHANGELOG, VERSION } from '../data/changelog.js';
 import { esc, on, sheet, toast, $, busy, cleanCode, codeOk } from './dom.js';
 import { reportPanelHTML, bindReportPanel } from './reportPanel.js';
-import { offlineChipHTML, offlinePanelHTML, bindOfflinePanel, pendingNote } from './offline.js';
+import { offlineChipHTML, offlinePanelHTML, bindOfflinePanel, pendingNote, outboxPillHTML } from './offline.js';
 import { isOnline, onOfflineChange } from '../core/offline.js';
 
 
@@ -324,7 +324,7 @@ function renderMain(root, go) {
         ${hasPin() ? '<span class="unlock-note">Unlocked for 10 min</span><button class="btn-chunky btn-sm" data-lock>Lock now</button>' : ''}
         <span class="ver">v${VERSION}</span>
       </header>
-      <div class="gu-offline">${offlineChipHTML(p)}</div>
+      <div class="gu-offline">${offlineChipHTML(p)}<span data-gu-waitslot>${outboxPillHTML()}</span></div>
 
       <nav class="gu-tabs" role="tablist" aria-label="Grown-ups sections">
         ${GU_TABS.map(([id, label]) => `<button class="gu-tab" role="tab" id="gu-tab-${id}" aria-controls="gu-pane-${id}" aria-selected="${guTab === id}" tabindex="${guTab === id ? 0 : -1}" data-gu-tab="${id}">${label}</button>`).join('')}
@@ -452,7 +452,7 @@ function renderMain(root, go) {
           <p class="note">Notes and ratings go only to the maker of Kaimon Multiply. What doesn’t work helps the most.</p>
           <div class="row"><span class="note">Something you love, an idea or a bug. Add your email if you want a reply.</span><button class="btn-chunky btn-sm" data-feedback>Send feedback</button></div>
           <div class="row"><span class="note">1 to 5 stars, and a comment if you like.</span><button class="btn-chunky btn-sm" data-rate>Rate the game</button></div>
-          ${queuedFeedback().length ? `<p class="note" data-fb-wait>${queuedFeedback().length === 1 ? 'One note is' : queuedFeedback().length + ' notes are'} waiting for the internet. It sends by itself.</p>` : ''}
+          ${queuedFeedback().length ? `<p class="note" data-fb-wait>${queuedFeedback().length === 1 ? 'One note is' : queuedFeedback().length + ' notes are'} waiting to send. ${queuedFeedback().length === 1 ? 'It goes by itself' : 'They go by themselves'} when the device is back online.</p>` : ''}
         </div>
 
         <div class="panel">

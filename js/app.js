@@ -10,7 +10,8 @@ import { renderBattle } from './ui/battle.js';
 import { renderTrainer } from './ui/trainer.js';
 import { VERSION } from './data/changelog.js';
 import { startAutoSync, completeLinkSignIn, syncNow } from './core/sync.js';
-import { autoSendReports, flushMailOutbox } from './core/mailer.js';
+import { autoSendReports } from './core/mailer.js';
+import { startOutbox } from './core/outbox.js';
 import { startOffline } from './core/offline.js';
 import { startOfflineUI, afterScreen } from './ui/offline.js';
 import { trainerPNG } from './ui/reportPanel.js';
@@ -22,7 +23,7 @@ import { startUpdates, justUpdated } from './core/update.js';
 import './ui/install.js'; // listens for Chrome's install prompt from the start
 import { maybeIconNotice } from './ui/iconNotice.js'; // must load before justUpdated() runs
 import { startAnalytics } from './core/analytics.js'; // anonymous usage counts (off switch in Grown-ups)
-import { flushFeedback, maybeAskRating } from './ui/feedback.js';
+import { maybeAskRating } from './ui/feedback.js';
 
 const SCREENS = {
   welcome: renderWelcome,
@@ -108,11 +109,10 @@ setTimeout(sendWeeklyReports, 5000);
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') setTimeout(sendWeeklyReports, 3000); });
 // A device left open across Sunday morning still sends on time.
 setInterval(() => { if (document.visibilityState === 'visible') sendWeeklyReports(); }, 20 * 60 * 1000);
-// Emails tried with no internet wait on the device and go out once back online.
-const sendWaitingMail = () => { flushMailOutbox().catch(() => {}); sendWeeklyReports(); };
-window.addEventListener('online', () => setTimeout(sendWaitingMail, 3000));
-setTimeout(() => flushMailOutbox().catch(() => {}), 6000);
-setTimeout(() => flushFeedback().catch(() => {}), 7000); // ratings and notes that waited for the internet
+// Email invites, feedback notes and ratings tried with no internet wait in the
+// outbox on this device and go out by themselves once back online.
+startOutbox();
+window.addEventListener('online', () => setTimeout(sendWeeklyReports, 3000));
 
 // Sound button in the top bars (home, practice, battles).
 document.addEventListener('click', (e) => {
