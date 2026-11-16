@@ -51,6 +51,10 @@ const PAPAZILLA_LINES = [
   'Time for the heavy lifting. Papazilla, you\u2019re up!',
 ];
 
+// The other side of the result card. Teacher K is on your side either way: she gives
+// a thumbs-up with her stamp when you win and points to the lesson when you don't.
+const duelPose = (kind, won) => kind === 'quiz' ? (won ? 'stamp' : 'point') : won ? 'lost' : 'won';
+
 // The name gets the whole top line so long names fit; the team balls sit under the bar, beside the HP number.
 const hpBar = (who) => `<div class="hp hp-${who}"><div class="hp-top"><span class="hp-name"></span></div><div class="hp-bar"><span></span></div><div class="hp-bot"><span class="hp-dots"></span><span class="hp-num"></span></div></div>`;
 
@@ -109,7 +113,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt } = {}
             <div class="vsi">
               <div class="vsi-stake">${stakeHTML()}</div>
               <div class="vsi-side vsi-foe">
-                <div class="vsi-body">${trainerFull(opp, 'talking')}</div>
+                <div class="vsi-body">${trainerFull(opp, kind === 'quiz' ? 'quiz' : 'talking')}</div>
                 <div class="vsi-info">
                   <p class="vsi-speech">${esc(introLine)}</p>
                   <div class="vsi-tag"><small>${esc(opp.kind === 'champ' ? `${opp.table}s Gym Leader` : opp.title)}</small><strong>${esc(opp.name)}</strong></div>
@@ -586,7 +590,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt } = {}
         <div class="duel">
           <figure class="duel-me${won ? ' win' : ''}"><span class="duel-pic">${playerArt(p, won ? 'won' : 'lost')}</span><figcaption>${esc(p.name)}${won ? '<span class="duel-tag">Winner!</span>' : ''}</figcaption></figure>
           <span class="duel-vs" aria-hidden="true">VS</span>
-          <figure class="duel-them${won ? '' : ' win'}"><span class="duel-pic">${trainerFull(opp, won ? 'lost' : 'won')}</span><figcaption>${esc(opp.name)}${won ? '' : '<span class="duel-tag">Winner</span>'}</figcaption></figure>
+          <figure class="duel-them${won ? '' : ' win'}"><span class="duel-pic">${trainerFull(opp, duelPose(kind, won))}</span><figcaption>${esc(opp.name)}${won ? '' : '<span class="duel-tag">Winner</span>'}</figcaption></figure>
         </div>
         <h2>${won ? `${esc(p.name)} beat ${esc(opp.name)}!` : `${esc(opp.name)} won this time`}</h2>
         <p class="speech intro-speech">${esc(line)}</p>

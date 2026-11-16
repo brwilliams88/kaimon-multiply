@@ -2972,3 +2972,42 @@ button.tp-slot:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--in
 .hp-bot { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-top: 3px; min-height: 14px; }
 .hp-bot .hp-num { margin-top: 0; }
 .battle .hp-bot .hp-dots i { width: 14px; height: 14px; }
+
+/* v1.0 art pass: Teacher K poses, Kaizo helpers and celebration effects that were drawn but not yet used. */
+/* Catch: a swirl of light pulls the Kaimon into the ball. */
+.catch-fx.swirl { width: clamp(100px, 50cqh, 300px); height: clamp(100px, 50cqh, 300px); margin: calc(clamp(100px, 50cqh, 300px) / -2) 0 0 calc(clamp(100px, 50cqh, 300px) / -2); z-index: 2; }
+.catch-zone.absorbed .catch-fx.swirl { animation: fxSwirl .62s ease-out both; }
+.catch-zone.quick.absorbed .catch-fx.swirl { animation-duration: .4s; }
+@keyframes fxSwirl { 0% { opacity: 0; transform: scale(1.25) rotate(0); } 25% { opacity: .95; } 100% { opacity: 0; transform: scale(.3) rotate(-300deg); } }
+@media (prefers-reduced-motion: reduce) { .catch-fx.swirl { display: none; } }
+
+/* Hint card: on roomy cards (iPad, landscape) Teacher K stands beside her trick. */
+.hint-scroll { position: relative; }
+.hint-teacher { display: none; }
+@container (min-width: 560px) and (min-height: 430px) {
+  .hint-scroll:has(.hint-teacher) { padding-right: clamp(104px, 22cqh, 150px); }
+  .hint-teacher { display: block; position: absolute; right: clamp(2px, 1cqw, 10px); bottom: -3px; width: clamp(100px, 22cqh, 146px); height: clamp(130px, 30cqh, 196px); pointer-events: none; }
+  .hint-teacher img { width: 100%; height: 100%; object-fit: contain; object-position: bottom; display: block; filter: drop-shadow(0 3px 0 rgba(20, 33, 61, .18)); }
+}
+
+/* Good Work Stamp: Teacher K holds up her stamp; the stamp lands on a starburst. */
+.celebrate-stamp { position: relative; display: grid; place-items: center; }
+.stamp-row .stamp-teacher { width: 150px; height: 150px; }
+.celebrate-stamp { width: 100px; height: 100px; margin: 0 0 6px; }
+.celebrate-stamp .cs-burst { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; opacity: .9; animation: ringSpin 18s linear infinite; }
+.celebrate-stamp .item-img { position: relative; z-index: 1; width: 70%; height: 70%; }
+@media (prefers-reduced-motion: reduce) { .celebrate-stamp .cs-burst { animation: none; } }
+
+/* Evolution: the new form glows. */
+.evo-new { position: relative; isolation: isolate; overflow: hidden; }
+.evo-new .evo-glow { position: absolute; inset: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none; opacity: .75; transform: scale(1.12); }
+
+/* Kairo caught: a capture swirl turns slowly behind it. */
+.mythic-arrive.caught { position: relative; }
+.mythic-arrive .mythic-swirl { position: absolute; inset: -14%; width: 128%; height: 128%; z-index: 0; opacity: .85; animation: ringSpin 10s linear infinite reverse; pointer-events: none; }
+.mythic-arrive.caught .kart { position: relative; z-index: 1; }
+@media (prefers-reduced-motion: reduce) { .mythic-arrive .mythic-swirl { animation: none; } }
+
+/* Results: empty sections get a small Kaizo instead of a bare line. */
+.res-empty:has(.res-empty-kaizo) { display: flex; align-items: center; gap: 10px; }
+.res-empty-kaizo { width: 52px; height: 52px; flex: none; object-fit: contain; }

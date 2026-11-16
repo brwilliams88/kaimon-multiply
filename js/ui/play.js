@@ -16,7 +16,7 @@ import { micMode, micButton } from './micMode.js';
 import { sfx, setSound } from '../core/sound.js';
 import { ballIcon, medal } from './home.js';
 import { trainerLook, trainerImg } from './avatars.js';
-import { ballSrc, sceneSrc, cssUrl, sceneKey, uiImg, itemImg, fxSrc, typeIcon, trainerFace, CARD_BACK } from '../core/assets.js';
+import { ballSrc, sceneSrc, cssUrl, sceneKey, uiImg, itemImg, fxSrc, typeIcon, trainerFace, trainerBody, CARD_BACK } from '../core/assets.js';
 import { trickyPool, markTrickyDone } from '../core/nextup.js';
 import { quick } from '../core/prefs.js';
 import { $, on, esc, sheet, wait, toast, soundButton, reducedMotion, setFlame } from './dom.js';
@@ -269,6 +269,7 @@ export function renderPlay(root, go, { table, focus } = {}) {
           <div class="catch-art">${creatureArt(S.species, { shiny: result?.shiny })}</div>
           <div class="catch-thrower" aria-hidden="true">${trainerImg(trainerLook(p), 'throw')}</div>
           <img class="catch-fx beam" src="${fxSrc('capture-beam')}" alt="" aria-hidden="true">
+          <img class="catch-fx swirl" src="${fxSrc('capture-swirl')}" alt="" aria-hidden="true">
           <img class="catch-fx burst" src="${fxSrc('capture-burst')}" alt="" aria-hidden="true">
           <div class="throw-ball"><img class="ball-svg ball-img" src="${ballSrc(ball)}" alt="" draggable="false"></div>
         </div>
@@ -306,7 +307,7 @@ export function renderPlay(root, go, { table, focus } = {}) {
       el.back.innerHTML = `
         <div class="card-head"><span class="chip">Not quite</span></div>
         <div class="card-q answer-reveal"><span>${a}</span><span class="times">×</span><span>${b}</span><span class="eq">=</span><span class="ans">${ans}</span></div>
-        <div class="hint-scroll"><p>Count by ${a}s</p><div class="ladder">${hintLadder(S.fact).map((v, i, arr) => `<span class="${i === arr.length - 1 ? 'last' : ''}">${v}</span>`).join('')}</div>${trickHTML(p, S.fact)}</div>
+        <div class="hint-scroll"><p>Count by ${a}s</p><div class="ladder">${hintLadder(S.fact).map((v, i, arr) => `<span class="${i === arr.length - 1 ? 'last' : ''}">${v}</span>`).join('')}</div>${trickHTML(p, S.fact)}<span class="hint-teacher" aria-hidden="true">${trainerBody('teacher-k', 'point')}</span></div>
         <div class="retype"><span class="learn-teacher">${trainerFace('teacher-k')}</span><span class="retype-label">Type it to keep going</span><span class="answer-val empty" data-ph="${ans}"></span></div>`;
       flip(true, 'wrong');
       S.phase = 'learn';
@@ -476,12 +477,12 @@ export function renderPlay(root, go, { table, focus } = {}) {
             <section class="res-card res-sec">
               <h2 class="res-h">${ballIcon('capture')}Caught this round${uniq.length ? `<span class="res-count">${S.catches.length}</span>` : ''}</h2>
               ${uniq.length ? `<div class="res-catches">${uniq.map((c, i) => { const s = byId(c.id); return `<div class="res-catch${c.isNew ? ' new' : ''}" style="--i:${i}">${creatureArt(s, { shiny: c.shiny })}<span${s.name.length > 10 ? ' class="long"' : ''}>${esc(s.name)}</span>${c.isNew ? '<em>New!</em>' : ''}</div>`; }).join('')}</div>`
-                : '<p class="res-empty">No catches this time. Fast answers throw harder!</p>'}
+                : `<p class="res-empty">${uiImg('kaizo-oops', 'res-empty-kaizo')}<span>No catches this time. Fast answers throw harder!</span></p>`}
             </section>
             <section class="res-card res-sec">
               <h2 class="res-h"><img class="res-h-ic" src="${fxSrc('levelup-wings')}" alt="" aria-hidden="true" draggable="false">Medals moving up${ups.length ? `<span class="res-count">${ups.length}</span>` : ''}</h2>
               ${ups.length ? `<div class="res-facts">${shown.map((l, i) => { const [a, b] = parseFact(l.id); return `<span class="res-fact lvl-${l.level}" style="--i:${i}">${itemImg('medal-' + l.level, 'res-fact-medal')}<b>${a} × ${b}</b><small>${LEVEL_LABEL[l.level]}</small></span>`; }).join('')}${ups.length > shown.length ? `<span class="res-fact more">+${ups.length - shown.length} more</span>` : ''}</div>`
-                : '<p class="res-empty">Get facts right and fast on different days to move them up: Bronze, Silver, Gold, then Star.</p>'}
+                : `<p class="res-empty">${uiImg('kaizo-think', 'res-empty-kaizo')}<span>Get facts right and fast on different days to move them up: Bronze, Silver, Gold, then Star.</span></p>`}
             </section>
             ${ambush ? `<div class="ambush">
               <span class="ambush-av">${trainerArt({ kind: 'grunt', grunt })}</span>

@@ -8,7 +8,7 @@ import { limitReached, cardsToday, roundSize, roundsToday, GOAL_ROUNDS } from '.
 import { nextUp, quizUseful } from '../core/nextup.js';
 import { VERSION } from '../data/changelog.js';
 import { trainerArt } from './trainerArt.js';
-import { ballImg, itemImg, sceneSrc, gymSrc, gymImg, badgeImg, cssUrl, uiImg, trainerFace, trainerBody, trainerKey, CARD_BACK, LOGO } from '../core/assets.js';
+import { ballImg, itemImg, sceneSrc, gymSrc, gymImg, badgeImg, cssUrl, uiImg, fxSrc, trainerFace, trainerBody, trainerKey, CARD_BACK, LOGO } from '../core/assets.js';
 import { kairoEvolves } from '../core/game.js';
 import { evolveKairo, ball as giveBall, caught as catchIt } from '../core/actions.js';
 import { save, touch, setSetting } from '../core/store.js';
@@ -28,10 +28,10 @@ const LOCK = '<span class="rg-lock" aria-hidden="true"><svg viewBox="0 0 24 24">
 const ARROW = '<svg class="nu-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12 H18 M13 6.5 L18.5 12 L13 17.5" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
 // A region's star Kaimon for the Next up card: the most evolved one this trainer
-// has caught there. None caught yet: Teacher K points the way.
+// has caught there. None caught yet: Kaizo gets out the map.
 function regionStar(p, table) {
   const caught = SPECIES.filter((s) => s.region === table && p.dex[s.id]?.caught).sort((a, b) => b.stage - a.stage);
-  return caught.length ? `<span class="nu-mon">${creatureArt(caught[0])}</span>` : trainerBody('teacher-k', 'point', 'nu-trainer');
+  return caught.length ? `<span class="nu-mon">${creatureArt(caught[0])}</span>` : uiImg('kaizo-map', 'nu-kaizo');
 }
 
 // Up to four facts as little chips, then "+3" for the rest.
@@ -261,13 +261,13 @@ export function renderHome(root, go, params = {}) {
     const seen = +localStorage.getItem(key) || 0;
     if (seen && partner.stage > seen) {
       const from = SPECIES.find((s) => s.line === partner.species.line && s.stage === seen);
-      setTimeout(() => { sfx.evolve(); sheet(`<div class="celebrate evolve"><p class="evo-kicker">What? ${esc(from.name)} is evolving!</p><div class="evo-row"><div class="partner-art">${creatureArt(from)}</div><span class="evo-arrow">›</span><div class="partner-art evo-new">${creatureArt(partner.species)}</div></div><h2>${esc(from.name)} evolved into ${esc(partner.species.name)}!</h2><p>All those right answers paid off. Lv ${partner.level}!</p><button class="btn-chunky btn-primary" data-close>Awesome!</button></div>`); }, 400);
+      setTimeout(() => { sfx.evolve(); sheet(`<div class="celebrate evolve"><p class="evo-kicker">What? ${esc(from.name)} is evolving!</p><div class="evo-row"><div class="partner-art">${creatureArt(from)}</div><span class="evo-arrow">›</span><div class="partner-art evo-new"><img class="evo-glow" src="${fxSrc('evolve-glow')}" alt="" draggable="false">${creatureArt(partner.species)}</div></div><h2>${esc(from.name)} evolved into ${esc(partner.species.name)}!</h2><p>All those right answers paid off. Lv ${partner.level}!</p><button class="btn-chunky btn-primary" data-close>Awesome!</button></div>`); }, 400);
     }
     localStorage.setItem(key, partner.stage);
   } catch {}
   if (kairoEvolves(p)) {
     evolveKairo(p); save(); syncNow();
-    setTimeout(() => { sfx.evolve(); sheet(`<div class="celebrate evolve"><p class="evo-kicker">A whole year with Kairo... and it's glowing!</p><div class="evo-row"><div class="partner-art">${creatureArt(byId(MYTHIC_ID))}</div><span class="evo-arrow">›</span><div class="partner-art">${creatureArt(byId(FUTURE_ID))}</div></div><h2>Kairo evolved into Kairos!</h2><p>Kaidex #060, the very last page. Kairo grew up right alongside you.</p><button class="btn-chunky btn-primary" data-close>Amazing!</button></div>`); }, 500);
+    setTimeout(() => { sfx.evolve(); sheet(`<div class="celebrate evolve"><p class="evo-kicker">A whole year with Kairo... and it's glowing!</p><div class="evo-row"><div class="partner-art">${creatureArt(byId(MYTHIC_ID))}</div><span class="evo-arrow">›</span><div class="partner-art evo-new"><img class="evo-glow" src="${fxSrc('evolve-glow')}" alt="" draggable="false">${creatureArt(byId(FUTURE_ID))}</div></div><h2>Kairo evolved into Kairos!</h2><p>Kaidex #060, the very last page. Kairo grew up right alongside you.</p><button class="btn-chunky btn-primary" data-close>Amazing!</button></div>`); }, 500);
   }
   // Beat Boss Papa but never caught Kairo (the app closed, or the result was skipped):
   // Kairo waits on the home screen until it's caught. It can never be missed.
@@ -287,7 +287,7 @@ export function renderHome(root, go, params = {}) {
   if (params.celebrate === 'stamp') {
     sfx.levelUp();
     sheet(`<div class="celebrate">
-      <div class="stamp-row" aria-hidden="true"><span class="stamp-teacher">${trainerBody('teacher-k', 'won')}</span><span class="celebrate-stamp">${itemImg('good-work-stamp')}</span></div>
+      <div class="stamp-row" aria-hidden="true"><span class="stamp-teacher">${trainerBody('teacher-k', 'stamp')}</span><span class="celebrate-stamp">${uiImg('starburst', 'cs-burst')}${itemImg('good-work-stamp')}</span></div>
       <h2>Good Work Stamp!</h2>
       <p>${esc(p.name)}, your grown-up says you did great on real math work. Teacher K is proud of you! Here's a reward:</p>
       <div class="celebrate-row"><span>${ballIcon('mega')} Mega Ball</span><span>${snackIcon()} 3 Power Snacks</span><span class="stars">★ Gold star</span></div>
@@ -329,7 +329,7 @@ function kairoWaiting(p, go) {
     catchIt(p, MYTHIC_ID);
     save(); syncNow();
     sfx.caught();
-    sh.el.querySelector('.celebrate').innerHTML = `<div class="mythic-arrive caught">${creatureArt(m)}</div>
+    sh.el.querySelector('.celebrate').innerHTML = `<div class="mythic-arrive caught"><img class="mythic-swirl" src="${fxSrc('capture-swirl')}" alt="" draggable="false">${creatureArt(m)}</div>
       <h2>You caught Kairo!</h2>
       <p>The mythic Kaimon, Kaidex #${String(m.num).padStart(3, '0')}. Some say a trainer named Kai dreamed it up.</p>
       <button class="btn-chunky btn-primary" data-dex>See it in the Kaidex</button>`;
