@@ -2,6 +2,12 @@
 
 All notable changes. Versioning: `0.MINOR.0` marks a roadmap phase, `0.x.PATCH` is any shipped change a player or parent can notice, and `1.0.0` is the public launch. See "Versioning" in CLAUDE.md. The in-app version history (Grown-ups > What's new) reads from `js/data/changelog.js`; keep both in sync. Each release is tagged in git as `vX.Y.Z`.
 
+## v0.5.32 (2026-11-15) Nicer report emails
+
+- Each kind of email now has its own picture at the top: a celebration for weekly reports, a sleepy Kaizo for quiet weeks, and Kaizo with an envelope for the "Say yes" email.
+- Fixed: small pictures in the emails (the trainer, medals and Kaimon) could look stretched on iPhone. They now keep their shape.
+- Fixed: Gmail could hide most of a new report under the "..." button when it landed in the same conversation as an earlier one. Every email now carries its own sent time, so the whole email shows.
+
 ## v0.5.31 (2026-11-15) A bigger streak flame
 
 - The streak flame now grows in six steps: 1, 3, 5, 10, 15 and 25 right in a row. Orange, then hotter orange, then red with a glow (your next throw is a free Super Ball), blue at 10 (free Mega Ball), violet at 15, and a white-hot rainbow flame at 25.
