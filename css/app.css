@@ -2336,6 +2336,144 @@ body:has(.res) #toast:not(.show) { visibility: hidden; }
 /* v0.5.27 The screen behind an open sheet stays still */
 html.sheet-open, html.sheet-open body { overflow: hidden; overscroll-behavior: none; }
 .sheet { overscroll-behavior: contain; }
+
+/* Who's playing? A swipe carousel of trainer cards (portrait), a list (landscape).
+   The selected card is what Play plays. It starts on the last trainer used here. */
+.title-panel .who-car { --cw: 124px; --av: 60px; --gap: 14px; position: relative; align-self: stretch; margin: 0 -16px; display: flex; flex-direction: column; min-height: 0; flex: 0 1 auto; }
+.title-panel .who-car .who-list {
+  position: relative; display: flex; flex-direction: row; flex-wrap: nowrap; align-items: stretch; justify-content: flex-start; gap: var(--gap);
+  width: 100%; max-width: none; margin: 0; min-height: 0;
+  padding: 14px calc(50% - var(--cw) / 2) 16px;
+  overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; scrollbar-width: none;
+  scroll-snap-type: x mandatory;
+}
+.title-panel .who-car .who-list::-webkit-scrollbar { display: none; }
+.title-panel .who-car .who-list::after { content: none; }
+.who-car[data-mode="fit"] .who-list { justify-content: center; padding-left: 8px; padding-right: 8px; scroll-snap-type: none; }
+.who-car[data-mode="carousel"] .who-list {
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 40px, #000 calc(100% - 40px), transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0, #000 40px, #000 calc(100% - 40px), transparent 100%);
+}
+.who-car.dragging .who-list { scroll-snap-type: none; cursor: grabbing; }
+.who-car.dragging .who-card { pointer-events: none; }
+
+.who-card {
+  position: relative; flex: 0 0 var(--cw); width: var(--cw); min-width: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 8px;
+  padding: 13px 8px 14px; margin: 0;
+  background: var(--paper); color: var(--ink); font: inherit;
+  border: 3px solid var(--ink); border-radius: 22px; box-shadow: 0 5px 0 var(--ink);
+  scroll-snap-align: center; scroll-snap-stop: always;
+  scale: calc(1 - .12 * var(--k, 0));
+  transition: transform .06s, box-shadow .06s, translate .2s cubic-bezier(.3, 1.4, .5, 1), background-color .2s;
+  -webkit-tap-highlight-color: transparent;
+}
+.who-card:active { transform: translateY(4px); box-shadow: 0 1px 0 var(--ink); }
+.who-card.sel { background: #FFE98F; translate: 0 -3px; box-shadow: 0 8px 0 var(--ink); }
+.who-card.sel:active { transform: translateY(7px); box-shadow: 0 1px 0 var(--ink); }
+.title-panel .who-card .who-av { width: var(--av); height: var(--av); flex: none; border-width: 3px; transition: box-shadow .2s; }
+.who-card.sel .who-av { box-shadow: 0 0 0 4px #fff; }
+.title-panel .who-card .who-text { display: flex; flex-direction: column; align-items: center; gap: 2px; width: 100%; min-width: 0; text-align: center; line-height: 1.1; }
+.title-panel .who-card .who-name { display: block; max-width: 100%; font-size: 19px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.title-panel .who-card .who-meta { display: inline-flex; align-items: center; justify-content: center; gap: 3px; font-size: 13px; font-weight: 500; color: var(--ink-2); white-space: nowrap; }
+.who-card.sel .who-meta { color: #5B4A12; }
+.who-fam { display: inline-flex; color: #1E8A3A; }
+.who-fam svg { width: 15px; height: 15px; }
+.who-last { position: absolute; z-index: 1; top: -12px; left: 50%; translate: -50% 0; padding: 2px 9px 3px; border-radius: 99px; background: var(--ink); color: #fff; font-size: 11.5px; font-weight: 600; line-height: 1.1; letter-spacing: .02em; white-space: nowrap; pointer-events: none; }
+/* New trainer: the same card, with a drawn plus that sits dead center */
+.title-panel .who-card .who-plus { display: grid; place-items: center; padding: 0; font-size: 0; line-height: 0; background: var(--sky); color: var(--ink); border: 3px dashed var(--ink); }
+.who-plus svg { display: block; width: 52%; height: 52%; }
+.title-panel .who-new .who-name { font-size: 17px; line-height: 20px; }
+.who-car.tight .who-card { padding-left: 5px; padding-right: 5px; }
+.title-panel .who-car.tight .who-new .who-name { font-size: 15.5px; }
+.who-new:not(.sel) { background: #F4F9FF; }
+
+/* Under the carousel: dots, with arrow buttons beside them on bigger screens and with a mouse */
+.title-panel .who-nav { display: flex; align-items: center; justify-content: center; gap: 14px; margin: -8px 0 0; min-height: 12px; }
+.title-panel .who-nav[hidden] { display: none; }
+.who-arrow { display: none; }
+@media (min-width: 600px) {
+  .title-panel .who-nav { margin: -4px 0 0; }
+  .who-arrow {
+    display: grid; place-items: center; flex: none; width: 44px; height: 44px; padding: 0; border-radius: 50%;
+    border: 3px solid var(--ink); background: var(--paper); color: var(--ink);
+    box-shadow: 0 4px 0 var(--ink); transition: transform .06s, box-shadow .06s, opacity .2s;
+  }
+  .who-arrow:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--ink); }
+  .who-arrow:disabled { opacity: .3; box-shadow: 0 4px 0 var(--ink); transform: none; cursor: default; }
+  .who-arrow svg { width: 22px; height: 22px; }
+}
+.who-dots { display: flex; align-items: center; gap: 7px; height: 12px; }
+.who-dots i { position: relative; width: 9px; height: 9px; border-radius: 99px; background: #C5CFDE; cursor: pointer; transition: width .25s cubic-bezier(.3, 1.3, .5, 1), background-color .2s; }
+.who-dots i::before { content: ''; position: absolute; inset: -12px -4px; }
+.who-dots i.on { width: 24px; background: var(--ink); }
+
+/* Play: starts the game for the selected trainer */
+.title-panel .who-play { align-self: center; width: min(100%, 340px); min-height: 58px; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 8px 22px; font-size: 23px; }
+.who-play-label { display: inline-block; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.who-play-ic { width: 20px; height: 20px; flex: none; }
+.who-play.is-new .who-play-ic { display: none; }
+.who-play-label.swap { animation: whoSwap .22s ease-out; }
+@keyframes whoSwap { from { opacity: 0; transform: translateY(6px); } }
+/* Cards rise in one after another */
+.who-car .who-card { animation: whoIn .45s cubic-bezier(.3, 1.35, .5, 1) both; animation-delay: calc(80ms + var(--i, 0) * 55ms); }
+@keyframes whoIn { from { opacity: 0; transform: translateY(16px); } }
+@media (prefers-reduced-motion: reduce) {
+  .who-car .who-card, .who-play-label.swap { animation: none; }
+  .who-card, .who-dots i { transition: none; }
+}
+
+/* Portrait: room for the cards and the Play button */
+@media (max-aspect-ratio: 1/1) {
+  .title-panel { max-height: 56dvh; gap: 8px; padding-top: 14px; padding-bottom: 10px; align-self: stretch; min-width: 0; }
+  .title-panel .fam-signin { padding: 2px 8px; font-size: 16px; }
+  .title-panel .who-car .who-list { padding-top: 13px; padding-bottom: 13px; }
+  .title-panel .who-car { --av: 54px; }
+  .who-card { padding-top: 11px; padding-bottom: 10px; gap: 6px; }
+  .title-panel .who-play { min-height: 54px; font-size: 22px; }
+}
+@media (max-aspect-ratio: 1/1) and (min-width: 600px) {
+  .title-panel { width: min(92%, 720px); align-self: center; }
+  .title-panel .who-car { --cw: 126px; --av: 74px; margin: 0 -20px; }
+  .title-panel .who-card .who-name { font-size: 20px; }
+  .title-panel .who-card .who-meta { font-size: 14px; }
+  .title-panel .who-play { width: min(100%, 380px); min-height: 62px; font-size: 24px; }
+}
+
+/* Landscape: a list down the left panel. Up to four trainers fit with no scrolling. */
+@media (min-aspect-ratio: 1/1) {
+  .title-panel { display: flex; flex-direction: column; max-height: calc(93dvh - min(38vw, 520px) / 2.31 - 16px - var(--safe-b)); bottom: calc(4% + var(--safe-b)); gap: 10px; padding: 14px 14px 10px; }
+  .title-panel .who-car { margin: 0 -14px; }
+  .title-panel .who-car .who-list { flex-direction: column; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; padding: 10px 14px 12px; gap: 12px; scroll-snap-type: y proximity; flex: 0 1 auto; }
+  .who-car[data-mode="list over"] { --fs: 22px; --fe: 26px; }
+  .who-car[data-mode="list over"] .who-list { scroll-snap-type: y mandatory; scroll-padding-top: 10px; }
+  .who-car[data-mode="list over"] .who-card { scroll-snap-align: start; }
+  .who-car[data-mode="list over"].at-start { --fs: 0px; }
+  .who-car[data-mode="list over"].at-end { --fe: 0px; }
+  .who-car[data-mode="list over"] .who-list {
+    -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 var(--fs), #000 calc(100% - var(--fe)), transparent 100%);
+    mask-image: linear-gradient(180deg, transparent 0, #000 var(--fs), #000 calc(100% - var(--fe)), transparent 100%);
+  }
+  .who-card { flex: 0 0 auto; width: auto; flex-direction: row; gap: 12px; padding: 4px 12px 4px 6px; border-radius: 18px; scale: none; }
+  .who-card.sel { translate: 0 -2px; box-shadow: 0 6px 0 var(--ink); }
+  .who-card.sel:active { transform: translateY(5px); }
+  .title-panel .who-car { --av: 46px; }
+  .title-panel .who-card .who-text { align-items: flex-start; text-align: left; flex: 1; }
+  .title-panel .who-card .who-name { font-size: 19px; }
+  .title-panel .who-play { width: 100%; min-height: 54px; font-size: 21px; }
+  .who-last { top: -10px; left: auto; right: 16px; translate: none; }
+  .title-panel .fam-signin { padding: 2px 8px; font-size: 15px; }
+}
+@media (min-aspect-ratio: 1/1) and (max-height: 520px) { .title-panel { max-height: 74%; } }
+
+/* Tapping your trainer on Home: trainer page or Switch trainer */
+.tsw { display: flex; flex-direction: column; text-align: left; }
+.tsw-me { display: flex; align-items: center; gap: 14px; padding: 2px 0 14px; }
+.tsw-av { width: 64px; height: 64px; flex: none; border-width: 3px; }
+.tsw-hi { margin: 0; font-size: 15px; font-weight: 600; color: var(--ink-2); }
+.tsw-who h2 { margin: 0; font-size: 28px; line-height: 1.1; overflow-wrap: anywhere; }
+.tsw .menu-row:first-of-type { border-top: 2px solid #EEF2F8; }
+
 /* v0.5.31 Streak flame: real fire that grows at 1, 3, 5, 10, 15 and 25 in a row */
 .streak-flame { width: 28px; height: 28px; color: inherit; transform-origin: 50% 85%; transition: transform .3s cubic-bezier(.3, 1.5, .5, 1), filter .3s; }
 .streak-flame .fl-out { fill: #FFB24A; transition: fill .25s; }
