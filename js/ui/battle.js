@@ -744,7 +744,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt } = {}
     if (S.phase === 'intro' || S.phase === 'over') return;
     sfx.tap();
     S.snack = !S.snack && canSnack(p, mine[S.me]);
-    if (S.snack) el.msg.textContent = 'Snack ready! Get a card right to feed it.';
+    if (S.snack && S.phase !== 'learn') el.msg.textContent = 'Snack ready! Get a card right to feed it.'; // keep the Type it lesson on screen
     drawSnack();
   });
   on(root, 'click', '[data-leave]', () => { sfx.tap(); go('home'); });
