@@ -12,9 +12,13 @@ export function usedToday(p) {
   return r ? Math.max(r.open, r.ms) / 60000 : 0;
 }
 
-// Cards answered today, and a small daily goal: two practice rounds.
+// Cards answered today, and a gentle daily goal: three rounds of cards.
+// Battle answers count too. No streaks and nothing lost on a day off.
+export const GOAL_ROUNDS = 3;
 export const cardsToday = (p) => p.play[today()]?.a || 0;
-export const dailyGoal = (p) => Math.max(10, 2 * (p.settings.sessionLength || 15));
+export const roundSize = (p) => Math.max(5, p.settings.sessionLength || 15);
+export const dailyGoal = (p) => GOAL_ROUNDS * roundSize(p);
+export const roundsToday = (p) => Math.min(GOAL_ROUNDS, Math.floor(cardsToday(p) / roundSize(p)));
 
 export function limitReached(p) {
   const lim = p.settings.dailyLimit || 0;

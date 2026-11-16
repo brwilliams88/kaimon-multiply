@@ -8,7 +8,7 @@ import { pickEncounter, ballForStreak, rollCatch, mythicCameo, BALLS, dexState }
 import { powerFor, powerLabel, GRUNTS } from '../core/battle.js';
 import { dadJoke } from '../data/dadjokes.js';
 import { trainerArt } from './trainerArt.js';
-import { limitReached } from '../core/playtime.js';
+import { limitReached, roundsToday, GOAL_ROUNDS } from '../core/playtime.js';
 import { partnerOf } from '../core/game.js';
 import { voiceSupported, stop as stopVoice } from '../core/voice.js';
 import { micMode, micButton } from './micMode.js';
@@ -28,6 +28,7 @@ export function renderPlay(root, go, { table, focus } = {}) {
   const tricky = focus === 'tricky' ? trickyPool(p) : null;
   const pool = tricky?.length ? tricky : factsForTables(tables);
   const bestBefore = p.stats.bestStreak || 0;
+  const goalBefore = roundsToday(p);
   const buddyBefore = partnerOf(p);
   const S = {
     n: 0, length: p.settings.sessionLength, streak: 0, best: 0, correct: 0, answered: 0,
@@ -36,6 +37,8 @@ export function renderPlay(root, go, { table, focus } = {}) {
   };
   const useVoice = p.settings.voice && voiceSupported();
   const tierBefore = Object.fromEntries([1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((t) => [t, tableTier(p, t)]));
+  // Warm up every ball picture, so a fast throw never cuts a half-loaded picture short.
+  for (const k of Object.keys(BALLS)) for (const o of [false, true]) new Image().src = ballSrc(k, o);
 
   root.innerHTML = `
     <section class="screen play v2">
@@ -443,6 +446,7 @@ export function renderPlay(root, go, { table, focus } = {}) {
               <div class="res-hero-text">
                 <h1 class="screen-title res-title">${title}, ${esc(p.name)}!</h1>
                 <p class="res-sub">${sub}</p>
+                ${goalBefore < GOAL_ROUNDS && roundsToday(p) >= GOAL_ROUNDS ? `<span class="res-goal"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5 L10 17.5 L19 7" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/></svg>Today's goal done!</span>` : ''}
               </div>
             </div>
             <div class="res-card res-score">
@@ -470,7 +474,7 @@ export function renderPlay(root, go, { table, focus } = {}) {
             </div>`).join('')}
             <section class="res-card res-sec">
               <h2 class="res-h">${ballIcon('capture')}Caught this round${uniq.length ? `<span class="res-count">${S.catches.length}</span>` : ''}</h2>
-              ${uniq.length ? `<div class="res-catches">${uniq.map((c, i) => { const s = byId(c.id); return `<div class="res-catch${c.isNew ? ' new' : ''}" style="--i:${i}">${creatureArt(s, { shiny: c.shiny })}<span>${esc(s.name)}</span>${c.isNew ? '<em>New!</em>' : ''}</div>`; }).join('')}</div>`
+              ${uniq.length ? `<div class="res-catches">${uniq.map((c, i) => { const s = byId(c.id); return `<div class="res-catch${c.isNew ? ' new' : ''}" style="--i:${i}">${creatureArt(s, { shiny: c.shiny })}<span${s.name.length > 10 ? ' class="long"' : ''}>${esc(s.name)}</span>${c.isNew ? '<em>New!</em>' : ''}</div>`; }).join('')}</div>`
                 : '<p class="res-empty">No catches this time. Fast answers throw harder!</p>'}
             </section>
             <section class="res-card res-sec">
