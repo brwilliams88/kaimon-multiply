@@ -3,7 +3,7 @@ import { SPECIES, REGIONS, TYPES } from '../data/creatures.js';
 import { creatureArt } from '../core/art.js';
 import { tableTier, tableProgress, LEVEL_LABEL, parseFact } from '../core/facts.js';
 import { partnerOf, dexCounts, trainerTitle } from '../core/game.js';
-import { bossUnlocked, quizReady, quizNextIn, champReady } from '../core/battle.js';
+import { bossUnlocked, quizReady, quizNextIn, champReady, gymOpen } from '../core/battle.js';
 import { limitReached, cardsToday, roundSize, roundsToday, GOAL_ROUNDS } from '../core/playtime.js';
 import { nextUp, quizUseful } from '../core/nextup.js';
 import { VERSION } from '../data/changelog.js';
@@ -23,6 +23,7 @@ export const medal = (tier) => tier
   ? `<span class="medal medal-${tier}" title="${LEVEL_LABEL[tier]} medal">${itemImg('medal-' + tier)}</span>`
   : '';
 
+const LOCK = '<span class="rg-lock" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2.6" fill="currentColor"/><path d="M8.2 10.5 V8 a3.8 3.8 0 0 1 7.6 0 V10.5" fill="none" stroke="currentColor" stroke-width="2.6"/><circle cx="12" cy="15.2" r="1.7" fill="#fff"/></svg></span>';
 const ARROW = '<svg class="nu-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12 H18 M13 6.5 L18.5 12 L13 17.5" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
 // A region's star Kaimon for the Next up card: the most evolved one this trainer
@@ -122,14 +123,14 @@ function regionRow(p, r, nu) {
   const won = p.battles.champs[r.table];
   const ready = !won && champReady(p, r.table);
   const now = nu.table === r.table && ['region', 'shine', 'gym', 'weak'].includes(nu.kind);
-  const gymState = won ? 'won' : ready ? 'ready' : 'later';
-  const gymLabel = `Battle ${r.champion} at the ${r.table}s gym${won ? '. Badge earned' : ready ? '. Ready!' : ''}`;
+  const gymState = won ? 'won' : ready ? 'ready' : 'locked';
+  const gymLabel = gymState === 'locked' ? `${r.champion}'s gym is locked. Get a Bronze medal on the ${r.table}s to open it.` : `Battle ${r.champion} at the ${r.table}s gym${won ? '. Badge earned' : '. Ready!'}`;
   return `<div class="rg-row${enabled ? '' : ' off'}${now ? ' now' : ''}" style="--rc:${t.color};--rl:${t.light};--ri:${t.ink}">
     <button class="rg" data-play="${r.table}" ${enabled ? '' : 'aria-disabled="true"'} aria-label="${esc(r.name)}, the ${r.table}s${tier ? `, ${LEVEL_LABEL[tier]} medal` : ''}">
       <span class="rg-thumb" style="--scene:${esc(cssUrl(sceneSrc(String(r.table), true)))}" aria-hidden="true"><b>${r.table}<small>s</small></b></span>
       <span class="rg-text"><strong>${esc(r.name)}</strong><span class="rg-prog"><span class="bar mini"><span style="width:${Math.round(prog * 100)}%"></span></span>${medal(tier)}</span></span>
     </button>
-    ${enabled ? `<button class="rg-gym ${gymState}" data-champ="${r.table}" aria-label="${esc(gymLabel)}">${gymImg(r.table)}${won ? badgeImg(r.table, 'rg-badge') : `<span class="${ready ? 'rg-ready' : 'rg-gym-tag'}">${ready ? 'Battle!' : 'Battle'}</span>`}</button>` : ''}
+    ${enabled ? `<button class="rg-gym ${gymState}" data-champ="${r.table}" aria-label="${esc(gymLabel)}">${gymImg(r.table)}${won ? badgeImg(r.table, 'rg-badge') : ready ? '<span class="rg-ready">Battle!</span>' : `${LOCK}<span class="rg-gym-tag">Get Bronze</span>`}</button>` : ''}
   </div>`;
 }
 
@@ -157,9 +158,9 @@ export function renderHome(root, go, params = {}) {
           ${nextCard(p, nu)}
 
           <div class="actions">
-          <button class="quick" data-play="mix" aria-label="Quick practice. Mixed tables.">
+          <button class="quick" data-play="mix" aria-label="Quick practice. Mixed times tables.">
             <span class="quick-cards" aria-hidden="true"><img src="${CARD_BACK}" alt="" draggable="false"><img src="${CARD_BACK}" alt="" draggable="false"><img src="${CARD_BACK}" alt="" draggable="false"></span>
-            <span class="quick-text"><strong>Quick practice</strong><small>Mixed tables</small></span>
+            <span class="quick-text"><strong>Quick practice</strong><small>Mixed times tables</small></span>
             <span class="quick-go" aria-hidden="true">${ARROW}</span>
           </button>
 
@@ -238,7 +239,13 @@ export function renderHome(root, go, params = {}) {
       default: return go('play', { table: t });
     }
   });
-  on(root, 'click', '[data-champ]', (e, el) => { unlock(); sfx.tap(); if (timesUp()) return; keepPlace(); go('battle', { kind: 'champ', table: +el.dataset.champ }); });
+  on(root, 'click', '[data-champ]', (e, el) => {
+    unlock(); sfx.tap();
+    const t = +el.dataset.champ;
+    if (!gymOpen(p, t)) return gymLocked(p, t, go, timesUp);
+    if (timesUp()) return;
+    keepPlace(); go('battle', { kind: 'champ', table: t });
+  });
   on(root, 'click', '[data-boss]', () => {
     unlock(); sfx.tap();
     if (timesUp()) return;
@@ -285,6 +292,23 @@ export function renderHome(root, go, params = {}) {
       <div class="celebrate-row"><span>${ballIcon('mega')} Mega Ball</span><span>${snackIcon()} 3 Power Snacks</span><span class="stars">★ Gold star</span></div>
       <button class="btn-chunky btn-primary" data-close>Awesome!</button></div>`);
   }
+}
+
+// A locked gym: say how to open it, with one tap to practice that table.
+function gymLocked(p, table, go, timesUp) {
+  const R = REGIONS.find((r) => r.table === table), T = TYPES[R.type];
+  const sh = sheet(`<div class="gym-locked" style="--rc:${T.color};--rl:${T.light};--ri:${T.ink}">
+    <div class="gym-locked-art" aria-hidden="true">${gymImg(table)}${LOCK}</div>
+    <h2>${esc(R.champion)}'s gym is locked</h2>
+    <p>Get a Bronze medal on the ${table}s to open this gym.</p>
+    <p class="note">${medal('bronze')}Bronze: every ${table}s fact right on 2 different days.</p>
+    <div class="sheet-actions"><button class="btn-chunky" data-close>Okay</button><button class="btn-chunky btn-primary" data-practice>Practice the ${table}s</button></div>
+  </div>`);
+  sh.el.querySelector('[data-practice]').addEventListener('click', () => {
+    sfx.tap(); sh.close();
+    if (timesUp()) return;
+    go('play', { table });
+  });
 }
 
 function kairoWaiting(p, go) {
