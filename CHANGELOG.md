@@ -2,6 +2,20 @@
 
 All notable changes. Versioning: `0.MINOR.0` marks a roadmap phase, `0.x.PATCH` is any shipped change a player or parent can notice, and `1.0.0` is the public launch. See "Versioning" in CLAUDE.md. The in-app version history (Grown-ups > What's new) reads from `js/data/changelog.js`; keep both in sync. Each release is tagged in git as `vX.Y.Z`.
 
+## v1.1.1 (2026-11-16) Smoother play, hats for everyone, easier feedback
+
+- The number pad is faster: a key counts the moment your finger touches it, and quick double taps both count.
+- Taps are never lost between cards. Digits you type while the next card slides in land on it, and a tap during a throw skips ahead.
+- The Hint Scroll is now a Teacher K Hint, with her face on it. She pops in when a hint could help: on new or tricky facts, or when you're stuck for a few seconds. Never on the first card.
+- The streak flame is simpler. At 5 in a row you'll see "You throw Super Balls now", and at 10, Mega Balls. Your streak ball on the belt has a little flame on it.
+- Make-your-own trainers can now wear every hat: the Kaizo Hood, Papa Cap and Kairo Crown. Caps and beanies come off, and long hair and braids flow out of the Kaizo Hood.
+- When you earn a new hat, "Wear it!" now works for every trainer.
+- Fixed: lips and cheeks no longer turn blue on some skin tones for make-your-own trainers.
+- Send feedback is simpler: one box for what you love, one for what should be better or is broken. Fill in one or both, then send. Tap Send more to add another note.
+- Rate the game is now in the Menu. You can see your last rating and change it whenever you like.
+- The game only asks for a rating again after a big update, and never more than a few times a year.
+- Fixed: How to play fits on an iPad held sideways again, with no scrolling.
+
 ## v1.1.0 (2026-11-16) Types and Lightning Round
 
 - Types now matter in battles! When your Kaimon's type is strong against the other Kaimon, right answers hit harder: Super effective! When it's weak, they hit a bit softer.

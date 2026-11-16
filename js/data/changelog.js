@@ -1,7 +1,25 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '1.1.0';
+export const VERSION = '1.1.1';
 
 export const CHANGELOG = [
+  {
+    version: '1.1.1',
+    date: '2026-11-16',
+    title: "Smoother play, hats for everyone, easier feedback",
+    items: [
+      "The number pad is faster: a key counts the moment your finger touches it, and quick double taps both count.",
+      "Taps are never lost between cards. Digits you type while the next card slides in land on it, and a tap during a throw skips ahead.",
+      "The Hint Scroll is now a Teacher K Hint, with her face on it. She pops in when a hint could help: on new or tricky facts, or when you're stuck for a few seconds. Never on the first card.",
+      "The streak flame is simpler. At 5 in a row you'll see \"You throw Super Balls now\", and at 10, Mega Balls. Your streak ball on the belt has a little flame on it.",
+      "Make-your-own trainers can now wear every hat: the Kaizo Hood, Papa Cap and Kairo Crown. Caps and beanies come off, and long hair and braids flow out of the Kaizo Hood.",
+      "When you earn a new hat, \"Wear it!\" now works for every trainer.",
+      "Fixed: lips and cheeks no longer turn blue on some skin tones for make-your-own trainers.",
+      "Send feedback is simpler: one box for what you love, one for what should be better or is broken. Fill in one or both, then send. Tap Send more to add another note.",
+      "Rate the game is now in the Menu. You can see your last rating and change it whenever you like.",
+      "The game only asks for a rating again after a big update, and never more than a few times a year.",
+      "Fixed: How to play fits on an iPad held sideways again, with no scrolling.",
+    ],
+  },
   {
     version: '1.1.0',
     date: '2026-11-16',
