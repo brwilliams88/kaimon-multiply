@@ -20,32 +20,35 @@ import { ballSrc, sceneSrc, cssUrl, sceneKey, uiImg, itemImg, fxSrc, typeIcon, t
 import { trickyPool, markTrickyDone } from '../core/nextup.js';
 import { quick } from '../core/prefs.js';
 import { $, on, esc, sheet, wait, toast, soundButton, reducedMotion, setFlame } from './dom.js';
+import { firstGameGuide, finishFirstGame, GUIDE_FACTS } from './firstGame.js';
 
-export function renderPlay(root, go, { table, focus } = {}) {
+export function renderPlay(root, go, { table, focus, guide } = {}) {
   const p = active();
   setSound(p.settings.sound);
   const tables = table ? [table] : p.settings.tables;
   // focus 'tricky': a round of the facts that got away lately (from Home's Next up).
   const tricky = focus === 'tricky' ? trickyPool(p) : null;
-  const pool = tricky?.length ? tricky : factsForTables(tables);
+  // guide: the guided first game with Teacher K (a few very easy cards).
+  const pool = guide ? GUIDE_FACTS : tricky?.length ? tricky : factsForTables(tables);
   const bestBefore = p.stats.bestStreak || 0;
   const goalBefore = roundsToday(p);
   const buddyBefore = partnerOf(p);
   const S = {
-    n: 0, length: p.settings.sessionLength, streak: 0, best: 0, correct: 0, answered: 0,
+    n: 0, length: guide ? GUIDE_FACTS.length : p.settings.sessionLength, streak: 0, best: 0, correct: 0, answered: 0,
     recent: [], requeue: [], catches: [], levelUps: [], misses: [], startedAt: Date.now(),
     fact: null, species: null, shownAt: 0, input: '', phase: 'ask', mustType: null, listening: false, raf: 0,
   };
-  const useVoice = p.settings.voice && voiceSupported();
+  const useVoice = !guide && p.settings.voice && voiceSupported();
   const tierBefore = Object.fromEntries([1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((t) => [t, tableTier(p, t)]));
   // Warm up every ball picture, so a fast throw never cuts a half-loaded picture short.
   for (const k of Object.keys(BALLS)) for (const o of [false, true]) new Image().src = ballSrc(k, o);
 
   root.innerHTML = `
-    <section class="screen play v2">
+    <section class="screen play v2${guide ? ' guided' : ''}">
       <header class="play-top">
         <button class="icon-btn" data-exit aria-label="Stop practicing"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6 L18 18 M18 6 L6 18" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg></button>
         <div class="pips" aria-hidden="true">${Array.from({ length: S.length }, () => '<span></span>').join('')}</div>
+        ${guide ? '<button class="pill guide-skip" data-guide-skip>Skip</button>' : ''}
         ${soundButton(p.settings.sound)}
         <div class="streak" data-tier="0" aria-live="polite" title="Streak: right answers in a row"><span class="streak-flame" aria-hidden="true"><svg viewBox="0 0 24 24"><path class="fl-out" d="M12 1.8c.9 3.2-1.2 5-2.7 6.8C7.7 10.5 6.6 12.3 6.6 14.6a5.4 5.4 0 0 0 10.8 0c0-2.9-1.5-4.8-2.6-6.2-.3 1.6-1.1 2.5-2.1 3 .5-3.1-.1-6.5-.7-9.6z" stroke="#14213D" stroke-width="1.5" stroke-linejoin="round"/><path class="fl-in" d="M12.1 10.6c.4 1.7-.6 2.6-1.3 3.5-.5.6-.9 1.3-.9 2.1a2.2 2.2 0 0 0 4.4 0c0-1.3-.7-2.1-1.2-2.8-.2.7-.5 1-1 1.2.2-1.4 0-2.7 0-4z"/></svg></span><span class="streak-num">0</span><span class="streak-ball" hidden></span><span class="sr-only streak-sr"></span></div>
       </header>
@@ -130,7 +133,7 @@ export function renderPlay(root, go, { table, focus } = {}) {
 
   function next() {
     if (S.n >= S.length) return finish();
-    const id = pickNext(p, pool, S.recent, S.requeue, S.n);
+    const id = guide ? GUIDE_FACTS[S.n] : pickNext(p, pool, S.recent, S.requeue, S.n);
     S.recent.push(id); if (S.recent.length > 3) S.recent.shift();
     S.fact = id;
     const [a, b] = parseFact(id);
@@ -183,6 +186,7 @@ export function renderPlay(root, go, { table, focus } = {}) {
     runPower();
     S.mic?.ready();
     el.pips.forEach((pip, i) => pip.className = i < S.n ? (S.results?.[i] ? 'done ok' : 'done') : i === S.n ? 'now' : '');
+    if (G) { if (S.n > 0) G.deal(S.n, S.streak); return; }
     maybeMythic();
   }
 
@@ -219,6 +223,8 @@ export function renderPlay(root, go, { table, focus } = {}) {
   async function submit(via = 'pad') {
     if (S.phase === 'learn') return checkRetype();
     if (S.phase !== 'ask' || !S.input) return;
+    if (G?.waiting) { G.waiting = false; S.shownAt = performance.now(); }
+    G?.answered();
     stopVoice();
     S.phase = 'result';
     const ms = performance.now() - S.shownAt;
@@ -250,7 +256,8 @@ export function renderPlay(root, go, { table, focus } = {}) {
       const fast = ms <= p.settings.fastMs;
       const pw = powerFor(ms);
       cancelAnimationFrame(S.raf);
-      const roll = rollCatch(S.species, ball, pw);
+      // The guided first game: the first right answer always catches.
+      const roll = G?.mustCatch() ? { caught: true, shakes: 2 } : rollCatch(S.species, ball, pw);
       const caught = roll.caught;
       let result = null;
       if (caught) result = catchIt(p, S.species.id);
@@ -281,6 +288,8 @@ export function renderPlay(root, go, { table, focus } = {}) {
         toast(`${a} × ${b} reached ${LEVEL_LABEL[l.level]}!`);
       }
       S.phase = 'done';
+      // Guided first game: Teacher K talks about the first catch, then Next moves on.
+      if (caught && G?.caught(result.isNew, () => { if (S.phase === 'done') advance(); })) return;
       // Give a new Kaimon its moment; repeats stay quick but visible. Quick mode
       // keeps only a short look. A tap moves on at any time.
       const q = quick(p);
@@ -309,6 +318,7 @@ export function renderPlay(root, go, { table, focus } = {}) {
         <div class="hint-scroll"><p>Count by ${a}s</p><div class="ladder">${hintLadder(S.fact).map((v, i, arr) => `<span class="${i === arr.length - 1 ? 'last' : ''}">${v}</span>`).join('')}</div>${trickHTML(p, S.fact)}</div>
         <div class="retype"><span class="learn-teacher">${trainerFace('teacher-k')}</span><span class="retype-label">Type it to keep going</span><span class="answer-val empty" data-ph="${ans}"></span></div>`;
       flip(true, 'wrong');
+      G?.wrong();
       S.phase = 'learn';
       S.mustType = ans;
       setInput('');
@@ -405,6 +415,7 @@ export function renderPlay(root, go, { table, focus } = {}) {
   }
 
   function finish() {
+    if (G) G.answered();
     S.mic?.destroy();
     stopVoice();
     endTime();
@@ -418,7 +429,7 @@ export function renderPlay(root, go, { table, focus } = {}) {
     syncNow();
     document.getElementById('toast')?.classList.remove('show');
     // Team Papa sometimes jumps out at the end of a practice.
-    const ambush = S.answered >= 8 && Math.random() < 0.3 && !limitReached(p);
+    const ambush = !guide && S.answered >= 8 && Math.random() < 0.3 && !limitReached(p);
     const grunt = 1 + Math.floor(Math.random() * 6);
     const uniq = [];
     for (const c of S.catches) { const u = uniq.find((x) => x.id === c.id); if (!u) uniq.push({ ...c }); else { u.isNew ||= c.isNew; u.shiny ||= c.shiny; } }
@@ -490,15 +501,17 @@ export function renderPlay(root, go, { table, focus } = {}) {
             </div>` : ''}
           </div>
         </div>
-        <div class="res-actions">
-          <button class="btn-chunky res-home" data-home>Home</button>
-          <button class="btn-chunky btn-primary btn-xl res-again" data-again>Play again<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12 H18 M13 6.5 L18.5 12 L13 17.5" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <div class="res-actions${guide ? ' guided' : ''}">
+          ${guide ? `<button class="btn-chunky res-again res-again-sm" data-again>Play again</button>
+          <button class="btn-chunky btn-primary btn-xl res-go-home" data-home>Go Home<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12 H18 M13 6.5 L18.5 12 L13 17.5" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>` : `<button class="btn-chunky res-home" data-home>Home</button>
+          <button class="btn-chunky btn-primary btn-xl res-again" data-again>Play again<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12 H18 M13 6.5 L18.5 12 L13 17.5" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>`}
         </div>
       </section>`;
     if (newBadges.length) setTimeout(() => sfx.levelUp(), 250);
     else if (party) setTimeout(() => sfx.win(), 250);
     on(root, 'click', '[data-again]', () => go(limitReached(p) ? 'home' : 'play', { table, focus }));
-    on(root, 'click', '[data-home]', () => go('home'));
+    on(root, 'click', '[data-home]', () => go('home', guide ? { guide: 'next' } : {}));
+    if (G) G.results();
     on(root, 'click', '[data-ambush]', () => go('battle', { kind: 'grunt', grunt }));
   }
 
@@ -521,6 +534,7 @@ export function renderPlay(root, go, { table, focus } = {}) {
     if (S.phase === 'done') { advance(); return; }
     if (v === 'go') return submit('pad');
     if (S.phase !== 'ask' && S.phase !== 'learn') return;
+    if (S.phase === 'ask') G?.key();
     sfx.tap();
     if (v === 'del') setInput(S.input.slice(0, -1));
     else if (S.input.length < 3) setInput(S.input + v);
@@ -544,8 +558,10 @@ export function renderPlay(root, go, { table, focus } = {}) {
   });
   on(root, 'click', '[data-exit]', () => {
     const sh = sheet(`<h2>Stop practicing?</h2><p>Your catches and progress are saved.</p><div class="sheet-actions"><button class="btn-chunky btn-primary" data-stop>Stop</button><button class="btn-chunky" data-close>Keep going</button></div>`);
-    sh.el.querySelector('[data-stop]').addEventListener('click', () => { sh.close(); S.mic?.destroy(); stopVoice(); endTime(); save(); syncNow(); go('home'); });
+    sh.el.querySelector('[data-stop]').addEventListener('click', () => { sh.close(); S.mic?.destroy(); stopVoice(); endTime(); if (guide) finishFirstGame(p); save(); syncNow(); go('home'); });
   });
+  // Skip the guided first game: straight to Home, and it never comes back.
+  on(root, 'click', '[data-guide-skip]', () => { sfx.tap(); S.mic?.destroy(); stopVoice(); G?.end(); if (S.answered) endTime(); else S.done = true; finishFirstGame(p); save(); go('home'); });
   if (el.mic) {
     let bubbleTimer = 0;
     const bubble = (msg) => {
@@ -567,12 +583,16 @@ export function renderPlay(root, go, { table, focus } = {}) {
   const onKey = (e) => {
     if (!document.body.contains(root.querySelector('.play'))) { document.removeEventListener('keydown', onKey); return; }
     if (document.querySelector('.sheet-wrap')) return;
+    if (e.target.closest?.('.coach') && (e.key === 'Enter' || e.key === ' ')) return; // Teacher K's button
     if (/^[0-9]$/.test(e.key)) $(`[data-k="${e.key}"]`, root)?.click();
     else if (e.key === 'Backspace') $('[data-k="del"]', root)?.click();
     else if (e.key === 'Enter') { e.preventDefault(); if (S.phase === 'done') advance(); else submit('keyboard'); }
   };
   document.addEventListener('keydown', onKey);
 
+  // The guided first game: Teacher K's coach marks ride along with the round.
+  const G = guide ? firstGameGuide(p, { onReady: () => { G.waiting = false; S.shownAt = performance.now(); } }) : null;
   updateStreak();
   next();
+  if (G) { G.waiting = true; G.start(); }
 }

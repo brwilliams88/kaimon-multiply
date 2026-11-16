@@ -15,6 +15,7 @@ import { startOffline } from './core/offline.js';
 import { startOfflineUI, afterScreen } from './ui/offline.js';
 import { trainerPNG } from './ui/reportPanel.js';
 import { toast, soundIcon } from './ui/dom.js';
+import { coachEnd } from './ui/coach.js';
 import { openTime } from './core/actions.js';
 import { stopMusic, startMusic, musicFor } from './core/music.js';
 import { save, touch, setSetting } from './core/store.js';
@@ -38,6 +39,7 @@ const NEEDS_PROFILE = new Set(['home', 'play', 'kaidex', 'grownups', 'meetPartne
 
 function go(name, params = {}) {
   stopVoice();
+  coachEnd(); // Teacher K's coach marks belong to the screen they were shown on
   if (NEEDS_PROFILE.has(name) && !active()) name = 'welcome';
   // Fresh element per screen so old listeners go away.
   const old = document.getElementById('app');
@@ -67,7 +69,10 @@ document.addEventListener('touchmove', (e) => {
   if (html.classList.contains('sheet-open')) {
     const sh = e.target.closest?.('.sheet');
     if (sh && sh.scrollHeight > sh.clientHeight + 1) return;
-    if (sh) for (let el = e.target; el && el !== sh; el = el.parentElement) if (el.scrollHeight > el.clientHeight + 1 && /auto|scroll/.test(getComputedStyle(el).overflowY)) return;
+    if (sh) for (let el = e.target; el && el !== sh; el = el.parentElement) {
+      if (el.scrollHeight > el.clientHeight + 1 && /auto|scroll/.test(getComputedStyle(el).overflowY)) return;
+      if (el.scrollWidth > el.clientWidth + 1 && /auto|scroll/.test(getComputedStyle(el).overflowX)) return; // swipe decks
+    }
     e.preventDefault();
     return;
   }

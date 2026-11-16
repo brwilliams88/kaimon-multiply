@@ -5,7 +5,8 @@ import { dexCounts } from '../core/game.js';
 import { checkNow } from '../core/update.js';
 import { showIconNotice } from './iconNotice.js';
 import { sfx, soundOn, soundStatus } from '../core/sound.js';
-import { itemImg } from '../core/assets.js';
+import { itemImg, uiImg } from '../core/assets.js';
+import { howToPlay } from './howToPlay.js';
 import { installHelpHTML, canPromptInstall, promptInstall, isInstalled } from './install.js';
 import { lastDays, partsOfDay, usedToday } from '../core/playtime.js';
 import { bonusTime } from '../core/actions.js';
@@ -179,6 +180,12 @@ function renderMain(root, go) {
           ${p.trophies.length ? `<div class="trophies">${p.trophies.slice().reverse().map((t) => `<figure class="trophy">${t.img ? `<img src="${t.img}" alt="">` : '<span class="trophy-star">★</span>'}<figcaption>${esc(t.note || 'Good work')}<small>${new Date(t.t).toLocaleDateString()}</small></figcaption></figure>`).join('')}</div>` : ''}
         </div>
 
+        <div class="panel gu-howto">
+          <h2 class="h-ic">${uiImg('icon-howto')}How to play</h2>
+          <p class="note">The same quick cards kids see in the Menu: catching Kaimon, streaks, balls, gyms, battles and the Kaidex. Great to look at together.</p>
+          <button class="btn-chunky" data-howto>Show How to play</button>
+        </div>
+
         <div class="panel playtime">
           ${(() => {
             const days = lastDays(p, 14);
@@ -275,6 +282,7 @@ function renderMain(root, go) {
 
   on(root, 'click', '[data-back]', () => go('home'));
   on(root, 'click', '[data-newicon]', () => showIconNotice());
+  on(root, 'click', '[data-howto]', () => { sfx.tap(); howToPlay(p, {}); });
   on(root, 'click', '[data-soundtest]', () => {
     const msg = root.querySelector('[data-soundmsg]');
     if (!soundOn()) { msg.textContent = 'Sound is off for this trainer. Turn on Sound above first.'; return; }

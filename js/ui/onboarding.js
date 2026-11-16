@@ -11,6 +11,7 @@ import { avatarSVG, trainerLook, PRESETS } from './avatars.js';
 import { lookPickerHTML, wireLookPicker } from './lookPicker.js';
 import { esc, on, $, sheet } from './dom.js';
 import { sfx, unlock } from '../core/sound.js';
+import { wantsFirstGame } from './firstGame.js';
 
 export function renderWelcome(root, go) {
   const profiles = allProfiles();
@@ -316,7 +317,8 @@ export function renderMeetPartner(root, go) {
   };
   draw();
   on(root, 'click', '[data-pick]', (e, el) => { pick = el.dataset.pick; sfx.tap(); draw(); });
-  on(root, 'click', '[data-go]', () => { if (!pick) return; p.starter = pick; touch(p); sfx.levelUp(); go('home'); });
+  // A brand-new trainer goes straight into the guided first game with Teacher K.
+  on(root, 'click', '[data-go]', () => { if (!pick) return; p.starter = pick; touch(p); sfx.levelUp(); go(wantsFirstGame(p) ? 'play' : 'home', wantsFirstGame(p) ? { guide: true } : {}); });
 }
 
 export const cloudIcon = () => `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 18 H17.5 a4 4 0 0 0 0.4 -8 a6 6 0 0 0 -11.6 1.2 A3.5 3.5 0 0 0 7 18 Z" fill="currentColor"/></svg>`;
