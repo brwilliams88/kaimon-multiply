@@ -11,7 +11,7 @@
 // streaks, Gym Leader wins and medals. They are claimed with the same keyed
 // 'got' event as quests, so they can never be given twice.
 import { today } from './store.js';
-import { tableTier, levelRank } from './facts.js';
+import { tableTier, levelRank, levelOf, factsForTables } from './facts.js';
 import { grant, claimed } from './items.js';
 
 const ALL_TABLES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
@@ -74,13 +74,16 @@ export function questsFor(p, day = today()) {
   const q2 = make(1, pick(rng, ['streak', 'catch', 'table']));
   const third = ['streak', 'catch', 'table', ...(veteran ? ['battle'] : [])].filter((k) => k !== q2.kind);
   const q3 = make(2, pick(rng, third));
-  // Rewards, tuned with tools/pacing-sim.mjs: Buddy XP most days, a Super Ball
-  // about 1 day in 3, and about one charm and one lantern a week, so balls and
-  // items stay special.
+  // Rewards, tuned with tools/pacing-sim.mjs: a little Buddy XP most days (small,
+  // so quests don't rush evolutions), a Super Ball about 1 day in 5, and about
+  // one charm, one lantern and one Hint Scroll a week, so items stay special.
+  // A Hint Scroll only while some practiced fact is below Silver (it helps with
+  // shaky facts); after that the slot gives XP.
+  const shaky = factsForTables(tables).some((id) => levelRank(levelOf(p.facts?.[id])) < levelRank('silver'));
   const r1 = rng(), r2 = rng(), r3 = rng();
-  q1.reward = [r1 < 1 / 3 ? ['b', 'super', 1] : ['x', 'xp', 50]];
-  q2.reward = [r2 < 0.3 ? ['i', 'snack', 1] : ['x', 'xp', 60]];
-  q3.reward = [r3 < 0.15 ? ['i', 'charm', 1] : r3 < 0.3 ? ['i', 'lantern', 1] : r3 < 0.5 ? ['b', 'mega', 1] : ['x', 'xp', 100]];
+  q1.reward = [r1 < 0.2 ? ['b', 'super', 1] : ['x', 'xp', 30]];
+  q2.reward = [r2 < 0.2 ? ['i', 'snack', 1] : r2 < 0.35 && shaky ? ['i', 'scroll', 1] : ['x', 'xp', 40]];
+  q3.reward = [r3 < 0.15 ? ['i', 'charm', 1] : r3 < 0.3 ? ['i', 'lantern', 1] : r3 < 0.5 ? ['b', 'mega', 1] : ['x', 'xp', 75]];
   return [q1, q2, q3];
 }
 
@@ -98,9 +101,11 @@ export function questStatus(p, day = today()) {
 }
 
 // One-time rewards for long-term answering. Each: key, a test, what it gives and a line.
+// The first Evolve Crystal waits until 500 right answers, so it nudges an
+// evolution a few levels early instead of rushing the first one.
 const RIGHT_STEPS = [
-  [100, 'lantern'], [200, 'evolve'], [400, 'charm'], [700, 'evolve'], [1000, 'lantern'],
-  [1500, 'charm'], [2000, 'lantern'], [3000, 'charm'], [4000, 'lantern'], [5000, 'charm'],
+  [50, 'scroll'], [100, 'lantern'], [200, 'charm'], [300, 'scroll'], [500, 'evolve'], [700, 'lantern'], [1000, 'charm'],
+  [1500, 'evolve'], [2000, 'lantern'], [3000, 'charm'], [4000, 'lantern'], [5000, 'charm'],
 ];
 const STREAK_STEPS = [[10, 'charm'], [20, 'lantern'], [30, 'charm'], [50, 'lantern']];
 export function milestones(p) {
@@ -123,7 +128,7 @@ export function milestones(p) {
 // get the best few (MAX_CATCH_UP, all different) and the rest are marked done,
 // so items stay special.
 export const MAX_CATCH_UP = 3;
-const VALUE = { evolve: 4, charm: 3, lantern: 2, snack: 1 };
+const VALUE = { evolve: 4, charm: 3, lantern: 2, scroll: 1.5, snack: 1 };
 export function catchUp(ready, max = MAX_CATCH_UP) {
   if (ready.length <= max) return { give: ready, skip: [] };
   const sorted = [...ready].sort((a, b) => (VALUE[b.gives[0][1]] || 0) - (VALUE[a.gives[0][1]] || 0));

@@ -9,15 +9,15 @@
 //                       Claims are keyed, so two devices can never claim one twice.
 //
 // Names, art and kid lines come from ITEM_INFO in extras.js (one source of truth).
-// Saved item keys: snack, charm, lantern, evolve (Evolve Crystal) and
-// megaCrystal (the Tower's Mega Crystal; extras.js maps it to its 'mega' row).
+// Saved item keys: snack (Power Snack), scroll (Hint Scroll), charm, lantern,
+// evolve (Evolve Crystal) and megaCrystal (the Tower's Mega Crystal).
 import { emit } from './actions.js';
 import { partnerOf } from './game.js';
 import { dayRec } from './playtime.js';
 import { today } from './store.js';
 import { itemInfo } from './extras.js';
 
-export const ITEM_KEYS = ['snack', 'charm', 'lantern', 'evolve', 'megaCrystal'];
+export const ITEM_KEYS = ['snack', 'scroll', 'charm', 'lantern', 'evolve', 'megaCrystal'];
 export const MEGA_KEY = 'megaCrystal';
 // Older spellings of saved item keys. The Mega Crystal is always megaCrystal.
 const OLD_KEYS = { megacrystal: MEGA_KEY };
@@ -37,8 +37,11 @@ export const itemName = (key) => itemInfo(key).name;
 export const SNACK_HEAL = 0.5;      // a Power Snack heals half of a Kaimon's HP
 export const CHARM_MIN_STREAK = 3;  // a Second Chance Charm is offered on a streak of 3 or more
 export const LANTERN_CARDS = 15;    // a Lucky Lantern lasts for 15 wild Kaimon
-export const LANTERN_SHINY = 1 / 16; // shiny odds while lit (normally 1 in 32)
-export const BASE_SHINY = 1 / 32;
+// Shiny odds per catch, tuned with tools/pacing-sim.mjs: at 1 in 32 a kid playing
+// 10 minutes a day had 13 shinies after a month, so they stopped being special.
+// 1 in 128 gives the first one in about the first week and a new one most weeks.
+export const LANTERN_SHINY = 1 / 32; // while a Lucky Lantern is lit: 4 times the odds
+export const BASE_SHINY = 1 / 128;
 export const LANTERN_RARE = 2;      // rarer Kaimon show up twice as often while lit
 export const CRYSTAL_RANGE = 3;     // an Evolve Crystal works 3 levels or less from evolving
 
@@ -144,6 +147,16 @@ export function useSnack(p, team, i = 0) {
   const ev = emit(p, 'use', { i: 'snack', n: mon.species?.id || null });
   return { healed, hp, ev };
 }
+
+// ---- Hint Scroll (practice) -------------------------------------------------------
+
+// One scroll shows Teacher K's trick on the card before you answer. The answer
+// still counts as practice, but never as a fast one (see hintedMs).
+export const canScroll = (p) => itemCount(p, 'scroll') > 0;
+export const useScroll = (p, factId) => canScroll(p) ? emit(p, 'use', { i: 'scroll', f: factId }) : null;
+// The time saved for a hinted answer: at least just over "fast", so a hint can
+// help a kid catch the Kaimon but never moves a fact toward Silver, Gold or Star.
+export const hintedMs = (p, ms) => Math.max(ms, (p.settings?.fastMs || 5000) + 1);
 
 // ---- Second Chance Charm (practice) -------------------------------------------------
 

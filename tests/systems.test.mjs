@@ -24,11 +24,13 @@ const ev = (k, d, t = Date.now()) => ({ id: Math.random().toString(36), t, k, d 
 test('every item gets its name, art and kid line from extras.js, no em dashes', () => {
   for (const k of items.ITEM_KEYS) {
     const i = itemInfo(k);
-    assert.ok(i.name && i.art && i.does && i.earn, k);
+    assert.ok(i.name && (i.art || k === 'scroll') && i.does && i.earn, k); // the Hint Scroll is drawn in ui/items.js
     assert.ok(!/\u2014/.test(i.name + i.does + i.earn), k);
     assert.equal(items.itemName(k), i.name);
   }
-  assert.deepEqual(items.ITEM_KEYS, ['snack', 'charm', 'lantern', 'evolve', 'megaCrystal']);
+  assert.deepEqual(items.ITEM_KEYS, ['snack', 'scroll', 'charm', 'lantern', 'evolve', 'megaCrystal']);
+  assert.equal(items.itemName('scroll'), 'Hint Scroll');
+  assert.equal(itemInfo('megacrystal').name, 'Mega Crystal'); // old spelling still finds its row
   assert.equal(items.itemName('megaCrystal'), 'Mega Crystal');
   assert.equal(items.itemName('evolve'), 'Evolve Crystal');
 });
@@ -174,7 +176,7 @@ test('shinyChance and luckWeight are better only while lit', () => {
 
 test('caught uses lantern shiny odds (seeded check)', () => {
   const p = fresh(); p.lucky = true;
-  const r = Math.random; Math.random = () => 0.05; // between 1/32 and 1/16
+  const r = Math.random; Math.random = () => 0.02; // between 1/128 and 1/32
   try { assert.ok(caught(p, 'gemmo').shiny); p.lucky = false; assert.ok(!caught(p, 'gemmo').shiny); } finally { Math.random = r; }
 });
 
@@ -257,9 +259,9 @@ test('questsFor: same trainer and day gives the same 3 quests; days differ', () 
   for (const q of a) { assert.ok(q.text && !/\u2014/.test(q.text)); assert.ok(q.reward.length); assert.ok(q.key.startsWith('q:2026-11-15:')); }
 });
 
-test('quest rewards: a Super Ball about 1 day in 3, Buddy XP most days', () => {
+test('quest rewards: a Super Ball about 1 day in 5, Buddy XP most days, scrolls only while facts are shaky', () => {
   const p = fresh();
-  let superDays = 0, xp = 0, charm = 0, lantern = 0, days = 0;
+  let superDays = 0, xp = 0, charm = 0, lantern = 0, scroll = 0, days = 0;
   for (let m = 1; m <= 12; m++) for (let d = 1; d <= 28; d++) {
     const qs = quests.questsFor(p, `2027-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`);
     const g = qs.flatMap((q) => q.reward);
@@ -268,8 +270,15 @@ test('quest rewards: a Super Ball about 1 day in 3, Buddy XP most days', () => {
     xp += g.filter(([k]) => k === 'x').length;
     charm += g.filter(([, id]) => id === 'charm').length;
     lantern += g.filter(([, id]) => id === 'lantern').length;
+    scroll += g.filter(([, id]) => id === 'scroll').length;
   }
-  assert.ok(superDays / days > 0.25 && superDays / days < 0.42, `super days ${superDays / days}`);
+  assert.ok(superDays / days > 0.12 && superDays / days < 0.28, `super days ${superDays / days}`);
+  assert.ok(scroll / days > 0.08 && scroll / days < 0.22, `scrolls per day ${scroll / days}`);
+  // Every fact at Silver: no more Hint Scrolls from quests.
+  for (let a = 1; a <= 10; a++) for (let b = 1; b <= 10; b++) p.facts[a + 'x' + b] = { a: 9, c: 9, ms: 9000, days: ['d1', 'd2', 'd3', 'd4', 'd5'], fastDays: ['d1', 'd2', 'd3', 'd4', 'd5'], lastMiss: 0 };
+  let later = 0;
+  for (let d = 1; d <= 28; d++) later += quests.questsFor(p, `2027-03-${String(d).padStart(2, '0')}`).flatMap((q) => q.reward).filter(([, id]) => id === 'scroll').length;
+  assert.equal(later, 0);
   assert.ok(xp / days > 1.2, `xp rewards per day ${xp / days}`);
   assert.ok(charm / days < 0.22 && lantern / days < 0.22);
 });
@@ -356,10 +365,10 @@ test('milestones: right answers, streaks, gym wins and medals', () => {
   assert.ok(quests.milestones(p).every((m) => !m.ok));
   p.stats.correct = 250; p.stats.bestStreak = 12; p.battles.champs = { 3: 1 };
   const ok = quests.milestones(p).filter((m) => m.ok).map((m) => m.key).sort();
-  assert.deepEqual(ok, ['m:gym:3', 'm:right:100', 'm:right:200', 'm:streak:10']);
+  assert.deepEqual(ok, ['m:gym:3', 'm:right:100', 'm:right:200', 'm:right:50', 'm:streak:10']);
   const won = quests.claimRewards(p, '2026-01-01');
   assert.equal(won.length, 3); // catch-up: the best three, all different
-  assert.equal(p.items.evolve, 1); assert.equal(p.items.charm, 1); assert.equal(p.items.lantern, 1); assert.equal(p.items.snack, 0);
+  assert.equal(p.items.charm, 1); assert.equal(p.items.lantern, 1); assert.equal(p.items.scroll, 1); assert.equal(p.items.snack, 0);
   assert.equal(quests.claimRewards(p, '2026-01-01').length, 0);
   for (const m of quests.milestones(p)) assert.ok(!/\u2014/.test(m.text));
 });
@@ -387,15 +396,53 @@ test('boltPool uses the tables being practiced', () => {
   assert.equal(bolt.boltPool(p).length, 10);
 });
 
-test('boltUnlocked needs 100 answers and 10 known facts, and Calm mode hides it', () => {
+test('boltUnlocked: one warm-up round (15 answers), a full pool, and Calm mode hides it', () => {
   const p = fresh();
-  assert.ok(!bolt.boltUnlocked(p)); assert.equal(bolt.boltToGo(p), 100); assert.equal(bolt.boltFactsToGo(p), 10);
-  p.stats.answers = 99; known(p, 10); assert.ok(!bolt.boltUnlocked(p)); assert.equal(bolt.boltToGo(p), 1);
-  p.stats.answers = 100; assert.ok(bolt.boltUnlocked(p)); assert.equal(bolt.boltToGo(p), 0);
-  p.facts['1x1'].lastMiss = Date.now(); assert.equal(bolt.boltFactsToGo(p), 1); assert.ok(!bolt.boltUnlocked(p));
-  p.facts['1x1'].lastMiss = 0; p.settings.calm = true;
+  assert.ok(!bolt.boltUnlocked(p)); assert.equal(bolt.boltToGo(p), 15);
+  assert.equal(bolt.boltFactsToGo(p), 0); // anchor facts (1, 2, 5, 10) fill the pool
+  p.stats.answers = 14; assert.ok(!bolt.boltUnlocked(p)); assert.equal(bolt.boltToGo(p), 1);
+  p.stats.answers = 15; assert.ok(bolt.boltUnlocked(p)); assert.equal(bolt.boltToGo(p), 0);
+  // Only the 7s and 8s: 8 anchors, so 2 more facts must be known first.
+  p.settings.tables = [7, 8];
+  assert.equal(bolt.boltPool(p).length, 8); assert.equal(bolt.boltFactsToGo(p), 2); assert.ok(!bolt.boltUnlocked(p));
+  p.facts['7x3'] = { a: 1, c: 1, ms: 2000, days: [today()], fastDays: [today()], lastMiss: 0 };
+  p.facts['8x3'] = { a: 1, c: 1, ms: 2000, days: [today()], fastDays: [today()], lastMiss: 0 };
+  assert.ok(bolt.boltUnlocked(p));
+  p.facts['7x3'].lastMiss = Date.now(); assert.equal(bolt.boltFactsToGo(p), 1); assert.ok(!bolt.boltUnlocked(p));
+  p.facts['7x3'].lastMiss = 0; p.settings.calm = true;
   assert.ok(bolt.calmMode(p)); assert.ok(!bolt.boltUnlocked(p));
   assert.ok(!bolt.calmMode(fresh()));
+});
+
+test('boltPool: known facts lead, anchors only fill a short pool, missed anchors stay out', () => {
+  const p = fresh();
+  const pool0 = bolt.boltPool(p);
+  assert.equal(pool0.length, 10);
+  assert.ok(pool0.every((id) => id.split('x').map(Number).some((n) => [1, 2, 5, 10].includes(n))));
+  p.facts['1x1'] = { a: 1, c: 0, ms: 0, days: [], fastDays: [], lastMiss: Date.now() };
+  assert.ok(!bolt.boltPool(p).includes('1x1'));
+  // A grown-up's warm-up: right and fast once is enough.
+  for (const id of ['6x7', '7x8', '8x9', '9x6', '4x7', '3x8', '6x6', '7x7', '8x8', '9x9', '4x9']) p.facts[id] = { a: 1, c: 1, ms: 1500, days: [today()], fastDays: [today()], lastMiss: 0 };
+  const pool = bolt.boltPool(p);
+  assert.equal(pool.length, 11); assert.ok(pool.includes('7x8') && !pool.includes('1x2'));
+});
+
+test('Hint Scroll: one per card, and a hinted answer is never a fast one', () => {
+  const p = fresh();
+  assert.ok(!items.canScroll(p)); assert.equal(items.useScroll(p, '7x8'), null);
+  p.items.scroll = 1;
+  assert.ok(items.useScroll(p, '7x8')); assert.equal(p.items.scroll, 0);
+  assert.equal(items.hintedMs(p, 1200), p.settings.fastMs + 1);
+  assert.equal(items.hintedMs(p, 9000), 9000);
+});
+
+test('Power Snack heals half, only a hurt Kaimon, and spends one', () => {
+  const p = fresh(); p.items.snack = 1;
+  const team = [{ hp: 10, max: 40, species: { id: 'kaimo' } }];
+  const r = items.useSnack(p, team, 0);
+  assert.equal(r.healed, 20); assert.equal(team[0].hp, 30); assert.equal(p.items.snack, 0);
+  assert.equal(items.useSnack(p, team, 0), null);
+  p.items.snack = 1; team[0].hp = 40; assert.ok(!items.canSnack(p, team[0]));
 });
 
 test('boltRewards: only new bests, with bigger prizes at 10, 20, 30...', () => {

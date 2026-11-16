@@ -9,6 +9,9 @@
 // The kid model is simple on purpose: each fact has a mastery that grows with
 // right answers on different days; accuracy and speed improve with mastery, and
 // the 6s to 9s start harder. Card time = answer time + about 2.5 s of catching.
+// Most rounds follow Home's Next up card (a region, a weak table or tricky facts),
+// like a kid tapping the big card; the rest are Quick practice (all tables mixed).
+// --report 1 prints what the 10-minutes-a-day kid has at 1 week, 1, 3 and 6 months.
 
 const args = Object.fromEntries(process.argv.slice(2).reduce((a, x, i, all) => (x.startsWith('--') ? [...a, [x.slice(2), all[i + 1]]] : a), []));
 const DAYS = +(args.days || 540), SEEDS = +(args.seeds || 3), ONLY = args.profile || null;
@@ -39,6 +42,7 @@ const B = await import('../js/core/battle.js');
 const I = await import('../js/core/items.js');
 const Q = await import('../js/core/quests.js');
 const L = await import('../js/core/lightning.js');
+const N = await import('../js/core/nextup.js');
 const { SPECIES, MYTHIC_ID, FUTURE_ID } = await import('../js/data/creatures.js');
 
 const DAY = 86400000;
@@ -48,6 +52,7 @@ const REGIONAL = SPECIES.filter((s) => typeof s.region === 'number' && s.region 
 // Kid profiles: minutes a day, chance of playing on a given day, starting accuracy,
 // starting answer time, and whether they like the Lightning Round.
 const PROFILES = {
+  ten:     { label: '10 minutes every day',      minutes: 10, playChance: 1.0, acc: 0.8, ms: 5500, bolt: 0.5 },
   kai:     { label: 'Kai: keen, most days',      minutes: 15, playChance: 0.9, acc: 0.85, ms: 4500, bolt: 0.8 },
   steady:  { label: 'Steady friend, 4 days/wk',  minutes: 10, playChance: 0.57, acc: 0.8, ms: 5500, bolt: 0.4 },
   light:   { label: 'Light player, 2-3 days/wk', minutes: 6,  playChance: 0.35, acc: 0.75, ms: 6500, bolt: 0.2 },
@@ -64,13 +69,13 @@ function simulate(kid, s) {
   const mastery = {}; // fact -> 0..1
   const skill = (f) => mastery[f] || 0;
   const hard = (f) => { const [a, b] = F.parseFact(f); return [6, 7, 8, 9].includes(a) || [6, 7, 8, 9].includes(b) ? 0.08 : 0; };
-  const answerOnce = (f, via = 'pad') => {
+  const answerOnce = (f, via = 'pad', hinted = false) => {
     const m = skill(f);
-    const acc = Math.min(0.98, kid.acc - hard(f) + (0.98 - kid.acc) * m);
+    const acc = Math.min(0.98, kid.acc - hard(f) + (0.98 - kid.acc) * m + (hinted ? 0.2 : 0));
     const ok = rand() < acc;
-    const ms = Math.max(900, kid.ms * (1.25 - 0.65 * m) * (0.7 + rand() * 0.6));
+    const ms = Math.max(900, kid.ms * (1.25 - 0.65 * m) * (0.7 + rand() * 0.6)) + (hinted ? 4000 : 0);
     NOW += ms;
-    A.answer(p, f, ok, ms, via);
+    A.answer(p, f, ok, hinted ? I.hintedMs(p, ms) : ms, via);
     if (ok) {
       const rec = p.facts[f];
       mastery[f] = Math.min(1, (rec.days.length) / 14 + (rec.c / 200));
@@ -83,9 +88,30 @@ function simulate(kid, s) {
   const tally = (gives) => { for (const [, id, n] of gives) earned[id] = (earned[id] || 0) + n; };
   const claim = () => { if (BASE) return; for (const w of Q.claimRewards(p)) { tally(w.gives); if (w.quest) questsDone++; } };
   const stock = {};
+  let hintDay = '';
+  const snaps = {};
+  const snap = () => {
+    const tiers = TABLES.map((t) => F.levelRank(F.tableTier(p, t) || 'learning'));
+    const pl = G.partnerOf(p);
+    return {
+      bronzeTables: tiers.filter((x) => x >= 2).length, silverTables: tiers.filter((x) => x >= 3).length, goldTables: tiers.filter((x) => x >= 4).length,
+      bronzeFacts: F.countAtLeast(p, 'bronze'), silverFacts: F.countAtLeast(p, 'silver'), goldFacts: F.countAtLeast(p, 'gold'),
+      lv: pl.level, stage: pl.stage, caught: REGIONAL.filter((x) => p.dex[x.id]?.caught).length,
+      shiny: Object.values(p.dex).filter((e) => e.shiny).length, badges: Object.keys(p.battles.champs).length,
+      boss: p.battles.boss ? 1 : 0, kairo: p.dex[MYTHIC_ID]?.caught ? 1 : 0, best: L.boltBest(p),
+      answers: p.stats.answers, super: p.balls.super || 0, mega: p.balls.mega || 0, legend: p.balls.legend || 0,
+      got: { ...earned }, usedSoFar: { ...used }, items: { ...p.items },
+    };
+  };
 
   const session = (budgetMs) => {
-    const pool = F.factsForTables(p.settings.tables);
+    // Follow Next up most of the time, like a kid tapping the big card on Home.
+    const nu = N.nextUp(p);
+    let pool = F.factsForTables(p.settings.tables);
+    if (rand() < 0.7 && nu) {
+      if (['region', 'weak', 'shine'].includes(nu.kind) && nu.table) pool = F.factsForTables([nu.table]);
+      else if (nu.kind === 'tricky') { pool = N.trickyPool(p); N.markTrickyDone(p); }
+    }
     const tierBefore = Object.fromEntries(TABLES.map((t) => [t, F.tableTier(p, t)]));
     const recent = [], requeue = [];
     let streak = 0, best = 0, n = 0, t0 = NOW;
@@ -97,7 +123,11 @@ function simulate(kid, s) {
       A.seen(p, sp.id);
       const who = G.mythicCameo(p);
       if (who) A.sighting(p, who === 'kairos');
-      let r = answerOnce(f); cards++;
+      // A kid with a Hint Scroll opens it on a fact that is still new or shaky (one a day at most).
+      const shaky = F.levelRank(F.levelOf(p.facts[f])) < F.levelRank('bronze');
+      const hint = !BASE && shaky && I.canScroll(p) && hintDay !== today() && rand() < 0.5;
+      if (hint) { I.useScroll(p, f); used.scroll = (used.scroll || 0) + 1; hintDay = today(); }
+      let r = answerOnce(f, 'pad', hint); cards++;
       if (!BASE && !r.ok && I.charmReady(p, streak)) { I.useCharm(p, f); used.charm = (used.charm || 0) + 1; r = answerOnce(f); cards++; }
       if (r.ok) {
         streak++; best = Math.max(best, streak);
@@ -158,7 +188,7 @@ function simulate(kid, s) {
   for (let d = 0; d < DAYS; d++) {
     NOW = start + d * DAY + Math.floor(rand() * 3 * 3600000);
     if (G.kairoEvolves(p)) { A.evolveKairo(p); mark('Kairos (Kairo evolves)'); }
-    if (rand() > kid.playChance) continue;
+    if (rand() > kid.playChance) { for (const m of [7, 30, 91, 182]) if (d === m - 1) snaps[m] = snap(); continue; }
     playDays++;
     // Kids use items when they have them.
     if (!BASE && I.canLight(p)) { I.lightLantern(p); used.lantern = (used.lantern || 0) + 1; }
@@ -195,8 +225,9 @@ function simulate(kid, s) {
     if (p.dex[FUTURE_ID]?.seen) mark('Kairos spotted');
     if (L.boltUnlocked(p)) mark('Lightning Round opens');
     for (const m of [30, 90, 180, 365]) if (d === m) stock[m] = { ...p.balls, ...p.items, best: L.boltBest(p), lv: G.partnerOf(p).level };
+    for (const m of [7, 30, 91, 182]) if (d === m - 1) snaps[m] = snap();
   }
-  return { log, earned, used, questsDone, playDays, cards, boltCards, battleCards, p, stock };
+  return { log, earned, used, questsDone, playDays, cards, boltCards, battleCards, p, stock, snaps };
 }
 
 const ORDER = ['Lightning Round opens', 'First medal (Bronze)', 'First Gym badge', 'Buddy evolves (stage 2)', 'Evolve Crystal used', 'First shiny', '5 tables with a medal', 'Kaidex: half the regions caught', 'All 10 tables Bronze', 'All 10 Gym badges', 'Beat Boss Papa', 'Kairo caught', 'Buddy evolves (stage 3)', 'Kaidex: 90% of the regions', 'All 10 tables Silver', 'Kaidex: every region Kaimon', 'Kairos spotted', 'All 10 tables Gold', 'Kairos (Kairo evolves)', 'All 10 tables Star'];
@@ -216,15 +247,45 @@ for (const [key, kid] of Object.entries(PROFILES)) {
   console.log(`== ${kid.label} (${kid.minutes} min, acc ${kid.acc}, ${kid.ms / 1000}s)`);
   for (const k of ORDER) console.log(`  ${k.padEnd(34)}${base ? fmt(med(base.map((r) => r.log[k]))) + '  |' : ''} ${fmt(med(runs.map((r) => r.log[k])))}`);
   const { avg, months } = stats(runs);
-  const items = ['xp', 'super', 'mega', 'legend', 'snack', 'charm', 'lantern', 'evolve'];
+  const items = ['xp', 'super', 'mega', 'legend', 'snack', 'scroll', 'charm', 'lantern', 'evolve'];
   const all = avg((r) => r.cards + r.battleCards + r.boltCards);
   console.log(`  play days ${avg((r) => r.playDays).toFixed(0)}; cards ${avg((r) => r.cards).toFixed(0)} practice, ${avg((r) => r.battleCards).toFixed(0)} battle, ${avg((r) => r.boltCards).toFixed(0)} Lightning (${(100 * avg((r) => r.boltCards) / all).toFixed(0)}%)`);
   console.log(`  quests done per play day: ${(avg((r) => r.questsDone) / avg((r) => r.playDays)).toFixed(2)} of 3`);
   console.log(`  new rewards per month: ${items.map((i) => `${i} ${(avg((r) => r.earned[i] || 0) / months).toFixed(1)}`).join(', ')}`);
-  console.log(`  items used per month: ${['charm', 'lantern', 'evolve'].map((i) => `${i} ${(avg((r) => r.used[i] || 0) / months).toFixed(1)}`).join(', ')}`);
+  console.log(`  items used per month: ${['scroll', 'charm', 'lantern', 'evolve'].map((i) => `${i} ${(avg((r) => r.used[i] || 0) / months).toFixed(1)}`).join(', ')}`);
   for (const m of [30, 90, 180, 365]) {
     const s = runs[0].stock[m];
     if (s) console.log(`  day ${String(m).padStart(3)} (seed 1): super ${s.super}, mega ${s.mega}, legend ${s.legend}, snack ${s.snack}, charm ${s.charm || 0}, lantern ${s.lantern || 0}, evolve ${s.evolve || 0}; Buddy Lv ${s.lv}; Lightning best ${s.best}`);
   }
   console.log('');
+}
+
+// --report 1: what the 10-minutes-every-day kid has at 1 week, 1, 3 and 6 months (median of the seeds).
+if (args.report) {
+  const kid = PROFILES.ten;
+  const runs = Array.from({ length: SEEDS }, (_, i) => simulate(kid, i + 1));
+  const md = (f) => { const v = runs.map(f).sort((a, b) => a - b); return v[Math.floor(v.length / 2)]; };
+  const cols = [[7, '1 week'], [30, '1 month'], [91, '3 months'], [182, '6 months']].filter(([d]) => d <= DAYS);
+  const row = (label, f) => console.log(`  ${label.padEnd(30)}${cols.map(([d]) => String(md((r) => f(r.snaps[d] || {}))).padStart(10)).join('')}`);
+  console.log(`\n== Report: ${kid.label} (median of ${SEEDS} runs)`);
+  console.log(`  ${''.padEnd(30)}${cols.map(([, l]) => l.padStart(10)).join('')}`);
+  row('cards answered', (s) => s.answers);
+  row('facts at Bronze+ (of 100)', (s) => s.bronzeFacts);
+  row('facts at Silver+', (s) => s.silverFacts);
+  row('facts at Gold+', (s) => s.goldFacts);
+  row('tables with a medal (of 10)', (s) => s.bronzeTables);
+  row('tables at Silver+', (s) => s.silverTables);
+  row('tables at Gold+', (s) => s.goldTables);
+  row('Gym badges (of 10)', (s) => s.badges);
+  row('beat Boss Papa (1 = yes)', (s) => s.boss);
+  row('Kairo caught (1 = yes)', (s) => s.kairo);
+  row('Buddy level', (s) => s.lv);
+  row('Buddy stage (1 to 3)', (s) => s.stage);
+  row(`region Kaimon caught (of ${REGIONAL.length})`, (s) => s.caught);
+  row('shiny Kaimon', (s) => s.shiny);
+  row('Lightning Round best', (s) => s.best);
+  for (const k of ['snack', 'scroll', 'charm', 'lantern', 'evolve']) row(`${k} earned so far`, (s) => s.got?.[k] || 0);
+  row('Super Balls in the bag', (s) => s.super);
+  row('Mega Balls in the bag', (s) => s.mega);
+  row('Legend Balls in the bag', (s) => s.legend);
 }

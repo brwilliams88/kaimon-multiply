@@ -70,11 +70,18 @@ export function questsCard(p) {
   </section>`;
 }
 
+// Why the Lightning Round is still closed, in kid words (Home row and Menu).
+export function boltLockedNote(p) {
+  const toGo = boltToGo(p), factsToGo = boltFactsToGo(p);
+  if (toGo) return `Warm up first: ${toGo} more card${toGo === 1 ? '' : 's'}`;
+  return `Opens when you know ${factsToGo} more fact${factsToGo === 1 ? '' : 's'}`;
+}
+
 // The Lightning Round row. Hidden in Calm mode. Optional: nothing needs it.
 function boltRow(p) {
   if (calmMode(p)) return '';
-  const open = boltUnlocked(p), best = boltBest(p), toGo = boltToGo(p), factsToGo = boltFactsToGo(p);
-  const note = open ? (best ? `Your best: <b>${best}</b>` : '60 seconds. Set a best!') : toGo ? `Opens after ${toGo} more card${toGo === 1 ? '' : 's'}` : `Opens when ${factsToGo} more fact${factsToGo === 1 ? ' is' : 's are'} at Bronze`;
+  const open = boltUnlocked(p), best = boltBest(p);
+  const note = open ? (best ? `Your best: <b>${best}</b>` : '60 seconds. Set a best!') : boltLockedNote(p);
   return `<button class="qx-bolt${open ? '' : ' locked'}" data-bolt ${open ? '' : 'aria-disabled="true"'}>
     <span class="qb-ic" aria-hidden="true">${itemImg('time-freeze', 'qb-img')}</span>
     <span class="qb-text"><strong>${BOLT_SVG}Lightning Round</strong><small>${note}</small></span>

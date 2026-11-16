@@ -4,17 +4,32 @@
 // The trainer page's Bag opens openItem(p, key) from its [data-bag] rows.
 import { save } from '../core/store.js';
 import { syncNow } from '../core/sync.js';
-import { itemCount, charmReady, useCharm, canLight, lightLantern, lanternLeft, canCrystal, crystalTarget, useCrystal, LANTERN_CARDS } from '../core/items.js';
+import { itemCount, canScroll, useScroll, charmReady, useCharm, canLight, lightLantern, lanternLeft, canCrystal, crystalTarget, useCrystal, LANTERN_CARDS } from '../core/items.js';
 import { itemInfo } from '../core/extras.js';
 import { partnerOf, BALLS } from '../core/game.js';
 import { ballImg, itemImg } from '../core/assets.js';
 import { SPECIES } from '../data/creatures.js';
 import { sfx } from '../core/sound.js';
 import { sheet, esc, toast } from './dom.js';
+import { trickHTML } from './trickArt.js';
 
 // Item art. The Mega Crystal is the crystal art with a gold tint.
 const MEGA = new Set(['megaCrystal', 'mega']);
+// The Hint Scroll has no painted art yet, so it is drawn here in the same sticker
+// style: navy ink, one hard shadow tone and a glossy highlight.
+export const scrollArt = (cls = '') => `<svg class="item-img item-svg ${cls}" viewBox="0 0 64 64" role="presentation" aria-hidden="true">
+  <rect x="14" y="12" width="36" height="40" rx="3" fill="#FFF4D6" stroke="#14213D" stroke-width="3"/>
+  <path d="M41 13.5 H48.5 V50.5 H41 Z" fill="#F3DDA6"/>
+  <path d="M20 22 H40 M20 28.5 H36 M20 35 H39" stroke="#C8A86A" stroke-width="2.6" stroke-linecap="round"/>
+  <path d="M32 39.5 l1.9 3.9 4.3.6-3.1 3 .7 4.2-3.8-2-3.8 2 .7-4.2-3.1-3 4.3-.6z" fill="#FFD23F" stroke="#14213D" stroke-width="1.8" stroke-linejoin="round"/>
+  <rect x="8" y="6" width="48" height="10" rx="5" fill="#2F80ED" stroke="#14213D" stroke-width="3"/>
+  <rect x="8" y="48" width="48" height="10" rx="5" fill="#2F80ED" stroke="#14213D" stroke-width="3"/>
+  <path d="M12 13 H52 M12 55 H52" stroke="#1C5FC0" stroke-width="2.4" stroke-linecap="round" opacity=".7"/>
+  <rect x="13" y="8.6" width="16" height="3" rx="1.5" fill="#fff" opacity=".8"/>
+  <rect x="13" y="50.6" width="16" height="3" rx="1.5" fill="#fff" opacity=".8"/>
+</svg>`;
 export const itemIcon = (key, cls = '') => {
+  if (key === 'scroll') return scrollArt(cls);
   const i = itemInfo(key);
   return itemImg(i.art || 'bag', `${cls}${MEGA.has(key) ? ' item-mega' : ''}`);
 };
@@ -38,6 +53,7 @@ export function itemUse(p, key) {
     return { can: false, note: pl.stage >= 3 || !pl.evolveAt ? `${pl.species.name} is fully evolved. Keep it for a friend line later.` : `It works at Lv ${pl.evolveAt - 3} or higher. ${pl.species.name} is Lv ${pl.level}.` };
   }
   if (key === 'snack') return { can: false, note: 'Use it in a battle when your Kaimon is hurt.' };
+  if (key === 'scroll') return { can: false, note: 'Open it on a practice card: tap the scroll on the card before you answer.' };
   if (key === 'charm') return { can: false, note: 'It works by itself: miss a card on a streak of 3 or more and you can try again.' };
   return { can: false, note: 'Keep it safe for the Hundred Tower.' }; // the Tower uses Mega Crystals
 }
@@ -116,4 +132,25 @@ export function lanternGlow(p, root) {
   }
   tag.innerHTML = `${itemIcon('lantern', 'lt-img')}<b>${left}</b><span class="sr-only"> lucky Kaimon left</span>`;
   tag.title = `Lucky Lantern: ${left} lucky Kaimon left`;
+}
+
+// Practice hook: the Hint Scroll button on a card, while there is one in the bag.
+export const scrollButton = (p) => canScroll(p)
+  ? `<button class="scroll-btn" data-scroll aria-label="Open a Hint Scroll. You have ${itemCount(p, 'scroll')}.">${scrollArt('sb-img')}<b>${itemCount(p, 'scroll')}</b></button>`
+  : '';
+// Spend one scroll on the card now and show Teacher K's trick on it. Returns true if used.
+export function openScroll(p, S, front) {
+  if (S.hinted === S.n || !useScroll(p, S.fact)) return false;
+  S.hinted = S.n;
+  save();
+  sfx.tap();
+  front.querySelector('[data-scroll]')?.remove();
+  // The trick, with its last "= answer" turned into "= ?": the kid still finds it.
+  const [a, b] = S.fact.split('x').map(Number);
+  const re = new RegExp(`= ${a * b}(?!\\d)`, 'g');
+  let html = trickHTML(p, S.fact);
+  const hits = [...html.matchAll(re)];
+  if (hits.length) { const h = hits[hits.length - 1]; html = html.slice(0, h.index) + '= ?' + html.slice(h.index + h[0].length); }
+  front.querySelector('.card-wild')?.insertAdjacentHTML('beforeend', `<div class="scroll-hint" role="status">${html}</div>`);
+  return true;
 }

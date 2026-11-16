@@ -12,7 +12,7 @@ import { badgeImg, ballImg, itemImg, uiImg, ITEMS } from '../core/assets.js';
 import { teamRowHTML, teamSheet } from './teamPicker.js';
 import { esc, on, sheet, toast } from './dom.js';
 import { sfx } from '../core/sound.js';
-import { openItem } from './items.js'; // [systems] Item Bag
+import { openItem, scrollArt } from './items.js'; // [systems] Item Bag
 
 const INK = '#14213D';
 const minutes = (ms) => {
@@ -145,6 +145,7 @@ function badgeSheet(p, key) {
 const HAS_ITEM_ART = new Set(ITEMS);
 function bagArt(r) {
   if (r.kind === 'ball') return ballImg(r.key, 'bag-art');
+  if (r.key === 'scroll') return scrollArt('bag-art'); // [systems] drawn, no painted art yet
   if (r.art && HAS_ITEM_ART.has(r.art)) return itemImg(r.art, 'bag-art');
   return itemImg('bag', 'bag-art bag-generic');
 }
