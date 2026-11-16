@@ -1,7 +1,19 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.6.10';
+export const VERSION = '0.6.11';
 
 export const CHANGELOG = [
+  {
+    version: '0.6.11',
+    date: '2026-11-16',
+    title: "Stay where you were",
+    items: [
+      "Closing a window no longer jumps you back to the top of Home. You stay right where you were.",
+      "Back from the Kaidex, your trainer page, Grown-ups or practice takes you to the same spot on Home.",
+      "Taps right after closing a window, or while a message is showing, now work the first time.",
+      "Grown-ups keeps your place and anything you typed when the page updates.",
+      "A feedback note you started is still there if you close the window by mistake.",
+    ],
+  },
   {
     version: '0.6.10',
     date: '2026-11-16',
