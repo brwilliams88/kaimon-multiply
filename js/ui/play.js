@@ -20,6 +20,7 @@ import { ballSrc, sceneSrc, cssUrl, sceneKey, uiImg, itemImg, fxSrc, typeIcon, t
 import { trickyPool, markTrickyDone } from '../core/nextup.js';
 import { quick } from '../core/prefs.js';
 import { $, on, esc, sheet, wait, toast, soundButton, reducedMotion, setFlame } from './dom.js';
+import { secondChance, lanternGlow, scrollButton, openScroll } from './items.js'; import { hintedMs } from '../core/items.js'; import { afterRound } from './quests.js'; import { calmMode } from '../core/lightning.js'; // [systems] items, quests, Calm mode
 
 export function renderPlay(root, go, { table, focus } = {}) {
   const p = active();
@@ -72,6 +73,7 @@ export function renderPlay(root, go, { table, focus } = {}) {
       </div>
     </section>`;
 
+  if (calmMode(p)) root.querySelector('.play')?.classList.add('calm-mode'); // [systems] Calm mode hides the speed meter
   // Say it: a small mic button in the top bar, so the card gets the room.
   { const mic = root.querySelector('[data-mic]'); const snd = root.querySelector('.play-top .sound-btn'); if (mic && snd) snd.before(mic); }
   const el = {
@@ -149,7 +151,7 @@ export function renderPlay(root, go, { table, focus } = {}) {
     el.front.innerHTML = `
       <div class="card-head"><span class="chip wild-chip" aria-live="polite">${lingering ? `<strong>${esc(species.name)}</strong> is still here!` : `Wild <strong>${esc(species.name)}</strong>${known ? '' : ' <span class="wild-new">New!</span>'}`}</span><span class="chip card-type" title="${esc(region.name)}">${typeIcon(region.type)}${t.name}</span></div>
       <div class="qplate"><span>${a}</span><span class="times">×</span><span>${b}</span><span class="eq">=</span><span class="answer-val empty" data-ph="?"></span><span class="power-strip" aria-hidden="true"><span class="power-fill"></span></span></div>
-      <div class="card-wild${lingering ? ' stay' : ''}"><div class="wild-art">${creatureArt(species)}</div></div>
+      <div class="card-wild${lingering ? ' stay' : ''}"><div class="wild-art">${creatureArt(species)}</div>${scrollButton(p) /* [systems] Hint Scroll */}</div>
       ${beltHTML(species)}`;
     el.front.classList.toggle('has-belt', !!el.front.querySelector('.belt'));
     el.stage.dataset.left = Math.max(0, Math.min(2, S.length - S.n - 1));
@@ -184,6 +186,7 @@ export function renderPlay(root, go, { table, focus } = {}) {
     S.mic?.ready();
     el.pips.forEach((pip, i) => pip.className = i < S.n ? (S.results?.[i] ? 'done ok' : 'done') : i === S.n ? 'now' : '');
     maybeMythic();
+    lanternGlow(p, root); // [systems] Lucky Lantern
   }
 
   // Power meter: full for a quick answer, drains slowly, never runs out.
@@ -221,9 +224,11 @@ export function renderPlay(root, go, { table, focus } = {}) {
     if (S.phase !== 'ask' || !S.input) return;
     stopVoice();
     S.phase = 'result';
-    const ms = performance.now() - S.shownAt;
+    const ms0 = performance.now() - S.shownAt;
+    const ms = S.hinted === S.n ? hintedMs(p, ms0) : ms0; // [systems] a hinted answer is never a fast one
     const ans = answerOf(S.fact);
     const ok = parseInt(S.input, 10) === ans;
+    if (!ok && await secondChance(p, S)) { answer(p, S.fact, false, ms, via); onAnswer(S, S.fact, false); save(); S.phase = 'ask'; setInput(''); S.shownAt = performance.now(); runPower(); S.mic?.ready(); return; } // [systems] Second Chance Charm: the miss counts, the streak and the Kaimon stay
     const [a, b] = parseFact(S.fact);
     const region = regionOf(a);
     const xp0 = p.xp || 0, pl0 = partnerOf(p);
@@ -248,7 +253,7 @@ export function renderPlay(root, go, { table, focus } = {}) {
       if (S.pick !== 'free' && (p.balls[S.pick] || 0) > 0) { ball = S.pick; giveBall(p, S.pick, -1); }
       S.pick = 'free';
       const fast = ms <= p.settings.fastMs;
-      const pw = powerFor(ms);
+      const pw = powerFor(ms0); // [systems] the throw uses the real time
       cancelAnimationFrame(S.raf);
       const roll = rollCatch(S.species, ball, pw);
       const caught = roll.caught;
@@ -495,6 +500,7 @@ export function renderPlay(root, go, { table, focus } = {}) {
           <button class="btn-chunky btn-primary btn-xl res-again" data-again>Play again<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12 H18 M13 6.5 L18.5 12 L13 17.5" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
         </div>
       </section>`;
+    afterRound(p, root); // [systems] quest and milestone rewards
     if (newBadges.length) setTimeout(() => sfx.levelUp(), 250);
     else if (party) setTimeout(() => sfx.win(), 250);
     on(root, 'click', '[data-again]', () => go(limitReached(p) ? 'home' : 'play', { table, focus }));
@@ -530,6 +536,7 @@ export function renderPlay(root, go, { table, focus } = {}) {
     if (S.phase === 'done') advance();
     else if (S.phase === 'result' && !S.skip) { S.skip = true; S.wake?.(); }
   });
+  on(root, 'click', '[data-scroll]', (e) => { e.stopPropagation(); if (S.phase === 'ask') openScroll(p, S, el.front); }); // [systems] Hint Scroll
   on(root, 'click', '[data-ball]', (e, b) => {
     e.stopPropagation();
     if (S.phase !== 'ask') return;

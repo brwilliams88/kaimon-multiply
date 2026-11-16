@@ -10,6 +10,8 @@ import { megaEntryHTML, bindMegaEntry } from './mega.js'; // Mega hook
 const num3 = (n) => '#' + String(n).padStart(3, '0');
 // Mythic Kaimon keep their names secret until caught.
 const shownName = (s, st) => st === 'unknown' || (s.region === 'mythic' && st !== 'caught') ? '???' : s.name;
+// Kairos (Kairo's future form) gives nothing away until a trainer first spots it.
+const hiddenFuture = (p, s) => s.id === FUTURE_ID && dexState(p, s.id) === 'unknown';
 const day = (t) => new Date(t).toLocaleDateString([], { month: 'short', day: 'numeric', year: new Date(t).getFullYear() === new Date().getFullYear() ? undefined : 'numeric' });
 function ago(t) {
   const d = Math.floor((Date.now() - t) / 86400000);
@@ -65,29 +67,29 @@ const FILTERS = [
 ];
 
 // One card sleeve. Caught: the card with art. Seen: a silhouette. Unseen: an empty
-// numbered sleeve. Kairos stays a faint silhouette until it is spotted.
+// numbered sleeve. Kairos is an ordinary empty sleeve until it is spotted, so nothing
+// hints that it is special.
 function sleeveHTML(p, s, lazy) {
   const st = dexState(p, s.id);
   const e = p.dex[s.id];
   const name = shownName(s, st);
   const t = TYPES[s.type];
-  const mythic = s.region === 'mythic';
-  const faint = st === 'unknown' && s.id === FUTURE_ID;
+  const mythic = s.region === 'mythic' && !hiddenFuture(p, s);
   let art = '';
-  if (st !== 'unknown' || faint) {
+  if (st !== 'unknown') {
     art = creatureArt(s, { mode: st === 'caught' ? 'full' : st, shiny: false });
     if (lazy) art = art.replace('<img ', '<img loading="lazy" ');
   }
   const marks = st === 'caught'
     ? `${e?.shiny ? `<span class="dex-shiny" title="Shiny caught">${shinyStar()}</span>` : ''}${s.mega ? '<span class="sl-mega" title="Has a Mega form">M</span>' : ''}`
     : '';
-  const cls = ['dex-tile', 'sleeve', 'dex-' + st, e?.shiny && st === 'caught' ? 'dex-has-shiny' : '', mythic ? 'sl-mythic' : '', faint ? 'sl-faint' : ''].filter(Boolean).join(' ');
-  const label = st === 'unknown' && !faint ? `${num3(s.num)}, not found yet` : `${num3(s.num)} ${name}${st === 'seen' ? ', seen' : ''}`;
+  const cls = ['dex-tile', 'sleeve', 'dex-' + st, e?.shiny && st === 'caught' ? 'dex-has-shiny' : '', mythic ? 'sl-mythic' : ''].filter(Boolean).join(' ');
+  const label = st === 'unknown' ? `${num3(s.num)}, not found yet` : `${num3(s.num)} ${name}${st === 'seen' ? ', seen' : ''}`;
   return `<button class="${cls}" data-n="${s.id}" style="--rc:${t.color};--rl:${t.light}" aria-label="${esc(label)}">
     <span class="sl-card">
       <span class="dex-num">${num3(s.num)}</span>
       ${art ? `<span class="sl-art">${art}</span>` : `<span class="sl-big" aria-hidden="true">${String(s.num).padStart(3, '0')}</span>`}
-      ${st === 'unknown' && !faint ? '' : `<span class="dex-name">${esc(name)}</span>`}
+      ${st === 'unknown' ? '' : `<span class="dex-name">${esc(name)}</span>`}
       ${st === 'caught' ? `<span class="sl-type" aria-hidden="true">${typeIcon(s.type)}</span>` : ''}
       ${marks}
     </span>
@@ -220,17 +222,20 @@ function showEntry(p, s) {
   const e = p.dex[s.id] || {};
   const t = TYPES[s.type];
   const mythic = s.id === MYTHIC_ID;
+  // Unseen Kaimon all open the same plain sheet: an empty numbered card, no colors or shapes.
+  const unknown = st === 'unknown';
   let body;
-  if (st === 'unknown') {
+  if (unknown) {
     body = `<p class="entry-desc">You haven't met this Kaimon yet. Keep practicing to find it.</p>`;
   } else if (s.id === FUTURE_ID && st !== 'caught') {
     body = `<p class="entry-desc">It looked a lot like the mythic Kaimon, only older and bigger, like it flew in from the future. Spotted ${e.seen || 1} time${(e.seen || 1) === 1 ? '' : 's'}.</p>`;
   } else if (mythic && st !== 'caught') {
     body = `<p class="entry-desc">A 1 in 10,000 Kaimon. Spotted ${p.mythic.sightings} time${p.mythic.sightings === 1 ? '' : 's'}. Nobody knows where it lives. Some say it only lands for the trainer who beats Boss Papa.</p>`;
   } else {
-    const line = lineOf(s).filter((x) => dexVisible(p, x));
+    const line = lineOf(s).filter((x) => dexVisible(p, x) && !hiddenFuture(p, x));
+    const stages = lineOf(s).some((x) => hiddenFuture(p, x)) ? line.length : s.stages;
     body = `
-      <p class="entry-meta"><span class="type-tag" style="--rc:${t.color}">${typeIcon(s.type)}${t.name}</span><span>${esc(regionLabel(s))}</span>${s.stages > 1 ? `<span>Stage ${s.stage} of ${s.stages}</span>` : ''}</p>
+      <p class="entry-meta"><span class="type-tag" style="--rc:${t.color}">${typeIcon(s.type)}${t.name}</span><span>${esc(regionLabel(s))}</span>${stages > 1 ? `<span>Stage ${s.stage} of ${stages}</span>` : ''}</p>
       <p class="entry-desc">${st === 'caught' ? esc(s.desc) : 'You’ve seen it, but not caught it yet.'}</p>
       ${(() => {
         const r = RARITY[s.rarity] || RARITY.common;
@@ -252,8 +257,8 @@ function showEntry(p, s) {
       ${megaEntryHTML(p, s, st)}`; // Mega hook
   }
   const sh = sheet(`
-    <div class="entry" style="--rc:${t.color};--rl:${t.light}">
-      <div class="entry-art">${creatureArt(s, { mode: st === 'caught' ? 'full' : st, shiny: false })}</div>
+    <div class="entry${unknown ? ' entry-unknown' : ''}"${unknown ? '' : ` style="--rc:${t.color};--rl:${t.light}"`}>
+      <div class="entry-art">${unknown ? `<span class="entry-big" aria-hidden="true">${String(s.num).padStart(3, '0')}</span>` : creatureArt(s, { mode: st === 'caught' ? 'full' : st, shiny: false })}</div>
       ${e.shiny && st === 'caught' ? `<div class="look-toggle" role="group" aria-label="Colors"><button class="on" data-look="normal" aria-pressed="true">Normal</button><button data-look="shiny" aria-pressed="false">${shinyStar()}Shiny</button></div>` : ''}
       <p class="entry-num">${num3(s.num)}</p>
       <h2 class="entry-name">${esc(shownName(s, st))}</h2>

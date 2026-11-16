@@ -2,6 +2,7 @@ import { partnerLevel, EVOLVE_AT } from './xp.js';
 // Kaimon core rules: encounters, Capture Balls, catching, partner evolution, mythic cameos.
 import { SPECIES, MYTHIC_ID, FUTURE_ID } from '../data/creatures.js';
 import { tableTier, levelRank, countAtLeast } from './facts.js';
+import { luckWeight, crystalStage } from './items.js'; // [systems] Lucky Lantern, Evolve Crystal
 
 export const BALLS = {
   capture: { name: 'Capture Ball', power: 1 },
@@ -24,7 +25,7 @@ export function pickEncounter(profile, table) {
     else if (s.stage === 1) w = 50;
     else if (s.stage === 2 && tier >= 2) w = 16;
     else if (s.stage === 3 && tier >= 3) w = 6;
-    if (w) weighted.push([s, w]);
+    if (w) weighted.push([s, luckWeight(profile, s, w)]); // [systems] Lucky Lantern
   }
   const total = weighted.reduce((t, [, w]) => t + w, 0);
   let r = Math.random() * total;
@@ -61,8 +62,8 @@ export const dexState = (profile, id) => {
   return 'unknown';
 };
 
-// Kairos (Kairo's future form) stays off the Kaidex until a trainer first spots it.
-export const dexVisible = () => true; // all 60 show; Kairos stays a faint silhouette until spotted
+// Kairos (Kairo's future form) looks like any empty sleeve until a trainer first spots it.
+export const dexVisible = () => true; // all 60 show; Kairos is an ordinary empty sleeve until spotted
 
 export function dexCounts(profile) {
   let seen = 0, caught = 0, total = 0;
@@ -84,7 +85,7 @@ export function partnerOf(profile) {
   const silver = countAtLeast(profile, 'silver');
   const old = silver >= 100 ? 3 : silver >= 30 ? 2 : 1;
   const byLevel = pl.level >= EVOLVE_AT[3] ? 3 : pl.level >= EVOLVE_AT[2] ? 2 : 1;
-  const stage = Math.max(old, byLevel);
+  const stage = Math.max(old, byLevel, crystalStage(profile)); // [systems] Evolve Crystal
   const line = profile.starter || 'kaimo';
   const species = SPECIES.find((s) => s.line === line && s.stage === stage);
   const evolveAt = stage === 1 ? EVOLVE_AT[2] : stage === 2 ? EVOLVE_AT[3] : null;

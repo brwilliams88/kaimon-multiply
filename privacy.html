@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Privacy · Kaimon Multiply</title>
+<meta name="description" content="What Kaimon Multiply keeps, what it sends, and how to turn things off. No ads, no selling data.">
+<meta name="theme-color" content="#CFE8FF">
+<link rel="canonical" href="https://brwilliams88.github.io/kaimon-multiply/privacy.html">
+<link rel="icon" href="icons/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="icons/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="stylesheet" href="css/pages.css">
+</head>
+<body>
+<main class="page">
+  <a class="back" href="./"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 L8 12 L15 19" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>Back to the game</a>
+
+  <header class="hero">
+    <img src="assets/ui/kaizo-wave.webp" alt="">
+    <div><h1>Privacy</h1><p>Kaimon Multiply is a free times tables game for kids. Here is what it keeps, what it sends, and how to turn things off.</p></div>
+  </header>
+
+  <section class="card tldr" aria-labelledby="short">
+    <h2 id="short">The short version</h2>
+    <ul>
+      <li>No ads. We never sell or share your data.</li>
+      <li>You don't need an account to play. Progress stays on your device.</li>
+      <li>Emails only go to grown-ups who sign up, and every email has a way to stop.</li>
+      <li>We count how the game is used, with a rough city but never emails, names of real people or exact locations. A grown-up can turn this off.</li>
+    </ul>
+  </section>
+
+  <section class="card" aria-labelledby="local">
+    <h2 id="local"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="2.5" width="12" height="19" rx="3" fill="none" stroke="#14213D" stroke-width="2.4"/><path d="M10.5 18 H13.5" stroke="#14213D" stroke-width="2.4" stroke-linecap="round"/></svg></span>Progress on your device</h2>
+    <p>Trainer names, answers, Kaimon caught and settings are saved in the browser on this device. Guest trainers (friends playing on your device) never leave it.</p>
+    <p class="short">To erase it, delete the trainer in Grown-ups, or clear this site's data in the browser settings.</p>
+  </section>
+
+  <section class="card" aria-labelledby="sync">
+    <h2 id="sync"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12 A7 7 0 0 1 17.5 7.5 M19 12 A7 7 0 0 1 6.5 16.5" fill="none" stroke="#14213D" stroke-width="2.4" stroke-linecap="round"/><path d="M18 3.5 V8 H13.5 M6 20.5 V16 H10.5" fill="none" stroke="#14213D" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Family sync (optional)</h2>
+    <p>If a grown-up turns on family sync, the family's trainers and their progress are stored with <a href="https://supabase.com/privacy" rel="noopener">Supabase</a> so every family device stays in step. Sign-in uses the grown-up's email and a one-time code.</p>
+    <p>Each family can only see its own trainers. Turning sync off keeps progress on the device. A grown-up can delete a trainer everywhere from Grown-ups.</p>
+  </section>
+
+  <section class="card" aria-labelledby="reports">
+    <h2 id="reports"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="6" width="17" height="12.5" rx="2.5" fill="none" stroke="#14213D" stroke-width="2.4"/><path d="M4.5 7.5 L12 13 L19.5 7.5" fill="none" stroke="#14213D" stroke-width="2.4" stroke-linejoin="round"/></svg></span>Weekly reports (optional)</h2>
+    <p>A grown-up can add up to 5 emails to get a short weekly report about one trainer. Each person gets one "say yes" email first, and reports only go to people who tap yes. Every report has a <b>Stop these emails</b> link.</p>
+    <p class="short">The game sends the week's numbers and a small picture of the trainer to our Google Apps Script mailer, which builds the email and sends it from the Kaimon Gmail account. It keeps only who said yes, which weeks were sent and today's email count. It does not keep progress or pictures.</p>
+  </section>
+
+  <section class="card" aria-labelledby="news">
+    <h2 id="news"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10 V14 H7 L14 18.5 V5.5 L7 10 Z" fill="none" stroke="#14213D" stroke-width="2.4" stroke-linejoin="round"/><path d="M17.5 9 Q19.5 12 17.5 15" fill="none" stroke="#14213D" stroke-width="2.4" stroke-linecap="round"/></svg></span>News emails</h2>
+    <p>The grown-up who turns on family sync can get emails about what's new in Kaimon games: weekly for the first few weeks after launch, then about once a month. The box is checked when you sign up, and you can uncheck it. You can turn news off any time in Grown-ups, or tap <b>Unsubscribe</b> in any news email, which deletes your email from the list.</p>
+    <p class="short">Emails that a grown-up types in for weekly reports are never added to the news list.</p>
+  </section>
+
+  <section class="card" aria-labelledby="feedback">
+    <h2 id="feedback"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5 L14.6 9 L20.5 9.6 L16 13.6 L17.3 19.5 L12 16.5 L6.7 19.5 L8 13.6 L3.5 9.6 L9.4 9 Z" fill="none" stroke="#14213D" stroke-width="2.2" stroke-linejoin="round"/></svg></span>Ratings and feedback</h2>
+    <p>When you rate the game or send feedback, we keep what you send: the stars, your note, a name if you give one, a reply email if a grown-up adds one, the app version and a random device number. It goes only to the maker of the game, by email and in a private list. Please don't put anything private in a note.</p>
+  </section>
+
+  <section class="card" aria-labelledby="usage">
+    <h2 id="usage"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20 H20" stroke="#14213D" stroke-width="2.4" stroke-linecap="round"/><rect x="5.5" y="12" width="3.5" height="6" rx="1" fill="none" stroke="#14213D" stroke-width="2.2"/><rect x="10.5" y="8" width="3.5" height="10" rx="1" fill="none" stroke="#14213D" stroke-width="2.2"/><rect x="15.5" y="4.5" width="3.5" height="13.5" rx="1" fill="none" stroke="#14213D" stroke-width="2.2"/></svg></span>Usage counts</h2>
+    <p>To see if the game is fun and working, it sends simple counts to a private dashboard:</p>
+    <ul>
+      <li>a random number made for this device (not linked to your email or family sync)</li>
+      <li>trainer names</li>
+      <li>the kind of device and browser, and whether the game is installed</li>
+      <li>app opens, rounds, battles, Kaimon caught and minutes played</li>
+      <li>where the game was first opened from: a shared link like "WhatsApp", or just the name of the site that sent you, like linkedin.com (never the full web address), and which page of the game it opened on</li>
+      <li>a rough place: city, region and country</li>
+      <li>the device's time zone, and the local day and hour of play (so we know when kids like to play)</li>
+    </ul>
+    <p>For the rough place, once a day the device asks a free lookup service (<a href="https://www.geojs.io/" rel="noopener">GeoJS</a>, or <a href="https://ipapi.co/privacy/" rel="noopener">ipapi</a> if that is busy) where its internet address is. We keep only the city, region and country. The internet address itself is never sent to us or stored.</p>
+    <p>No emails, real names or photos are collected this way. A grown-up can turn usage counts off in Grown-ups, on the Help tab. Turning them off also forgets the device number and the place.</p>
+  </section>
+
+  <section class="card" aria-labelledby="services">
+    <h2 id="services"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5 L19 6.5 V11.5 C19 15.5 16 18.8 12 20.5 C8 18.8 5 15.5 5 11.5 V6.5 Z" fill="none" stroke="#14213D" stroke-width="2.4" stroke-linejoin="round"/><path d="M9 12 L11.2 14.2 L15.2 10" fill="none" stroke="#14213D" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>No ads, no tracking</h2>
+    <p>There are no ads, no tracking cookies and no third-party trackers. The game is hosted on GitHub Pages, sync and counts use Supabase, and emails use Google. Like any website, these services see basic connection details such as IP addresses to deliver the game. We don't store them.</p>
+  </section>
+
+  <section class="card" aria-labelledby="contact">
+    <h2 id="contact"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5.5 5 H18.5 A2 2 0 0 1 20.5 7 V14.5 A2 2 0 0 1 18.5 16.5 H11 L6.5 20 V16.5 H5.5 A2 2 0 0 1 3.5 14.5 V7 A2 2 0 0 1 5.5 5 Z" fill="none" stroke="#14213D" stroke-width="2.4" stroke-linejoin="round"/></svg></span>Questions or deleting data</h2>
+    <p>Use <b>Send feedback</b> in the game's Menu and add your email so we can reply, or reply to any email from Kaimon Multiply. We can delete your family's synced data, your feedback or your email from any list.</p>
+  </section>
+
+  <p class="center"><a class="btn" href="./">Play Kaimon Multiply</a></p>
+  <p class="foot">Last updated November 2026.</p>
+</main>
+</body>
+</html>

@@ -1,4 +1,4 @@
-// The trainer page: your Trainer License, battle team, Badge case, Bag, medals and stats.
+// The trainer page: your Trainer License, battle team, Badge case, Item Bag, medals and stats.
 import { active, touch, save } from '../core/store.js';
 import { REGIONS, TYPES } from '../data/creatures.js';
 import { tableTier, LEVEL_LABEL } from '../core/facts.js';
@@ -12,6 +12,7 @@ import { badgeImg, ballImg, itemImg, uiImg, ITEMS } from '../core/assets.js';
 import { teamRowHTML, teamSheet } from './teamPicker.js';
 import { esc, on, sheet, toast } from './dom.js';
 import { sfx } from '../core/sound.js';
+import { openItem, scrollArt } from './items.js'; // [systems] Item Bag
 
 const INK = '#14213D';
 const minutes = (ms) => {
@@ -139,22 +140,33 @@ function badgeSheet(p, key) {
     <button class="btn-chunky btn-primary" data-close>Got it</button></div>`, { x: true });
 }
 
-// ---- Bag
+// ---- Item Bag: a satchel with a leather flap. Balls ride in one pocket, items in another.
+// Each row keeps its data-bag key so items can be tapped to use them.
 const HAS_ITEM_ART = new Set(ITEMS);
 function bagArt(r) {
   if (r.kind === 'ball') return ballImg(r.key, 'bag-art');
+  if (r.key === 'scroll') return scrollArt('bag-art'); // [systems] drawn, no painted art yet
   if (r.art && HAS_ITEM_ART.has(r.art)) return itemImg(r.art, 'bag-art');
   return itemImg('bag', 'bag-art bag-generic');
 }
+function bagRowHTML(r) {
+  const n = r.count === Infinity ? '∞' : '×' + r.count;
+  return `<div class="bag-item${r.count ? '' : ' none'}" data-bag="${esc(r.key)}">
+    <span class="bag-pic">${bagArt(r)}</span>
+    <div class="bag-txt"><strong>${esc(r.name)}</strong><p>${esc(r.does)}</p><p class="bag-earn"><span>Get more</span> ${esc(r.earn)}</p></div>
+    <span class="bag-n" aria-label="${r.count === Infinity ? 'Never runs out' : `You have ${r.count}`}">${n}</span>
+  </div>`;
+}
 function bagHTML(p) {
   const rows = bagRows(p);
+  const balls = rows.filter((r) => r.kind === 'ball'), items = rows.filter((r) => r.kind !== 'ball');
+  const pocket = (title, list) => `<div class="bag-pocket"><h3 class="bag-pocket-title">${title}</h3><div class="bag-grid">${list.map(bagRowHTML).join('')}</div></div>`;
   return `<div class="bag">
-    ${bagEmpty(p) ? `<div class="bag-empty">${uiImg('kaizo-search', 'bag-kaizo')}<p><strong>Just Capture Balls for now.</strong> Win Gym battles and earn medals to fill your bag!</p></div>` : ''}
-    <div class="bag-grid">
-      ${rows.map((r) => `<div class="bag-item${r.count ? '' : ' none'}" data-bag="${esc(r.key)}">
-        <span class="bag-pic">${bagArt(r)}<span class="bag-n">${r.count === Infinity ? '∞' : '×' + r.count}</span></span>
-        <div class="bag-txt"><strong>${esc(r.name)}</strong><p>${esc(r.does)}</p><p class="bag-earn"><span>Get more</span> ${esc(r.earn)}</p></div>
-      </div>`).join('')}
+    <div class="bag-flap" aria-hidden="true"><i class="bag-rivet"></i><span class="bag-emblem">${itemImg('bag', 'bag-emblem-img')}</span><i class="bag-rivet"></i></div>
+    <div class="bag-body">
+      ${bagEmpty(p) ? `<div class="bag-empty">${uiImg('kaizo-search', 'bag-kaizo')}<p><strong>Just Capture Balls for now.</strong> Win Gym battles and earn medals to fill your bag!</p></div>` : ''}
+      ${pocket('Balls', balls)}
+      ${items.length ? pocket('Items', items) : ''}
     </div>
   </div>`;
 }
@@ -188,7 +200,7 @@ export function renderTrainer(root, go) {
         <div class="tr-col">
           <h2 class="section-title">Badge case <span class="tr-count">${x.badges} of ${REGIONS.length}</span></h2>
           ${badgeCaseHTML(p)}
-          <h2 class="section-title">Bag</h2>
+          <h2 class="section-title">Item Bag</h2>
           ${bagHTML(p)}
           <h2 class="section-title">Medals</h2>
           <div class="tr-medals">
@@ -215,6 +227,7 @@ export function renderTrainer(root, go) {
   on(root, 'click', '[data-team]', () => { sfx.tap(); teamSheet(p, draw); });
   on(root, 'click', '[data-switch]', () => { sfx.tap(); go('welcome'); });
   on(root, 'click', '[data-badge]', (e, el) => { sfx.tap(); badgeSheet(p, el.dataset.badge); });
+  on(root, 'click', '[data-bag]', (e, el) => { if (openItem(p, el.dataset.bag, { go, onUse: draw })) sfx.tap(); }); // [systems] Item Bag: what it does, and Use
   on(root, 'click', '[data-look]', () => {
     sfx.tap();
     // Every change saves right away, so closing the sheet any way keeps the new look.

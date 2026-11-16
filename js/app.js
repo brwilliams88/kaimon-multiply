@@ -9,6 +9,7 @@ import { renderGrownups } from './ui/grownups.js';
 import { renderBattle } from './ui/battle.js';
 import { renderTrainer } from './ui/trainer.js';
 import { renderTower } from './ui/tower.js'; // Hundred Tower hook
+import { renderLightning } from './ui/lightning.js'; // [systems] Lightning Round
 import { VERSION } from './data/changelog.js';
 import { startAutoSync, completeLinkSignIn, syncNow } from './core/sync.js';
 import { autoSendReports, flushMailOutbox } from './core/mailer.js';
@@ -22,6 +23,8 @@ import { save, touch, setSetting } from './core/store.js';
 import { startUpdates, justUpdated } from './core/update.js';
 import './ui/install.js'; // listens for Chrome's install prompt from the start
 import { maybeIconNotice } from './ui/iconNotice.js'; // must load before justUpdated() runs
+import { startAnalytics } from './core/analytics.js'; // anonymous usage counts (off switch in Grown-ups)
+import { flushFeedback, maybeAskRating } from './ui/feedback.js';
 
 const SCREENS = {
   welcome: renderWelcome,
@@ -34,9 +37,10 @@ const SCREENS = {
   battle: renderBattle,
   trainer: renderTrainer,
   tower: renderTower, // Hundred Tower hook
+  lightning: renderLightning, // [systems] Lightning Round
 };
 
-const NEEDS_PROFILE = new Set(['home', 'play', 'kaidex', 'grownups', 'meetPartner', 'battle', 'trainer']);
+const NEEDS_PROFILE = new Set(['home', 'play', 'kaidex', 'grownups', 'meetPartner', 'battle', 'trainer', 'lightning', 'tower']); // [systems] + lightning, tower
 
 function go(name, params = {}) {
   stopVoice();
@@ -56,6 +60,7 @@ function go(name, params = {}) {
   root.firstElementChild?.classList.add('screen-in');
   window.scrollTo(0, 0);
   if (name === 'welcome' || name === 'home') maybeIconNotice();
+  if (name === 'home') maybeAskRating(); // gentle one-time Rate the game, after a happy moment
   afterScreen(name, root); // offline chip, storage protection, a waiting "Back online" note
   // The title screen is one fixed screen: no rubber-band scrolling on iPhone.
   document.documentElement.classList.toggle('lock-screen', name === 'welcome');
@@ -81,6 +86,8 @@ document.addEventListener('touchmove', (e) => {
   }
   e.preventDefault();
 }, { passive: false });
+
+try { startAnalytics(); } catch { /* usage counts never block the game */ } // also takes ?ref= off the address bar
 
 // Offline play: online/offline state, saving pictures for offline, the offline chip.
 startOffline();
@@ -109,6 +116,7 @@ setInterval(() => { if (document.visibilityState === 'visible') sendWeeklyReport
 const sendWaitingMail = () => { flushMailOutbox().catch(() => {}); sendWeeklyReports(); };
 window.addEventListener('online', () => setTimeout(sendWaitingMail, 3000));
 setTimeout(() => flushMailOutbox().catch(() => {}), 6000);
+setTimeout(() => flushFeedback().catch(() => {}), 7000); // ratings and notes that waited for the internet
 
 // Sound button in the top bars (home, practice, battles).
 document.addEventListener('click', (e) => {
@@ -130,7 +138,7 @@ document.addEventListener('click', (e) => {
 // Offline support and updates. Updates install by themselves between rounds;
 // during a round, a bar offers to update.
 startUpdates({
-  isBusy: () => ['play', 'battle'].includes(document.getElementById('app')?.dataset.screen),
+  isBusy: () => ['play', 'battle', 'lightning'].includes(document.getElementById('app')?.dataset.screen), // [systems] + lightning
   showBar: (apply) => {
     if (document.querySelector('.update-bar')) return;
     const bar = document.createElement('div');
