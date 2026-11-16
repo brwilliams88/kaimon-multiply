@@ -38,6 +38,7 @@ export function newProfile(name, avatar, id) {
     mons: {}, evos: {}, bud: null, // Kaimon levels (levels.js)
     trophies: [],
     tips: {},
+    wardrobe: {},
     outbox: [],
   };
 }
