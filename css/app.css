@@ -451,7 +451,8 @@ button { font: inherit; color: inherit; cursor: pointer; touch-action: manipulat
 
 .hp { flex: 1; max-width: 300px; background: var(--paper); border: 3px solid var(--ink); border-radius: 18px; padding: 8px 12px 6px; box-shadow: 0 4px 0 var(--ink); }
 .hp-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
-.hp-name { font-weight: 700; font-size: 18px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hp-name { font-weight: 700; font-size: 18px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1 1 auto; min-width: 0; }
+.hp-dots { flex: none; }
 .hp-dots { display: flex; gap: 4px; }
 .hp-dots i { width: 11px; height: 11px; border-radius: 50%; border: 2px solid var(--ink); background: var(--paper); }
 .hp-dots i.on { background: var(--grass); }
@@ -2936,3 +2937,8 @@ button.tp-slot:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--in
   .battle .mon.so-fade { animation: so-fade .15s ease-out both; }
   @keyframes co-fade { 0% { opacity: 0; } 15%, 80% { opacity: 1; } 100% { opacity: 0; } }
 }
+
+/* v0.5.38: battle names get the full top line (no more "..."); team balls move under the HP bar. */
+.hp-bot { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-top: 3px; min-height: 14px; }
+.hp-bot .hp-num { margin-top: 0; }
+.battle .hp-bot .hp-dots i { width: 14px; height: 14px; }

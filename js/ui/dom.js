@@ -105,3 +105,15 @@ export function setFlame(box, n) {
   if (t > old) sfx.streak(t);
   if (t > old && t >= 3) { box.classList.remove('flare'); void box.offsetWidth; box.classList.add('flare'); setTimeout(() => box.classList.remove('flare'), 700); }
 }
+
+// Shrink a one-line label until it fits its box (down to `min` px), so names
+// are shown in full instead of being cut off with "...".
+export function fitText(el, min = 11) {
+  if (!el) return;
+  el.style.fontSize = '';
+  let size = parseFloat(getComputedStyle(el).fontSize) || 16;
+  while (el.scrollWidth > el.clientWidth + 0.5 && size > min) {
+    size -= 0.5;
+    el.style.fontSize = size + 'px';
+  }
+}

@@ -19,7 +19,7 @@ import { sceneSrc, cssUrl, sceneKey, fxSrc, typeIcon, badgeImg, ballSrc } from '
 import { quick } from '../core/prefs.js';
 import { limitReached } from '../core/playtime.js';
 import { startMusic, stopMusic, setPinch } from '../core/music.js';
-import { $, on, esc, sheet, reducedMotion, soundButton, setFlame } from './dom.js';
+import { $, on, esc, sheet, reducedMotion, soundButton, setFlame, fitText } from './dom.js';
 
 // Special hit-back moves for the big opponents. Papazilla lifts.
 const FOE_MOVES = { papa: 'Dumbbell Drop', legend: 'Hundred Blast', mythic: 'Dream Burst' };
@@ -51,7 +51,8 @@ const PAPAZILLA_LINES = [
   'Time for the heavy lifting. Papazilla, you\u2019re up!',
 ];
 
-const hpBar = (who) => `<div class="hp hp-${who}"><div class="hp-top"><span class="hp-name"></span><span class="hp-dots"></span></div><div class="hp-bar"><span></span></div><span class="hp-num"></span></div>`;
+// The name gets the whole top line so long names fit; the team balls sit under the bar, beside the HP number.
+const hpBar = (who) => `<div class="hp hp-${who}"><div class="hp-top"><span class="hp-name"></span></div><div class="hp-bar"><span></span></div><div class="hp-bot"><span class="hp-dots"></span><span class="hp-num"></span></div></div>`;
 
 export function renderBattle(root, go, { kind = 'champ', table = 1, grunt } = {}) {
   const p = active();
@@ -159,6 +160,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt } = {}
   function drawHp(box, team, idx, known) {
     const m = team[idx];
     $('.hp-name', box).textContent = known ? m.species.name : (box === el.foeHp && !p.dex[m.species.id]?.caught ? 'Wild ???' : m.species.name);
+    fitText($('.hp-name', box), 11);
     // One ball per Kaimon on that side: bright while it can still battle, gray once it's out.
     const left = team.filter((x) => x.hp > 0).length;
     $('.hp-dots', box).innerHTML = team.map((x, i) => `<i class="${x.hp <= 0 ? 'out' : i === idx ? 'on' : ''}"></i>`).join('');
