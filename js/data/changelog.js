@@ -1,7 +1,15 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.5.37';
+export const VERSION = '0.5.38';
 
 export const CHANGELOG = [
+  {
+    version: '0.5.38',
+    date: '2026-11-15',
+    title: "Full Kaimon names in battle",
+    items: [
+      "Fixed: long Kaimon names in battle (like Supernovasaur) were cut off with \"...\" on phones. Names now get the whole top line of the HP box and shrink a little if needed, and the team balls moved under the HP bar.",
+    ],
+  },
   {
     version: '0.5.37',
     date: '2026-11-15',

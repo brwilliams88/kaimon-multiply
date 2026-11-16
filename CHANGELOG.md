@@ -2,6 +2,10 @@
 
 All notable changes. Versioning: `0.MINOR.0` marks a roadmap phase, `0.x.PATCH` is any shipped change a player or parent can notice, and `1.0.0` is the public launch. See "Versioning" in CLAUDE.md. The in-app version history (Grown-ups > What's new) reads from `js/data/changelog.js`; keep both in sync. Each release is tagged in git as `vX.Y.Z`.
 
+## v0.5.38 (2026-11-15) Full Kaimon names in battle
+
+- Fixed: long Kaimon names in battle (like Supernovasaur) were cut off with "..." on phones. Names now get the whole top line of the HP box and shrink a little if needed, and the team balls moved under the HP bar.
+
 ## v0.5.37 (2026-11-15) Pick a trainer, then Play
 
 - Who's playing is easier: swipe or tap to pick a trainer, then press the big Play button under the cards.
