@@ -79,6 +79,8 @@ export function applySystems(p, ev) {
     b.best = Math.max(b.best, d.sc | 0);
     b.runs++;
     b.last = Math.max(b.last, ev.t);
+    // Your best runs (score, answered, best streak, when): personal bests only.
+    b.top = keepTop([...(b.top || []), { s: d.sc | 0, n: d.n | 0, st: d.st | 0, t: ev.t }]);
     const r = dayRec(p, today(ev.t));
     r.lr = (r.lr || 0) + 1;
     r.lb = Math.max(r.lb || 0, d.sc | 0);
@@ -91,6 +93,14 @@ export function applySystems(p, ev) {
 export function onSeen(p) {
   p.lucky = (p.lantern || 0) > 0;
   if (p.lucky) p.lantern--;
+}
+
+// Lightning Round: your best runs, highest score first (the earlier run first on a tie).
+export const BOLT_TOP = 5;
+export function keepTop(list) {
+  const seen = new Set();
+  return list.filter((r) => r && r.s > 0 && !seen.has(r.t + ':' + r.s) && seen.add(r.t + ':' + r.s))
+    .sort((a, b) => b.s - a.s || a.t - b.t).slice(0, BOLT_TOP);
 }
 
 // ---- Family sync -------------------------------------------------------------------
@@ -110,6 +120,7 @@ export function mergeSystems(p, d) {
     b.best = Math.max(b.best, d.bolt.best || 0);
     b.runs += d.bolt.runs || 0;
     b.last = Math.max(b.last, d.bolt.last || 0);
+    if (Array.isArray(d.bolt.top)) b.top = keepTop([...(b.top || []), ...d.bolt.top]);
   }
   for (const [day, r] of Object.entries(d.play || {})) {
     if (!r.lr && !r.lb) continue;

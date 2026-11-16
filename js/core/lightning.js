@@ -14,7 +14,8 @@
 // - Your own best only. No fail state, no "too slow".
 // - Calm mode (a Grown-ups setting) hides it and its timer completely.
 import { emit } from './actions.js';
-import { grant } from './items.js';
+import { grant, keepTop, BOLT_TOP } from './items.js';
+export { keepTop, BOLT_TOP };
 import { factsForTables, levelOf, levelRank, parseFact } from './facts.js';
 
 export const BOLT_MS = 60000;
@@ -53,24 +54,50 @@ export const boltFactsToGo = (p) => Math.max(0, BOLT_MIN_FACTS - boltPool(p).len
 export const boltUnlocked = (p) => !calmMode(p) && !boltToGo(p) && !boltFactsToGo(p);
 export const boltBest = (p) => p.bolt?.best || 0;
 
-// Rewards for a round: nothing unless it beats the old best. A new best gives a
-// Super Ball; passing 10, 20, 30, 40 or 50 for the first time adds a bigger prize.
+// Rewards for a round. A new best gives a Super Ball; passing 10, 20, 30, 40 or 50
+// for the first time adds a bigger prize. Every 5 in a row is a combo, and each
+// combo gives the Buddy a little bonus XP (on top of the XP every right answer gives).
 export const BOLT_STEPS = [[10, ['i', 'lantern', 1]], [20, ['i', 'charm', 1]], [30, ['i', 'evolve', 1]], [40, ['b', 'mega', 1]], [50, ['b', 'legend', 1]]];
+export const BOLT_RECORD = ['b', 'super', 1];
+export const BOLT_COMBO = 5;    // right answers in a row for one combo
+export const COMBO_XP = 5;      // bonus Buddy XP per combo
 export function boltRewards(prevBest, score) {
   if (!(score > prevBest) || score <= 0) return [];
-  const gives = [['b', 'super', 1]];
+  const gives = [BOLT_RECORD];
   for (const [n, g] of BOLT_STEPS) if (prevBest < n && score >= n) gives.push(g);
   return gives;
 }
+// The next score prize still to win: { n, give }, or null once all are won.
+export function boltNext(best) {
+  const s = BOLT_STEPS.find(([n]) => best < n);
+  return s ? { n: s[0], give: s[1] } : null;
+}
+// Combos in a run: one for every BOLT_COMBO right answers in a row.
+export const isCombo = (streak) => streak > 0 && streak % BOLT_COMBO === 0;
 
+// Your best runs, best first: [{ s: score, n: answered, st: best streak, t: time }].
+// Saves from before the list (or a best synced from an older device) show the best
+// on its own, with no answered count.
+export function boltRuns(p) {
+  const b = p.bolt || {};
+  const top = Array.isArray(b.top) ? b.top.slice() : [];
+  if ((b.best || 0) > (top[0]?.s || 0)) top.unshift({ s: b.best, t: b.last || 0 });
+  return top.slice(0, BOLT_TOP);
+}
 // Seconds left, rounded up, from ms left.
 export const secsLeft = (msLeft) => Math.max(0, Math.ceil(msLeft / 1000));
 
-// Save a finished round. Returns { score, prev, best, isBest, gives }.
-export function finishBolt(p, score, answered) {
+// Save a finished round. run: { streak, combos } (best streak and combos in the run).
+// Returns { score, prev, best, isBest, gives, comboXP, rank } where rank is the
+// run's place in your best runs (1 to 5), or 0.
+export function finishBolt(p, score, answered, run = {}) {
   const prev = boltBest(p);
-  emit(p, 'bolt', { sc: score, n: answered });
+  const st = run.streak | 0, combos = run.combos | 0;
+  const ev = emit(p, 'bolt', { sc: score, n: answered, st });
   const gives = boltRewards(prev, score);
-  const ev = gives.length ? grant(p, `bolt:${score}`, gives) : null;
-  return { score, prev, best: Math.max(prev, score), isBest: score > prev && score > 0, gives: ev ? gives : [] };
+  const got = gives.length ? grant(p, `bolt:${score}`, gives) : null;
+  const comboXP = combos * COMBO_XP;
+  if (comboXP) grant(p, `bolt-combo:${ev.id}`, [['x', 'xp', comboXP]]);
+  const rank = score > 0 ? (p.bolt.top || []).findIndex((r) => r.t === ev.t && r.s === score) + 1 : 0;
+  return { score, prev, best: Math.max(prev, score), isBest: score > prev && score > 0, gives: got ? gives : [], comboXP, combos, rank, t: ev.t };
 }
