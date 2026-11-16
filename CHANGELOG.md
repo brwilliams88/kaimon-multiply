@@ -2,6 +2,12 @@
 
 All notable changes. Versioning: `0.MINOR.0` marks a roadmap phase, `0.x.PATCH` is any shipped change a player or parent can notice, and `1.0.0` is the public launch. See "Versioning" in CLAUDE.md. The in-app version history (Grown-ups > What's new) reads from `js/data/changelog.js`; keep both in sync. Each release is tagged in git as `vX.Y.Z`.
 
+## v0.5.15 (2026-11-15) Family sync for every family
+
+- Family sync now works for any family, not just ours. A grown-up turns it on in Grown-ups with their email and a code, then uses the same email on each device (phone, iPad, Chromebook) to keep progress in step. Each family only ever sees its own trainers.
+- New, optional news emails about Kaimon games, a few times a year. The box starts unchecked, there's a News emails switch in Grown-ups, and every news email has a link to a page that deletes your email from the list for good.
+- Only a grown-up can start family sync, from behind the parent PIN. The family sign-in on the welcome screen, and the PIN reset, only work with an email that already uses family sync.
+
 ## v0.5.14 (2026-11-15) Smoother screens and messages
 
 - Messages (like "Team saved!") now pop up at the bottom as a light card instead of covering the top of the screen. In practice and battles they show just under the top bar so they never cover the number pad.

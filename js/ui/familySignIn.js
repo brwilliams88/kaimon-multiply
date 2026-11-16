@@ -11,8 +11,8 @@ export function familySignInSheet(onDone) {
   const box = sh.el.querySelector('[data-fs]');
   const draw = () => {
     box.innerHTML = !email ? `
-      <div class="fs-head">${uiImg('kaizo-wave', 'fs-kaizo')}<div><h2>Family sign-in</h2><p>For your family's devices. Type a family email and we'll send you a code.</p></div></div>
-      <input class="field fs-field" type="email" autocomplete="email" placeholder="Family email" data-email>
+      <div class="fs-head">${uiImg('kaizo-wave', 'fs-kaizo')}<div><h2>Family sign-in</h2><p>Already using family sync on another device? Type the same grown-up's email and we'll send a code. New to family sync? A grown-up can turn it on in Grown-ups.</p></div></div>
+      <input class="field fs-field" type="email" autocomplete="email" placeholder="Grown-up's email" data-email>
       <div class="fs-actions"><button class="btn-chunky btn-primary btn-xl" data-send>${ballImg('capture', 'fs-ball')}Email me a code</button><button class="link-btn" data-close>Not now</button></div>`
     : `
       <div class="fs-head">${uiImg('kaizo-cheer', 'fs-kaizo')}<div><h2>Type the code</h2><p class="sent-ok">Sent to <strong>${esc(email)}</strong>. It can take a minute. Not there? Check Spam.</p></div></div>
@@ -29,7 +29,7 @@ export function familySignInSheet(onDone) {
     if (!t) return;
     if (t.matches('[data-send]')) {
       const v = box.querySelector('[data-email]').value;
-      if (!/^\S+@\S+\.\S+$/.test(v)) return toast('Type a family email first.');
+      if (!/^\S+@\S+\.\S+$/.test(v)) return toast('Type a grown-up\u2019s email first.');
       send(v, t);
     } else if (t.matches('[data-resend]')) send(email, t);
     else if (t.matches('[data-change]')) { email = ''; draw(); }
@@ -37,7 +37,7 @@ export function familySignInSheet(onDone) {
       const code = cleanCode(box.querySelector('[data-code]').value);
       if (!codeOk(code)) return toast('Type the code from the email.');
       busy(t, 'Checking...', async () => { try {
-        await verifyCode(email, code);
+        await verifyCode(email, code, { existingOnly: true });
         sh.close();
         toast('Signed in. Looking for family trainers...');
         await syncNow();

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Unsubscribe · Kaimon</title>
+<style>
+@font-face { font-family: 'Fredoka'; font-weight: 600; font-display: swap; src: url(fonts/fredoka-latin-600-normal.woff2) format('woff2'); }
+@font-face { font-family: 'Fredoka'; font-weight: 700; font-display: swap; src: url(fonts/fredoka-latin-700-normal.woff2) format('woff2'); }
+:root { --ink: #14213D; --ink-2: #44506b; --sky: #CFE8FF; --paper: #fff; --gold: #FFC93C; }
+* { box-sizing: border-box; }
+body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 24px; background: var(--sky); font-family: 'Fredoka', system-ui, sans-serif; color: var(--ink); }
+.card { width: 100%; max-width: 440px; background: var(--paper); border: 3px solid var(--ink); border-radius: 26px; box-shadow: 0 6px 0 var(--ink); padding: 28px 26px 26px; text-align: center; }
+img { width: 150px; height: 150px; object-fit: contain; margin: -6px auto 6px; display: block; }
+h1 { font-size: 28px; margin: 0 0 8px; line-height: 1.15; }
+p { font-size: 18px; line-height: 1.4; margin: 0 0 18px; color: var(--ink-2); font-weight: 600; }
+button, a.btn { display: inline-block; font: 700 20px 'Fredoka', system-ui, sans-serif; color: var(--ink); background: var(--gold); border: 3px solid var(--ink); border-radius: 18px; box-shadow: 0 5px 0 var(--ink); padding: 12px 26px; cursor: pointer; text-decoration: none; }
+button:active, a.btn:active { transform: translateY(4px); box-shadow: 0 1px 0 var(--ink); }
+button:disabled { opacity: .6; cursor: wait; }
+button:focus-visible, a.btn:focus-visible { outline: 3px solid #2E6BFF; outline-offset: 3px; }
+.small { font-size: 15px; margin: 18px 0 0; }
+</style>
+</head>
+<body>
+<main class="card" id="box">
+  <img src="assets/ui/kaizo-wave.webp" alt="">
+  <h1>Stop Kaimon news emails?</h1>
+  <p>We'll take your email off the news list for good. Family sync and sign-in keep working.</p>
+  <button id="go">Remove me from the list</button>
+</main>
+<script>
+const URL = 'https://qabevoqmalqjvesqzuse.supabase.co';
+const KEY = 'sb_publishable_6VwJkmR4SMSCs7WXQKjbnA_R0hK8OUW';
+const t = new URLSearchParams(location.search).get('t') || '';
+const box = document.getElementById('box');
+const show = (img, title, text) => { box.innerHTML = `<img src="assets/ui/${img}.webp" alt=""><h1>${title}</h1><p>${text}</p><a class="btn" href="./">Play Kaimon</a>`; };
+if (!/^[0-9a-f-]{36}$/i.test(t)) {
+  show('kaizo-think', 'This link looks broken', 'Try the link in the email again. A grown-up can also turn off news emails in the game under Grown-ups.');
+} else {
+  document.getElementById('go').addEventListener('click', async (e) => {
+    e.currentTarget.disabled = true; e.currentTarget.textContent = 'Removing...';
+    try {
+      const res = await fetch(URL + '/rest/v1/rpc/unsubscribe', { method: 'POST', headers: { apikey: KEY, 'Content-Type': 'application/json' }, body: JSON.stringify({ t }) });
+      if (!res.ok) throw new Error();
+      const done = await res.json();
+      show('kaizo-cheer', done ? 'You’re off the list' : 'Already off the list', done ? 'Your email has been deleted from the news list. You won’t get news emails from us again.' : 'This email isn’t on the news list, so there’s nothing to remove.');
+    } catch {
+      show('kaizo-oops', 'Couldn’t reach the server', 'Check the internet and tap the link in the email again.');
+    }
+  });
+}
+</script>
+</body>
+</html>

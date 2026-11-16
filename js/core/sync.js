@@ -1,5 +1,5 @@
 // Family sync with Supabase, using plain fetch (no library, works offline-first).
-// Only emails on the family list can read or write; everything else stays on the device.
+// Any grown-up's email can start a family. Each family only sees its own rows; guests stay on the device.
 import { allProfiles, profileById, putProfile, newProfile, save, deviceId, syncState, setSyncState, deleteProfile, hiddenProfiles, unhideProfile } from './store.js';
 import { apply, emit } from './actions.js';
 
@@ -38,14 +38,17 @@ export async function requestCode(email) {
   await api('/auth/v1/otp?redirect_to=' + back, { method: 'POST', body: { email: email.trim().toLowerCase(), create_user: true } });
 }
 
-// Step 2: check the code, then make sure this email is on the family list.
-export async function verifyCode(email, code) {
+// Step 2: check the code, then find this email's family (or start a new one).
+// existingOnly: only emails that already set up family sync pass (used for PIN resets).
+export async function verifyCode(email, code, { existingOnly = false } = {}) {
   const e = email.trim().toLowerCase();
   const r = await api('/auth/v1/verify', { method: 'POST', body: { type: 'email', email: e, token: code.trim() } });
-  const family = await api('/rest/v1/rpc/my_family', { method: 'POST', body: {}, token: r.access_token });
-  if (!family) {
-    throw new Error('That email isn’t on the family list. Family sync is only for the family that set up this game.');
+  if (existingOnly) {
+    const known = await api('/rest/v1/rpc/my_family', { method: 'POST', body: {}, token: r.access_token });
+    if (!known) throw new Error('That email isn\u2019t set up for family sync on this game. Use the email you sync with.');
   }
+  const family = await api('/rest/v1/rpc/ensure_family', { method: 'POST', body: {}, token: r.access_token });
+  if (!family) throw new Error('Couldn\u2019t set up family sync for that email. Try again.');
   setSyncState({ email: e, access: r.access_token, refresh: r.refresh_token, exp: Date.now() + (r.expires_in || 3600) * 1000, family, lastSeq: 0, lastSync: 0 });
   notify();
 }
@@ -59,13 +62,17 @@ export async function completeLinkSignIn() {
   if (!access || !refresh) return null;
   let email = '';
   try { email = JSON.parse(atob(access.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))).email || ''; } catch {}
-  const family = await api('/rest/v1/rpc/my_family', { method: 'POST', body: {}, token: access });
-  if (!family) throw new Error('That email isn\u2019t on the family list.');
+  const family = await api('/rest/v1/rpc/ensure_family', { method: 'POST', body: {}, token: access });
+  if (!family) throw new Error('Couldn\u2019t set up family sync for that email. Try again.');
   setSyncState({ email, access, refresh, exp: Date.now() + (+q.get('expires_in') || 3600) * 1000, family, lastSeq: 0, lastSync: 0 });
   notify();
   syncNow();
   return email;
 }
+
+// Opt-in news emails about Kaimon games. Off unless a grown-up turns it on.
+export async function getUpdates() { return !!(await api('/rest/v1/rpc/get_updates', { method: 'POST', body: {}, token: await token() })); }
+export async function setUpdates(want) { return api('/rest/v1/rpc/set_updates', { method: 'POST', body: { want: !!want }, token: await token() }); }
 
 export function signOut() {
   setSyncState(null);

@@ -10,7 +10,7 @@ import { installHelpHTML, canPromptInstall, promptInstall, isInstalled } from '.
 import { lastDays, partsOfDay, usedToday } from '../core/playtime.js';
 import { bonusTime } from '../core/actions.js';
 import { active, save, exportBackup, importBackup, deleteProfile, allProfiles, hasPin, setPin, checkPin, clearPin } from '../core/store.js';
-import { status as syncStatus, requestCode, verifyCode, signOut, syncNow, joinFamily, leaveFamily, onSyncChange } from '../core/sync.js';
+import { status as syncStatus, requestCode, verifyCode, signOut, syncNow, joinFamily, leaveFamily, onSyncChange, getUpdates, setUpdates } from '../core/sync.js';
 import { goodWorkStamp } from '../core/actions.js';
 import { levelOf, factId, LEVEL_LABEL, RULES, countAtLeast } from '../core/facts.js';
 import { voiceSupported } from '../core/voice.js';
@@ -76,8 +76,8 @@ export function renderGrownups(root, go) {
 function forgotPin(root, go) {
   const st = syncStatus();
   const sh = sheet(`<h2>Reset the parent PIN</h2>
-    <p>${st.signedIn ? `We'll email a sign-in code to ${esc(st.email)}.` : 'Sign in with a family email to reset it. Friends\u2019 families: clearing this site\u2019s data in the browser settings also resets it, but erases progress on this device.'}</p>
-    <input class="field" type="email" placeholder="Family email" value="${esc(st.email || '')}" ${st.signedIn ? 'readonly' : ''} data-email>
+    <p>${st.signedIn ? `We'll email a sign-in code to ${esc(st.email)}.` : 'Type the email you use for family sync and we\u2019ll send a code. No family sync? Clearing this site\u2019s data in the browser settings also resets the PIN, but erases progress on this device.'}</p>
+    <input class="field" type="email" placeholder="Grown-up's email" value="${esc(st.email || '')}" ${st.signedIn ? 'readonly' : ''} data-email>
     <button class="btn-chunky" data-send>Send code</button>
     <input class="field code-field" inputmode="numeric" autocomplete="one-time-code" maxlength="12" placeholder="Code" data-code>
     <div class="sheet-actions"><button class="btn-chunky btn-primary" data-verify>Reset PIN</button><button class="btn-chunky" data-close>Cancel</button></div>`);
@@ -88,7 +88,7 @@ function forgotPin(root, go) {
   sh.el.querySelector('[data-verify]').addEventListener('click', (e) => busy(e.currentTarget, 'Checking...', async () => {
     const code = cleanCode(sh.el.querySelector('[data-code]').value);
     if (!codeOk(code)) return toast('Type the code from the email.');
-    try { await verifyCode(email(), code); clearPin(); sh.close(); toast('PIN cleared. Choose a new one.'); renderGrownups(root, go); }
+    try { await verifyCode(email(), code, { existingOnly: true }); clearPin(); sh.close(); toast('PIN cleared. Choose a new one.'); renderGrownups(root, go); }
     catch (err) { toast(err.message); }
   }));
 }
@@ -284,6 +284,8 @@ function renderMain(root, go) {
 
   const syncPanel = root.querySelector('[data-syncpanel]');
   let pendingEmail = '';
+  let wantNews = false;
+  let newsOn = false;
   const drawSync = () => {
     const st = syncStatus();
     const check = (done) => `<span class="step-check ${done ? 'done' : ''}" aria-hidden="true">${done ? '✓' : ''}</span>`;
@@ -292,6 +294,7 @@ function renderMain(root, go) {
         <p class="step-title">1. This device is signed in</p>
         <p class="note">As <strong>${esc(st.email)}</strong>. ${st.busy ? 'Syncing now...' : st.lastSync ? 'Last synced ' + new Date(st.lastSync).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) + '.' : 'Not synced yet.'}${st.error ? ' Last problem: ' + esc(st.error) : ''}</p>
         <div class="btn-row"><button class="btn-chunky btn-sm" data-syncnow>Sync now</button><button class="btn-chunky btn-sm" data-signout>Sign out on this device</button></div>
+        <label class="trow news-row"><span class="sync-who"><span class="trow-name">News emails</span><small>A few times a year about Kaimon games. Off unless you turn it on.</small></span><input type="checkbox" class="switch" data-newsrow ${newsOn ? 'checked' : ''} aria-label="News emails"></label>
       </div></div>`
     : pendingEmail ? `
       <div class="step">${check(false)}<div class="step-body">
@@ -303,8 +306,9 @@ function renderMain(root, go) {
     : `
       <div class="step">${check(false)}<div class="step-body">
         <p class="step-title">1. Sign in this device</p>
-        <p class="note">Use a family email. We'll email you a code to type here.</p>
-        <input class="field" type="email" autocomplete="email" placeholder="Family email" data-email>
+        <p class="note">Use a grown-up's email, and the same one on every device you want to sync: phones, tablets, Chromebooks. We'll email a code to type here. Your email is only used to sign in.</p>
+        <input class="field" type="email" autocomplete="email" placeholder="Grown-up's email" data-email>
+        <label class="news-opt"><input type="checkbox" data-news> <span>Also email me news about Kaimon games, a few times a year. Unsubscribe any time.</span></label>
         <button class="btn-chunky btn-primary" data-send>Email me a code</button>
       </div></div>`;
     const people = allProfiles();
@@ -317,6 +321,12 @@ function renderMain(root, go) {
     syncPanel.innerHTML = `<h2>Family sync</h2>${step1}${step2}`;
   };
   drawSync();
+  if (syncStatus().signedIn) getUpdates().then((v) => { if (v !== newsOn) { newsOn = v; if (!syncPanel.contains(document.activeElement)) drawSync(); } }).catch(() => {});
+  on(root, 'change', '[data-newsrow]', async (e, el) => {
+    const want = el.checked;
+    try { await setUpdates(want); newsOn = want; toast(want ? 'News emails on. Thanks!' : 'News emails off. Your email is off the list.'); }
+    catch { el.checked = !want; toast('Couldn\u2019t reach the server. Check the internet and try again.'); }
+  });
   const off = onSyncChange(() => { if (document.body.contains(syncPanel)) { if (!syncPanel.contains(document.activeElement)) drawSync(); } else off(); });
   const send = (email, btn) => busy(btn, 'Sending...', async () => {
     try { await requestCode(email); pendingEmail = email.trim().toLowerCase(); drawSync(); syncPanel.querySelector('[data-code]')?.focus(); toast('Code sent. Check your email.'); }
@@ -324,7 +334,8 @@ function renderMain(root, go) {
   });
   on(root, 'click', '[data-send]', (e, btn) => {
     const email = root.querySelector('[data-email]').value;
-    if (!/^\S+@\S+\.\S+$/.test(email)) { toast('Type a family email first.'); return; }
+    if (!/^\S+@\S+\.\S+$/.test(email)) { toast('Type a grown-up\u2019s email first.'); return; }
+    wantNews = !!root.querySelector('[data-news]')?.checked;
     send(email, btn);
   });
   on(root, 'click', '[data-resend]', (e, btn) => send(pendingEmail, btn));
@@ -335,6 +346,7 @@ function renderMain(root, go) {
     try {
       await verifyCode(pendingEmail, code);
       pendingEmail = '';
+      if (wantNews) { try { await setUpdates(true); newsOn = true; } catch {} }
       toast('Signed in. Looking for family trainers...');
       await syncNow();
       renderMain(root, go);

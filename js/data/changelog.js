@@ -1,7 +1,17 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.5.14';
+export const VERSION = '0.5.15';
 
 export const CHANGELOG = [
+  {
+    version: '0.5.15',
+    date: '2026-11-15',
+    title: "Family sync for every family",
+    items: [
+      "Family sync now works for any family, not just ours. A grown-up turns it on in Grown-ups with their email and a code, then uses the same email on each device (phone, iPad, Chromebook) to keep progress in step. Each family only ever sees its own trainers.",
+      "New, optional news emails about Kaimon games, a few times a year. The box starts unchecked, there's a News emails switch in Grown-ups, and every news email has a link to a page that deletes your email from the list for good.",
+      "Only a grown-up can start family sync, from behind the parent PIN. The family sign-in on the welcome screen, and the PIN reset, only work with an email that already uses family sync.",
+    ],
+  },
   {
     version: '0.5.14',
     date: '2026-11-15',

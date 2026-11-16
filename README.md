@@ -117,7 +117,8 @@ Then go find the rest. Every times table is a region with its own Kaimon living 
 **Privacy, in plain words**
 
 - **No account needed.** Kids pick a trainer name and play. A friend can play as a guest, and guest progress never leaves the device.
-- **Family sync is optional.** Families can sign in with a code to keep progress in step across their devices. Synced data is locked down so only signed-in family members can reach it.
+- **Family sync is optional, and open to any family.** A grown-up signs in with their email and a code, then uses the same email on each device (phones, tablets, Chromebooks) to keep progress in step. Each family can only reach its own data.
+- **News emails are opt-in.** The box is unchecked unless a grown-up checks it, there's an off switch in Grown-ups, and every news email has a link that deletes the address from the list.
 - **The mic never records.** Mic mode only listens while a card is waiting for an answer, and turns itself off after 2 minutes of quiet. Speech goes to the device's own speech service to become a number. Audio is never recorded or saved.
 
 **The Grown-ups area** is behind a parent PIN (press and hold Grown-ups in the Menu). In it you can:
