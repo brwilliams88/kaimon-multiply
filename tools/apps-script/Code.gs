@@ -129,7 +129,9 @@ function setup() {
 // small branded email (with a plain text copy). Every value is checked here.
 var FEEDBACK_OS = { iphone: 'iPhone', ipad: 'iPad', android: 'Android', chromebook: 'Chromebook', mac: 'Mac', windows: 'Windows', linux: 'Linux', computer: 'Computer' };
 var FEEDBACK_BROWSERS = { safari: 'Safari', chrome: 'Chrome', edge: 'Edge', firefox: 'Firefox', samsung: 'Samsung Internet', other: 'another browser' };
-var FEEDBACK_KINDS = { love: 'Something they love', idea: 'An idea', bug: 'A bug', review: 'A rating', other: 'Feedback' };
+// mixed / mixedbug: one Send from the game's two boxes (what they love, and what
+// should be better), sent as one email so it counts once against the daily limit.
+var FEEDBACK_KINDS = { love: 'Something they love', idea: 'An idea', bug: 'A bug', mixed: 'Love and an idea', mixedbug: 'Love and a bug', review: 'A rating', other: 'Feedback' };
 
 function cleanFeedback_(b) {
   var kind = FEEDBACK_KINDS.hasOwnProperty(b.kind) ? b.kind : 'other';
@@ -139,6 +141,8 @@ function cleanFeedback_(b) {
   return {
     kind: kind,
     text: String(b.text || '').replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, '').trim().slice(0, FEEDBACK_MAX),
+    love: String(b.love || '').replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, '').trim().slice(0, FEEDBACK_MAX),
+    better: String(b.better || '').replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, '').trim().slice(0, FEEDBACK_MAX),
     stars: int_(b.stars, 5, 0),
     from: cleanEmail_(b.from || ''),
     who: part(b.name, 40), // a name they chose to give (optional)
@@ -182,7 +186,7 @@ function feedbackMail_(f, to, opt) {
 function renderFeedbackEmail_(f, opt) {
   opt = opt || {};
   var base = opt.base || ASSET_BASE, app = opt.appUrl || APP_URL;
-  var chip = { love: ['Love', '#E5487A'], idea: ['Idea', '#2D7FF9'], bug: ['Bug', GRASS], review: ['Rating', '#C98A00'], other: ['Feedback', INK2] }[f.kind];
+  var chip = { love: ['Love', '#E5487A'], idea: ['Idea', '#2D7FF9'], bug: ['Bug', GRASS], mixed: ['Love + idea', '#7A4FD0'], mixedbug: ['Love + bug', '#7A4FD0'], review: ['Rating', '#C98A00'], other: ['Feedback', INK2] }[f.kind];
   var stars = '';
   if (f.stars) {
     for (var i = 1; i <= 5; i++) stars += '<span style="font-size:34px;line-height:38px;color:' + (i <= f.stars ? '#FFC93C' : '#D5DCE8') + ';text-shadow:0 2px 0 ' + (i <= f.stars ? '#B8860B' : '#B8C2D3') + ';">&#9733;</span>';
@@ -197,9 +201,15 @@ function renderFeedbackEmail_(f, opt) {
     + (opt.test ? ' <span style="font-size:13px;font-weight:700;color:' + INK2 + ';">TEST</span>' : '') + '</div>'
     + '<div style="font-size:26px;font-weight:700;line-height:32px;padding-top:8px;">' + esc_(FEEDBACK_KINDS[f.kind]) + (f.who ? ' from ' + esc_(f.who) : '') + '</div>'
     + stars + '</td></tr></table></td></tr>');
-  rows.push(card_(f.text
-    ? '<div style="font-size:13px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:#2D7FF9;padding-bottom:6px;">What they said</div><div style="font-size:18px;line-height:27px;">' + esc_(f.text).replace(/\n/g, '<br>') + '</div>'
-    : '<div style="font-size:16px;color:' + INK2 + ';">No words, just stars.</div>', { bg: '#FFFDF4' }));
+  var said = function (head, color, text) { return '<div style="font-size:13px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:' + color + ';padding-bottom:6px;">' + head + '</div><div style="font-size:18px;line-height:27px;">' + esc_(text).replace(/\n/g, '<br>') + '</div>'; };
+  if (f.love && f.better) {
+    // Both boxes: two cards, so each part reads on its own.
+    rows.push(card_(said('What they love', '#E5487A', f.love), { bg: '#FFFDF4' }));
+    rows.push(card_(said('What should be better', f.kind === 'mixedbug' ? GRASS : '#2D7FF9', f.better), { bg: '#FFFDF4' }));
+  } else {
+    rows.push(card_(f.text ? said('What they said', '#2D7FF9', f.text)
+      : '<div style="font-size:16px;color:' + INK2 + ';">No words, just stars.</div>', { bg: '#FFFDF4' }));
+  }
   rows.push(card_('<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">'
     + row('Name', f.who ? esc_(f.who) : '<span style="color:' + INK2 + ';">Not given</span>')
     + row('Device', esc_([f.os, f.browser].filter(function (x) { return x; }).join(', ') || 'Not known'))

@@ -23,7 +23,7 @@ import { esc, on, $, sheet, soundIcon, toast, fitText } from './dom.js';
 import { sfx, unlock } from '../core/sound.js';
 import { shareGame, shareIcon } from './share.js';
 import { openPlayElsewhere, deviceIcon } from './playElsewhere.js';
-import { openFeedback } from './feedback.js';
+import { openFeedback, openRate, myRating, rateIcon } from './feedback.js';
 import { trainerChipSheet } from './onboarding.js';
 import { towerTile } from './tower.js'; // Hundred Tower hook
 import { questsCard, bindQuests, boltLockedNote } from './quests.js'; // [systems] daily quests, Lightning Round
@@ -419,6 +419,7 @@ function homeMenu(p, go) {
     ${row('data-m="switch"', uiImg('icon-trainers'), 'Title screen', 'Switch trainer or add a new one')}
     ${row('data-m="device"', deviceIcon(), 'Play on another device', 'Open the game on an iPad, phone or Chromebook')}
     ${row('data-m="feedback"', uiImg('kaizo-feedback'), 'Send feedback', 'Tell the maker what you love and what you don\u2019t')}
+    ${((r) => row('data-m="rate"', rateIcon(), 'Rate the game', r?.stars ? `You gave it ${r.stars} star${r.stars === 1 ? '' : 's'}. Change it any time.` : r ? 'Change your rating any time' : 'Give it 1 to 5 stars'))(myRating())}
     <button class="menu-row menu-share" data-share><span class="menu-ic" aria-hidden="true">${shareIcon()}</span><span class="menu-txt"><strong>Share the game</strong><small>Send a friend the link</small></span></button>
     <button class="menu-row menu-grown" data-grownups><span class="menu-ic" aria-hidden="true">${uiImg('icon-grownups')}</span><span class="menu-txt"><strong>Grown-ups</strong><small>Settings and progress. Needs the grown-up PIN.</small></span></button>
     <p class="menu-ver">Kaimon Multiply v${VERSION}${offlineBadgeHTML('menu-badge')}</p>
@@ -438,6 +439,7 @@ function homeMenu(p, go) {
     if (m === 'balls') setTimeout(() => ballsHelp(p, { back }), 200);
     if (m === 'device') setTimeout(() => openPlayElsewhere({ back }), 200);
     if (m === 'feedback') setTimeout(() => openFeedback({ place: 'menu', back }), 200);
+    if (m === 'rate') setTimeout(() => openRate({ place: 'menu', back }), 200);
     if (m === 'switch') go('welcome');
     if (m === 'bolt') { if (!boltUnlocked(p)) { setTimeout(() => toast(`Lightning Round: ${boltLockedNote(p)}.`, 2600), 200); return; } if (!limitReached(p)) go('lightning'); } // [systems]
   });

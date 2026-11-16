@@ -22,18 +22,15 @@
 .sheet .fb-star-label { margin: -4px 0 0; text-align: center; font-size: 19px; font-weight: 700; color: var(--ink-2); min-height: 26px; }
 .sheet .fb-star-label.set { color: var(--ink); }
 
-/* Kind chips */
-.fb-kinds { display: flex; flex-wrap: wrap; gap: 8px; }
-.fb-kind { flex: 1 1 auto; min-height: 48px; padding: 8px 16px; border: 3px solid var(--ink); border-radius: 999px; background: var(--paper); box-shadow: 0 4px 0 var(--ink); font-weight: 600; font-size: 17px; transition: transform .06s, box-shadow .06s, background-color .15s; }
-.fb-kind:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--ink); }
-.fb-kind.on { color: #fff; }
-.fb-kind-love.on { background: #E5487A; }
-.fb-kind-idea.on { background: #2D7FF9; }
-.fb-kind-bug.on { background: var(--grass); }
-.fb-kind-dislike.on { background: #7A4FD0; }
-/* Four kinds: two even columns, so a long label wraps inside its own button. */
-.fb-kinds { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.fb-kind { border-radius: 18px; line-height: 1.15; padding: 8px 10px; text-align: center; }
+/* Two boxes: what you love, and what should be better. Fill one or both. */
+.fb-box-label { display: flex; align-items: center; gap: 10px; line-height: 1.2; }
+.fb-box-ic { flex-shrink: 0; width: 32px; height: 32px; border-radius: 50%; border: 2.5px solid var(--ink); display: grid; place-items: center; box-shadow: 0 2px 0 var(--ink); }
+.fb-box-ic svg { width: 19px; height: 19px; display: block; }
+.fb-box-love .fb-box-ic { background: #E5487A; }
+.fb-box-better .fb-box-ic { background: #2D7FF9; }
+.fb-box .fb-text { min-height: 92px; }
+.fb-box-love .fb-text:focus { border-color: #C93366; box-shadow: 0 0 0 3px rgba(229, 72, 122, .2); }
+.sheet .fb-hint { margin: -4px 0 -4px; font-size: 15px; font-weight: 600; color: var(--ink-2); }
 
 .fb-field { display: flex; flex-direction: column; gap: 6px; font-size: 16px; font-weight: 600; }
 .fb-field em { font-style: normal; font-weight: 500; color: var(--ink-2); }
@@ -59,9 +56,14 @@
 .sheet .fb-thanks h2 { margin: 2px 0 0; font-size: 30px; color: #fff; -webkit-text-stroke: 5px var(--ink); paint-order: stroke fill; text-shadow: 0 3px 0 var(--ink); }
 .sheet .fb-thanks p { margin: 4px 0 10px; color: var(--ink-2); max-width: 32ch; }
 .fb-thanks .fb-actions { width: 100%; }
+.fb-more { background: var(--paper); color: var(--ink); }
+.sheet .fb-thanks .fb-note { margin: 4px 0 0; max-width: none; font-size: 14px; }
 
 @media (prefers-reduced-motion: reduce) {
   .fb-kaizo, .fb-thanks, .fb-thanks-kaizo, .fb-star.pop svg { animation: none; }
+}
+@media (max-width: 500px) {
+  .sheet .fb-head h2.fb-long { font-size: 25px; }
 }
 @media (max-width: 380px) {
   .sheet .fb-head h2 { font-size: 24px; }
