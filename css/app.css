@@ -3358,3 +3358,28 @@ button.tp-slot:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--in
 .pt-line b { color: var(--ink); font-size: 17px; }
 .cl-more { margin-top: 4px; }
 .cl-more summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; font-weight: 700; color: #123F8C; }
+
+/* Who's playing: trainer cards are picks, not buttons. No press-down; the pick wears a
+   sun ring. The New trainer card stays a real chunky button. */
+.who-card[data-id] { box-shadow: 0 3px 0 rgba(20, 33, 61, .2); cursor: pointer; transition: box-shadow .2s, background-color .2s; }
+.who-card[data-id]:active { transform: none; box-shadow: 0 3px 0 rgba(20, 33, 61, .2); }
+.title-panel .who-card[data-id].sel, .title-panel .who-card[data-id].sel:active { cursor: default; translate: none; transform: none; background: #FFE98F; box-shadow: 0 0 0 4px var(--sun), 0 0 0 6.5px var(--ink); }
+.who-new.sel { box-shadow: 0 5px 0 var(--ink), 0 0 0 4px var(--sun); }
+/* Keyboard focus: a coral ring just inside the card, so the strip never clips it */
+.title-panel .who-card:focus-visible { outline: 3px solid var(--coral); outline-offset: -9px; border-radius: 22px; }
+@media (min-aspect-ratio: 1/1) { .title-panel .who-card:focus-visible { outline-offset: -5px; border-radius: 18px; } }
+@media (prefers-reduced-motion: reduce) { .who-card[data-id] { transition: none; } }
+/* Phone and iPad portrait: the © line keeps clear of the panel (its shadow is 8px) and
+   sits well above the home indicator: at least 18px from the bottom edge, or 12px above
+   the safe area on iPhones with a home bar. */
+@media (max-aspect-ratio: 1/1) {
+  .title-copy { margin: 18px 0 max(18px, calc(var(--safe-b) + 12px)); line-height: 1.2; }
+}
+
+/* Trainer License: tap your name (pencil) to change it */
+.lic-namebtn { margin: 0; border: 0; background: none; font: inherit; color: var(--ink); text-align: left; cursor: pointer; border-radius: 1.6cqw; -webkit-tap-highlight-color: transparent; transition: background-color .15s; }
+.lic-namebtn:active { background: rgba(255, 210, 63, .35); }
+.lic-namebtn .lic-name { flex: 0 1 auto; }
+.lic-pen { flex: none; display: grid; place-items: center; width: 5.4cqw; height: 5.4cqw; margin-left: .4cqw; border-radius: 50%; background: #fff; border: .45cqw solid var(--ink); color: var(--ink); box-shadow: 0 .5cqw 0 var(--ink); }
+.lic-pen svg { width: 72%; height: 72%; display: block; }
+.rename h2 { margin-top: 0; }

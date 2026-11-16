@@ -1,4 +1,5 @@
-import { touch, setSetting, switchProfile, renameProfile, hideProfile, hiddenProfiles } from '../core/store.js';
+import { touch, setSetting, switchProfile, hideProfile, hiddenProfiles } from '../core/store.js';
+import { renameSheet } from './renameSheet.js';
 import { deleteEverywhere, addBackFromFamily } from '../core/sync.js';
 import { avatarSVG, trainerLook } from './avatars.js';
 import { dexCounts } from '../core/game.js';
@@ -648,11 +649,7 @@ function renderMain(root, go) {
   on(root, 'click', '[data-tm-switch]', (e, el) => { switchProfile(el.dataset.tmSwitch); guTab = 'progress'; renderMain(root, go); window.scrollTo(0, 0); });
   on(root, 'click', '[data-tm-rename]', (e, el) => {
     const x = allProfiles().find((y) => y.id === el.dataset.tmRename);
-    const sh = sheet(`<h2>Rename ${esc(x.name)}</h2><input class="field" maxlength="16" value="${esc(x.name)}" data-newname><p class="note">${x.family ? 'The new name shows on every family device.' : 'Only on this device.'}</p><div class="sheet-actions"><button class="btn-chunky btn-primary" data-do>Save</button><button class="btn-chunky" data-close>Cancel</button></div>`);
-    const inp = sh.el.querySelector('[data-newname]'); inp.focus(); inp.select();
-    const doIt = () => { const v = inp.value.trim(); if (!v) return toast('Type a name.'); renameProfile(x.id, v); if (x.family) syncNow(); sh.close(); toast(`Renamed to ${v}`); renderMain(root, go); };
-    sh.el.querySelector('[data-do]').addEventListener('click', doIt);
-    inp.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') doIt(); });
+    renameSheet(x, { onDone: () => renderMain(root, go) });
   });
   on(root, 'click', '[data-tm-delete]', (e, el) => {
     const x = allProfiles().find((y) => y.id === el.dataset.tmDelete);

@@ -10,6 +10,7 @@ import { lookPickerHTML, wireLookPicker } from './lookPicker.js';
 import { medal } from './home.js';
 import { badgeImg, ballImg, itemImg, uiImg, ITEMS } from '../core/assets.js';
 import { teamRowHTML, teamSheet } from './teamPicker.js';
+import { renameSheet } from './renameSheet.js';
 import { esc, on, sheet, toast } from './dom.js';
 import { sfx } from '../core/sound.js';
 
@@ -79,7 +80,7 @@ function licenseHTML(p, x) {
     <div class="lic-card">
       ${uiImg('trainer-license', 'lic-bg')}
       <div class="lic-photo tr-av">${avatarSVG(trainerLook(p))}</div>
-      <div class="lic-bar b1"><span class="lic-k">Name</span><strong class="lic-name">${esc(p.name)}</strong></div>
+      <button class="lic-bar b1 lic-namebtn" data-rename aria-label="Name: ${esc(p.name)}. Tap to change your name."><span class="lic-k">Name</span><strong class="lic-name">${esc(p.name)}</strong><span class="lic-pen" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4.5 19.5 L5.4 15.4 L15.6 5.2 a2.1 2.1 0 0 1 3 0 l0.2 0.2 a2.1 2.1 0 0 1 0 3 L8.6 18.6 Z" fill="#FFD23F" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M13.6 7.2 L16.8 10.4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span></button>
       <div class="lic-bar b2"><span class="lic-k">Rank</span><span class="lic-v">${esc(trainerTitle(p))}${stars}</span></div>
       <div class="lic-bar b3"><span class="lic-k">Since</span><span class="lic-v">${sinceDay(trainerSince(p))}</span></div>
       <div class="lic-bar b4 lic-nums">
@@ -225,6 +226,8 @@ export function renderTrainer(root, go) {
   on(root, 'click', '[data-team]', () => { sfx.tap(); teamSheet(p, draw); });
   on(root, 'click', '[data-switch]', () => { sfx.tap(); go('welcome'); });
   on(root, 'click', '[data-badge]', (e, el) => { sfx.tap(); badgeSheet(p, el.dataset.badge); });
+  // Tap your name on the License to change it (the same sheet as Grown-ups > Trainers).
+  on(root, 'click', '[data-rename]', () => { sfx.tap(); renameSheet(p, { title: 'Change your name', onDone: () => draw() }); });
   on(root, 'click', '[data-look]', () => {
     sfx.tap();
     // Every change saves right away, so closing the sheet any way keeps the new look.
