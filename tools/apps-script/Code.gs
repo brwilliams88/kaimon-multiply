@@ -321,7 +321,7 @@ var TYPE_COLORS = {
   papa: ['#2B2B33', '#F3D6DA', '#111111'], mythic: ['#FF6B9A', '#FFE0EC', '#5C1030'],
 };
 var TABLE_TYPE = ['leaf', 'water', 'fire', 'wind', 'spark', 'stone', 'frost', 'metal', 'shadow', 'cosmic'];
-var DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+var DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']; // weeks run Sunday to Saturday (the device's own time zone)
 var MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 function int_(x, max, min) {
@@ -367,7 +367,7 @@ function cleanReport_(r, trainer, week) {
     cards: cards,
     right: right,
     accuracy: cards ? Math.round((right / cards) * 100) : null,
-    daily: DAY_NAMES.map(function (name, i) { var x = arr(r.daily, 7)[i] || {}; return { name: name, minutes: int_(x.minutes, 1440), cards: int_(x.cards, 100000) }; }),
+    daily: DAY_NAMES.map(function (name, i) { var x = arr(r.daily, 7)[i] || {}; return { name: DAY_NAMES.indexOf(x.name) >= 0 ? x.name : name, minutes: int_(x.minutes, 1440), cards: int_(x.cards, 100000) }; }),
     tables: arr(r.tables, 10).map(function (t) {
       t = t || {}; var a = int_(t.answers, 100000), c = Math.min(int_(t.right, 100000), a);
       return { table: int_(t.table, 10, 1), answers: a, right: c, accuracy: a ? Math.round((c / a) * 100) : 0 };

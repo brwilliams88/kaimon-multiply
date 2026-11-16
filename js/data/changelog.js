@@ -1,7 +1,17 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.5.29';
+export const VERSION = '0.5.30';
 
 export const CHANGELOG = [
+  {
+    version: '0.5.30',
+    date: '2026-11-15',
+    title: "Weekly report fixes",
+    items: [
+      "Fixed: the minutes for each day in the report email were labeled one day off (Sunday showed as Monday). Days now match the week, Sunday to Saturday.",
+      "Every family gets the report on their own Sunday morning: days are counted in each device's own time zone, and the report goes out from 9 am local time, whether you are in California, New York or Japan.",
+      "The trainer in the report email is now a closer picture of their head and shoulders, so it shows up better in the small circle.",
+    ],
+  },
   {
     version: '0.5.29',
     date: '2026-11-15',

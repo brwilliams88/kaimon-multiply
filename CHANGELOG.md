@@ -2,6 +2,12 @@
 
 All notable changes. Versioning: `0.MINOR.0` marks a roadmap phase, `0.x.PATCH` is any shipped change a player or parent can notice, and `1.0.0` is the public launch. See "Versioning" in CLAUDE.md. The in-app version history (Grown-ups > What's new) reads from `js/data/changelog.js`; keep both in sync. Each release is tagged in git as `vX.Y.Z`.
 
+## v0.5.30 (2026-11-15) Weekly report fixes
+
+- Fixed: the minutes for each day in the report email were labeled one day off (Sunday showed as Monday). Days now match the week, Sunday to Saturday.
+- Every family gets the report on their own Sunday morning: days are counted in each device's own time zone, and the report goes out from 9 am local time, whether you are in California, New York or Japan.
+- The trainer in the report email is now a closer picture of their head and shoulders, so it shows up better in the small circle.
+
 ## v0.5.29 (2026-11-15) No more peeking messages
 
 - Fixed: an old message could peek out half hidden at the bottom of the screen (like "Looking good!" on the trainer page) or as a cut-off oval above the prize at the start of a battle. Messages now fully disappear when they are done.

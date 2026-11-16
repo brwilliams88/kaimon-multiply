@@ -10,7 +10,9 @@ const fromKey = (k) => { const [y, m, d] = k.split('-').map(Number); return new 
 const LEVEL_NAMES = ['new', 'learning', 'bronze', 'silver', 'gold', 'star'];
 const MEDAL_DAY = [[5, 'fastDays', 19], [4, 'fastDays', 9], [3, 'fastDays', 4], [2, 'days', 1]];
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-export const SEND_HOUR = 7; // reports go out Sunday morning, from 7 am local time
+// Reports go out Sunday morning from 9 am in each device's own time zone, so a family in
+// New York, California or Japan each gets theirs on their own Sunday morning.
+export const SEND_HOUR = 9;
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 // Midnight on the Sunday that starts the week holding t (a Date, ms or "YYYY-MM-DD").
