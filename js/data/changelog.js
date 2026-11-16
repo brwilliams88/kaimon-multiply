@@ -1,7 +1,15 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.5.24';
+export const VERSION = '0.5.25';
 
 export const CHANGELOG = [
+  {
+    version: '0.5.25',
+    date: '2026-11-15',
+    title: "Kairo and Kairos HP",
+    items: [
+      "Kairo now has 120 HP and Kairos 200. Their attacks still grow with quick right answers and every right answer in a row.",
+    ],
+  },
   {
     version: '0.5.24',
     date: '2026-11-15',

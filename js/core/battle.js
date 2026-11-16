@@ -11,7 +11,7 @@ export const HIT_BACK = 12;   // damage you take on a wrong answer
 // huge HP (a normal Kaimon has 40, Papazilla 80). Their attack comes from how well
 // the trainer answers: a quick right answer hits very hard, and every right answer
 // in a row adds more (up to +60%). A slow answer hits about like anyone else.
-const MYTHIC = { 1: { hp: 160, base: 4, perPower: 46 }, 2: { hp: 240, base: 4, perPower: 62 } };
+const MYTHIC = { 1: { hp: 120, base: 4, perPower: 46 }, 2: { hp: 200, base: 4, perPower: 62 } };
 const COMBO_STEP = 0.12, COMBO_MAX = 0.6; // mythic bonus per right answer in a row
 const mythicStats = (sp) => sp.type === 'mythic' ? MYTHIC[sp.stage] || MYTHIC[1] : null;
 export const maxHpFor = (sp) => mythicStats(sp)?.hp || MY_HP;

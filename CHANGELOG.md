@@ -2,6 +2,10 @@
 
 All notable changes. Versioning: `0.MINOR.0` marks a roadmap phase, `0.x.PATCH` is any shipped change a player or parent can notice, and `1.0.0` is the public launch. See "Versioning" in CLAUDE.md. The in-app version history (Grown-ups > What's new) reads from `js/data/changelog.js`; keep both in sync. Each release is tagged in git as `vX.Y.Z`.
 
+## v0.5.25 (2026-11-15) Kairo and Kairos HP
+
+- Kairo now has 120 HP and Kairos 200. Their attacks still grow with quick right answers and every right answer in a row.
+
 ## v0.5.24 (2026-11-15) News emails on by default
 
 - The News emails switch in Grown-ups is now on by default for a signed-in grown-up. Turn it off to opt out. Unsubscribing from an email turns it off in the game too, and it stays off.
