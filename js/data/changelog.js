@@ -1,7 +1,16 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.5.10';
+export const VERSION = '0.5.11';
 
 export const CHANGELOG = [
+  {
+    version: '0.5.11',
+    date: '2026-11-15',
+    title: "Your trainer throws the ball",
+    items: [
+      "Your trainer now throws the ball: on every catch, your full-body trainer slides in from the corner, throws, and slides back out once the ball starts to shake.",
+      "Every trainer look has its own throwing pose, including the wheelchair trainer, and jacket colors carry over.",
+    ],
+  },
   {
     version: '0.5.10',
     date: '2026-11-15',

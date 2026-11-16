@@ -14,7 +14,7 @@ import { voiceSupported, stop as stopVoice } from '../core/voice.js';
 import { micMode, micButton } from './micMode.js';
 import { sfx, setSound } from '../core/sound.js';
 import { ballIcon, medal } from './home.js';
-import { avatarSVG, trainerLook } from './avatars.js';
+import { trainerLook, trainerImg } from './avatars.js';
 import { ballSrc, sceneSrc, cssUrl, sceneKey, uiImg, itemImg, fxSrc, typeIcon, trainerFace, CARD_BACK } from '../core/assets.js';
 import { quick } from '../core/prefs.js';
 import { $, on, esc, sheet, wait, toast, soundButton, reducedMotion } from './dom.js';
@@ -249,7 +249,7 @@ export function renderPlay(root, go, { table }) {
         <div class="qplate done"><span>${a}</span><span class="times">×</span><span>${b}</span><span class="eq">=</span><span class="ans">${ans}</span></div>
         <div class="catch-zone">
           <div class="catch-art">${creatureArt(S.species, { shiny: result?.shiny })}</div>
-          <div class="catch-trainer" aria-hidden="true">${avatarSVG(trainerLook(p))}</div>
+          <div class="catch-thrower" aria-hidden="true">${trainerImg(trainerLook(p), 'throw')}</div>
           <img class="catch-fx beam" src="${fxSrc('capture-beam')}" alt="" aria-hidden="true">
           <img class="catch-fx burst" src="${fxSrc('capture-burst')}" alt="" aria-hidden="true">
           <div class="throw-ball"><img class="ball-svg ball-img" src="${ballSrc(ball)}" alt="" draggable="false"></div>
@@ -321,7 +321,11 @@ export function renderPlay(root, go, { table }) {
     const q = quick(p);
     const shakes = q ? Math.min(roll.shakes, 1) : roll.shakes;
     zone.classList.toggle('quick', q);
-    await nap(q ? 120 : 200);
+    // Your trainer slides in from the corner and throws, then slides back out
+    // once the ball starts to shake.
+    await nap(30);
+    zone.classList.add('trainer-in');
+    await nap(q ? 200 : 320);
     sfx.throw();
     zone.style.setProperty('--spin', '-' + (360 + Math.round(pw * 540)) + 'deg');
     zone.classList.add('thrown');
@@ -331,7 +335,7 @@ export function renderPlay(root, go, { table }) {
     zone.classList.add('absorbed');
     await nap(q ? 120 : 220);
     if (ballEl) ballEl.src = ballSrc(ball);
-    zone.classList.add('shut');
+    zone.classList.add('shut', 'trainer-out');
     for (let i = 0; i < shakes; i++) { await nap(q ? 200 : 260); sfx.wobble(); zone.classList.toggle('wob'); }
     await nap(shakes ? (q ? 140 : 220) : 120);
     S.wake = null;

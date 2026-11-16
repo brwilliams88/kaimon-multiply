@@ -1808,3 +1808,17 @@ html.lock-screen #app { height: 100%; }
 .done-pile[data-n="1"] i:nth-child(1), .done-pile[data-n="2"] i:nth-child(-n+2), .done-pile[data-n="3"] i { opacity: 1; }
 .face.front.catching .catch-zone { flex: 1; }
 @media (prefers-reduced-motion: reduce) { .card3d, .card3d.card-in { transition: none; animation: none; } }
+/* v0.5.11 Trainer throw: the full-body trainer slides in, throws, slides out */
+.catch-thrower { position: absolute; left: -3%; bottom: -2%; height: min(82%, 320px); aspect-ratio: 1; z-index: 3; pointer-events: none; transform: translateX(-115%); transition: transform .3s cubic-bezier(.2, 1.15, .4, 1); }
+.catch-thrower img { width: 100%; height: 100%; object-fit: contain; object-position: left bottom; display: block; filter: drop-shadow(0 6px 0 rgba(20, 33, 61, .28)); }
+.catch-zone.trainer-in .catch-thrower { transform: none; }
+.catch-zone.trainer-out .catch-thrower { transform: translateX(-115%); transition: transform .26s cubic-bezier(.6, 0, .9, .5); }
+.play.v2 .catch-zone .throw-ball { transform: translate(calc(-1 * min(22vw, 170px)), 30px) rotate(0deg) scale(.7); opacity: 0; }
+.play.v2 .catch-zone.thrown .throw-ball { opacity: 1; transform: translate(0, -6px) rotate(var(--spin, -360deg)); }
+.play.v2 .catch-zone.absorbed.wob .throw-ball { transform: translate(0, -6px) rotate(-16deg); }
+.play.v2 .catch-zone.absorbed:not(.wob) .throw-ball { transform: translate(0, -6px) rotate(14deg); }
+.play.v2 .catch-zone.caught .throw-ball { transform: translate(0, -6px) scale(1.15); opacity: 0; }
+.play.v2 .catch-zone.escaped .throw-ball { opacity: 0; }
+@media (prefers-reduced-motion: reduce) { .catch-thrower { transition: none; } }
+/* The throw art has a ball drawn by the hand; hide it so only the flying ball shows. */
+.catch-thrower img { clip-path: polygon(0 0, 80% 0, 80% 25%, 100% 25%, 100% 100%, 0 100%); }
