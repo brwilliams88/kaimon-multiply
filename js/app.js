@@ -83,7 +83,7 @@ function go(name, params = {}) {
   document.documentElement.classList.toggle('lock-screen', name === 'welcome');
 }
 // Each screen has a name: in the browser tab, and as a heading screen readers land on.
-const SCREEN_NAMES = { welcome: '', newTrainer: 'New trainer', meetPartner: 'Meet your Buddy', home: 'Home', play: 'Practice', kaidex: 'Kaidex', grownups: 'Grown-ups', battle: 'Battle', trainer: 'Trainer' };
+const SCREEN_NAMES = { welcome: '', newTrainer: 'New trainer', meetPartner: 'Meet your Buddy', home: 'Home', play: 'Practice', kaidex: 'Kaidex', grownups: 'Grown-ups', battle: 'Battle', trainer: 'Trainer', lightning: 'Lightning Round', tower: 'The Hundred Tower' };
 let firstScreen = true;
 function nameScreen(root, name) {
   const label = SCREEN_NAMES[name] || '';

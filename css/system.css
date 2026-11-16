@@ -7,7 +7,7 @@
   --coral: #EE5530;
   --coral-deep: #C4421F;   /* small white-text chips (4.5:1) */
   --grass-ink: #287D35;    /* green text on white */
-  --gold-ink: #946B00;     /* star and gold text on white */
+  --star-ink: #765600;     /* star and gold text on white or sky */
   --muted: #646F8B;        /* quiet text that still reads (4.5:1 on white) */
   --link: #1A62C4;
   --focus: #1E6FD9;
@@ -57,7 +57,7 @@ a:focus-visible, .link-btn:focus-visible { border-radius: 6px; }
   .btn-chunky:not([disabled]):hover, .icon-btn:hover, .pill:hover, .sheet-x:hover, .menu-row:hover, .chip:hover, .tp-switch:hover, .buddy-switch:hover { filter: brightness(1.04); }
   .btn-chunky:not([disabled]):not(:active):hover { transform: translateY(-1px); }
 }
-.link-btn { color: var(--ink-2); text-underline-offset: 3px; }
+.link-btn { text-underline-offset: 3px; }
 
 /* Sheet buttons: a lone button spans the sheet; pairs share the row. */
 .sheet .sheet-actions:not(.icon-notice .sheet-actions) > .btn-chunky { flex: 1 1 auto; }
@@ -80,8 +80,8 @@ a:focus-visible, .link-btn:focus-visible { border-radius: 6px; }
 }
 
 /* ---------- Tap targets: at least 44px, without changing how things look ---------- */
-:where(.chips > button.chip, .tc-tab, .dc-shiny, .wn-x, .buddy-switch, .tp-switch, .tg-view, .sheet-back, .link-btn, .tc-random, .btn-sm, .hd-dot, .hd-arrow-btn, .lic-bar, .bn-dot, .vsi-later) { position: relative; }
-:is(.chips > button.chip, .tc-tab, .dc-shiny, .wn-x, .buddy-switch, .tp-switch, .tg-view, .sheet-back, .link-btn, .tc-random, .btn-sm, .hd-dot, .hd-arrow-btn, .lic-bar, .vsi-later)::before {
+:where(.snack-btn, .chips > button.chip, .tc-tab, .dc-shiny, .wn-x, .buddy-switch, .tp-switch, .tg-view, .sheet-back, .link-btn, .tc-random, .btn-sm, .hd-dot, .hd-arrow-btn, .lic-bar, .bn-dot, .vsi-later) { position: relative; }
+:is(.snack-btn, .chips > button.chip, .tc-tab, .dc-shiny, .wn-x, .buddy-switch, .tp-switch, .tg-view, .sheet-back, .link-btn, .tc-random, .btn-sm, .hd-dot, .hd-arrow-btn, .lic-bar, .vsi-later)::before {
   content: ''; position: absolute; left: 50%; top: 50%; width: max(100%, var(--tap)); height: max(100%, var(--tap)); transform: translate(-50%, -50%);
 }
 .bn-dot::after { inset: -16px -4px; }
@@ -92,7 +92,7 @@ a:focus-visible, .link-btn:focus-visible { border-radius: 6px; }
 .tc-tab { padding-top: 9px; padding-bottom: 9px; }
 
 /* ---------- Readable colors (WCAG AA) ---------- */
-.stars { color: #765600; }
+.stars { color: var(--star-ink); }
 .lic-stars { color: #6E5000; }
 .lic-k { color: var(--ink-2); }
 .bc-slot:not(.won) .bc-name { color: rgba(255, 255, 255, .78); }
@@ -108,3 +108,8 @@ a:focus-visible, .link-btn:focus-visible { border-radius: 6px; }
 /* White words on a type color get a navy outline, like the game titles, so they read on light colors too. */
 .type-tag, .chips > .chip.on:not([data-f="all"]):not([data-f="special"]) { -webkit-text-stroke: 3px var(--ink); paint-order: stroke fill; font-weight: 700; }
 .title-copy { text-shadow: 0 1px 3px rgba(20, 33, 61, .9), 0 0 2px rgba(20, 33, 61, .9); }
+
+/* Tower and Lightning Round (systems and tower branches) */
+.tf-locked .tw-fname, .mt-unknown .mt-name, .mt-unknown .mt-tag { color: var(--muted); }
+.tw-floor .btn-primary, .bolt-panel .btn-primary { font-size: max(19px, 1em); }
+.bolt-panel > h2 { color: #FFFFFF; -webkit-text-stroke: 5px var(--ink); paint-order: stroke fill; text-shadow: 0 3px 0 var(--ink); letter-spacing: .01em; }
