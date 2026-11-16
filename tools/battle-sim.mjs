@@ -84,7 +84,7 @@ console.log(`Battle length, ${N} battles per row (answers per battle, win rate)`
 console.log('                          types off        types on         on, smart team');
 let sumOff = 0, sumOn = 0;
 for (const [label, r] of rows) {
-  const c = (x) => `${x.answers.toFixed(2).padStart(6)}  ${(x.win * 100).toFixed(0).padStart(3)}%   `;
+  const c = (x) => `${x.answers.toFixed(2).padStart(6)}  ${label.startsWith('Wild') ? '   -' : (x.win * 100).toFixed(0).padStart(3) + '%'}   `;
   console.log(label.padEnd(26) + c(r.off) + '  ' + c(r.on) + '  ' + c(r['on, smart team']) + `  (${(((r.on.answers / r.off.answers) - 1) * 100).toFixed(1)}% on vs off)`);
   sumOff += r.off.answers; sumOn += r.on.answers;
 }
