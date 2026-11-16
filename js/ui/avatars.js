@@ -89,8 +89,26 @@ export const JACKETS = { green: '#22C55E', teal: '#14B8A6', sky: '#38BDF8', blue
 const HUE = { green: null, teal: 172, sky: 199, blue: 222, purple: 262, pink: 330, red: 0, orange: 24, gold: 46 };
 const KEY_HUE = 142;
 
+// Make-your-own trainers (v0.5.12): 12 hairstyles (two with hats) x 3 outfits, drawn
+// with placeholder colors (magenta hair, tan skin, green clothes) that the browser
+// repaints, so every hair color, skin tone and jacket color needs no extra art.
+export const HEADS = ['spiky', 'buzz', 'curly', 'swept', 'twists', 'long', 'pony', 'buns', 'braids', 'puffs', 'cap', 'beanie'];
+export const HEAD_LABEL = { spiky: 'Spiky', buzz: 'Buzz cut', curly: 'Curly', swept: 'Swept', twists: 'Twists', long: 'Long', pony: 'Ponytail', buns: 'Buns', braids: 'Braids', puffs: 'Puffs', cap: 'Cap', beanie: 'Beanie' };
+export const OUTFIT_KINDS = ['zip', 'hoodie', 'varsity'];
+export const OUTFIT_LABEL = { zip: 'Zip jacket', hoodie: 'Hoodie', varsity: 'Varsity' };
+export const HAIR_TONES = { black: '#2B2321', brown: '#6B4226', chestnut: '#9A5B2E', blond: '#E6BE62', red: '#C4472B', silver: '#C9CFDA', blue: '#3D6FE2', pink: '#EE6FB0', purple: '#8E5CF0' };
+export const SKIN_TONES = ['#FFE1C6', '#F5C9A2', '#E6A878', '#C88A5C', '#A0673F', '#7A4829', '#57311D'];
+const SKIN_KEY = 2; // the tone the art is drawn in: no repaint needed
+
 // Old looks (the drawn-in-code portraits) become the closest anime trainer.
 function migrateLook(L) {
+  if (L.char === 'm') {
+    return {
+      char: 'm', head: HEADS.includes(L.head) ? L.head : 'spiky', outfit: OUTFIT_KINDS.includes(L.outfit) ? L.outfit : 'zip',
+      hair: HAIR_TONES[L.hair] ? L.hair : 'brown', skin: Number.isInteger(L.skin) && L.skin >= 0 && L.skin < SKIN_TONES.length ? L.skin : SKIN_KEY,
+      color: JACKETS[L.color] ? L.color : 'green',
+    };
+  }
   if (L.char && (CHARS.includes(L.char))) return { char: L.char, color: JACKETS[L.color] ? L.color : 'green' };
   const color = ['red', 'blue', 'green', 'purple', 'gold', 'teal', 'pink', 'blue'][L.outfit] || 'green';
   const dark = L.skin >= 4, mid = L.skin >= 2;
@@ -102,15 +120,37 @@ function migrateLook(L) {
   return { char, color };
 }
 // Trainers who never picked a look (only an old number) start as Kai, the default.
-export const charLook = (x) => (x && typeof x === 'object' ? migrateLook(lookOf(x)) : { char: 'kai', color: 'green' });
+export const charLook = (x) => (x && typeof x === 'object' ? migrateLook(x.char ? x : lookOf(x)) : { char: 'kai', color: 'green' });
+export const randomLook = () => {
+  const pick = (a) => a[Math.floor(Math.random() * a.length)];
+  return { char: 'm', head: pick(HEADS), outfit: pick(OUTFIT_KINDS), hair: pick(Object.keys(HAIR_TONES)), skin: Math.floor(Math.random() * SKIN_TONES.length), color: pick(Object.keys(JACKETS)) };
+};
 
-const src = (char, pose) => `assets/trainers/${char}/${pose}.webp`;
-const painted = new Map();   // "char|pose|color" -> data URL
+const folder = (char) => (char.startsWith('m:') ? char.slice(2) : char);
+const src = (char, pose) => `assets/trainers/${folder(char)}/${pose}.webp`;
+const painted = new Map();   // paint key -> data URL
 const waiting = new Map();
-function paint(char, pose, color) {
-  const key = `${char}|${pose}|${color}`;
+const hsv = (hex) => {
+  const n = parseInt(hex.slice(1), 16), r = (n >> 16) / 255, g = ((n >> 8) & 255) / 255, b = (n & 255) / 255;
+  const mx = Math.max(r, g, b), mn = Math.min(r, g, b), d = mx - mn;
+  let h = !d ? 0 : mx === r ? ((g - b) / d) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4;
+  return [(h * 60 + 360) % 360, mx ? d / mx : 0, mx];
+};
+const toRGB = (h, s, v) => {
+  h = ((h % 360) + 360) % 360; s = Math.max(0, Math.min(1, s)); v = Math.max(0, Math.min(1, v));
+  const c = v * s, x = c * (1 - Math.abs(((h / 60) % 2) - 1)), m = v - c;
+  const [R, G, B] = h < 60 ? [c, x, 0] : h < 120 ? [x, c, 0] : h < 180 ? [0, c, x] : h < 240 ? [0, x, c] : h < 300 ? [x, 0, c] : [c, 0, x];
+  return [(R + m) * 255, (G + m) * 255, (B + m) * 255];
+};
+// key: "char|pose|jacket|hair|skin" (hair and skin only for make-your-own trainers)
+function paint(key) {
   if (painted.has(key)) return Promise.resolve(painted.get(key));
   if (waiting.has(key)) return waiting.get(key);
+  const [char, pose, color, hair, skinS] = key.split('|');
+  const target = HUE[color];
+  const hairT = hair ? hsv(HAIR_TONES[hair] || HAIR_TONES.brown) : null;
+  const skin = skinS === '' || skinS == null ? SKIN_KEY : +skinS;
+  const skinT = skin !== SKIN_KEY ? hsv(SKIN_TONES[skin]) : null;
   const job = new Promise((resolve) => {
     const im = new Image();
     im.onload = () => {
@@ -119,20 +159,27 @@ function paint(char, pose, color) {
         c.width = im.naturalWidth; c.height = im.naturalHeight;
         const g = c.getContext('2d', { willReadFrequently: true });
         g.drawImage(im, 0, 0);
-        const d = g.getImageData(0, 0, c.width, c.height), px = d.data, target = HUE[color];
+        const d = g.getImageData(0, 0, c.width, c.height), px = d.data;
         for (let i = 0; i < px.length; i += 4) {
           if (px[i + 3] < 8) continue;
           const r = px[i] / 255, gg = px[i + 1] / 255, b = px[i + 2] / 255;
           const mx = Math.max(r, gg, b), mn = Math.min(r, gg, b), dl = mx - mn;
-          if (dl < 0.12 || mx < 0.12) continue;
+          if (dl < 0.06 || mx < 0.12) continue;
           let h = mx === r ? ((gg - b) / dl) % 6 : mx === gg ? (b - r) / dl + 2 : (r - gg) / dl + 4;
           h = (h * 60 + 360) % 360;
-          if (h < 95 || h > 170 || dl / mx < 0.28) continue;
-          // Same shading, new hue. Warm colors read a touch lighter, like real dye.
-          const nh = ((target + (h - KEY_HUE)) % 360 + 360) % 360, sat = dl / mx;
-          const v = Math.min(1, mx * (color === 'gold' ? 1.08 : 1)), cC = v * sat, x = cC * (1 - Math.abs(((nh / 60) % 2) - 1)), m = v - cC;
-          const [R, G, B] = nh < 60 ? [cC, x, 0] : nh < 120 ? [x, cC, 0] : nh < 180 ? [0, cC, x] : nh < 240 ? [0, x, cC] : nh < 300 ? [x, 0, cC] : [cC, 0, x];
-          px[i] = (R + m) * 255; px[i + 1] = (G + m) * 255; px[i + 2] = (B + m) * 255;
+          const sat = dl / mx;
+          let out = null;
+          if (target != null && h >= 95 && h <= 170 && sat >= 0.28 && dl >= 0.12) {
+            // Jacket: same shading, new hue. Warm colors read a touch lighter, like real dye.
+            out = toRGB(target + (h - KEY_HUE), sat, mx * (color === 'gold' ? 1.08 : 1));
+          } else if (hairT && h >= 268 && h <= 336 && sat >= 0.3 && mx >= 0.2) {
+            // Hair: the magenta placeholder becomes the chosen color, keeping its shading.
+            out = toRGB(hairT[0] + (h - 300) * 0.25, hairT[1] * Math.min(1.25, sat / 0.72), hairT[2] * Math.min(1.25, mx / 0.82));
+          } else if (skinT && (h <= 45 || h >= 345) && sat >= 0.12 && sat <= 0.85 && mx >= 0.35) {
+            // Skin: the tan placeholder becomes the chosen tone, keeping its shading.
+            out = toRGB(skinT[0] + (h - 24) * 0.5, skinT[1] * Math.min(1.4, sat / 0.55), skinT[2] * Math.min(1.08, mx / 0.97));
+          }
+          if (out) { px[i] = out[0]; px[i + 1] = out[1]; px[i + 2] = out[2]; }
         }
         g.putImageData(d, 0, 0);
         const url = c.toDataURL('image/webp', 0.9);
@@ -147,18 +194,26 @@ function paint(char, pose, color) {
   return job;
 }
 const BLANK = 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
-// An <img> for a trainer. Repainted jackets fill in a moment later (see watcher below).
+// The paint key for a look and pose, or null when the art can show as drawn.
+export function paintKey(x, pose) {
+  const L = charLook(x);
+  if (L.char === 'm') return `m:${L.head}-${L.outfit}|${pose}|${L.color}|${L.hair}|${L.skin}`;
+  if (L.char === 'kai' || L.color === 'green') return null;
+  return `${L.char}|${pose}|${L.color}||`;
+}
+// An image URL for a look (painted if needed). For places that need a finished
+// picture, like an email or a share image.
+export const lookImage = (x, pose = 'base') => { const k = paintKey(x, pose); return k ? paint(k) : Promise.resolve(src(charLook(x).char, pose)); };
+// An <img> for a trainer. Repainted art fills in a moment later (see watcher below).
 export function trainerImg(x, pose = 'face', cls = '') {
-  const { char, color } = charLook(x);
-  const p = char === 'kai' ? pose : pose;
-  if (char === 'kai' || color === 'green') return `<img class="pl-img ${cls}" src="${src(char, p)}" alt="" draggable="false" decoding="async">`;
-  const key = `${char}|${p}|${color}`;
+  const key = paintKey(x, pose);
+  if (!key) return `<img class="pl-img ${cls}" src="${src(charLook(x).char, pose)}" alt="" draggable="false" decoding="async">`;
   return `<img class="pl-img ${cls}" src="${painted.get(key) || BLANK}" data-paint="${key}" alt="" draggable="false">`;
 }
 function fill(img) {
-  const [char, pose, color] = img.dataset.paint.split('|');
+  const key = img.dataset.paint;
   delete img.dataset.paint;
-  paint(char, pose, color).then((u) => { img.src = u; });
+  paint(key).then((u) => { img.src = u; });
 }
 if (typeof MutationObserver !== 'undefined' && typeof document !== 'undefined') {
   const scan = (root) => root.querySelectorAll?.('img[data-paint]').forEach(fill);

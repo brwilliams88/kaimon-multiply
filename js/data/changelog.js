@@ -1,7 +1,18 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.5.12';
+export const VERSION = '0.5.13';
 
 export const CHANGELOG = [
+  {
+    version: '0.5.13',
+    date: '2026-11-15',
+    title: "Make your own trainer",
+    items: [
+      "A much bigger trainer creator. Make your own trainer: 12 hairstyles (including a cap and a beanie), 3 outfits (zip jacket, hoodie or varsity jacket), 7 skin tones, 9 hair colors and 9 jacket colors.",
+      "The creator has tabs for Trainer, Hair, Outfit, Skin and Colors, plus a Surprise me button that picks a random look.",
+      "Your own trainer shows everywhere your trainer does: the trainer page, battles, catches (with their own throwing pose) and the title screen.",
+      "Kai and the 14 ready-made trainers are still there to pick from.",
+    ],
+  },
   {
     version: '0.5.12',
     date: '2026-11-15',

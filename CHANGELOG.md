@@ -2,6 +2,13 @@
 
 All notable changes. Versioning: `0.MINOR.0` marks a roadmap phase, `0.x.PATCH` is any shipped change a player or parent can notice, and `1.0.0` is the public launch. See "Versioning" in CLAUDE.md. The in-app version history (Grown-ups > What's new) reads from `js/data/changelog.js`; keep both in sync. Each release is tagged in git as `vX.Y.Z`.
 
+## v0.5.13 (2026-11-15) Make your own trainer
+
+- A much bigger trainer creator. Make your own trainer: 12 hairstyles (including a cap and a beanie), 3 outfits (zip jacket, hoodie or varsity jacket), 7 skin tones, 9 hair colors and 9 jacket colors.
+- The creator has tabs for Trainer, Hair, Outfit, Skin and Colors, plus a Surprise me button that picks a random look.
+- Your own trainer shows everywhere your trainer does: the trainer page, battles, catches (with their own throwing pose) and the title screen.
+- Kai and the 14 ready-made trainers are still there to pick from.
+
 ## v0.5.12 (2026-11-15) Clearer cards and streaks
 
 - Practice cards: the Kaimon now sits fully below the question and is never covered by it, on phones, iPads and computers. On most phones it's bigger too.
