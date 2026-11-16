@@ -9,7 +9,9 @@ import { renderGrownups } from './ui/grownups.js';
 import { renderBattle } from './ui/battle.js';
 import { renderTrainer } from './ui/trainer.js';
 import { VERSION } from './data/changelog.js';
-import { startAutoSync, completeLinkSignIn } from './core/sync.js';
+import { startAutoSync, completeLinkSignIn, syncNow } from './core/sync.js';
+import { autoSendReports } from './core/mailer.js';
+import { trainerPNG } from './ui/reportPanel.js';
 import { toast, soundIcon } from './ui/dom.js';
 import { openTime } from './core/actions.js';
 import { stopMusic, startMusic } from './core/music.js';
@@ -65,6 +67,19 @@ document.addEventListener('touchmove', (e) => {
 go(!active() || allProfiles().length > 1 ? 'welcome' : (active().starter ? 'home' : 'meetPartner'));
 completeLinkSignIn().then((email) => { if (email) { toast('This device is signed in for family sync'); if (!active() || allProfiles().length > 1) go('welcome'); } }).catch((e) => toast(e.message));
 startAutoSync();
+
+// Weekly report emails: once a week, when the app opens, send last week's report
+// for trainers whose grown-ups turned it on. Does nothing until the sender is set up.
+let reportRun = null;
+function sendWeeklyReports() {
+  if (reportRun) return;
+  reportRun = autoSendReports({ imageFor: (p) => trainerPNG(p), syncFirst: syncNow })
+    .then((out) => { if (out.some((x) => x.sent || x.dup) && active()) syncNow(); })
+    .catch(() => {})
+    .finally(() => { reportRun = null; });
+}
+setTimeout(sendWeeklyReports, 5000);
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') setTimeout(sendWeeklyReports, 3000); });
 
 // Sound button in the top bars (home, practice, battles).
 document.addEventListener('click', (e) => {
