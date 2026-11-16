@@ -18,6 +18,7 @@ import { esc, on, sheet, toast } from './dom.js';
 import { sfx } from '../core/sound.js';
 import { openItem, hintArt } from './items.js'; // [systems] Item Bag
 import { patchSVG } from './patchArt.js';
+import { trophyFlag, trophyHTML, wireTrophy } from './trophy.js'; // design options, behind ?trophy=
 export { patchSVG };
 
 const INK = '#14213D';
@@ -144,6 +145,7 @@ function bagHTML(p) {
 
 export function renderTrainer(root, go, params = {}) {
   const p = active();
+  const trophy = trophyFlag(); // design options: one object for badges, medals, patches and the Bag
   const draw = () => {
     const dex = dexCounts(p);
     const shiny = Object.values(p.dex).reduce((t, x) => t + (x.shiny || 0), 0);
@@ -170,14 +172,14 @@ export function renderTrainer(root, go, params = {}) {
           <div class="tr-team">${teamRowHTML(p)}<button class="btn-chunky" data-team>Change team</button></div>
         </div>
         <div class="tr-col">
-          <h2 class="section-title">Badge case <span class="tr-count">${x.badges} of ${REGIONS.length}</span></h2>
+          ${trophy ? trophyHTML(p, trophy) : `<h2 class="section-title">Badge case <span class="tr-count">${x.badges} of ${REGIONS.length}</span></h2>
           ${badgeCaseHTML(p)}
           <h2 class="section-title">Item Bag</h2>
           ${bagHTML(p)}
           <h2 class="section-title">Medals</h2>
           <div class="tr-medals">
             ${REGIONS.map((r) => { const tier = tableTier(p, r.table); return `<div class="tr-medal${tier ? '' : ' none'}"><span class="tr-m-num">${r.table}s</span>${tier ? medal(tier) : '<span class="tr-m-empty"></span>'}<span class="tr-m-label">${tier ? LEVEL_LABEL[tier] : 'Not yet'}</span></div>`; }).join('')}
-          </div>
+          </div>`}
           <h2 class="section-title">Stats</h2>
           <dl class="tr-stats">
             <div><dt>Kaimon caught</dt><dd>${dex.caught} of ${dex.total}</dd></div>
@@ -201,6 +203,7 @@ export function renderTrainer(root, go, params = {}) {
   on(root, 'click', '[data-badge]', (e, el) => { sfx.tap(); badgeSheet(p, el.dataset.badge); });
   on(root, 'click', '[data-bag]', (e, el) => { if (openItem(p, el.dataset.bag, { go, onUse: draw })) sfx.tap(); }); // [systems] Item Bag: what it does, and Use
   // Tap your name on the License to change it (the same sheet as Grown-ups > Trainers).
+  if (trophy) wireTrophy(root, p, { go, draw, bagHTML, openItem, sfx });
   on(root, 'click', '[data-rename]', () => { sfx.tap(); renameSheet(p, { title: 'Change your name', onDone: () => draw() }); });
   on(root, 'click', '[data-wardrobe]', () => { sfx.tap(); openWardrobe(p, { onChange: draw }); });
   if (params.wardrobe) setTimeout(() => openWardrobe(p, { onChange: draw }), 250);
