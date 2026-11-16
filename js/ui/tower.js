@@ -7,7 +7,7 @@ import { byId } from '../data/creatures.js';
 import { creatureArt } from '../core/art.js';
 import { sceneSrc, cssUrl, ballImg, fxSrc, ballSrc, uiImg } from '../core/assets.js';
 import { dexState } from '../core/game.js';
-import { towerState, pendingCatch, floorOf, needsCatch, floorUnlocked } from '../core/tower.js';
+import { towerState, pendingCatch, floorOf, needsCatch, floorUnlocked, towerRelevant, towerLockedLine } from '../core/tower.js';
 import { megaReady, crystals } from '../core/megas.js';
 import { seen, caught as catchIt, ball as giveBall } from '../core/actions.js';
 import { syncNow } from '../core/sync.js';
@@ -20,18 +20,20 @@ const num3 = (n) => '#' + String(n).padStart(3, '0');
 const LOCK = '<svg class="tw-lock" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10.5" rx="2.6" fill="#FFD23F" stroke="#14213D" stroke-width="2"/><path d="M8.2 10.5 V8 a3.8 3.8 0 0 1 7.6 0 V10.5" fill="none" stroke="#14213D" stroke-width="2.2"/><circle cx="12" cy="15.6" r="1.6" fill="#14213D"/></svg>';
 const CHECK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5 L10 17.5 L19 7" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
-// ---------- Home tile ----------
-// A small card for the Home screen. data-tower opens this screen.
+// ---------- Home row ----------
+// A row for Home, under Papa's Gym in the region list. Shown once Papa's Gym is open
+// (as a locked peek) and from then on. data-tower opens this screen.
 export function towerTile(p) {
+  if (!towerRelevant(p)) return '';
   const st = towerState(p);
-  const sub = !st.open ? 'Where the legendaries live. Beat Boss Papa to open it.'
+  const sub = !st.open ? ((p.battles?.boss || 0) > 0 ? 'Catch the mythic Kaimon to open it.' : 'Opens after Boss Papa and the mythic Kaimon.')
     : st.pending ? `${byId(floorOf(st.pending).id).name} is waiting to be caught!`
-    : st.next ? (st.next === 1 ? 'It’s open! Three legendaries are waiting.' : `Floor ${st.next} is open. ${st.caught} of 3 legendaries caught.`)
+    : st.next ? (st.next === 1 ? 'Open! Three legendaries are waiting.' : `Floor ${st.next} is open. ${st.caught} of 3 legendaries caught.`)
     : 'All 3 legendaries caught. Battle them again any time.';
-  return `<button class="tw-tile${st.open ? ' open' : ''}" data-tower style="--scene:${esc(cssUrl(sceneSrc('tower', true)))}" aria-label="The Hundred Tower. ${esc(sub)}">
-    <span class="tw-tile-mons" aria-hidden="true">${st.floors.map((f) => `<span>${creatureArt(f.species, { mode: f.caught ? 'full' : 'seen' })}</span>`).join('')}</span>
-    <span class="tw-tile-text"><strong>${st.open ? '' : LOCK}The Hundred Tower</strong><small>${esc(sub)}</small></span>
-    <span class="kdx-go" aria-hidden="true">›</span>
+  return `<button class="rg-tower${st.open ? ' open' : ''}${st.pending || (st.open && st.next === 1 && !st.floors[0].tries) ? ' new' : ''}" data-tower aria-label="The Hundred Tower. ${esc(sub)}">
+    <span class="rg-thumb rg-thumb-tower" aria-hidden="true" style="--scene:${esc(cssUrl(sceneSrc('tower', true)))}">${st.open ? '' : LOCK}</span>
+    <span class="rg-text"><strong>The Hundred Tower</strong><small>${esc(sub)}</small></span>
+    <span class="rg-tower-mons" aria-hidden="true">${st.floors.map((f) => `<span>${creatureArt(f.species, { mode: f.caught ? 'full' : 'seen' })}</span>`).join('')}</span>
   </button>`;
 }
 
@@ -77,7 +79,7 @@ export function renderTower(root, go, params = {}) {
     const top = [...st.floors].reverse();
     const kicker = !st.open ? 'Locked' : st.done ? 'Tower complete' : `Floor ${st.next || st.pending} of 3`;
     const lead = !st.open
-      ? 'Three legendary Kaimon live at the top of this tower. Its doors open for the trainer who beats Boss Papa.'
+      ? `Three legendary Kaimon live at the top of this tower. ${towerLockedLine(p)}`
       : st.done ? 'You climbed the whole tower. Battle the legendaries again to keep the toughest facts sharp.'
       : 'Each floor is guarded by a legendary Kaimon. Every right answer is an attack. Win to catch it!';
     root.innerHTML = `
@@ -99,7 +101,7 @@ export function renderTower(root, go, params = {}) {
           </div>
           <div class="tw-climb">
             <ol class="tw-floors" aria-label="Tower floors, top floor first">${top.map((f) => floorHTML(f, st)).join('')}</ol>
-            <p class="tw-note">${st.open ? 'Tower battles use harder facts. Every win gives bonus XP.' : 'Win every Gym badge, then beat Boss Papa at Papa’s Gym.'}</p>
+            <p class="tw-note">${st.open ? 'Tower battles use harder facts. Every win gives bonus XP.' : 'The tower is the last part of the adventure, after Papa\u2019s Gym.'}</p>
           </div>
           ${megaListHTML(p)}
         </div>

@@ -15,19 +15,26 @@
 .mc-count:not(.has) .mc-img { filter: grayscale(1) opacity(.5); }
 .mc-count.has { background: var(--gold-l); }
 
-/* ---------- Home tile ---------- */
-.tw-tile { position: relative; isolation: isolate; overflow: hidden; display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; border: 3px solid var(--ink); border-radius: 22px; padding: 12px 16px; box-shadow: 0 5px 0 var(--ink); background: #F4F1FF var(--scene) center 30% / cover no-repeat; min-height: 86px; }
-.tw-tile::before { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(90deg, rgba(255, 255, 255, .96) 0%, rgba(255, 255, 255, .9) 55%, rgba(255, 255, 255, .35) 100%); }
-.tw-tile:active { transform: translateY(4px); box-shadow: 0 1px 0 var(--ink); }
-.tw-tile.open { box-shadow: 0 5px 0 var(--ink), 0 0 0 4px var(--gold); }
-.tw-tile:not(.open) { filter: saturate(.75); }
-.tw-tile-mons { display: flex; flex-shrink: 0; }
-.tw-tile-mons > span { width: 40px; height: 40px; margin-right: -10px; border-radius: 50%; background: var(--gold-l); border: 2.5px solid var(--ink); padding: 3px; }
-.tw-tile-mons > span:nth-child(2) { transform: translateY(-6px); z-index: 1; }
-.tw-tile-text { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; margin-left: 16px; }
-.tw-tile-text strong { font-size: 20px; display: flex; align-items: center; gap: 6px; white-space: nowrap; }
-.tw-tile-text small { font-size: 15px; color: var(--ink-2); line-height: 1.25; }
-.tw-tile .tw-lock, .tw-kicker .tw-lock { width: 20px; height: 20px; flex-shrink: 0; }
+/* ---------- Home row (under Papa's Gym) ---------- */
+.rg-tower { display: flex; align-items: center; gap: 12px; text-align: left; width: 100%; padding: 6px 12px 6px 6px; border: 3px solid var(--ink); border-radius: 22px; background: linear-gradient(100deg, #FFF8DC, #FFFFFF 60%, #F1ECFF); color: var(--ink); box-shadow: 0 4px 0 var(--ink); min-width: 0; }
+.rg-tower:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--ink); }
+.rg-tower .rg-thumb-tower { width: 78px; background: var(--sky) var(--scene) center 25% / cover no-repeat; }
+.rg-tower .rg-thumb-tower::before { content: none; }
+.rg-tower .rg-text strong { display: flex; align-items: center; gap: 6px; }
+.rg-tower .rg-text small { color: var(--ink-2); font-size: 14px; line-height: 1.25; }
+.rg-tower:not(.open) { background: #F4F6FA; }
+.rg-tower:not(.open) .rg-thumb-tower { filter: saturate(.5) brightness(.95); }
+.rg-tower.open { box-shadow: 0 4px 0 var(--ink), 0 0 0 4px var(--gold); }
+.rg-tower.new { box-shadow: 0 4px 0 var(--ink), 0 0 0 4px var(--gold), 0 0 18px 4px rgba(201, 182, 255, .8); }
+.rg-tower .rg-thumb-tower { align-items: center; justify-content: center; }
+.rg-tower .tw-lock { width: 26px; height: 26px; flex-shrink: 0; filter: drop-shadow(0 2px 0 rgba(20, 33, 61, .35)); }
+.rg-tower-mons { display: flex; flex: none; padding-right: 8px; }
+.rg-tower-mons > span { width: 34px; height: 34px; margin-right: -12px; border-radius: 50%; background: var(--gold-l); border: 2.5px solid var(--ink); padding: 2px; }
+.rg-tower-mons > span:nth-child(2) { transform: translateY(-5px); z-index: 1; }
+@media (min-width: 700px) { .rg-tower { grid-column: 1 / -1; } }
+@media (max-width: 380px) { .rg-tower-mons { display: none; } }
+@media (max-width: 560px) { .rg-tower .rg-text strong { font-size: 17px; } .rg-tower .rg-thumb-tower { width: 64px; } }
+@media (prefers-reduced-motion: no-preference) { .rg-tower { animation: rgIn .35s cubic-bezier(.2, .9, .3, 1) .21s both; } }
 
 /* ---------- Screen ---------- */
 .tower-screen { gap: 16px; }
@@ -41,6 +48,7 @@
 .tw-hero-text { padding: 12px 16px 14px; display: grid; gap: 10px; }
 .tw-hero-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
 .tw-hero-foot .mc-count { height: 40px; font-size: 18px; box-shadow: 0 3px 0 var(--ink); }
+.tw-kicker .tw-lock { width: 20px; height: 20px; flex-shrink: 0; }
 .tw-kicker { position: relative; z-index: 1; display: inline-flex; align-items: center; gap: 6px; background: var(--gold); color: var(--ink); border: 2.5px solid var(--ink); border-radius: 999px; padding: 3px 12px; font-weight: 700; font-size: 14px; letter-spacing: .04em; text-transform: uppercase; box-shadow: 0 3px 0 var(--ink); }
 .tw-closed .tw-kicker { background: #E4E8EF; }
 .tw-lead { margin: 0; font-size: 17px; line-height: 1.35; }

@@ -8,7 +8,7 @@ import { MEGA_IDS, megaState, crystals, megaForm, owns, MEGA_HP } from '../core/
 import { megaEvolve, megaSwitch } from '../core/actions.js';
 import { save } from '../core/store.js';
 import { syncNow } from '../core/sync.js';
-import { towerOpen, towerDone } from '../core/tower.js';
+import { towerOpen, towerDone, towerLockedLine } from '../core/tower.js';
 import { sfx } from '../core/sound.js';
 import { esc, sheet, wait, reducedMotion } from './dom.js';
 
@@ -19,7 +19,7 @@ const megaSpecies = () => MEGA_IDS.map((id) => SPECIES.find((s) => s.id === id))
 
 // Where the next crystal comes from, in kid words.
 function whereCrystals(p) {
-  if (!towerOpen(p)) return 'Mega Crystals are found in the Hundred Tower. It opens after you beat Boss Papa.';
+  if (!towerOpen(p)) return `Mega Crystals are found in the Hundred Tower. ${towerLockedLine(p)}`;
   if (!towerDone(p)) return 'Beat a new floor of the Hundred Tower to find a Mega Crystal.';
   return 'You found every crystal in the Hundred Tower. Keep answering to find more.';
 }

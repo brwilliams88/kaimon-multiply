@@ -6,9 +6,9 @@
 // Progress comes only from 'battle' events with o: 'tower' (tb is the floor number),
 // applied in applyTowerBattle() below. Old saves without p.tower keep working.
 // Kaimon core rules; the fact pools use the Multiply subject pack (facts.js).
-import { byId } from '../data/creatures.js';
+import { byId, MYTHIC_ID } from '../data/creatures.js';
 import { factsForTables, parseFact } from './facts.js';
-import { quizFacts } from './battle.js';
+import { quizFacts, bossUnlocked } from './battle.js';
 import { creatureArt } from './art.js';
 import { ballImg } from './assets.js';
 import { CRYSTAL } from './megas.js';
@@ -32,8 +32,17 @@ export const guardian = (n) => byId(floorOf(n)?.id);
 const tablesOf = (p) => (p.settings?.tables?.length ? p.settings.tables : [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
 const floorRec = (p, n) => p.tower?.floors?.[n] || null;
 
-// The Tower opens after Boss Papa falls. Before that it can be looked at, but not climbed.
-export const towerOpen = (p) => (p.battles?.boss || 0) > 0;
+// The Tower is the post-game. It opens once Kairo is caught (Kairo lands after Boss Papa
+// falls), so Kai's mythic stays the climax of the adventure. Before that it can be
+// looked at, but not climbed.
+export const towerOpen = (p) => (p.battles?.boss || 0) > 0 && !!p.dex?.[MYTHIC_ID]?.caught;
+// Worth showing on Home: once Papa's Gym is open, or anything after.
+export const towerRelevant = (p) => towerOpen(p) || (p.battles?.boss || 0) > 0 || bossUnlocked(p);
+// What still stands between the trainer and the Tower, in kid words. The mythic
+// Kaimon's name stays secret until it is caught, so it isn't named here.
+export const towerLockedLine = (p) => (p.battles?.boss || 0) > 0
+  ? 'Catch the mythic Kaimon to open the Hundred Tower.'
+  : 'Beat Boss Papa, then catch the mythic Kaimon, to open the Hundred Tower.';
 export const floorCleared = (p, n) => (floorRec(p, n)?.w || 0) > 0;
 export const floorUnlocked = (p, n) => !!floorOf(n) && towerOpen(p) && (n === 1 || floorCleared(p, n - 1));
 export const guardianCaught = (p, n) => !!p.dex?.[floorOf(n)?.id]?.caught;
@@ -91,6 +100,7 @@ export function towerOpponent(p, n) {
       type: 'legend',
       chip: `Tower · Floor ${f.n}`,
       intro: f.intro,
+      appear: `${s.name} swoops down from Floor ${f.n}!`,
       stake: rematch
         ? `${ballImg('mega', 'ball-svg vsi-ball')}<span><small>Rematch · win a Mega Ball</small><strong>Floor ${f.n}: ${f.name}</strong></span>`
         : `${ballImg('legend', 'ball-svg vsi-ball')}<span><small>Win to catch it</small><strong>${s.name}</strong></span>`,

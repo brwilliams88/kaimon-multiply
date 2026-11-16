@@ -1,6 +1,6 @@
 // Mega Evolution. Eight fully evolved Kaimon have a Mega form (art in assets/kaimon/mega/).
 // A Mega Crystal, earned by answering (the first win on each Hundred Tower floor, and
-// any other grant path that adds p.items.megaCrystal), wakes up one Kaimon's Mega form
+// any other grant path, like grantMegaCrystal() in items.js), wakes up one Kaimon's Mega form
 // for good. After that the trainer can switch it on or off; while it's on, that Kaimon
 // battles in its Mega form with more HP and stronger hits.
 //
@@ -14,7 +14,7 @@ import { SPECIES } from '../data/creatures.js';
 import { MEGA_ART } from './art.js';
 import { partnerOf } from './game.js';
 
-export const CRYSTAL = 'megaCrystal'; // key in p.items
+export const CRYSTAL = 'megacrystal'; // key in p.items, the same one items.js grantMegaCrystal() fills
 export const MEGA_HP = 50;   // a normal Kaimon has 40
 export const MEGA_POWER = 4; // extra damage on every right answer
 

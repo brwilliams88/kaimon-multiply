@@ -22,7 +22,7 @@ const towerWin = (n, won = 1, t) => ev('battle', { o: 'tower', tb: n, w: won }, 
 function fresh(opts = {}) {
   const p = newProfile('Kai', 0);
   p.starter = 'kaimo';
-  if (opts.boss) p.battles.boss = 1;
+  if (opts.boss) { p.battles.boss = 1; p.dex.mythic = { seen: 1, caught: 1, shiny: 0 }; }
   return p;
 }
 const catchEv = (id) => ev('catch', { n: id, s: 0 });
@@ -44,12 +44,20 @@ test('no em dashes or the forbidden word in Tower copy', () => {
   assert.ok(!/pok[eé]mon/i.test(words));
 });
 
-test('unlocks: locked before Boss Papa, then one floor at a time', () => {
+test('unlocks: locked until Kairo is caught after Boss Papa, then one floor at a time', () => {
   const p = fresh();
   assert.equal(T.towerOpen(p), false);
+  assert.equal(T.towerRelevant(p), false, 'not shown on Home early on');
   assert.equal(T.floorUnlocked(p, 1), false);
   assert.equal(T.nextFloor(p), null);
+  for (let t = 1; t <= 10; t++) p.battles.champs[t] = 1;
+  assert.equal(T.towerRelevant(p), true, 'shown once Papa\u2019s Gym is open');
+  assert.match(T.towerLockedLine(p), /Beat Boss Papa/);
   p.battles.boss = 1;
+  assert.equal(T.towerOpen(p), false, 'Kairo comes first');
+  assert.match(T.towerLockedLine(p), /^Catch the mythic Kaimon/);
+  assert.doesNotMatch(T.towerLockedLine(p), /Kairo/, 'the mythic name stays secret');
+  apply(p, catchEv('mythic'));
   assert.equal(T.towerOpen(p), true);
   assert.equal(T.floorUnlocked(p, 1), true);
   assert.equal(T.floorUnlocked(p, 2), false);
@@ -129,7 +137,7 @@ test('old saves without tower or megas keep working', () => {
   assert.doesNotThrow(() => T.towerState(p));
   assert.equal(M.megaUnlocked(p, 'kaizenith'), false);
   assert.equal(M.crystals({ items: undefined }), 0);
-  const old = { settings: {}, battles: { boss: 1 }, dex: {} };
+  const old = { settings: {}, battles: { boss: 1 }, dex: { mythic: { caught: 1 } } };
   assert.equal(T.nextFloor(old), 1);
   assert.equal(T.towerFacts(old, 1).length, 49);
 });
@@ -190,13 +198,18 @@ test('tower snapshot merge adds wins and keeps the earliest first win', () => {
   assert.equal(p.tower.floors[1].last, 5000);
   assert.equal(p.tower.floors[2].p, 1);
   T.mergeTowerSnap(p, null);
-  const q = fresh();
+  const q = fresh({ boss: true });
   applySnapshot(q, { tower: { floors: { 1: { p: 1, w: 1, first: 1 } } }, megas: { kaizenith: { at: 9, on: 1, ot: 9 } } });
   assert.equal(T.floorCleared(q, 1), true);
   assert.equal(M.megaUnlocked(q, 'kaizenith'), true);
 });
 
 // ---------- Megas ----------
+
+test('the crystal key is the one items.js grantMegaCrystal() fills', () => {
+  assert.equal(M.CRYSTAL, 'megacrystal');
+  assert.equal(M.crystals({ items: { megacrystal: 2 } }), 2);
+});
 
 test('mega list: the 8 fully evolved Kaimon with Mega art', () => {
   assert.equal(M.MEGA_IDS.length, 8);
@@ -215,14 +228,14 @@ test('mega rules: needs the Kaimon and a crystal', () => {
   apply(p, catchEv('elderoak'));
   assert.equal(M.megaState(p, s), 'need');
   assert.equal(M.canMegaEvolve(p, s), false);
-  p.items.megaCrystal = 1;
+  p.items.megacrystal = 1;
   assert.equal(M.megaState(p, s), 'ready');
   assert.deepEqual(M.megaReady(p).map((x) => x.id), ['elderoak']);
 });
 
 test('mega rules: the Buddy counts as owned once fully evolved', () => {
   const p = fresh();
-  p.items.megaCrystal = 1;
+  p.items.megacrystal = 1;
   assert.equal(M.owns(p, byId('kaizenith')), false);
   p.xp = 1_000_000;
   assert.equal(M.owns(p, byId('kaizenith')), true);
@@ -232,7 +245,7 @@ test('mega rules: the Buddy counts as owned once fully evolved', () => {
 test('mega apply: unlock uses one crystal, switching is free, newest switch wins', () => {
   const p = fresh();
   apply(p, catchEv('triblaze'));
-  p.items.megaCrystal = 2;
+  p.items.megacrystal = 2;
   apply(p, ev('mega', { n: 'triblaze', u: 1 }, 100));
   assert.equal(M.crystals(p), 1);
   assert.equal(M.megaState(p, byId('triblaze')), 'on');
@@ -250,7 +263,7 @@ test('mega apply: unlock uses one crystal, switching is free, newest switch wins
   apply(p, ev('mega', { n: 'mythic', u: 1 }));
   assert.equal(p.megas.kaimo, undefined);
   assert.equal(p.megas.mythic, undefined);
-  p.items.megaCrystal = 0;
+  p.items.megacrystal = 0;
   apply(p, ev('mega', { n: 'octomech', u: 1 }, 500));
   assert.equal(M.crystals(p), 0, 'never below zero');
 });
@@ -258,7 +271,7 @@ test('mega apply: unlock uses one crystal, switching is free, newest switch wins
 test('mega merge: two devices unlocking the same Kaimon in either order agree', () => {
   const a = ev('mega', { n: 'octomech', u: 1 }, 10), b = ev('mega', { n: 'octomech', u: 1 }, 20);
   const p1 = fresh(), p2 = fresh();
-  for (const p of [p1, p2]) p.items.megaCrystal = 2;
+  for (const p of [p1, p2]) p.items.megacrystal = 2;
   apply(p1, a); apply(p1, b); apply(p2, b); apply(p2, a);
   assert.equal(M.crystals(p1), 1); assert.equal(M.crystals(p2), 1);
   assert.equal(p1.megas.octomech.at, 10); assert.equal(p2.megas.octomech.at, 10);
@@ -281,7 +294,7 @@ test('mega form: same id, Mega name, Mega art, more HP and power in battle', () 
   const s = byId('blizzardfang');
   assert.equal(M.megaForm(p, s), s);
   apply(p, catchEv('blizzardfang'));
-  p.items.megaCrystal = 1;
+  p.items.megacrystal = 1;
   apply(p, ev('mega', { n: 'blizzardfang', u: 1 }));
   const m = M.megaForm(p, s);
   assert.equal(m.id, s.id);
