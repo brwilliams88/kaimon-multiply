@@ -1,7 +1,8 @@
 // Family sync with Supabase, using plain fetch (no library, works offline-first).
 // Any grown-up's email can start a family. Each family only sees its own rows; guests stay on the device.
 import { allProfiles, profileById, putProfile, newProfile, save, deviceId, syncState, setSyncState, deleteProfile, hiddenProfiles, unhideProfile } from './store.js';
-import { apply, emit } from './actions.js';
+import { apply, emit, evolveReady } from './actions.js';
+import { mergeMonsSnap, monsSnap } from './levels.js';
 
 const URL = 'https://qabevoqmalqjvesqzuse.supabase.co';
 const KEY = 'sb_publishable_6VwJkmR4SMSCs7WXQKjbnA_R0hK8OUW';
@@ -160,7 +161,7 @@ export function joinFamily(p) {
   p.family = true;
   p.updatedAt = Date.now();
   p.outbox = [];
-  emit(p, 'snap', { facts: p.facts, dex: p.dex, balls: p.balls, items: p.items, stats: p.stats, mythic: p.mythic, battles: p.battles, play: p.play, xp: p.xp, tips: p.tips });
+  emit(p, 'snap', { facts: p.facts, dex: p.dex, balls: p.balls, items: p.items, stats: p.stats, mythic: p.mythic, battles: p.battles, play: p.play, xp: p.xp, tips: p.tips, ...monsSnap(p) });
   save();
   syncNow();
 }
@@ -173,6 +174,7 @@ export function leaveFamily(p) {
 
 // Snapshot from another device: merge into this trainer.
 export function applySnapshot(p, d) {
+  mergeMonsSnap(p, d); // Kaimon levels (before dex counts change below)
   p.xp = Math.max(p.xp || 0, d.xp || 0);
   for (const [n, t] of Object.entries(d.tips || {})) { p.tips = p.tips || {}; if (!p.tips[n] || t < p.tips[n]) p.tips[n] = t; }
   for (const [id, r] of Object.entries(d.facts || {})) {
