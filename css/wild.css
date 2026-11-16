@@ -15,7 +15,7 @@
 .wild-strong {
   display: inline-flex; align-items: center; gap: 6px; margin: 6px auto 8px; align-self: center; flex: none; max-width: calc(100% - 16px);
   font-weight: 700; font-size: clamp(13px, 3.6cqh, 17px); line-height: 1.1; color: #fff;
-  background: var(--coral); border: 2.5px solid var(--ink); border-radius: 99px; padding: 4px 12px 5px;
+  background: var(--coral); border: 2.5px solid var(--ink); border-radius: 18px; padding: 4px 12px 5px; justify-content: center;
   box-shadow: 0 3px 0 var(--ink); text-align: center;
 }
 
@@ -89,9 +89,14 @@ html.wild-open, html.wild-open body { overflow: hidden; }
 }
 
 /* How to play: the wild battle card. */
-.hd-wild { right: 6%; bottom: 6%; width: 40%; aspect-ratio: 1; }
+.hd-wild { right: 6%; bottom: 4%; width: 40%; aspect-ratio: 1; }
 .hd-wild .kart { width: 100%; height: 100%; }
-.hd-wlv { position: absolute; left: 50%; bottom: -4%; transform: translateX(-50%); padding: 3px 12px; border-radius: 99px; background: var(--coral); color: #fff; border: 2.5px solid #fff; font-size: 18px; line-height: 1.1; white-space: nowrap; box-shadow: 0 3px 0 rgba(20, 33, 61, .3); }
+.hd-wlv { position: absolute; z-index: 2; left: 50%; bottom: 6%; transform: translateX(-50%); padding: 3px 12px; border-radius: 99px; background: var(--coral); color: #fff; border: 2.5px solid #fff; font-size: 18px; line-height: 1.1; white-space: nowrap; box-shadow: 0 3px 0 rgba(20, 33, 61, .3); }
 .hd-whp { right: 8%; top: 9%; width: 36%; height: 16px; border-radius: 99px; background: var(--paper); border: 3px solid var(--ink); box-shadow: 0 3px 0 var(--ink); overflow: hidden; }
 .hd-whp i { display: block; width: 22%; height: 100%; background: var(--coral); }
 .hd-wball { right: 44%; bottom: 46%; width: 12%; }
+
+/* With a Hint Scroll button in the corner, the tag stays centered and clear of it. */
+.card-wild.strong:has(.scroll-btn) .wild-strong { max-width: calc(100% - 164px); }
+.wild-strong { flex-wrap: wrap; column-gap: .3em; row-gap: 0; }
+.wild-strong > span { white-space: nowrap; }

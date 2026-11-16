@@ -65,6 +65,7 @@ function migrate(p) {
   p.settings = { ...defaultSettings(), ...(p.settings || {}) };
   p.balls = { super: 0, mega: 0, legend: 0, ...(p.balls || {}) };
   p.items = { snack: 0, ...(p.items || {}) };
+  if ('megacrystal' in p.items) { p.items.megaCrystal = (p.items.megaCrystal || 0) + (+p.items.megacrystal || 0); delete p.items.megacrystal; } // [systems] the Mega Crystal key is megaCrystal
   p.stats = { stars: 0, ...(p.stats || {}) };
   p.mythic = p.mythic || { sightings: 0, lastSeen: 0 };
   p.battles = { ...newBattles(), ...(p.battles || {}) };

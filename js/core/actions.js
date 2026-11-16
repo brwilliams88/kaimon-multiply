@@ -7,6 +7,8 @@ import { dayRec } from './playtime.js';
 import { answerXP, XP } from './xp.js';
 import { byId as SPECIES_BY } from '../data/creatures.js';
 import { today } from './store.js';
+import { applyTowerBattle } from './tower.js'; import { applyMega } from './megas.js'; // Hundred Tower and Mega hooks
+import { applySystems, onSeen, shinyChance } from './items.js'; // [systems] items, quests, Lightning Round
 import { giveXP, applyCatch, applyEvo, applyBud, roster, buddyOf, nextGen, arrivalLevel, readyToEvolve, BOOST } from './levels.js';
 
 let counter = 0;
@@ -43,6 +45,7 @@ export function apply(p, ev) {
       const e = dexEntry(p, d.n);
       e.seen++;
       if (!e.firstSeen) e.firstSeen = ev.t;
+      onSeen(p); // [systems] Lucky Lantern counts wild Kaimon
       break;
     }
     case 'esc':
@@ -84,6 +87,7 @@ export function apply(p, ev) {
     case 'bonus':
       dayRec(p, today(ev.t)).bonus += d.m || 0;
       break;
+    case 'mega': applyMega(p, d, ev.t); break; // Mega hook
     case 'evo': applyEvo(p, d, ev); break;  // a Kaimon evolved (levels.js)
     case 'bud': applyBud(p, d, ev); break;  // a new Buddy (levels.js)
     case 'tip':
@@ -115,8 +119,10 @@ export function apply(p, ev) {
         if (d.o === 'quiz') b.quiz = Math.max(b.quiz || 0, ev.t);
       }
       if (d.o === 'wild') { b.wild = (b.wild || 0) + 1; if (d.w) b.wildWins = (b.wildWins || 0) + 1; } // a wild battle (wild.js)
+      if (d.o === 'tower') applyTowerBattle(p, d, ev.t); // Hundred Tower hook
       break;
     }
+    default: applySystems(p, ev); // [systems] 'use', 'prize', 'bolt' events
   }
 }
 
@@ -169,7 +175,7 @@ export const seen = (p, speciesId) => emit(p, 'seen', { n: speciesId });
 // opts.o: 'wild' when it was caught after a wild battle.
 export function caught(p, speciesId, sp = null, opts = {}) {
   const isNew = !(p.dex[speciesId] && p.dex[speciesId].caught);
-  const shiny = Math.random() < 1 / 32;
+  const shiny = Math.random() < shinyChance(p); // [systems] 1 in 128, better with a Lucky Lantern
   const R = roster(p);
   const have = R.byId[speciesId];
   const d = { n: speciesId, s: shiny ? 1 : 0 };
@@ -202,6 +208,9 @@ export function battle(p, kind, table, won, team, extra = null) {
 }
 // Wardrobe: something earned by answering (or kept from before the Wardrobe existed).
 export const gotWear = (p, id, kept = false) => emit(p, 'got', kept ? { w: id, o: 1 } : { w: id });
+// Mega Evolution: use a Mega Crystal on a Kaimon (u), or switch its Mega form on or off.
+export const megaEvolve = (p, id) => emit(p, 'mega', { n: id, u: 1 });
+export const megaSwitch = (p, id, on) => emit(p, 'mega', { n: id, on: on ? 1 : 0 });
 
 // One-time guides (the guided first game): done or skipped once, never shown again.
 export const tipSeen = (p, name) => !!p.tips?.[name];

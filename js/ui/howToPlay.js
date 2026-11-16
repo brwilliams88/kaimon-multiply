@@ -7,6 +7,7 @@ import { byId, SPECIES } from '../data/creatures.js';
 import { ballImg, itemImg, badgeImg, uiImg, trainerFace, trainerBody, sceneSrc, gymSrc, cssUrl } from '../core/assets.js';
 import { esc, sheet, reducedMotion } from './dom.js';
 import { sfx } from '../core/sound.js';
+import { scrollArt } from './items.js'; import { calmMode } from '../core/lightning.js'; // [systems] quests, items, Lightning Round
 
 const chevron = (d) => `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${d < 0 ? 'M14.5 5 L7.5 12 L14.5 19' : 'M9.5 5 L16.5 12 L9.5 19'}" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 const ARROW = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12 H18 M13 6.5 L18.5 12 L13 17.5" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
@@ -88,6 +89,20 @@ function cards(p) {
         <span class="hd-kaizo hd-search">${uiImg('kaizo-search')}</span>
       </div>`,
     },
+    { // [systems]
+      key: 'quests', title: 'Quests and items',
+      text: 'Three small quests every day, all done by answering. They give XP, balls and items like the Hint Scroll. Find items in the Bag on your trainer page.',
+      art: `<div class="hd-art hd-sky">
+        <span class="hd-row">${[scrollArt(), itemImg('power-snack'), itemImg('sparkle-charm'), itemImg('hint-lamp')].map((x, i) => `<span class="hd-it" style="--i:${i}">${x}</span>`).join('')}</span>
+      </div>`,
+    },
+    ...(calmMode(p) ? [] : [{ // [systems]
+      key: 'bolt', title: 'The Lightning Round',
+      text: 'Warm up with one practice round, then try 60 seconds with facts you know. Beat your best for a prize. Grown-ups can play too!',
+      art: `<div class="hd-art hd-warm">
+        <span class="hd-row"><span class="hd-it hd-big">${itemImg('time-freeze')}</span><span class="hd-bolt-n"><b>60</b><small>seconds</small></span></span>
+      </div>`,
+    }]),
     {
       key: 'grownups', title: 'For grown-ups',
       text: 'Grown-ups have their own area with a PIN. They pick tables, see progress and give Good Work Stamps.',

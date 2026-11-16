@@ -7,7 +7,7 @@ import { factsForTables, pickNext, onAnswer, answerOf, parseFact, hintLadder } f
 import { answer, ball as giveBall, battle as recordBattle, session, caught as catchIt, escaped } from '../core/actions.js';
 import { myTeam, opponent, attack, powerFor, powerLabel, moveName, HIT_BACK, rewardFor, gymOpen } from '../core/battle.js';
 import { BALLS, ballForStreak } from '../core/game.js';
-import { WILD, wildOpponent, wildHitBack, throwNow, rollWildCatch, runLine } from '../core/wild.js'; // [wild] wild battles
+import { WILD, wildOpponent, wildHitBack, throwNow, rollWildCatch, runLine } from '../core/wild.js'; import { calmMode } from '../core/lightning.js'; // [wild] wild battles
 import { SHARE, DUP_XP } from '../core/levels.js';
 import { syncNow } from '../core/sync.js';
 import { dadJoke, DAD_JOKES } from '../data/dadjokes.js';
@@ -23,6 +23,7 @@ import { quick } from '../core/prefs.js';
 import { limitReached } from '../core/playtime.js';
 import { startMusic, stopMusic, setPinch } from '../core/music.js';
 import { $, on, esc, sheet, reducedMotion, soundButton, setFlame, fitText } from './dom.js';
+import { canSnack, useSnack, itemCount } from '../core/items.js'; import { towerCrystal } from '../core/tower.js'; import { itemIcon } from './items.js'; // [systems] Power Snack
 
 // Special hit-back moves for the big opponents. Papazilla lifts.
 const FOE_MOVES = { papa: 'Dumbbell Drop', legend: 'Hundred Blast', mythic: 'Dream Burst' };
@@ -75,8 +76,9 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt, wild 
   // [wild] A wild battle (from practice, see play.js): one wild Kaimon against your
   // Buddy. The rest of your team cheers from the side and still gets half the XP.
   const isWild = kind === 'wild' && !!wild;
-  const calm = isWild && !!p.settings.calm; // Calm mode: no speed meter, every hit the same
+  const calm = isWild && calmMode(p); // Calm mode: no speed meter, every hit the same
   const opp = isWild ? wildOpponent(wild.species, wild.lv, wild.table) : opponent(p, kind, table, grunt);
+  if (opp.ui?.go) go = opp.ui.go(go); // Hundred Tower hook: every way out goes back to the Tower
   let crew = myTeam(p);
   let mine = isWild ? crew.slice(0, 1) : crew;
   const pool = isWild && wild.pool?.length ? wild.pool : opp.facts || factsForTables(opp.tables);
@@ -86,17 +88,18 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt, wild 
     fact: null, shownAt: 0, input: '', phase: 'intro', mustType: null, listening: false, startedAt: Date.now(), raf: 0,
   };
   const region = opp.table ? regionOf(opp.table) : null;
-  const t = region ? TYPES[region.type] : kind === 'quiz' ? TYPES.dragon : TYPES.papa;
+  const t = opp.ui?.type ? TYPES[opp.ui.type] : region ? TYPES[region.type] : kind === 'quiz' ? TYPES.dragon : TYPES.papa;
   root.style.setProperty('--rc', t.color);
   root.style.setProperty('--rl', t.light);
   root.style.setProperty('--ri', t.ink);
   // The arena is the place itself: the Gym Leader's region, or Papa's Gym for Team Papa.
   root.style.setProperty('--scene', cssUrl(sceneSrc(sceneKey({ kind, table: opp.table }))));
 
-  const introLine = kind === 'champ' ? CHAMP_LINES[opp.table] : kind === 'quiz' ? 'Pop quiz! These are the facts that keep getting away from you. Let\u2019s catch them today!' : kind === 'boss' ? bossHello() : dadJoke('appear');
+  const introLine = opp.ui?.intro || (kind === 'champ' ? CHAMP_LINES[opp.table] : kind === 'quiz' ? 'Pop quiz! These are the facts that keep getting away from you. Let\u2019s catch them today!' : kind === 'boss' ? bossHello() : dadJoke('appear')); // Hundred Tower hook: opp.ui.intro
 
   // What this battle is for, shown at the top of the intro.
   function stakeHTML() {
+    if (opp.ui?.stake) return opp.ui.stake; // Hundred Tower hook
     if (kind === 'champ') return `${badgeImg(opp.table, 'vsi-badge')}<span><small>${opp.rematch ? 'Rematch' : 'Win the'}</small><strong>${esc(region.badge)}</strong></span>`;
     // Papa's Gym is a CrossFit gym, so its sign is a chalkboard with today's workout.
     const papaMark = '<span class="pg-mark" aria-hidden="true">P</span>';
@@ -110,7 +113,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt, wild 
       <header class="play-top">
         <button class="icon-btn" data-exit aria-label="Leave battle"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6 L18 18 M18 6 L6 18" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg></button>
         ${isWild ? `<div class="vs-chip wild-chip-top"><span class="vs-av wild-av">${creatureArt(opp.team[0].species)}</span><span><strong>Wild ${esc(opp.name)}</strong><small class="wild-turns" aria-live="polite"></small></span></div>`
-        : `<div class="vs-chip"><span class="vs-av">${trainerArt(opp)}</span><span><strong>${esc(opp.name)}</strong><small>${esc(opp.kind === 'champ' ? `${opp.table}s Gym Leader` : opp.kind === 'boss' ? 'The final gym' : opp.kind === 'quiz' ? 'Pop Quiz' : 'Team Papa')}</small></span></div>`}
+        : `<div class="vs-chip"><span class="vs-av">${trainerArt(opp)}</span><span><strong>${esc(opp.name)}</strong><small>${esc(opp.ui?.chip || (opp.kind === 'champ' ? `${opp.table}s Gym Leader` : opp.kind === 'boss' ? 'The final gym' : opp.kind === 'quiz' ? 'Pop Quiz' : 'Team Papa'))}</small></span></div>`}
         ${soundButton(p.settings.sound)}
         <div class="streak" data-tier="0" aria-live="polite" title="Streak: right answers in a row" aria-label="Streak"><span class="streak-flame" aria-hidden="true"><svg viewBox="0 0 24 24"><path class="fl-out" d="M12 1.8c.9 3.2-1.2 5-2.7 6.8C7.7 10.5 6.6 12.3 6.6 14.6a5.4 5.4 0 0 0 10.8 0c0-2.9-1.5-4.8-2.6-6.2-.3 1.6-1.1 2.5-2.1 3 .5-3.1-.1-6.5-.7-9.6z" stroke="#14213D" stroke-width="1.5" stroke-linejoin="round"/><path class="fl-in" d="M12.1 10.6c.4 1.7-.6 2.6-1.3 3.5-.5.6-.9 1.3-.9 2.1a2.2 2.2 0 0 0 4.4 0c0-1.3-.7-2.1-1.2-2.8-.2.7-.5 1-1 1.2.2-1.4 0-2.7 0-4z"/></svg></span><span class="streak-num">0</span><span class="streak-ball" hidden></span></div>
       </header>
@@ -164,6 +167,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt, wild 
     </section>`;
 
   { const mic = root.querySelector('[data-mic]'); const snd = root.querySelector('.play-top .sound-btn'); if (mic && snd) snd.before(mic); }
+  root.querySelector('.hp-me')?.insertAdjacentHTML('beforeend', '<button class="snack-btn" data-snack hidden></button>'); // [systems] Power Snack, just above your HP
   const el = {
     arena: $('.arena', root), q: $('.q', root), qcard: $('.q-card', root), msg: $('.b-msg', root),
     foeMon: $('.foe-mon', root), meMon: $('.me-mon', root), foeHp: $('.hp-foe', root), meHp: $('.hp-me', root),
@@ -190,6 +194,27 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt, wild 
     bar.style.width = pct + '%';
     bar.className = pct <= 25 ? 'low' : pct <= 50 ? 'mid' : '';
     $('.hp-num', box).textContent = `${Math.max(0, m.hp)} / ${m.max}`;
+    if (box === el.meHp) drawSnack(); // [systems]
+  }
+  // [systems] Power Snack: tap it, then a right answer feeds it to the Kaimon out now.
+  // Every move stays an answer: the snack only works on a right one.
+  function drawSnack() {
+    const btn = root.querySelector('[data-snack]');
+    if (!btn) return;
+    const show = S.snack || (canSnack(p, mine[S.me]) && S.phase !== 'intro' && S.phase !== 'over');
+    btn.hidden = !show;
+    if (!show) return;
+    btn.classList.toggle('armed', !!S.snack);
+    btn.setAttribute('aria-pressed', !!S.snack);
+    btn.setAttribute('aria-label', S.snack ? 'Power Snack ready. Get a card right to feed it.' : `Use a Power Snack. You have ${itemCount(p, 'snack')}.`);
+    btn.innerHTML = `${itemIcon('snack', 'snk-img')}<b>${S.snack ? 'Ready!' : itemCount(p, 'snack')}</b>`;
+  }
+  function feedSnack() {
+    if (!S.snack) return;
+    const r = useSnack(p, mine, S.me);
+    S.snack = false;
+    if (r) { save(); sfx.levelUp(); popNumber(el.meMon, '+' + r.healed, 'heal'); drawHp(el.meHp, mine, S.me, true); el.msg.textContent = `${mine[S.me].species.name} ate the Power Snack!`; }
+    drawSnack();
   }
   function drawMons() {
     el.foeMon.innerHTML = creatureArt(opp.team[S.foe].species);
@@ -386,6 +411,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt, wild 
     S.phase = 'ask';
     S.skip = false;
     S.mustType = null;
+    drawSnack(); // [systems]
     S.shownAt = performance.now();
     startPower();
     S.mic?.ready();
@@ -464,6 +490,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt, wild 
       if (last && foe.hp > 0 && foe.hp / foe.max < 0.4) setPinch(true);
       if (last && foe.hp > 0 && foe.hp / foe.max < 0.5 && !S.joked && opp.team[S.foe].species.id !== 'papazilla') { S.joked = true; joke(dadJoke('appear')); }
       if (hit.crit) el.msg.textContent = hit.special ? `${move}! Critical hit!` : 'Critical hit!';
+      if (S.snack) { await nap(q ? 160 : 220); feedSnack(); } // [systems] Power Snack
       await nap(q ? 240 : 320);
       if (isWild) { drawTurns(); if (throwNow(foe.hp, foe.max, S.answered)) return wildThrow(pw); S.n++; return next(); } // [wild]
       if (foe.hp <= 0) {
@@ -791,7 +818,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt, wild 
 
   async function finish(won) {
     if (isWild) return finishWild({ won, caught: false }); // [wild]
-    S.phase = 'over';
+    S.phase = 'over'; drawSnack(); // [systems]
     cancelAnimationFrame(S.raf);
     S.mic?.destroy();
     stopVoice();
@@ -805,13 +832,14 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt, wild 
     if (bev.d.x) S.teamXP = (S.teamXP || 0) + Math.round(bev.d.x * SHARE);
     const bonusXP = (p.xp || 0) - xpBefore;
     if (reward) giveBall(p, reward.ball, reward.n);
+    if (won && kind === 'tower') towerCrystal(p, opp.table); // Hundred Tower: a floor's first win gives a Mega Crystal, once ever
     endTime();
     save();
     syncNow();
     won ? sfx.win() : sfx.lose();
     if (firstBadge) await ceremony();
 
-    const line = kind === 'champ'
+    const line = opp.ui ? (won ? opp.ui.win : opp.ui.lose) : kind === 'champ'
       ? (won ? (opp.rematch ? `You won the rematch! ${region.badge} polished.` : `You did it! You earned the ${region.badge}!`) : `Great battle! Practice your ${opp.table}s and come back.`)
       : kind === 'quiz' ? (won ? 'A+! Those tricky facts didn’t stand a chance. See you at next week’s quiz!' : 'Good try! Every miss is a fact you’re about to learn. You can take the quiz again anytime this week.')
       : kind === 'boss' ? (won ? bossLoses() : dadJoke('papaWins')) : dadJoke(won ? 'kidWins' : 'papaWins');
@@ -843,7 +871,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt, wild 
         ${won ? '' : '<p class="br-kind">Every answer still counts as practice.</p>'}
         <div class="sheet-actions">
           ${won ? '' : '<button class="btn-chunky btn-primary" data-again>Try again</button>'}
-          <button class="btn-chunky ${won ? 'btn-primary' : ''}" data-home>${reward?.mythic ? 'Wait... what is that?' : 'Home'}</button>
+          <button class="btn-chunky ${won ? 'btn-primary' : ''}" data-home>${opp.ui?.homeLabel?.(won) || (reward?.mythic ? 'Wait... what is that?' : 'Home')}</button>
         </div>
       </div>`;
     el.arena.appendChild(ov);
@@ -910,8 +938,8 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt, wild 
     el.qcard.classList.add('pre');
     await nap(160);
     el.intro.remove();
-    el.msg.textContent = `${opp.name} sends out ${opp.team[0].species.name}!`;
-    await Promise.all([sendOut('foe'), sendOut('me', { trainer: true })]);
+    el.msg.textContent = opp.ui?.appear || `${opp.name} sends out ${opp.team[0].species.name}!`; // Hundred Tower hook: a guardian has no ball
+    await Promise.all([opp.ui?.appear ? (el.foeMon.classList.remove('so-hidden'), anim(el.foeMon, 'enter', 600)) : sendOut('foe'), sendOut('me', { trainer: true })]); // Hundred Tower hook
     next();
   });
   // Back out before the battle starts: Not now (or Esc on a keyboard).
@@ -924,6 +952,14 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt, wild 
       if (row) row.innerHTML = mine.map((m) => `<span class="mini">${creatureArt(m.species)}</span>`).join('') + '<span class="tc-label">Change team</span>';
       drawMons();
     });
+  });
+  on(root, 'click', '[data-snack]', (e) => { // [systems] Power Snack
+    e.stopPropagation();
+    if (S.phase === 'intro' || S.phase === 'over') return;
+    sfx.tap();
+    S.snack = !S.snack && canSnack(p, mine[S.me]);
+    if (S.snack) el.msg.textContent = 'Snack ready! Get a card right to feed it.';
+    drawSnack();
   });
   on(root, 'click', '[data-leave]', () => { sfx.tap(); go('home'); });
   on(root, 'click', '[data-k]', (e, k) => {
