@@ -1,7 +1,15 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.5.23';
+export const VERSION = '0.5.24';
 
 export const CHANGELOG = [
+  {
+    version: '0.5.24',
+    date: '2026-11-15',
+    title: "News emails on by default",
+    items: [
+      "The News emails switch in Grown-ups is now on by default for a signed-in grown-up. Turn it off to opt out. Unsubscribing from an email turns it off in the game too, and it stays off.",
+    ],
+  },
   {
     version: '0.5.23',
     date: '2026-11-15',

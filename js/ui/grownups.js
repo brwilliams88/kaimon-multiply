@@ -10,7 +10,7 @@ import { installHelpHTML, canPromptInstall, promptInstall, isInstalled } from '.
 import { lastDays, partsOfDay, usedToday } from '../core/playtime.js';
 import { bonusTime } from '../core/actions.js';
 import { active, save, exportBackup, importBackup, deleteProfile, allProfiles, hasPin, setPin, checkPin, clearPin } from '../core/store.js';
-import { status as syncStatus, requestCode, verifyCode, signOut, syncNow, joinFamily, leaveFamily, onSyncChange, getUpdates, setUpdates } from '../core/sync.js';
+import { status as syncStatus, requestCode, verifyCode, signOut, syncNow, joinFamily, leaveFamily, onSyncChange, ensureUpdates, setUpdates } from '../core/sync.js';
 import { goodWorkStamp } from '../core/actions.js';
 import { levelOf, factId, LEVEL_LABEL, RULES, countAtLeast } from '../core/facts.js';
 import { voiceSupported } from '../core/voice.js';
@@ -296,7 +296,7 @@ function renderMain(root, go) {
   const syncPanel = root.querySelector('[data-syncpanel]');
   let pendingEmail = '';
   let wantNews = false;
-  let newsOn = false;
+  let newsOn = true;
   const drawSync = () => {
     const st = syncStatus();
     const check = (done) => `<span class="step-check ${done ? 'done' : ''}" aria-hidden="true">${done ? '✓' : ''}</span>`;
@@ -306,7 +306,7 @@ function renderMain(root, go) {
         <p class="note">As <strong>${esc(st.email)}</strong>. ${st.busy ? 'Syncing now...' : st.lastSync ? 'Last synced ' + new Date(st.lastSync).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) + '.' : 'Not synced yet.'}${st.error && isOnline() ? ' Last problem: ' + esc(st.error) : ''}</p>
         ${pendingNote() ? `<p class="sync-wait" data-syncwait>${esc(pendingNote())}</p>` : ''}
         <div class="btn-row"><button class="btn-chunky btn-sm" data-syncnow ${isOnline() ? '' : 'disabled'}>Sync now</button><button class="btn-chunky btn-sm" data-signout>Sign out on this device</button></div>
-        <label class="trow news-row"><span class="sync-who"><span class="trow-name">News emails</span><small>A few times a year about Kaimon games. Turn off any time.</small></span><input type="checkbox" class="switch" data-newsrow ${newsOn ? 'checked' : ''} aria-label="News emails"></label>
+        <label class="trow news-row"><span class="sync-who"><span class="trow-name">News emails</span><small>A few times a year about Kaimon games. On unless you turn it off.</small></span><input type="checkbox" class="switch" data-newsrow ${newsOn ? 'checked' : ''} aria-label="News emails"></label>
       </div></div>`
     : pendingEmail ? `
       <div class="step">${check(false)}<div class="step-body">
@@ -333,7 +333,7 @@ function renderMain(root, go) {
     syncPanel.innerHTML = `<h2>Family sync</h2>${step1}${step2}`;
   };
   drawSync();
-  if (syncStatus().signedIn && isOnline()) getUpdates().then((v) => { if (v !== newsOn) { newsOn = v; if (!syncPanel.contains(document.activeElement)) drawSync(); } }).catch(() => {});
+  if (syncStatus().signedIn && isOnline()) ensureUpdates().then((v) => { if (v !== newsOn) { newsOn = v; if (!syncPanel.contains(document.activeElement)) drawSync(); } }).catch(() => {});
   on(root, 'change', '[data-newsrow]', async (e, el) => {
     const want = el.checked;
     try { await setUpdates(want); newsOn = want; toast(want ? 'News emails on. Thanks!' : 'News emails off. Your email is off the list.'); }
@@ -360,7 +360,7 @@ function renderMain(root, go) {
     try {
       await verifyCode(pendingEmail, code);
       pendingEmail = '';
-      if (wantNews) { try { await setUpdates(true); newsOn = true; } catch {} }
+      try { await setUpdates(wantNews); newsOn = wantNews; } catch {}
       toast('Signed in. Looking for family trainers...');
       await syncNow();
       renderMain(root, go);

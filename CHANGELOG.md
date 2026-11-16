@@ -2,6 +2,10 @@
 
 All notable changes. Versioning: `0.MINOR.0` marks a roadmap phase, `0.x.PATCH` is any shipped change a player or parent can notice, and `1.0.0` is the public launch. See "Versioning" in CLAUDE.md. The in-app version history (Grown-ups > What's new) reads from `js/data/changelog.js`; keep both in sync. Each release is tagged in git as `vX.Y.Z`.
 
+## v0.5.24 (2026-11-15) News emails on by default
+
+- The News emails switch in Grown-ups is now on by default for a signed-in grown-up. Turn it off to opt out. Unsubscribing from an email turns it off in the game too, and it stays off.
+
 ## v0.5.23 (2026-11-15) Weekly reports on Sunday mornings
 
 - Weekly reports now cover Sunday to Saturday and go out on Sunday mornings, from a family device the first time the game is open after 7 am.
