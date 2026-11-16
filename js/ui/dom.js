@@ -47,6 +47,11 @@ function releasePage(typed) {
   if (keepScreen === null || keepScreen !== navNow()) { keepScreen = keepFocus = keepFocusKey = null; return; }
   const y = keepY, scr = keepScreen;
   if (Math.abs(pageY() - y) > 0.5) window.scrollTo(0, y);
+  // WebKit can move the page a frame later, after a sheet redrew the screen under it
+  // (Change team on the Trainer page). Put it back, unless the player scrolled or left.
+  requestAnimationFrame(() => {
+    if (!document.documentElement.classList.contains('sheet-open') && scr === navNow() && Math.abs(pageY() - y) > 0.5 && !document.querySelector('.sheet-wrap.open')) window.scrollTo(0, y);
+  });
   // iOS can move the page again a moment later, as the keyboard slides away after
   // typing in a sheet. Put it back once more, unless the player has scrolled since.
   if (typed) {
