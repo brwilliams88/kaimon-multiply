@@ -455,7 +455,8 @@ function cleanInsights_(x) {
   (x.trend && Array.isArray(x.trend.up) ? x.trend.up.slice(0, 10) : []).forEach(function (t) { if (field_(t, [1, 10]) !== null && up.indexOf(t) < 0) up.push(t); });
   var talk = cleanTalk_(x.talk);
   if (!tips.length && !talk) return null;
-  return { period: x.period === 'last7' ? 'last7' : 'week', head: shape_(x.head, HEAD_SPEC), tips: tips, up: up, talk: talk };
+  var heart = shape_(x.heart && typeof x.heart === 'object' ? { k: 'heart', n: x.heart.n, prev: x.heart.prev } : null, { heart: { need: { n: [0, 100], prev: [0, 100] } } });
+  return { period: x.period === 'last7' ? 'last7' : 'week', head: shape_(x.head, HEAD_SPEC), tips: tips, up: up, talk: talk, heart: heart };
 }
 
 // "Talk about it": one question a week, as a style key, a fact id and a source key.
@@ -496,6 +497,22 @@ function talkText_(talk, name) {
       return { lead: lead, q: 'Ask ' + name + ' to count by ' + a + 's up to ' + a + ' \u00d7 ' + b + '.', a: list.join(', ') + '. Counting by ' + a + 's lands on ' + ans + '.' };
   }
 }
+// "By heart: 42 of 100 (+6 this week)": facts answered right and fast lately.
+function heartText_(h, period) {
+  if (!h) return '';
+  var ch = h.n - h.prev, W = TIP_WORDS[period] || TIP_WORDS.week;
+  return 'By heart: ' + h.n + ' of 100' + (ch > 0 ? ' (+' + ch + ' ' + W.inn + ')' : '');
+}
+function heartHTML_(h, period) {
+  if (!h) return '';
+  var ch = h.n - h.prev, W = TIP_WORDS[period] || TIP_WORDS.week;
+  return '<div style="font-family:' + FONT + ';font-size:16px;line-height:24px;color:' + INK2 + ';margin:0 0 12px 0;">'
+    + '<span style="display:inline-block;width:20px;height:20px;line-height:18px;margin-right:6px;border:2px solid ' + INK + ';border-radius:6px;background:#CFE5FF;color:#0F4C9E;font-size:13px;font-weight:700;text-align:center;vertical-align:-3px;">&#10003;</span>'
+    + '<b style="color:' + INK + ';">By heart: ' + h.n + ' of 100</b> facts, right and fast lately'
+    + (ch > 0 ? ' <span style="display:inline-block;padding:0 8px;border-radius:99px;background:#DDF3E0;color:#1E5E28;font-size:13px;font-weight:700;line-height:20px;white-space:nowrap;">+' + ch + ' ' + W.inn + '</span>' : '')
+    + '</div>';
+}
+
 // The "Talk about it" block (HTML), under What to practice next.
 function talkHTML_(talk, name, img, top) {
   var w = talkText_(talk, name);
@@ -655,6 +672,7 @@ function insightsHTML_(ins, img, name) {
   if (head) out += '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate;margin:0 0 14px 0;"><tr>'
     + '<td style="padding:10px 14px;background:#FFF6D6;border:2px solid #F2D27A;border-radius:14px;font-family:' + FONT + ';font-size:16px;line-height:22px;color:' + INK2 + ';">'
     + '<b style="color:' + INK + ';">' + esc_(head.title) + '.</b> ' + esc_(head.sub) + '</td></tr></table>';
+  out += heartHTML_(ins.heart, ins.period);
   out += '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate;">';
   ins.tips.forEach(function (tip, i) {
     var w = tipText_(tip, ins.period);
@@ -874,6 +892,7 @@ function reportText_(d) {
   if (d.trickiest.length) L.push('Tricky: ' + d.trickiest.map(function (x) { return x.a + ' x ' + x.b + ' = ' + x.a * x.b; }).join(', '));
   if (d.insights && d.insights.tips.length) {
     L.push('', 'What to practice next:');
+    if (d.insights.heart) L.push('  ' + heartText_(d.insights.heart, d.insights.period));
     d.insights.tips.forEach(function (tip) { var w = tipText_(tip, d.insights.period); if (w) L.push('  ' + w.title + '. ' + w.why + ' ' + w.act); });
   }
   var tk = d.insights && talkText_(d.insights.talk, d.trainer);
@@ -919,7 +938,7 @@ function sendTestEmails() {
     newEntries: [{ id: 'puddlepup', num: 10, name: 'Puddlepup', type: 'water' }], dex: { caught: 23, total: 60 },
     battles: { played: 3, won: 2 }, bestStreak: 14, prev: { minutes: 52, cards: 130, accuracy: 84 }, change: { minutes: 22, cards: 54, accuracy: 5 },
     insights: { v: 1, period: 'week', head: { k: 'up', pct: 89, prev: 84 }, trend: { up: [8] },
-      tips: [{ k: 'misses', t: 7, n: 10, of: 21, f: '7x8', fn: 5 }, { k: 'rest', t: 9, d: 16 }, { k: 'acc-up', pct: 89, prev: 84 }],
+      heart: { n: 42, prev: 36 }, tips: [{ k: 'misses', t: 7, n: 10, of: 21, f: '7x8', fn: 5 }, { k: 'rest', t: 9, d: 16 }, { k: 'acc-up', pct: 89, prev: 84 }],
       talk: { k: 'way', f: '7x8', src: 'tricky' } } };
   var empty = { cards: 0, right: 0, minutes: 0, daysPlayed: 0, daily: [], tables: [], dex: { caught: 23, total: 60 },
     insights: { v: 1, period: 'week', head: { k: 'empty' }, trend: { up: [] }, tips: [{ k: 'comeback', t: 7 }], talk: { k: 'story', f: '7x4', src: 'start' } } };

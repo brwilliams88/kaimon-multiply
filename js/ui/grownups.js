@@ -13,7 +13,7 @@ import { active, save, exportBackup, importBackup, deleteProfile, allProfiles, h
 import { status as syncStatus, requestCode, verifyCode, signOut, syncNow, joinFamily, leaveFamily, onSyncChange, ensureUpdates, setUpdates } from '../core/sync.js';
 import { goodWorkStamp } from '../core/actions.js';
 import { levelOf, factId, LEVEL_LABEL, LEVELS, RULES, countAtLeast, trickFor } from '../core/facts.js';
-import { insights, tipText, headText, tableNotes, factInfo, isCheer, talkText, TALK_TIP } from '../core/insights.js';
+import { insights, tipText, headText, tableNotes, factInfo, isCheer, talkText, TALK_TIP, FLUENCY, FLUENCY_LABEL } from '../core/insights.js';
 import { REGIONS, TYPES } from '../data/creatures.js';
 import { voiceSupported } from '../core/voice.js';
 import { CHANGELOG, VERSION } from '../data/changelog.js';
@@ -187,41 +187,69 @@ function insightsHTML(p, ins) {
     </section>`;
 }
 
-function gridHTML(p, notes, now) {
+const FL_ICON = {
+  heart: '<svg class="tg-fl" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.4 6.4 4.9 8.8 9.6 3.4" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  figuring: '<svg class="tg-fl" viewBox="0 0 12 12" aria-hidden="true"><circle cx="2.6" cy="6" r="1.35" fill="currentColor"/><circle cx="6" cy="6" r="1.35" fill="currentColor"/><circle cx="9.4" cy="6" r="1.35" fill="currentColor"/></svg>',
+  learning: '<svg class="tg-fl" viewBox="0 0 12 12" aria-hidden="true"><path d="M6 10.4V5.6M6 6.6C6 4.4 4.3 3.1 2.2 3.3c-.1 2.1 1.6 3.4 3.8 3.3zm0 0c0-2.2 1.7-3.6 3.8-3.4.1 2.1-1.6 3.5-3.8 3.4z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+};
+let gridView = 'level'; // remembered while the app is open
+
+function flBar(row, total = 10) {
+  return `<span class="tg-flbar" aria-hidden="true">${FLUENCY.map((g) => (row[g] ? `<i class="fl-${g}" style="flex:${row[g]}"></i>` : '')).join('')}</span>`;
+}
+
+function gridHTML(p, notes, now, ins) {
   const rows = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
   const info = {};
   for (const a of rows) for (const b of rows) info[factId(a, b)] = factInfo(p, factId(a, b), now);
   const all = Object.values(info);
   const bronze = all.filter((x) => levelRankOf(x.level) >= 2).length, lately = all.filter((x) => x.missedLately).length;
+  const fl = { heart: 0, figuring: 0, learning: 0 }, flt = {};
+  for (const a of rows) { flt[a] = { heart: 0, figuring: 0, learning: 0 }; for (const b of rows) { const g = info[factId(a, b)].fluency; fl[g]++; flt[a][g]++; } }
+  const ch = ins?.heart ? ins.heart.n - ins.heart.prev : 0;
   const cell = (a, b) => {
     const x = info[factId(a, b)];
-    const label = `${a} times ${b} is ${a * b}. ${LEVEL_LABEL[x.level]}.${x.missedLately ? ' Missed in the last 7 days.' : ''}`;
-    return `<td><button class="tg-cell lv-${x.level}${x.missedLately ? ' miss' : ''}" data-fact="${a}x${b}" tabindex="${a === 1 && b === 1 ? 0 : -1}" aria-label="${label}" style="--d:${(a + b) * 14}ms"><span class="tg-n">${a * b}</span>${levelMark(x.level)}</button></td>`;
+    const label = `${a} times ${b} is ${a * b}. ${LEVEL_LABEL[x.level]}. ${FLUENCY_LABEL[x.fluency]}.${x.missedLately ? ' Missed in the last 7 days.' : ''}`;
+    return `<td><button class="tg-cell lv-${x.level} fl-${x.fluency}${x.missedLately ? ' miss' : ''}" data-fact="${a}x${b}" tabindex="${a === 1 && b === 1 ? 0 : -1}" aria-label="${label}" style="--d:${(a + b) * 14}ms"><span class="tg-n">${a * b}</span>${levelMark(x.level)}${FL_ICON[x.fluency]}</button></td>`;
   };
   const tone = { focus: 'Worth practice', good: 'Going well', plain: '' };
+  const flNote = (t) => `${flBar(flt[t])}<b>${flt[t].heart}</b> by heart`;
   return `
-    <section class="tg" aria-labelledby="tg-h-${esc(p.id)}">
+    <section class="tg" data-view="${gridView}" aria-labelledby="tg-h-${esc(p.id)}">
       <div class="tg-top">
         <h3 id="tg-h-${esc(p.id)}">Times table</h3>
-        <p class="tg-sum"><span><b>${bronze}</b> of 100 at Bronze or better</span>${lately ? `<span class="tg-sum-miss"><i aria-hidden="true"></i>${lately} missed lately</span>` : ''}</p>
+        <div class="tg-views" role="group" aria-label="Show">
+          <button class="tg-view" data-tg-view="level" aria-pressed="${gridView === 'level'}">Levels</button>
+          <button class="tg-view" data-tg-view="fluency" aria-pressed="${gridView === 'fluency'}">By heart</button>
+        </div>
+      </div>
+      <p class="tg-sum tg-only-level"><span><b>${bronze}</b> of 100 at Bronze or better</span>${lately ? `<span class="tg-sum-miss"><i aria-hidden="true"></i>${lately} missed lately</span>` : ''}</p>
+      <div class="tg-flsum tg-only-fl">
+        <p class="tg-flhead"><span><b>${fl.heart}</b> of 100 by heart</span>${ch ? `<em class="nx-d ${ch > 0 ? 'up' : 'down'}"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="${ch > 0 ? 'M6 2 L10.5 8.5 H1.5 Z' : 'M6 10 L10.5 3.5 H1.5 Z'}" fill="currentColor"/></svg>${ch > 0 ? '+' : ''}${ch} in the last 7 days</em>` : '<em class="nx-d flat">Same as the 7 days before</em>'}</p>
+        <span class="tg-flbar big" role="img" aria-label="${fl.heart} by heart, ${fl.figuring} figuring it out, ${fl.learning} still learning">${FLUENCY.map((g) => (fl[g] ? `<i class="fl-${g}" style="flex:${fl[g]}"></i>` : '')).join('')}</span>
       </div>
       <div class="tg-layout">
         <div class="tg-main">
           <table class="tg-grid">
             <caption class="sr">All 100 facts. Rows are the times tables, columns are what they are multiplied by. Tap a fact for details.</caption>
             <thead><tr><th class="tg-corner" scope="col"><span aria-hidden="true">×</span><span class="sr">Table</span></th>${rows.map((b) => `<th class="tg-ch" scope="col" data-col="${b}">${b}</th>`).join('')}<th class="tg-nh" scope="col"><span class="sr">Note</span></th></tr></thead>
-            <tbody>${rows.map((a) => { const n = notes[a - 1]; return `<tr data-row="${a}"><th class="tg-rh" scope="row" style="${typeVars(a)}"><span>${a}</span></th>${rows.map((b) => cell(a, b)).join('')}<td class="tg-note ${n.tone}"><span>${n.tone !== 'plain' ? `<i class="sr">${tone[n.tone]}: </i>` : ''}${esc(n.note)}</span></td></tr>`; }).join('')}</tbody>
+            <tbody>${rows.map((a) => { const n = notes[a - 1]; return `<tr data-row="${a}"><th class="tg-rh" scope="row" style="${typeVars(a)}"><span>${a}</span></th>${rows.map((b) => cell(a, b)).join('')}<td class="tg-note ${n.tone}"><span class="tg-only-level">${n.tone !== 'plain' ? `<i class="sr">${tone[n.tone]}: </i>` : ''}${esc(n.note)}</span><span class="tg-only-fl tg-flnote">${flNote(a)}</span></td></tr>`; }).join('')}</tbody>
           </table>
-          <ul class="tg-legend" aria-label="Levels">
+          <ul class="tg-legend tg-only-level" aria-label="Levels">
             ${LEVELS.map((l) => `<li><span class="tg-key tg-cell lv-${l}" aria-hidden="true">${levelMark(l)}</span>${LEVEL_LABEL[l]}</li>`).join('')}
             <li><span class="tg-key tg-cell lv-learning miss" aria-hidden="true"></span>Missed lately</li>
+          </ul>
+          <ul class="tg-legend tg-fllegend tg-only-fl" aria-label="By heart groups">
+            <li><span class="tg-key tg-cell fl-heart" aria-hidden="true">${FL_ICON.heart}</span><span><b>Knows by heart</b> ${fl.heart}<small>Right and fast lately</small></span></li>
+            <li><span class="tg-key tg-cell fl-figuring" aria-hidden="true">${FL_ICON.figuring}</span><span><b>Figuring it out</b> ${fl.figuring}<small>Right, but slow. Probably counting.</small></span></li>
+            <li><span class="tg-key tg-cell fl-learning" aria-hidden="true">${FL_ICON.learning}</span><span><b>Still learning</b> ${fl.learning}<small>New, or missed in the last 7 days</small></span></li>
           </ul>
         </div>
         <div class="tg-side">
           <div class="tg-detail" data-tg-detail aria-live="polite">${detailHTML(p, null, now)}</div>
           ${notes.some((n) => n.tried) ? `<div class="tg-notes">
             <p class="tg-notes-h">By table</p>
-            <ul>${notes.map((n) => `<li class="${n.tone}"><span class="tg-nt" style="${typeVars(n.t)}">${n.t}s</span><span class="tg-bar" aria-hidden="true">${n.counts.map((c, i) => (c ? `<i class="lv-${LEVELS[i]}" style="flex:${c}"></i>` : '')).reverse().join('')}</span><span class="tg-nn">${n.tone !== 'plain' ? `<i class="sr">${tone[n.tone]}: </i>` : ''}${esc(n.note)}</span></li>`).join('')}</ul>
+            <ul>${notes.map((n) => `<li class="${n.tone}"><span class="tg-nt" style="${typeVars(n.t)}">${n.t}s</span><span class="tg-bar tg-only-level" aria-hidden="true">${n.counts.map((c, i) => (c ? `<i class="lv-${LEVELS[i]}" style="flex:${c}"></i>` : '')).reverse().join('')}</span><span class="tg-nn tg-only-level">${n.tone !== 'plain' ? `<i class="sr">${tone[n.tone]}: </i>` : ''}${esc(n.note)}</span>${flBar(flt[n.t]).replace('tg-flbar', 'tg-flbar tg-only-fl')}<span class="tg-nn tg-only-fl"><b>${flt[n.t].heart}</b> by heart${flt[n.t].figuring ? `, ${flt[n.t].figuring} figuring` : ''}</span></li>`).join('')}</ul>
           </div>` : ''}
         </div>
       </div>
@@ -255,7 +283,7 @@ function detailHTML(p, f, now) {
     <div class="fd" data-f="${x.f}">
       <div class="fd-top">
         <p class="fd-eq"><span>${x.a} × ${x.b}</span> = <b>${x.answer}</b></p>
-        <span class="fd-lv lv-${x.level}">${medal}${LEVEL_LABEL[x.level]}</span>
+        <span class="fd-tags"><span class="fd-lv lv-${x.level}">${medal}${LEVEL_LABEL[x.level]}</span><span class="fd-fl fl-${x.fluency}">${FL_ICON[x.fluency]}${FLUENCY_LABEL[x.fluency]}</span></span>
       </div>
       <div class="fd-next">
         <span class="fd-bar lv-${nx ? nx.lv : 'star'}" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}" aria-label="Progress to the next level"><i style="width:${pct}%"></i></span>
@@ -283,7 +311,7 @@ function progressHTML(p, now = Date.now()) {
       <div><strong>${mins(p.stats.msPlayed)}</strong><span>minutes</span></div>
       <div><strong>${countAtLeast(p, 'silver')}</strong><span>at Silver+</span></div>
     </div>
-    ${gridHTML(p, notes, now)}
+    ${gridHTML(p, notes, now, ins)}
     <p class="note">Levels count separate days. Bronze: right on ${RULES.bronzeDays} days. Silver, Gold and Star: right within ${p.settings.fastMs / 1000} seconds on ${RULES.silverDays}, ${RULES.goldDays} and ${RULES.starDays} days. Star also needs no misses in the last ${RULES.starCleanDays} days.</p>`;
 }
 
@@ -303,6 +331,11 @@ function bindProgress(panel, p, go) {
   };
   cells.forEach((c) => c.setAttribute('aria-pressed', 'false'));
   on(panel, 'click', '.tg-grid [data-fact]', (e, el) => select(el));
+  on(panel, 'click', '[data-tg-view]', (e, el) => {
+    gridView = el.dataset.tgView;
+    panel.querySelector('.tg').dataset.view = gridView;
+    panel.querySelectorAll('[data-tg-view]').forEach((b) => b.setAttribute('aria-pressed', b === el));
+  });
   // Start on the fact the top insight is about, so the details are useful right away.
   const first = panel.querySelector('[data-nx-fact]')?.dataset.nxFact;
   const start = first && panel.querySelector(`.tg-grid [data-fact="${first}"]`);

@@ -97,7 +97,8 @@ export function insights(p, { start, days = 7, now = Date.now(), period } = {}) 
     up: moves.filter((m) => m.ch > 0).sort((a, b) => b.ch - a.ch || a.t - b.t).map((m) => m.t),
     down: moves.filter((m) => m.ch < 0).sort((a, b) => a.ch - b.ch || a.t - b.t).map((m) => m.t),
   };
-  const base = { v: 1, period: per, week: dayKey(s0), trend };
+  const heart = { n: fluencyCounts(p, addDays(s0, days).getTime()).heart, prev: fluencyCounts(p, s0.getTime()).heart };
+  const base = { v: 1, period: per, week: dayKey(s0), trend, heart };
 
   // A brand new trainer.
   if (!ever) {
@@ -374,6 +375,47 @@ export function factInfo(p, f, now = Date.now()) {
     tries: r?.a || 0, right: r?.c || 0, misses: Math.max(0, (r?.a || 0) - (r?.c || 0)),
     avgMs: r?.c ? Math.round(r.ms / r.c) : null, fastMs, days, fast,
     lastMiss, sinceMiss, missedLately: sinceMiss != null && sinceMiss < 7,
+    fluency: fluencyAt(r, addDays(midnight(now), 1).getTime()),
     next,
   };
+}
+
+// ---------------------------------------------------------------- fluency
+// Three groups for each fact, from the saved fact records only:
+//   heart:    knows it by heart. Right and fast (within the fast time) on at
+//             least 2 days, fast the last day it was right, no miss in 7 days.
+//   figuring: right on 2 or more days, but not fast lately (probably counting).
+//   learning: not tried, right on fewer than 2 days, or missed in the last 7 days.
+// `end` is a time (ms): only days before that day count, so the same record can
+// say how a fact stood at the start of a week. Misses after `end` are unknown then.
+export const FLUENCY = ['heart', 'figuring', 'learning'];
+export const FLUENCY_LABEL = { heart: 'Knows by heart', figuring: 'Figuring it out', learning: 'Still learning' };
+export function fluencyAt(rec, end = Date.now()) {
+  if (!rec || !rec.a) return 'learning';
+  const k = dayKey(new Date(end));
+  const days = (rec.days || []).filter((d) => d < k), fast = (rec.fastDays || []).filter((d) => d < k);
+  const t = midnight(end).getTime();
+  if (rec.lastMiss && rec.lastMiss < t && rec.lastMiss >= t - 7 * DAY) return 'learning';
+  if (days.length < 2) return 'learning';
+  const last = days.slice().sort().at(-1);
+  return fast.length >= 2 && fast.includes(last) ? 'heart' : 'figuring';
+}
+// Counts for all 100 facts and per table, as of `end` (default: through today).
+export function fluencyCounts(p, end) {
+  const e = end ?? addDays(midnight(Date.now()), 1).getTime();
+  const out = { heart: 0, figuring: 0, learning: 0, tables: {} };
+  for (const t of TABLES) {
+    const row = { heart: 0, figuring: 0, learning: 0 };
+    for (const f of factsForTables([t])) row[fluencyAt((p.facts || {})[f], e)]++;
+    out.tables[t] = row;
+    for (const g of FLUENCY) out[g] += row[g];
+  }
+  return out;
+}
+
+// "By heart: 42 of 100 (+6 this week)". Keep in step with heartText_ in Code.gs.
+export function heartText(h, period = 'week') {
+  if (!h) return '';
+  const ch = h.n - h.prev, W = WORDS[period] || WORDS.week;
+  return `By heart: ${h.n} of 100${ch > 0 ? ` (+${ch} ${W.in})` : ''}`;
 }
