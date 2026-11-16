@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Put Kaimon on your Home Screen · Kaimon Multiply</title>
+<meta name="description" content="How to add Kaimon Multiply to the Home Screen on iPhone, iPad, Android and Chromebook, so it opens like an app and works offline.">
+<meta name="theme-color" content="#CFE8FF">
+<link rel="canonical" href="https://brwilliams88.github.io/kaimon-multiply/install.html">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="icons/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="stylesheet" href="css/pages.css">
+</head>
+<body>
+<main class="page">
+  <a class="back" href="./"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 L8 12 L15 19" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>Back to the game</a>
+
+  <header class="hero">
+    <img src="assets/ui/kaizo-map.webp" alt="">
+    <div><h1>Put Kaimon on your Home Screen</h1><p>Then it opens like an app, full screen, and works without internet. It's free and takes a few seconds.</p></div>
+  </header>
+
+  <section class="card" id="installed" hidden><h2>All set!</h2><p>Kaimon is already installed on this device. Open it from your Home Screen.</p></section>
+  <section class="card" id="quick" hidden>
+    <h2>One tap</h2>
+    <p>This browser can install Kaimon for you.</p>
+    <p><button class="btn" id="go" type="button">Install Kaimon</button></p>
+  </section>
+
+  <div class="tabs" role="tablist" aria-label="Device"></div>
+  <div id="panels"></div>
+
+  <section class="card">
+    <h2>Good to know</h2>
+    <ul>
+      <li>Progress is saved on the device. On iPhone and iPad the Home Screen app keeps its own save, apart from Safari, so it's best to add it before you start. Family sync can bring progress across.</li>
+      <li>Updates come by themselves. Open the game and the new version loads.</li>
+      <li>Playing on a few devices? A grown-up can turn on <b>Family sync</b> in Grown-ups to keep them in step.</li>
+    </ul>
+  </section>
+
+  <p class="center"><a class="btn" href="./">Play Kaimon Multiply</a></p>
+  <p class="foot"><a href="privacy.html">Privacy</a></p>
+</main>
+<script type="module">
+import { platform, browser, steps, isInstalled, canPromptInstall, promptInstall } from './js/ui/install.js';
+
+const TABS = [
+  { id: 'iphone', label: 'iPhone', main: 'safari', alt: ['chrome', 'In Chrome on iPhone:'] },
+  { id: 'ipad', label: 'iPad', main: 'safari', alt: ['chrome', 'In Chrome on iPad:'] },
+  { id: 'android', label: 'Android', main: 'chrome', alt: ['samsung', 'In Samsung Internet:'] },
+  { id: 'chromebook', label: 'Chromebook', main: 'chrome' },
+  { id: 'computer', label: 'Computer', main: 'chrome', alt: ['safari', 'In Safari on a Mac:'] },
+];
+const NAME = { safari: 'Safari', chrome: 'Chrome', samsung: 'Samsung Internet', edge: 'Edge', firefox: 'Firefox' };
+const mine = platform(), br = browser();
+const list = (s) => `<ol class="steps">${s.map((x) => `<li>${x}</li>`).join('')}</ol>`;
+
+const tabs = document.querySelector('.tabs'), panels = document.getElementById('panels');
+TABS.forEach((t) => {
+  const useBr = t.id === mine && br !== 'other' ? br : t.main;
+  tabs.insertAdjacentHTML('beforeend', `<button class="tab" role="tab" id="tab-${t.id}" aria-controls="p-${t.id}" aria-selected="false" data-tab="${t.id}">${t.label}${t.id === mine ? '<span class="you">You</span>' : ''}</button>`);
+  const alt = t.alt && t.alt[0] !== useBr ? `<div class="alt"><p>${t.alt[1]}</p>${list(steps(t.id, t.alt[0]))}</div>` : '';
+  panels.insertAdjacentHTML('beforeend', `<section class="card panel" role="tabpanel" id="p-${t.id}" aria-labelledby="tab-${t.id}" hidden>
+    <h2>${t.label} with ${NAME[useBr] || 'your browser'}</h2>${list(steps(t.id, useBr))}${alt}</section>`);
+});
+function pick(id) {
+  tabs.querySelectorAll('.tab').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.tab === id)));
+  panels.querySelectorAll('.panel').forEach((p) => { p.hidden = p.id !== 'p-' + id; });
+}
+tabs.addEventListener('click', (e) => { const b = e.target.closest('[data-tab]'); if (b) pick(b.dataset.tab); });
+tabs.addEventListener('keydown', (e) => {
+  const d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0; if (!d) return;
+  const all = [...tabs.querySelectorAll('.tab')], i = all.findIndex((b) => b.getAttribute('aria-selected') === 'true');
+  const n = all[(i + d + all.length) % all.length]; n.focus(); pick(n.dataset.tab);
+});
+pick(TABS.some((t) => t.id === mine) ? mine : 'iphone');
+
+if (isInstalled()) document.getElementById('installed').hidden = false;
+const quick = document.getElementById('quick');
+const offer = () => { if (canPromptInstall() && !isInstalled()) quick.hidden = false; };
+window.addEventListener('beforeinstallprompt', () => setTimeout(offer, 0));
+offer();
+document.getElementById('go').addEventListener('click', async () => { if (await promptInstall()) quick.innerHTML = '<h2>Installed!</h2><p>Open Kaimon from your Home Screen or app list.</p>'; });
+</script>
+</body>
+</html>

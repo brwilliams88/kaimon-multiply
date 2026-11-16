@@ -2,6 +2,7 @@
 // local time. Pure functions of the trainer's saved progress, so every family
 // device builds the same report. Used by the Grown-ups panel and the email.
 import { SPECIES, byId } from '../data/creatures.js';
+import { insights, tipText, headLine, talkText, heartText, TALK_TIP } from './insights.js';
 
 const DAY_MS = 86400000;
 const pad = (n) => String(n).padStart(2, '0');
@@ -171,6 +172,8 @@ export function weeklyReport(p, weekStart, now = Date.now()) {
     bestStreak,
     prev: { minutes: prev.minutes, cards: prev.cards, accuracy: prev.accuracy },
     change: { minutes: cur.minutes - prev.minutes, cards: cur.cards - prev.cards, accuracy: diff(cur.accuracy, prev.accuracy) },
+    // What to practice next: plain data (kind keys, tables, fact ids, numbers).
+    insights: insights(p, { start, period: 'week', now }),
   };
 }
 
@@ -192,6 +195,14 @@ export function reportText(r) {
   if (r.strongest.length) L.push('', 'Strongest facts: ' + r.strongest.map((x) => `${x.a} x ${x.b}`).join(', '));
   if (r.trickiest.length) L.push('', 'Tricky facts to practice: ' + r.trickiest.map((x) => `${x.a} x ${x.b} = ${x.a * x.b}`).join(', '));
   if (r.medals.total) L.push('', `New medals: ${['star', 'gold', 'silver', 'bronze'].filter((k) => r.medals[k]).map((k) => `${r.medals[k]} ${k[0].toUpperCase() + k.slice(1)}`).join(', ')}`);
+  if (r.insights?.tips?.length) {
+    const h = headLine(r.insights.head, r.insights.period);
+    L.push('', 'What to practice next', ...(h ? [`  ${h}`] : []));
+    if (r.insights.heart) L.push(`  ${heartText(r.insights.heart, r.insights.period)}`);
+    for (const tip of r.insights.tips) { const w = tipText(tip, r.insights.period); if (w) L.push(`  ${w.title}. ${w.why} ${w.act}`); }
+  }
+  const tk = talkText(r.insights?.talk, r.trainer);
+  if (tk) L.push('', `Talk about it (about 2 minutes): ${tk.q}`, `If they get stuck: ${tk.a}`, TALK_TIP);
   L.push('', `Kaimon caught: ${r.caught}${r.newEntries.length ? `, ${r.newEntries.length} new in the Kaidex (${r.newEntries.map((s) => s.name).join(', ')})` : ''}`);
   L.push(`Kaidex: ${r.dex.caught} of ${r.dex.total}`);
   if (r.battles.played) L.push(`Battles won: ${r.battles.won} of ${r.battles.played}`);

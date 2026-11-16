@@ -17,8 +17,12 @@ export function renderWelcome(root, go) {
   const profiles = allProfiles();
   const st = syncStatus();
   const hasFamily = profiles.some((p) => p.family);
-  const famLine = st.signedIn ? `<p class="fam-status">${cloudIcon()}<span>Family sync is on for <strong>${esc(st.email)}</strong>${st.busy ? '. Looking for family trainers...' : ''}</span></p>
-    ${!hasFamily && !st.busy ? `<p class="fam-help">No family trainers yet. On the device where your child plays, open Grown-ups and turn on <strong>Sync with family</strong> for their trainer. It will show up here by itself.</p>` : ''}` : '';
+  // Family sync: a small quiet line under Play (the email lives in Grown-ups). The
+  // how-to note shows only while a signed-in family device has no family trainers yet.
+  const famFoot = st.signedIn
+    ? `<div class="fam-foot${st.busy ? ' busy' : ''}" role="status"><p class="fam-status">${cloudIcon()}<span>Family sync on</span>${st.busy ? '<span class="fam-busy">Looking for trainers...</span>' : ''}</p>
+      ${!hasFamily && !st.busy ? '<p class="fam-help">No family trainers yet. On your child\'s device, open Grown-ups and turn on <strong>Sync with family</strong>.</p>' : ''}</div>`
+    : '<button class="link-btn fam-signin" data-famsignin>Family device? Sign in for family sync</button>';
   // The last trainer used on this device starts selected (and centered), so one tap on Play goes in.
   const lastId = active()?.id;
   const start = Math.max(0, profiles.findIndex((p) => p.id === lastId));
@@ -32,7 +36,6 @@ export function renderWelcome(root, go) {
         <h1 class="title-logo"><img src="${LOGO}" alt="Kaimon Multiply" draggable="false"></h1>
       </div>
       <div class="title-panel">
-      ${famLine}
       ${profiles.length ? `
         <h2 class="welcome-q" id="who-q">Who's playing?</h2>
         <div class="who-car">
@@ -56,7 +59,7 @@ export function renderWelcome(root, go) {
         <button class="btn-chunky btn-primary btn-xl who-play" data-play><span class="who-play-label"></span>${playIcon()}</button>` : `
         <p class="welcome-line">Answer times tables. Catch Kaimon. Fill your Kaidex.</p>
         <button class="btn-chunky btn-primary btn-xl" data-new>Start</button>`}
-      ${st.signedIn ? '' : '<button class="link-btn fam-signin" data-famsignin>Family device? Sign in for family sync</button>'}
+      ${famFoot}
       </div>
       <p class="title-copy">© 2026 Kaimon Games · v${VERSION}</p>
     </section>`;
@@ -325,33 +328,58 @@ export const cloudIcon = () => `<svg viewBox="0 0 24 24" aria-hidden="true"><pat
 
 // Lay out the tall title art so the logo is big, sits clear of the Dynamic Island,
 // and never covers Kai: the art is scaled and shifted so Kai's cap starts just under
-// the logo and everyone's feet stay above the panel. The wide art (landscape) keeps
-// its CSS layout.
+// the logo and everyone's feet (Kai, Kaizo, Kaiko, Kipbun) stay above the panel. The
+// logo shrinks a little if it must. On screens where the art still can't fit (a tall
+// panel on an iPad), the art is framed a bit narrower than the screen over a soft,
+// blurred copy of itself. The wide art (landscape) keeps its CSS layout.
 function fitTitleLogo(root) {
   const hero = root.querySelector('.title-hero');
   const logo = root.querySelector('.title-logo');
   const art = root.querySelector('.title-art');
-  if (!hero || !logo || !art) return;
+  const panel = root.querySelector('.title-panel');
+  if (!hero || !logo || !art || !panel) return;
   const CAP = 0.36, FEET = 0.9, RATIO = 1152 / 768; // positions in the tall art
+  const LOGO = 2.31; // logo width / height
   const fit = () => {
-    if (!hero.isConnected) { removeEventListener('resize', fit); return; }
-    if (matchMedia('(min-aspect-ratio: 1/1)').matches) { logo.style.removeProperty('--logo-w'); art.removeAttribute('style'); logo.style.visibility = ''; return; }
+    if (!hero.isConnected) { removeEventListener('resize', fit); ro?.disconnect(); return; }
+    if (matchMedia('(min-aspect-ratio: 1/1)').matches) { logo.style.removeProperty('--logo-w'); art.removeAttribute('style'); hero.classList.remove('framed'); logo.style.visibility = ''; return; }
     const W = hero.clientWidth, H = hero.clientHeight;
+    if (!W || !H) return;
+    // The panel rides up over the bottom of the art: only the part above it counts.
+    const V = Math.min(H, panel.getBoundingClientRect().top - hero.getBoundingClientRect().top);
     const top0 = parseFloat(getComputedStyle(logo).top) || 0;
-    const overlap = 34; // the panel rides up over the bottom of the art
-    let w = Math.min(W * 0.9, 600), artH = 0, top = 0;
+    const wMax = Math.min(W * 0.9, 600), wMin = Math.min(wMax, Math.max(W * 0.6, 220));
+    const lb = (w) => top0 + w / LOGO + 4; // bottom of the logo
+    let w = wMax, artH = 0, top = 0;
     for (;;) {
-      const LB = top0 + w / 2.31 + 4;                        // bottom of the logo
-      const lo = Math.max(W * RATIO, LB / CAP, (H - LB) / (1 - CAP));
-      const hi = (H + overlap - LB) / (FEET - CAP);
-      if (lo <= hi || w <= W * 0.55) { artH = lo; top = LB - CAP * artH; break; }
+      const LB = lb(w);
+      const lo = Math.max(W * RATIO, H, LB / CAP, (H - V) / (1 - FEET));
+      const hi = (V - LB) / (FEET - CAP);
+      if (lo <= hi) {
+        artH = lo;
+        const t0 = Math.max(H - artH, LB - CAP * artH), t1 = Math.min(0, V - FEET * artH);
+        top = (t0 + t1) / 2;
+        break;
+      }
+      if (w * 0.96 < wMin) {
+        // Framed: the band from Kai's cap to everyone's feet fits exactly.
+        w = wMin;
+        const L2 = lb(w);
+        artH = Math.max(H * 0.5, (V - L2) / (FEET - CAP));
+        top = Math.min(0, L2 - CAP * artH);
+        break;
+      }
       w *= 0.96;
     }
     const artW = artH / RATIO;
-    Object.assign(art.style, { position: 'absolute', width: artW + 'px', height: artH + 'px', left: (W - artW) / 2 + 'px', top: Math.min(0, top) + 'px', objectFit: 'fill', maxWidth: 'none' });
+    hero.classList.toggle('framed', artW < W - 1);
+    Object.assign(art.style, { position: 'absolute', width: artW + 'px', height: artH + 'px', left: (W - artW) / 2 + 'px', top: top + 'px', objectFit: 'fill', maxWidth: 'none' });
     logo.style.setProperty('--logo-w', w + 'px');
     logo.style.visibility = '';
   };
+  // The panel can change height after fonts load or trainers arrive from sync.
+  const ro = typeof ResizeObserver === 'function' ? new ResizeObserver(() => fit()) : null;
+  ro?.observe(panel);
   fit();
   addEventListener('resize', fit);
   art.addEventListener('load', fit);

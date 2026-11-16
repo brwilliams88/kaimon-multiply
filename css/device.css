@@ -1,0 +1,24 @@
+/* Play on another device (js/ui/playElsewhere.js). Loaded when the sheet first opens. */
+.pe-sheet { width: min(100%, 480px); }
+.pe { display: flex; flex-direction: column; gap: 14px; text-align: left; }
+.sheet .pe h2 { margin: 0; padding-right: 46px; font-size: 28px; line-height: 1.1; color: #fff; -webkit-text-stroke: 5px var(--ink); paint-order: stroke fill; text-shadow: 0 3px 0 var(--ink); }
+.sheet .pe-sub { margin: -4px 0 0; color: var(--ink-2); font-size: 17px; }
+.pe-qr { margin: 0 auto; width: min(100%, 260px); padding: 14px 14px 10px; background: #fff; border: 3px solid var(--ink); border-radius: 22px; box-shadow: 0 5px 0 var(--ink); text-align: center; animation: pe-in .4s cubic-bezier(.3, 1.4, .5, 1); }
+.pe-qr svg { display: block; width: 100%; height: auto; image-rendering: pixelated; border-radius: 8px; }
+.pe-qr figcaption { margin-top: 6px; font-size: 14px; font-weight: 600; color: var(--ink-2); overflow-wrap: anywhere; }
+@keyframes pe-in { from { opacity: 0; transform: scale(.94); } to { opacity: 1; transform: none; } }
+.pe-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.pe-btn { flex: 1 1 160px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 54px; font-size: 18px; text-decoration: none; color: var(--ink); }
+.pe-btn.btn-primary { color: #fff; }
+.pe-btn svg { width: 22px; height: 22px; flex-shrink: 0; }
+.pe-btn.copied { background: #D9F4DD; color: #1F6B2A; }
+.pe-steps { background: #F4F8FD; border: 2.5px solid var(--ink); border-radius: 20px; padding: 14px 16px 12px; }
+.sheet .pe-steps h3 { margin: 0 0 6px; font-size: 19px; }
+.pe-steps ol { counter-reset: pe; list-style: none; margin: 0; padding: 0; }
+.pe-steps li { counter-increment: pe; position: relative; padding: 4px 0 8px 40px; min-height: 34px; font-size: 17px; }
+.pe-steps li::before { content: counter(pe); position: absolute; left: 0; top: 2px; width: 28px; height: 28px; border-radius: 50%; background: var(--coral); color: #fff; font-weight: 700; font-size: 15px; display: grid; place-items: center; border: 2.5px solid var(--ink); }
+.pe-step-ic { width: 20px; height: 20px; vertical-align: -4px; }
+.sheet .pe-note { margin: 4px 0 0; font-size: 14px; color: var(--ink-2); }
+.pe-note a { color: #1E6FD9; font-weight: 600; }
+.menu-ic .dev-ic { width: 100%; height: 100%; filter: drop-shadow(0 2px 0 rgba(20, 33, 61, .2)); }
+@media (prefers-reduced-motion: reduce) { .pe-qr { animation: none; } }
