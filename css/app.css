@@ -101,6 +101,12 @@ button { font: inherit; color: inherit; cursor: pointer; touch-action: manipulat
 .logo-sub { flex-basis: 100%; font-size: clamp(26px, 5vw, 38px); font-weight: 600; color: var(--ink); letter-spacing: .04em; margin-top: 6px; }
 .welcome-art { width: min(52vw, 240px); aspect-ratio: 1; animation: bob 3.2s ease-in-out infinite; }
 .welcome-line { margin: 0; font-size: 20px; color: var(--ink-2); max-width: 30ch; }
+.beta-note { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 4px 10px; width: 100%; max-width: 440px; padding: 10px 12px; background: #FFF8DC; border: 2.5px solid var(--ink); border-radius: 16px; text-align: left; animation: beta-in .4s .2s both cubic-bezier(.2, .9, .3, 1.3); }
+.beta-note p { margin: 0; font-size: 16px; line-height: 1.3; color: var(--ink); }
+.beta-tag { align-self: start; padding: 2px 9px; border: 2px solid var(--ink); border-radius: 99px; background: var(--sun); font-size: 13px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; box-shadow: 0 2px 0 var(--ink); }
+.beta-fb { grid-column: 2; justify-self: start; background: none; border: 0; padding: 2px 0; font: inherit; font-size: 15px; font-weight: 600; color: #1E6FD9; text-decoration: underline; cursor: pointer; }
+@keyframes beta-in { from { opacity: 0; transform: translateY(6px) scale(.97); } }
+@media (prefers-reduced-motion: reduce) { .beta-note { animation: none; } }
 .welcome-q { margin: 0; font-size: 26px; }
 .who-list { display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; max-width: 720px; }
 .who { display: flex; align-items: center; gap: 12px; padding: 10px 20px 10px 10px; font-size: 22px; }
@@ -383,6 +389,7 @@ button { font: inherit; color: inherit; cursor: pointer; touch-action: manipulat
 .starter-name { font-size: 22px; font-weight: 700; }
 .starter-note { font-size: 14px; color: var(--ink-2); line-height: 1.3; }
 .btn-chunky[disabled] { opacity: .5; }
+.gu-class a.btn-chunky { display: inline-flex; align-items: center; justify-content: center; text-align: center; text-decoration: none; color: var(--ink); }
 .stars { color: #C99400; font-size: 16px; }
 @media (max-width: 480px) { .starter-note { display: none; } }
 

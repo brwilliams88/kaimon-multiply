@@ -448,6 +448,11 @@ function renderMain(root, go) {
           ${isInstalled() ? '<div class="row"><span class="note">Kaimon got a new app icon in v0.5.0.</span><button class="btn-chunky btn-sm" data-newicon>New icon help</button></div>' : ''}
         </div>
 
+        <div class="panel gu-class">
+          <h2>Share with a class</h2>
+          <div class="row"><span class="note">A page for teachers and families: what the game is, privacy in plain words, a QR code and a one-page letter to print.</span><a class="btn-chunky btn-sm" href="classroom.html" target="_blank" rel="noopener" data-classpage>Open page</a></div>
+        </div>
+
         <div class="panel gu-feedback">
           <h2>Feedback</h2>
           <p class="note">Notes and ratings go only to the maker of Kaimon Multiply. What doesn’t work helps the most.</p>
