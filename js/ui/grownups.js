@@ -17,6 +17,8 @@ import { voiceSupported } from '../core/voice.js';
 import { CHANGELOG, VERSION } from '../data/changelog.js';
 import { esc, on, sheet, toast, $, busy, cleanCode, codeOk } from './dom.js';
 import { reportPanelHTML, bindReportPanel } from './reportPanel.js';
+import { offlineChipHTML, offlinePanelHTML, bindOfflinePanel, pendingNote } from './offline.js';
+import { isOnline, onOfflineChange } from '../core/offline.js';
 
 const mins = (ms) => Math.round(ms / 60000);
 
@@ -136,6 +138,7 @@ function renderMain(root, go) {
         ${hasPin() ? '<span class="unlock-note">Unlocked for 10 min</span><button class="btn-chunky btn-sm" data-lock>Lock now</button>' : ''}
         <span class="ver">v${VERSION}</span>
       </header>
+      <div class="gu-offline">${offlineChipHTML(p)}</div>
 
       <div class="gu-grid">
         <div class="panel">
@@ -228,6 +231,8 @@ function renderMain(root, go) {
 
         <div class="panel" data-syncpanel></div>
 
+        <div class="panel off-panel" data-offpanel>${offlinePanelHTML()}</div>
+
         <div class="panel trainers-panel">
           <h2>Trainers on this device</h2>
           <p class="note">Tap a trainer to see their progress here.</p>
@@ -286,6 +291,7 @@ function renderMain(root, go) {
   });
 
   bindReportPanel(root.querySelector('[data-wrpanel]'), p);
+  bindOfflinePanel(root.querySelector('[data-offpanel]'));
 
   const syncPanel = root.querySelector('[data-syncpanel]');
   let pendingEmail = '';
@@ -297,8 +303,9 @@ function renderMain(root, go) {
     const step1 = st.signedIn ? `
       <div class="step done">${check(true)}<div class="step-body">
         <p class="step-title">1. This device is signed in</p>
-        <p class="note">As <strong>${esc(st.email)}</strong>. ${st.busy ? 'Syncing now...' : st.lastSync ? 'Last synced ' + new Date(st.lastSync).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) + '.' : 'Not synced yet.'}${st.error ? ' Last problem: ' + esc(st.error) : ''}</p>
-        <div class="btn-row"><button class="btn-chunky btn-sm" data-syncnow>Sync now</button><button class="btn-chunky btn-sm" data-signout>Sign out on this device</button></div>
+        <p class="note">As <strong>${esc(st.email)}</strong>. ${st.busy ? 'Syncing now...' : st.lastSync ? 'Last synced ' + new Date(st.lastSync).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) + '.' : 'Not synced yet.'}${st.error && isOnline() ? ' Last problem: ' + esc(st.error) : ''}</p>
+        ${pendingNote() ? `<p class="sync-wait" data-syncwait>${esc(pendingNote())}</p>` : ''}
+        <div class="btn-row"><button class="btn-chunky btn-sm" data-syncnow ${isOnline() ? '' : 'disabled'}>Sync now</button><button class="btn-chunky btn-sm" data-signout>Sign out on this device</button></div>
         <label class="trow news-row"><span class="sync-who"><span class="trow-name">News emails</span><small>A few times a year about Kaimon games. Off unless you turn it on.</small></span><input type="checkbox" class="switch" data-newsrow ${newsOn ? 'checked' : ''} aria-label="News emails"></label>
       </div></div>`
     : pendingEmail ? `
@@ -326,14 +333,16 @@ function renderMain(root, go) {
     syncPanel.innerHTML = `<h2>Family sync</h2>${step1}${step2}`;
   };
   drawSync();
-  if (syncStatus().signedIn) getUpdates().then((v) => { if (v !== newsOn) { newsOn = v; if (!syncPanel.contains(document.activeElement)) drawSync(); } }).catch(() => {});
+  if (syncStatus().signedIn && isOnline()) getUpdates().then((v) => { if (v !== newsOn) { newsOn = v; if (!syncPanel.contains(document.activeElement)) drawSync(); } }).catch(() => {});
   on(root, 'change', '[data-newsrow]', async (e, el) => {
     const want = el.checked;
     try { await setUpdates(want); newsOn = want; toast(want ? 'News emails on. Thanks!' : 'News emails off. Your email is off the list.'); }
     catch { el.checked = !want; toast('Couldn\u2019t reach the server. Check the internet and try again.'); }
   });
   const off = onSyncChange(() => { if (document.body.contains(syncPanel)) { if (!syncPanel.contains(document.activeElement)) drawSync(); } else off(); });
+  const offNet = onOfflineChange((kind) => { if (kind !== 'net') return; if (document.body.contains(syncPanel)) { if (!syncPanel.contains(document.activeElement)) drawSync(); } else offNet(); });
   const send = (email, btn) => busy(btn, 'Sending...', async () => {
+    if (!isOnline()) { toast('No internet right now. Connect to sign in.'); return; }
     try { await requestCode(email); pendingEmail = email.trim().toLowerCase(); drawSync(); syncPanel.querySelector('[data-code]')?.focus(); toast('Code sent. Check your email.'); }
     catch (e) { toast(/rate|seconds/i.test(e.message) ? 'Please wait a minute before asking for another code.' : e.message); }
   });
