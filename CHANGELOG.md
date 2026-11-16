@@ -2,6 +2,14 @@
 
 All notable changes. Versioning: `0.MINOR.0` marks a roadmap phase, `0.x.PATCH` is any shipped change a player or parent can notice, and `1.0.0` is the public launch. See "Versioning" in CLAUDE.md. The in-app version history (Grown-ups > What's new) reads from `js/data/changelog.js`; keep both in sync. Each release is tagged in git as `vX.Y.Z`.
 
+## v0.6.3 (2026-11-16) Feedback, sharing and usage counts
+
+- Send feedback from the Menu: tell us what you love, an idea or a bug. Grown-ups can also rate the game and leave an email for a reply.
+- Play on another device: Grown-ups shows a QR code and link to open the game on a phone, tablet or Chromebook.
+- New Install page with steps for iPad, iPhone, Android and Chromebook, and a plain Privacy page.
+- Anonymous usage counts help us see what is working: a random device id, trainer names, device type, rough location and play totals. No emails, real names or photos. Grown-ups shows exactly what is collected and has an off switch.
+- The news email checkbox and off switch now live in the Family tab.
+
 ## v0.6.2 (2026-11-15) A simpler Grown-ups area
 
 - Grown-ups is organized into four tabs: Progress, Settings, Family and Help.

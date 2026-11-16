@@ -1,7 +1,19 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.6.2';
+export const VERSION = '0.6.3';
 
 export const CHANGELOG = [
+  {
+    version: '0.6.3',
+    date: '2026-11-16',
+    title: "Feedback, sharing and usage counts",
+    items: [
+      "Send feedback from the Menu: tell us what you love, an idea or a bug. Grown-ups can also rate the game and leave an email for a reply.",
+      "Play on another device: Grown-ups shows a QR code and link to open the game on a phone, tablet or Chromebook.",
+      "New Install page with steps for iPad, iPhone, Android and Chromebook, and a plain Privacy page.",
+      "Anonymous usage counts help us see what is working: a random device id, trainer names, device type, rough location and play totals. No emails, real names or photos. Grown-ups shows exactly what is collected and has an off switch.",
+      "The news email checkbox and off switch now live in the Family tab.",
+    ],
+  },
   {
     version: '0.6.2',
     date: '2026-11-15',
