@@ -64,10 +64,10 @@ export function megaSheet(p, s, { onChange, onClose } = {}) {
   let body;
   if (unlocked) {
     body = `<p class="ms-desc">${esc(s.mega.desc)}</p>
-      <label class="ms-switch"><span><strong>Mega form in battles</strong><small>${MEGA_HP} HP and stronger hits</small></span><input type="checkbox" class="switch" data-mswitch ${st === 'on' ? 'checked' : ''} aria-label="Mega form in battles"></label>
+      <label class="ms-switch"><span><strong>Mega form in battles</strong><small>+${MEGA_HP} HP and stronger hits</small></span><input type="checkbox" class="switch" data-mswitch ${st === 'on' ? 'checked' : ''} aria-label="Mega form in battles"></label>
       <button class="btn-chunky btn-primary" data-close>Done</button>`;
   } else if (st === 'ready') {
-    body = `<p class="ms-desc">${esc(s.name)} is ready. A Mega Crystal will wake up its Mega form for good. In battles it gets ${MEGA_HP} HP and stronger hits.</p>
+    body = `<p class="ms-desc">${esc(s.name)} is ready. A Mega Crystal will wake up its Mega form for good. In battles it gets ${MEGA_HP} more HP and stronger hits.</p>
       <p class="ms-have">${crystalIcon()}You have <strong>${crystals(p)}</strong> Mega Crystal${crystals(p) === 1 ? '' : 's'}</p>
       <button class="btn-chunky btn-primary btn-xl ms-go" data-muse>${crystalIcon()}Mega Evolve!</button>`;
   } else if (st === 'need') {

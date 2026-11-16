@@ -3,7 +3,11 @@ import { SPECIES, TYPES, REGIONS, byId, lineOf, MYTHIC_ID, FUTURE_ID } from '../
 import { creatureArt, shinyStar, setShiny } from '../core/art.js';
 import { typeIcon, habitatSrc, cssUrl } from '../core/assets.js';
 import { dexState, dexCounts, dexVisible } from '../core/game.js';
-import { esc, on, sheet, reducedMotion } from './dom.js';
+import { roster, buddyOf, current } from '../core/levels.js';
+import { setBuddy } from './teamPicker.js';
+import { save } from '../core/store.js';
+import { syncNow } from '../core/sync.js';
+import { esc, on, sheet, reducedMotion, toast } from './dom.js';
 import { sfx } from '../core/sound.js';
 import { megaEntryHTML, bindMegaEntry } from './mega.js'; // Mega hook
 
@@ -68,9 +72,10 @@ const FILTERS = [
 
 // One card sleeve. Caught: the card with art. Seen: a silhouette. Unseen: an empty
 // numbered sleeve. Kairos is an ordinary empty sleeve until it is spotted, so nothing
-// hints that it is special.
-function sleeveHTML(p, s, lazy) {
-  const st = dexState(p, s.id);
+// hints that it is special. Kaimon you own show their level (the Buddy's in coral).
+function sleeveHTML(p, s, lazy, R, bk) {
+  const st = dexState(p, s.id, R);
+  const mon = R?.byId[s.id];
   const e = p.dex[s.id];
   const name = shownName(s, st);
   const t = TYPES[s.type];
@@ -81,10 +86,10 @@ function sleeveHTML(p, s, lazy) {
     if (lazy) art = art.replace('<img ', '<img loading="lazy" ');
   }
   const marks = st === 'caught'
-    ? `${e?.shiny ? `<span class="dex-shiny" title="Shiny caught">${shinyStar()}</span>` : ''}${s.mega ? '<span class="sl-mega" title="Has a Mega form">M</span>' : ''}`
+    ? `${e?.shiny ? `<span class="dex-shiny" title="Shiny caught">${shinyStar()}</span>` : ''}${s.mega ? '<span class="sl-mega" title="Has a Mega form">M</span>' : ''}${mon ? `<span class="sl-lv${mon.key === bk ? ' sl-bud' : ''}"${mon.key === bk ? ' title="Your Buddy"' : ''}>Lv ${mon.level}</span>` : ''}`
     : '';
   const cls = ['dex-tile', 'sleeve', 'dex-' + st, e?.shiny && st === 'caught' ? 'dex-has-shiny' : '', mythic ? 'sl-mythic' : ''].filter(Boolean).join(' ');
-  const label = st === 'unknown' ? `${num3(s.num)}, not found yet` : `${num3(s.num)} ${name}${st === 'seen' ? ', seen' : ''}`;
+  const label = st === 'unknown' ? `${num3(s.num)}, not found yet` : `${num3(s.num)} ${name}${st === 'seen' ? ', seen' : ''}${mon ? `, level ${mon.level}${mon.key === bk ? ', your Buddy' : ''}` : ''}`;
   return `<button class="${cls}" data-n="${s.id}" style="--rc:${t.color};--rl:${t.light}" aria-label="${esc(label)}">
     <span class="sl-card">
       <span class="dex-num">${num3(s.num)}</span>
@@ -102,9 +107,10 @@ export function renderKaidex(root, go) {
   let L = binderLayout();
   let idx = 0; // which view (page or open spread) is showing
   const c = dexCounts(p);
+  let R = roster(p), bk = buddyOf(p, R).key; // levels on the cards, and which one is the Buddy
   const shinyTotal = Object.values(p.dex).reduce((t, x) => t + (x.shiny || 0), 0);
   const listOf = (f) => SPECIES.filter((s) => dexVisible(p, s)).filter(FILTERS.find((x) => x.f === f).test);
-  const doneOf = (f) => { const l = listOf(f); return l.length && l.every((s) => dexState(p, s.id) === 'caught'); };
+  const doneOf = (f) => { const l = listOf(f); return l.length && l.every((s) => dexState(p, s.id, R) === 'caught'); };
   root.innerHTML = `
     <section class="screen kaidex binder-screen">
       <header class="topbar">
@@ -134,7 +140,7 @@ export function renderKaidex(root, go) {
     const list = listOf(filter);
     const fx = FILTERS.find((x) => x.f === filter);
     root.querySelector('.bh-title').textContent = fx.title;
-    const caughtHere = list.filter((s) => dexState(p, s.id) === 'caught').length;
+    const caughtHere = list.filter((s) => dexState(p, s.id, R) === 'caught').length;
     root.querySelector('.bh-count').innerHTML = `<strong>${caughtHere}</strong> of ${list.length}`;
     const pages = [];
     for (let i = 0; i < Math.max(1, list.length); i += per()) pages.push(list.slice(i, i + per()));
@@ -146,7 +152,7 @@ export function renderKaidex(root, go) {
       const lazy = Math.floor(pi / L.pages) !== idx;
       const pockets = per() - items.length;
       return `<div class="binder-page${side}"><div class="bp-paper"><span class="bp-rings" aria-hidden="true"><i></i><i></i><i></i></span><div class="bp-grid">
-        ${items.map((s) => sleeveHTML(p, s, lazy)).join('')}${'<span class="sleeve pocket" aria-hidden="true"><span class="sl-card"></span></span>'.repeat(pockets)}
+        ${items.map((s) => sleeveHTML(p, s, lazy, R, bk)).join('')}${'<span class="sleeve pocket" aria-hidden="true"><span class="sl-card"></span></span>'.repeat(pockets)}
       </div></div></div>`;
     };
     const spreads = [];
@@ -194,7 +200,11 @@ export function renderKaidex(root, go) {
   });
   on(root, 'click', '[data-pg]', (e, el) => { sfx.tap(); goTo(idx + +el.dataset.pg); });
   on(root, 'click', '[data-pgto]', (e, el) => { sfx.tap(); goTo(+el.dataset.pgto); });
-  on(root, 'click', '[data-n]', (e, el) => { sfx.tap(); showEntry(p, byId(el.dataset.n)); });
+  on(root, 'click', '[data-n]', (e, el) => {
+    sfx.tap();
+    // A new Buddy picked in the entry: show it on the cards too.
+    showEntry(p, byId(el.dataset.n), () => { R = roster(p); bk = buddyOf(p, R).key; drawBinder(idx * per() * L.pages); });
+  });
   on(root, 'click', '[data-shinyhelp]', () => { sfx.tap(); shinyHelp(p); });
   // Arrow keys turn pages; a new screen size can change how many sleeves fit.
   const onKey = (e) => {
@@ -217,8 +227,30 @@ export function renderKaidex(root, go) {
   addEventListener('resize', onResize);
 }
 
-function showEntry(p, s) {
-  const st = dexState(p, s.id);
+// Your Kaimon of this species: its level, XP and Make Buddy. Or what yours grew into.
+function levelBox(p, s, R) {
+  const m = R.byId[s.id];
+  const bk = buddyOf(p, R).key;
+  if (!m) {
+    // Owned once, then it evolved: say what it is now.
+    const cur = current(R, s.id);
+    if (!cur) return '';
+    const again = typeof s.region === 'number' && s.region > 0 ? ` Catch another ${esc(s.name)} to train one again!` : '';
+    return `<div class="entry-lv grew"><p>Your ${esc(s.name)} grew into <strong>${esc(cur.species.name)}</strong>.${again}</p></div>`;
+  }
+  const pct = Math.round((m.into / m.need) * 100);
+  const note = m.max ? 'Top level!' : `${Math.ceil(m.need - m.into)} XP to Lv ${m.level + 1}`;
+  const evo = s.id === MYTHIC_ID ? '' : s.evolveAt ? (m.level >= s.evolveAt ? 'Ready to evolve!' : `Evolves at Lv ${s.evolveAt}`) : '';
+  return `<div class="entry-lv">
+    <div class="elv-top"><span class="lv-tag">Lv ${m.level}</span><span class="bar xp-bar" role="progressbar" aria-label="XP to the next level" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}"><span style="width:${pct}%"></span></span></div>
+    <small class="elv-note">${esc(note)}${evo ? ` · ${esc(evo)}` : ''}</small>
+    ${m.key === bk ? '<span class="elv-buddy">Your Buddy</span>' : `<button class="btn-chunky btn-primary elv-make" data-buddy="${m.key}">Make Buddy</button>`}
+  </div>`;
+}
+
+function showEntry(p, s, onBuddy) {
+  const R = roster(p);
+  const st = dexState(p, s.id, R);
   const e = p.dex[s.id] || {};
   const t = TYPES[s.type];
   const mythic = s.id === MYTHIC_ID;
@@ -236,6 +268,7 @@ function showEntry(p, s) {
     const stages = lineOf(s).some((x) => hiddenFuture(p, x)) ? line.length : s.stages;
     body = `
       <p class="entry-meta"><span class="type-tag" style="--rc:${t.color}">${typeIcon(s.type)}${t.name}</span><span>${esc(regionLabel(s))}</span>${stages > 1 ? `<span>Stage ${s.stage} of ${stages}</span>` : ''}</p>
+      ${st === 'caught' ? levelBox(p, s, R) : ''}
       <p class="entry-desc">${st === 'caught' ? esc(s.desc) : 'You’ve seen it, but not caught it yet.'}</p>
       ${(() => {
         const r = RARITY[s.rarity] || RARITY.common;
@@ -243,17 +276,21 @@ function showEntry(p, s) {
           ['Rarity', `<span class="rar-dots" aria-label="${r[2]} of 5">${'<i class="on"></i>'.repeat(r[2])}${'<i></i>'.repeat(5 - r[2])}</span> ${r[0]}`],
           ['Found', esc(foundIn(s))],
         ];
-        if (st === 'caught') {
+        if (st === 'caught' && e.caught > 0) {
           rows.push(['Caught', `<strong>${e.caught}</strong> time${e.caught === 1 ? '' : 's'}${e.shiny ? ` · <button class="shiny-word" data-showshiny>${shinyStar()}${e.shiny} shiny</button>` : ''}`]);
           rows.push(['First caught', day(e.first || firstDayGuess(p))]);
           if (e.last && e.caught > 1) rows.push(['Last caught', ago(e.last)]);
+        } else if (st === 'caught') {
+          // Owned without a catch: the starter, or a form you evolved into.
+          const from = [...R.all.values()].find((x) => x.id === s.id)?.from?.[0];
+          rows.push(['Got it', from ? `Evolved from ${esc(byId(from.split('.')[0]).name)}` : s.region === 0 ? 'From Teacher K' : 'Evolved']);
         } else {
           rows.push(['Seen', `${e.seen || 1} time${(e.seen || 1) === 1 ? '' : 's'}`]);
         }
         if (e.esc) rows.push(['Got away', `${e.esc} time${e.esc === 1 ? '' : 's'}`]);
         return `<dl class="entry-facts">${rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl><p class="entry-hint">${esc(r[1])}</p>`;
       })()}
-      ${line.length > 1 ? `<div class="entry-line">${line.map((x) => { const xs = dexState(p, x.id); return `<div class="line-step${x.num === s.num ? ' cur' : ''}">${creatureArt(x, { mode: xs === 'caught' ? 'full' : xs })}<span>${esc(shownName(x, xs))}</span></div>`; }).join('<span class="line-arrow" aria-hidden="true">›</span>')}</div>` : ''}
+      ${line.length > 1 ? `<div class="entry-line">${line.map((x, i) => { const xs = dexState(p, x.id, R); const at = i ? line[i - 1].evolveAt : null; return `${i ? `<span class="line-arrow" aria-label="${at ? `evolves at level ${at}` : 'evolves'}">›${at ? `<small>Lv ${at}</small>` : ''}</span>` : ''}<div class="line-step${x.num === s.num ? ' cur' : ''}">${creatureArt(x, { mode: xs === 'caught' ? 'full' : xs })}<span>${esc(shownName(x, xs))}</span></div>`; }).join('')}</div>` : ''}
       ${megaEntryHTML(p, s, st)}`; // Mega hook
   }
   // Its home scene sits behind the art, once you have met it.
@@ -272,6 +309,17 @@ function showEntry(p, s) {
     sh.el.querySelectorAll('[data-look]').forEach((b) => { const on = (b.dataset.look === 'shiny') === shiny; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); });
   };
   sh.el.addEventListener('click', (ev) => {
+    const mk = ev.target.closest('[data-buddy]');
+    if (mk) {
+      const m = roster(p).all.get(mk.dataset.buddy);
+      if (!m) return;
+      sfx.levelUp();
+      setBuddy(p, m); save(); syncNow();
+      mk.outerHTML = '<span class="elv-buddy pop">Your Buddy</span>';
+      toast(`${m.species.name} is your Buddy!`, 1600);
+      onBuddy?.();
+      return;
+    }
     const b = ev.target.closest('[data-look], [data-showshiny]');
     if (!b) return;
     sfx.tap();

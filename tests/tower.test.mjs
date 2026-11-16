@@ -9,7 +9,8 @@ globalThis.localStorage = { getItem: (k) => mem[k] ?? null, setItem: (k, v) => {
 const { newProfile } = await import('../js/core/store.js');
 const T = await import('../js/core/tower.js');
 const M = await import('../js/core/megas.js');
-const { apply } = await import('../js/core/actions.js');
+const { apply, evolveReady } = await import('../js/core/actions.js');
+const L = await import('../js/core/levels.js');
 const { opponent, rewardFor, myTeam, attack, maxHpFor } = await import('../js/core/battle.js');
 const { applySnapshot } = await import('../js/core/sync.js');
 const { byId, SPECIES } = await import('../js/data/creatures.js');
@@ -129,8 +130,8 @@ test('event apply: wins give XP; the Mega Crystal comes only from towerCrystal (
 test('event merge: two devices clearing the same floor end with one crystal', () => {
   const a = ev('battle', { o: 'tower', tb: 1, w: 1 }, 1000);
   const b = ev('battle', { o: 'tower', tb: 1, w: 1 }, 2000);
-  const ga = ev('got', { r: 'tower-1', g: [['i', 'megaCrystal', 1]] }, 1001);
-  const gb = ev('got', { r: 'tower-1', g: [['i', 'megaCrystal', 1]] }, 2001);
+  const ga = ev('prize', { r: 'tower-1', g: [['i', 'megaCrystal', 1]] }, 1001);
+  const gb = ev('prize', { r: 'tower-1', g: [['i', 'megaCrystal', 1]] }, 2001);
   const p1 = fresh({ boss: true }), p2 = fresh({ boss: true }), p3 = fresh({ boss: true });
   for (const e of [a, ga, b, gb]) apply(p1, e);
   for (const e of [b, gb, a, ga]) apply(p2, e);
@@ -244,7 +245,9 @@ test('mega rules: the Buddy counts as owned once fully evolved', () => {
   const p = fresh();
   p.items.megaCrystal = 1;
   assert.equal(M.owns(p, byId('kaizenith')), false);
-  p.xp = 1_000_000;
+  // Levels: the starter reaches its final form by level, and evolveReady() records it.
+  p.mons = { kaimo: { 0: { a: 0, e: L.xpFor(30), c: 1 } } };
+  evolveReady(p);
   assert.equal(M.owns(p, byId('kaizenith')), true);
   assert.equal(M.megaState(p, byId('kaizenith')), 'ready');
 });
@@ -312,14 +315,15 @@ test('mega form: same id, Mega name, Mega art, more HP and power in battle', () 
   assert.match(creatureArt(m), /kart-mega/);
   assert.doesNotMatch(creatureArt(s), /mega/);
   assert.doesNotMatch(creatureArt(m, { mode: 'seen', mega: false }), /mega/);
-  assert.equal(maxHpFor(m), M.MEGA_HP);
+  assert.equal(maxHpFor(m), maxHpFor(s) + M.MEGA_HP, 'a Mega form adds MEGA_HP on top of its level HP');
   assert.equal(maxHpFor(s), 40);
-  assert.equal(attack({ species: m }, 0.5, 1).dmg - attack({ species: s }, 0.5, 1).dmg, M.MEGA_POWER);
+  assert.equal(maxHpFor(m, 30), L.hpForLevel(30) + M.MEGA_HP);
+  assert.equal(attack({ species: m, lv: 20 }, 0.5, 1).dmg - attack({ species: s, lv: 20 }, 0.5, 1).dmg, M.MEGA_POWER);
   p.team = ['blizzardfang'];
   const team = myTeam(p);
   const mine = team.find((x) => x.species.id === 'blizzardfang');
   assert.equal(mine.species.name, 'Mega Blizzardfang');
-  assert.equal(mine.max, M.MEGA_HP);
+  assert.equal(mine.max, L.hpForLevel(mine.lv) + M.MEGA_HP);
   apply(p, ev('mega', { n: 'blizzardfang', on: 0 }, Date.now() + 1e9));
   assert.equal(myTeam(p).find((x) => x.species.id === 'blizzardfang').species.name, 'Blizzardfang');
 });

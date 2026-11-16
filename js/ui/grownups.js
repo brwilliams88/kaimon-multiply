@@ -22,7 +22,7 @@ import { insights, tipText, headLine, heartText, factInfo, isCheer, talkText, TA
 import { REGIONS, TYPES } from '../data/creatures.js';
 import { voiceSupported } from '../core/voice.js';
 import { CHANGELOG, VERSION } from '../data/changelog.js';
-import { esc, on, sheet, toast, $, busy, cleanCode, codeOk } from './dom.js';
+import { esc, on, sheet, toast, $, busy, cleanCode, codeOk, keyOf } from './dom.js';
 import { reportPanelHTML, bindReportPanel } from './reportPanel.js';
 import { offlineChipHTML, offlinePanelHTML, bindOfflinePanel, pendingNote, outboxPillHTML } from './offline.js';
 import { isOnline, onOfflineChange } from '../core/offline.js';
@@ -312,7 +312,25 @@ const clHTML = (c) => `<div class="cl"><p class="cl-head"><strong>v${c.version}<
 const GU_TABS = [['progress', 'Progress'], ['settings', 'Settings'], ['family', 'Family'], ['help', 'Help']];
 let guTab = 'progress'; // the open tab, kept while the app is open
 
+// Redraws (after a rename, a new daily limit, a sync change...) keep the grown-up's
+// place: the scroll spot, open sections, the fact picked in the grid, typed text and focus.
 function renderMain(root, go) {
+  if (!root.querySelector('.grownups')) return drawMain(root, go);
+  const y = window.scrollY;
+  const open = [...root.querySelectorAll('details')].map((d) => d.open);
+  const fact = root.querySelector('.tg-grid [data-fact].sel')?.dataset.fact;
+  const typed = [...root.querySelectorAll('input[type=text], input[type=email], input:not([type]), textarea')]
+    .filter((i) => i.value !== i.defaultValue).map((i) => [keyOf(i), i.value]).filter(([k]) => k);
+  const f = document.activeElement && root.contains(document.activeElement) ? keyOf(document.activeElement) : null;
+  root = drawMain(root, go);
+  root.querySelectorAll('details').forEach((d, i) => { if (open[i] !== undefined && d.open !== open[i]) d.open = open[i]; });
+  if (fact) root.querySelector(`.tg-grid [data-fact="${fact}"]`)?.click();
+  typed.forEach(([k, v]) => { const i = root.querySelector(k); if (i && i.value === i.defaultValue) i.value = v; });
+  if (f) root.querySelector(f)?.focus({ preventScroll: true });
+  if (Math.abs(window.scrollY - y) > 1) window.scrollTo(0, y);
+  return root;
+}
+function drawMain(root, go) {
   // Fresh element on every redraw so button handlers never stack up.
   const fresh = root.cloneNode(false);
   root.replaceWith(fresh);
@@ -450,6 +468,11 @@ function renderMain(root, go) {
           ${isInstalled() ? '<div class="row"><span class="note">Kaimon got a new app icon in v0.5.0.</span><button class="btn-chunky btn-sm" data-newicon>New icon help</button></div>' : ''}
         </div>
 
+        <div class="panel gu-class">
+          <h2>Share with a class</h2>
+          <div class="row"><span class="note">A page for teachers and families: what the game is, privacy in plain words, a QR code and a one-page letter to print.</span><a class="btn-chunky btn-sm" href="classroom.html" target="_blank" rel="noopener" data-classpage>Open page</a></div>
+        </div>
+
         <div class="panel gu-feedback">
           <h2>Feedback</h2>
           <p class="note">Notes and ratings go only to the maker of Kaimon Multiply. What doesn’t work helps the most.</p>
@@ -558,7 +581,15 @@ function renderMain(root, go) {
         <p class="note">${st.signedIn ? 'Synced trainers show up on every signed-in family device, with the same progress.' : 'After signing in, pick the family trainers to sync.'}</p>
         ${st.signedIn ? `<div class="trainer-rows">${people.map((x) => `<label class="trow sync-row"><span class="sync-who"><span class="trow-name">${esc(x.name)}</span><span class="trow-tag ${x.family ? 'fam' : ''}">${x.family ? 'Synced' : 'This device only'}</span></span><input type="checkbox" class="switch" data-fam="${x.id}" ${x.family ? 'checked' : ''} aria-label="Sync ${esc(x.name)} with family"></label>`).join('')}</div>` : ''}
       </div></div>`;
+    // Keep what the grown-up already typed when the panel redraws (sync status, going online).
+    const typed = {};
+    syncPanel.querySelectorAll('[data-email], [data-code]').forEach((i) => { typed[i.hasAttribute('data-email') ? 'email' : 'code'] = i.value; });
+    const news = syncPanel.querySelector('[data-news]');
     syncPanel.innerHTML = `<h2>Family sync</h2>${step1}${step2}`;
+    const em = syncPanel.querySelector('[data-email]'), cd = syncPanel.querySelector('[data-code]'), nw = syncPanel.querySelector('[data-news]');
+    if (em && typed.email) em.value = typed.email;
+    if (cd && typed.code) cd.value = typed.code;
+    if (nw && news) nw.checked = news.checked;
   };
   drawSync();
   if (syncStatus().signedIn && isOnline()) ensureUpdates().then((v) => { if (v !== newsOn) { newsOn = v; if (!syncPanel.contains(document.activeElement)) drawSync(); } }).catch(() => {});
@@ -581,7 +612,7 @@ function renderMain(root, go) {
     send(email, btn);
   });
   on(root, 'click', '[data-resend]', (e, btn) => send(pendingEmail, btn));
-  on(root, 'click', '[data-change]', () => { pendingEmail = ''; drawSync(); });
+  on(root, 'click', '[data-change]', () => { const was = pendingEmail; pendingEmail = ''; drawSync(); const e = syncPanel.querySelector('[data-email]'); if (e) e.value = was; });
   on(root, 'click', '[data-verify]', (e, btn) => busy(btn, 'Checking...', async () => {
     const code = cleanCode(root.querySelector('[data-code]').value);
     if (!codeOk(code)) { toast('Type the code from the email.'); return; }
@@ -682,4 +713,5 @@ function renderMain(root, go) {
   });
   on(root, 'click', '[data-lock]', () => { unlockedUntil = 0; go('home');
   });
+  return root;
 }

@@ -5,7 +5,12 @@
 import { fxSrc, ballSrc } from '../core/assets.js';
 import { creatureArt } from '../core/art.js';
 import { sfx } from '../core/sound.js';
-import { sheet, wait, reducedMotion } from './dom.js';
+import { sheet, wait, reducedMotion, esc } from './dom.js';
+import { trainerImg, JACKETS } from './avatars.js';
+import { save } from '../core/store.js';
+import { syncNow } from '../core/sync.js';
+import { howTo } from '../core/wardrobe.js';
+import { lookOf, isKai, miniLicense, markSeen, wearColor } from './wardrobe.js';
 
 // One fx picture, always decorative.
 export const fxImg = (name, cls = '') => `<img class="${cls}" src="${fxSrc(name)}" alt="" aria-hidden="true" draggable="false" decoding="async">`;
@@ -21,7 +26,7 @@ export const glowBall = (kind) => kind === 'mega' || kind === 'legend';
 // Evolution. The old form flashes white faster and faster, shrinks into light, and the
 // new form pops out of a burst and fills in with color. The words arrive after the pop.
 // Reduced motion: the old and new forms side by side, the new one glowing.
-export function evolveMoment({ from, to, kicker, title, text, btn = 'Awesome!' }) {
+export function evolveMoment({ from, to, kicker, title, text, btn = 'Awesome!', onClose }) {
   const rm = reducedMotion();
   const fromArt = creatureArt(from), toArt = creatureArt(to);
   const stage = rm
@@ -34,7 +39,7 @@ export function evolveMoment({ from, to, kicker, title, text, btn = 'Awesome!' }
     <p class="evo-kicker">${kicker}</p>
     ${stage}
     <div class="evo-reveal"><h2>${title}</h2><p>${text}</p><button class="btn-chunky btn-primary" data-close>${btn}</button></div>
-  </div>`);
+  </div>`, { onClose });
 }
 
 // Kairo arrives: it glides down from the sky, then bobs in place.
@@ -62,4 +67,56 @@ export async function legendThrow(arriveEl) {
   await wait(240);
   arriveEl.classList.add('lt-click');
   await wait(260);
+}
+
+// Something new for the Wardrobe, earned by answering. A card in the page (never a
+// pop-up, so it never stops a kid mid-tap): the trainer's photo hops into the new
+// jacket color (Kai's License changes color instead), with a burst turning behind.
+// Several at once (like a long-time player's first visit after the Wardrobe
+// arrived): the new colors pop in one by one. Reduced motion: the end picture.
+const listOf = (names) => (names.length > 1 ? `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}` : names[0]);
+export function unlockCardHTML(p, items, { close = false, cls = '' } = {}) {
+  const L = lookOf(p), kai = isKai(L), one = items.length === 1, it = items[0];
+  let art, kicker, title, text, btn;
+  if (one) {
+    const after = kai ? { ...L, card: it.id } : { ...L, color: it.id };
+    art = kai ? poseSwap(miniLicense(p, L), miniLicense(p, after), 'wn-swap')
+      : `<span class="wn-face">${poseSwap(trainerImg(L, 'face'), trainerImg(after, 'face'), 'wn-swap')}</span>`;
+    kicker = kai ? 'New License color!' : 'New jacket color!';
+    title = `${esc(it.name)} is yours!`;
+    text = `${esc(howTo(it).replace(/^Get/, 'You got'))}.${kai ? ' Kai keeps his red jacket, so it goes on your License.' : ''}`;
+    btn = `<button class="btn-chunky btn-primary wn-btn" data-wn-wear="${it.id}">Wear it!</button>`;
+  } else {
+    art = `<span class="wn-dots">${items.map((x, i) => `<i style="--c:${JACKETS[x.id]};--i:${i}"></i>`).join('')}</span>`;
+    kicker = 'Your Wardrobe is open!';
+    title = `${items.length} new colors!`;
+    text = `Your right answers earned ${esc(listOf(items.map((x) => x.name)))}.`;
+    btn = '<button class="btn-chunky btn-primary wn-btn" data-wn-open>Open Wardrobe</button>';
+  }
+  return `<div class="res-card wd-new${kai && one ? ' wn-card' : ''}${one ? '' : ' wn-many'} ${cls}" role="status">
+    <span class="wn-art" aria-hidden="true">${fxImg('badge-burst', 'wn-burst')}${art}</span>
+    <span class="wn-text"><em>${kicker}</em><strong>${title}</strong><small>${text}</small></span>
+    <span class="wn-act">${btn}</span>
+    ${close ? '<button class="wn-x" data-wn-x aria-label="Hide"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6 L18 18 M18 6 L6 18" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg></button>' : ''}
+  </div>`;
+}
+
+// Records the items as celebrated (synced), then wires the card's buttons.
+// onWear runs after a color is put on; onOpen opens the Wardrobe; onHide after the x.
+export function wireUnlockCard(card, p, items, { onWear, onOpen, onHide } = {}) {
+  markSeen(p, items);
+  save(); syncNow();
+  if (!card) return;
+  card.addEventListener('click', (e) => {
+    const w = e.target.closest('[data-wn-wear]')?.dataset.wnWear;
+    if (w) {
+      wearColor(p, w); sfx.tap();
+      const act = card.querySelector('.wn-act');
+      if (act) act.innerHTML = '<span class="wn-on">Wearing it!</span>';
+      onWear?.(w);
+      return;
+    }
+    if (e.target.closest('[data-wn-open]')) { sfx.tap(); onOpen?.(); return; }
+    if (e.target.closest('[data-wn-x]')) { sfx.tap(); card.classList.add('wn-gone'); setTimeout(() => card.remove(), 220); onHide?.(); }
+  });
 }

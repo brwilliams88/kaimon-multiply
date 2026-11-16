@@ -9,7 +9,7 @@
 //
 // Milestones are one-time rewards for long-term answering: right answers, best
 // streaks, Gym Leader wins and medals. They are claimed with the same keyed
-// 'got' event as quests, so they can never be given twice.
+// 'prize' event as quests, so they can never be given twice.
 import { today } from './store.js';
 import { tableTier, levelRank, levelOf, factsForTables } from './facts.js';
 import { grant, claimed } from './items.js';

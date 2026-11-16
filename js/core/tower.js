@@ -12,6 +12,8 @@ import { quizFacts, bossUnlocked } from './battle.js';
 import { creatureArt } from './art.js';
 import { ballImg } from './assets.js';
 import { grantMegaCrystal } from './items.js';
+import { XP } from './xp.js';
+import { arrivalLevel } from './levels.js';
 
 // Bottom floor first. hp: the guardian's HP (a Gym Leader's Kaimon has about 60).
 export const FLOORS = [
@@ -25,7 +27,7 @@ export const FLOORS = [
     intro: 'Hundragon has 100 glowing scales, one for every fact. Show it everything you know!',
     lose: 'Hundragon is the strongest Kaimon in the tower. Keep practicing your 6s to 9s!' },
 ];
-export const TOWER_XP = 120; // bonus XP for every floor won
+export const TOWER_XP = XP.tower; // bonus XP for every floor won (battle() in actions.js gives it to the Buddy and team)
 export const floorOf = (n) => FLOORS.find((f) => f.n === +n) || null;
 export const guardian = (n) => byId(floorOf(n)?.id);
 
@@ -94,7 +96,7 @@ export function towerOpponent(p, n) {
   const art = (pose) => `<span class="tw-guard tw-pose-${pose}">${creatureArt(s)}</span>`;
   return {
     kind: 'tower', table: f.n, floor: f.n, name: s.name, title: `Floor ${f.n} guardian`, rematch,
-    team: [{ species: s, hp: f.hp, max: f.hp }],
+    team: [{ species: s, lv: arrivalLevel(p, s), hp: f.hp, max: f.hp }], // lv: for looks, the level it joins you at
     tables: tablesOf(p), facts: towerFacts(p, f.n), art,
     ui: {
       type: 'legend',
@@ -127,7 +129,6 @@ export function applyTowerBattle(p, d, t) {
   if (!f.w) f.first = t;
   f.w++;
   f.last = Math.max(f.last || 0, t);
-  p.xp = (p.xp || 0) + TOWER_XP;
 }
 
 // After a won Tower battle: the floor's Mega Crystal, once ever (items.js keeps the claim).

@@ -12,21 +12,21 @@
 // State comes only from 'mega' events, applied in applyMega(). Old saves have no p.megas.
 import { SPECIES } from '../data/creatures.js';
 import { MEGA_ART } from './art.js';
-import { partnerOf } from './game.js';
+import { roster } from './levels.js';
 
 export const CRYSTAL = 'megaCrystal'; // key in p.items, the same one items.js grantMegaCrystal() fills
-export const MEGA_HP = 50;   // a normal Kaimon has 40
+export const MEGA_HP = 10;   // extra HP on top of its level HP (levels.js hpForLevel)
 export const MEGA_POWER = 4; // extra damage on every right answer
 
 export const MEGA_IDS = SPECIES.filter((s) => s.mega && MEGA_ART.has(s.num) && s.stage === s.stages).map((s) => s.id);
 export const hasMega = (s) => !!s && MEGA_IDS.includes(s.id);
 export const crystals = (p) => Math.max(0, p.items?.[CRYSTAL] || 0);
 
-// Owned: caught, or it's the trainer's own Buddy (the starter evolves without a catch).
+// Owned: caught, or yours now in levels.js (a Kaimon that evolved into it, like the starter).
 export function owns(p, s) {
   if (!s) return false;
   if (p.dex?.[s.id]?.caught) return true;
-  try { return partnerOf(p).species.id === s.id; } catch { return false; }
+  try { return !!roster(p).byId[s.id]; } catch { return false; }
 }
 export const megaUnlocked = (p, id) => !!p.megas?.[id]?.at;
 export const megaOn = (p, id) => megaUnlocked(p, id) && p.megas[id].on !== 0;

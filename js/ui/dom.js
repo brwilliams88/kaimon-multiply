@@ -22,6 +22,54 @@ export function toast(msg, ms = 2600) {
 }
 
 let openSheets = 0;
+// The page behind a sheet stays exactly where it was. When the first sheet opens we
+// note the scroll spot, the screen and the focused button; when the last one closes
+// we put the scroll back (iOS Safari can jump to the top while the page is locked)
+// and, for keyboard users, return focus to the button that opened it.
+let keepY = 0, keepScreen = null, keepFocus = null, keepFocusKey = null, byKeys = false;
+// A selector for a button by its first data- attribute, to find it again after a redraw.
+export const keyOf = (el) => { const a = el && [...el.attributes].find((x) => x.name.startsWith('data-')); return a ? `${el.tagName}[${a.name}${a.value ? `="${CSS.escape(a.value)}"` : ''}]` : null; };
+const navNow = () => document.body.dataset.nav || '';
+addEventListener('keydown', (e) => { if (e.key === 'Tab' || e.key === 'Enter' || e.key === ' ' || e.key === 'Escape') byKeys = true; }, true);
+addEventListener('pointerdown', () => { byKeys = false; }, true);
+const pageY = () => window.scrollY || (document.scrollingElement || document.documentElement).scrollTop || 0;
+function holdPage() {
+  keepY = pageY();
+  keepScreen = navNow(); // app.js counts every screen change
+  const f = document.activeElement;
+  keepFocus = f && f !== document.body && !f.closest('.sheet-wrap') ? f : null;
+  keepFocusKey = keyOf(keepFocus);
+  document.documentElement.classList.add('sheet-open');
+}
+function releasePage(typed) {
+  document.documentElement.classList.remove('sheet-open');
+  // Only on the same screen: a sheet that closes after going to another screen leaves it alone.
+  if (keepScreen === null || keepScreen !== navNow()) { keepScreen = keepFocus = keepFocusKey = null; return; }
+  const y = keepY, scr = keepScreen;
+  if (Math.abs(pageY() - y) > 0.5) window.scrollTo(0, y);
+  // iOS can move the page again a moment later, as the keyboard slides away after
+  // typing in a sheet. Put it back once more, unless the player has scrolled since.
+  if (typed) {
+    let moved = false;
+    const mark = () => { moved = true; };
+    const evs = ['touchstart', 'wheel', 'keydown'];
+    evs.forEach((ev) => addEventListener(ev, mark, { capture: true, passive: true, once: true }));
+    setTimeout(() => {
+      evs.forEach((ev) => removeEventListener(ev, mark, { capture: true }));
+      if (!moved && !openSheets && scr === navNow() && Math.abs(pageY() - y) > 0.5) window.scrollTo(0, y);
+    }, 400);
+  }
+  // Keyboard players get focus back on the button that opened the sheet. Wait a tick:
+  // closing can redraw the screen (a new name, a new team), so find the new button.
+  const f = keepFocus, key = keepFocusKey;
+  if (byKeys && f) setTimeout(() => {
+    const a = document.activeElement;
+    if (openSheets || scr !== navNow() || (a && a !== document.body && !a.closest('.sheet-wrap'))) return;
+    const to = f.isConnected ? f : key && document.querySelector(`#app ${key}`);
+    to?.focus({ preventScroll: true });
+  }, 0);
+  keepScreen = keepFocus = keepFocusKey = null;
+}
 // Bottom sheet / dialog. Returns a close function.
 // back: a sheet opened from another sheet (like the Menu). Its own buttons and
 // Escape return to the parent; tapping outside closes everything.
@@ -32,18 +80,22 @@ export function sheet(html, { onClose, cls = '', back = null, backLabel = 'Menu'
   // x: a close button that stays in the top corner while the sheet scrolls.
   const xbar = x ? `<div class="sheet-xbar"><button class="sheet-x" data-close aria-label="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6 L18 18 M18 6 L6 18" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg></button></div>` : '';
   wrap.innerHTML = `<div class="sheet ${cls}" role="dialog" aria-modal="true">${xbar}${top}${html}</div>`;
+  // While a sheet is open the screen behind it stays still (see the touch guard in app.js).
+  if (openSheets++ === 0) holdPage();
   document.body.appendChild(wrap);
   requestAnimationFrame(() => wrap.classList.add('open'));
   sfx.open();
-  // While a sheet is open the screen behind it stays still (see the touch guard in app.js).
-  openSheets++; document.documentElement.classList.add('sheet-open');
   let done = false;
   const close = (toParent = false) => {
     if (done) return;
     done = true;
     sfx.close();
-    if (--openSheets <= 0) { openSheets = 0; document.documentElement.classList.remove('sheet-open'); }
+    // A focused button inside the sheet would be removed with it: let go of it first.
+    const typed = wrap.contains(document.activeElement) && document.activeElement.matches('input, textarea, select');
+    if (wrap.contains(document.activeElement)) document.activeElement.blur();
+    if (--openSheets <= 0) { openSheets = 0; releasePage(typed); }
     wrap.classList.remove('open');
+    wrap.classList.add('closing');
     setTimeout(() => wrap.remove(), 220);
     document.removeEventListener('keydown', onKey);
     onClose?.();

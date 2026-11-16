@@ -2,15 +2,19 @@ import { active } from '../core/store.js';
 import { SPECIES, REGIONS, TYPES } from '../data/creatures.js';
 import { creatureArt } from '../core/art.js';
 import { tableTier, tableProgress, LEVEL_LABEL, parseFact } from '../core/facts.js';
-import { partnerOf, dexCounts, trainerTitle } from '../core/game.js';
+import { dexCounts, trainerTitle } from '../core/game.js';
+import { roster, buddyOf, parseKey } from '../core/levels.js';
+import { teamSheet } from './teamPicker.js';
 import { bossUnlocked, quizReady, quizNextIn, champReady, gymOpen } from '../core/battle.js';
 import { limitReached, cardsToday, roundSize, roundsToday, GOAL_ROUNDS } from '../core/playtime.js';
 import { nextUp, quizUseful } from '../core/nextup.js';
 import { VERSION } from '../data/changelog.js';
-import { evolveMoment, poseSwap, kairoArrive, kairoCaught, legendThrow } from './moments.js';
+import { evolveMoment, poseSwap, kairoArrive, kairoCaught, legendThrow, unlockCardHTML, wireUnlockCard } from './moments.js';
+import { wardrobeCheck, WD_NEW, clearWardrobeNews } from './wardrobe.js';
+import { byId as wearItem } from '../core/wardrobe.js';
 import { ballImg, itemImg, sceneSrc, gymSrc, gymImg, badgeImg, cssUrl, uiImg, trainerFace, trainerBody, trainerKey, CARD_BACK, LOGO } from '../core/assets.js';
-import { kairoEvolves } from '../core/game.js';
-import { evolveKairo, ball as giveBall, caught as catchIt } from '../core/actions.js';
+import { evolveReady, boostLeft, ball as giveBall, caught as catchIt } from '../core/actions.js';
+import { BOOST } from '../core/levels.js';
 import { save, touch, setSetting } from '../core/store.js';
 import { syncNow } from '../core/sync.js';
 import { byId, MYTHIC_ID, FUTURE_ID } from '../data/creatures.js';
@@ -27,6 +31,16 @@ import { boltUnlocked, boltBest, calmMode } from '../core/lightning.js'; // [sys
 import { offlineBadgeHTML } from './offline.js';
 import { homeTour } from './firstGame.js';
 import { howToPlay } from './howToPlay.js';
+
+// Daily boost: the first right answers each day give triple XP. Say how many are
+// left, so the extra XP is never a surprise (and its end isn't either).
+function boostChip(p) {
+  const left = boostLeft(p);
+  const why = `Your first ${BOOST.n} right answers each day give triple XP.`;
+  return left > 0
+    ? `<span class="boost-chip" title="${why}">${itemImg('xp-star')}<span>Triple XP: <b>${left}</b> left<span class="bc-wide"> today</span></span><span class="sr-only">. ${why}</span></span>`
+    : `<span class="boost-chip done" title="${why}">${itemImg('xp-star')}<span><span class="bc-wide">Triple XP is back tomorrow</span><span class="bc-narrow">Triple XP: <b>0</b> left</span></span><span class="sr-only">. ${why}</span></span>`;
+}
 
 export const medal = (tier) => tier
   ? `<span class="medal medal-${tier}" title="${LEVEL_LABEL[tier]} medal">${itemImg('medal-' + tier)}</span>`
@@ -145,13 +159,16 @@ function regionRow(p, r, nu) {
 
 export function renderHome(root, go, params = {}) {
   const p = active();
-  const partner = partnerOf(p);
+  // Record any Kaimon that is ready to evolve (an old save's starter, Kairo after a year).
+  if (evolveReady(p).length) { save(); syncNow(); }
+  const partner = buddyOf(p);
   const dex = dexCounts(p);
   const nu = nextUp(p);
   const total = p.settings.tables.length || 10;
   const beaten = p.settings.tables.filter((t) => p.battles.champs[t]).length;
   const open = bossUnlocked(p);
   const qReady = quizReady(p) && quizUseful(p), qNext = quizNextIn(p);
+  const wn = params.guide ? { items: [], fresh: [] } : wardrobeNews(p);
   root.innerHTML = `
     <section class="screen home home2">
       <header class="topbar">
@@ -165,6 +182,7 @@ export function renderHome(root, go, params = {}) {
       <div class="home-main">
         <div class="home-side">
           ${nextCard(p, nu)}
+          ${wn.items.length ? unlockCardHTML(p, wn.items, { close: true, cls: 'home-wd' }) : ''}
 
           <div class="actions">
           <button class="quick" data-play="mix" aria-label="Quick practice. Mixed times tables.">
@@ -180,11 +198,12 @@ export function renderHome(root, go, params = {}) {
 
         <div class="home-regions">
           <div class="buddy">
-            <span class="buddy-art">${creatureArt(partner.species)}</span>
+            <button class="buddy-art" data-buddyteam aria-label="Your Buddy, ${esc(partner.species.name)}, level ${partner.level}. Tap to switch.">${creatureArt(partner.species)}</button>
             <span class="buddy-info">
-              <span class="buddy-name">${partner.species.name}<span class="lv-tag">Lv ${partner.level}</span></span>
-              <span class="bar xp-bar" role="progressbar" aria-label="XP to the next level" aria-valuemin="0" aria-valuemax="${partner.need}" aria-valuenow="${partner.into}"><span style="width:${Math.round((partner.into / partner.need) * 100)}%"></span></span>
-              <small class="buddy-note">${partner.need - partner.into} XP to Lv ${partner.level + 1}${partner.evolveAt ? `. Evolves at Lv ${partner.evolveAt}` : ''}</small>
+              <span class="buddy-name">${partner.species.name}<span class="lv-tag">Lv ${partner.level}</span><button class="buddy-switch" data-buddyteam aria-label="Switch your Buddy">Switch</button></span>
+              <span class="bar xp-bar" role="progressbar" aria-label="XP to the next level" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round((partner.into / partner.need) * 100)}"><span style="width:${Math.round((partner.into / partner.need) * 100)}%"></span></span>
+              <small class="buddy-note">${partner.max ? 'Top level!' : `${Math.ceil(partner.need - partner.into)} XP to Lv ${partner.level + 1}`}${partner.evolveAt && !partner.max ? `. Evolves at Lv ${partner.evolveAt}` : ''}</small>
+              ${boostChip(p)}
             </span>
             ${todayRing(p)}
             <button class="balls-row" data-balls aria-label="Your balls. Tap to learn how to use them.">
@@ -265,20 +284,9 @@ export function renderHome(root, go, params = {}) {
   });
   on(root, 'click', '[data-menu]', () => { unlock(); sfx.tap(); homeMenu(p, go); });
   on(root, 'click', '[data-balls]', () => { unlock(); sfx.tap(); ballsHelp(p); });
-  // Evolution moment: shown once on this device when the partner reaches a new stage.
-  try {
-    const key = 'kaimon.stage.' + p.id;
-    const seen = +localStorage.getItem(key) || 0;
-    if (seen && partner.stage > seen) {
-      const from = SPECIES.find((s) => s.line === partner.species.line && s.stage === seen);
-      setTimeout(() => evolveMoment({ from, to: partner.species, kicker: `What? ${esc(from.name)} is evolving!`, title: `${esc(from.name)} evolved into ${esc(partner.species.name)}!`, text: `All those right answers paid off. Lv ${partner.level}!` }), 400);
-    }
-    localStorage.setItem(key, partner.stage);
-  } catch {}
-  if (kairoEvolves(p)) {
-    evolveKairo(p); save(); syncNow();
-    setTimeout(() => evolveMoment({ from: byId(MYTHIC_ID), to: byId(FUTURE_ID), kicker: "A whole year with Kairo... and it's glowing!", title: 'Kairo evolved into Kairos!', text: 'Kaidex #060, the very last page. Kairo grew up right alongside you.', btn: 'Amazing!' }), 500);
-  }
+  // Evolution moments: each evolution is shown once on this device, for any Kaimon.
+  evolutionMoments(p);
+  on(root, 'click', '[data-buddyteam]', () => { unlock(); sfx.tap(); teamSheet(p, () => { keepPlace(); go('home'); }, { mode: 'buddy' }); });
   // Beat Boss Papa but never caught Kairo (the app closed, or the result was skipped):
   // Kairo waits on the home screen until it's caught. It can never be missed.
   if (p.battles.boss > 0 && !p.dex[MYTHIC_ID]?.caught) setTimeout(() => kairoWaiting(p, go), 600);
@@ -296,6 +304,16 @@ export function renderHome(root, go, params = {}) {
     }
   } catch {}
 
+  // New Wardrobe colors: a card under Next up, with a little fanfare the first time.
+  if (wn.items.length) {
+    wireUnlockCard(root.querySelector('.home-wd'), p, wn.fresh, {
+      onWear: () => { clearWardrobeNews(p); const av = root.querySelector('.trainer-av'); if (av) av.innerHTML = avatarSVG(trainerLook(p)); },
+      onOpen: () => { clearWardrobeNews(p); go('trainer', { wardrobe: true }); },
+      onHide: () => clearWardrobeNews(p),
+    });
+    if (wn.fresh.length) setTimeout(() => sfx.levelUp(), 500);
+  }
+
   // Right after the guided first game: Teacher K shows where things are.
   if (params.guide === 'next') homeTour();
 
@@ -308,6 +326,18 @@ export function renderHome(root, go, params = {}) {
       <div class="celebrate-row"><span>${ballIcon('mega')} Mega Ball</span><span>${snackIcon()} 3 Power Snacks</span><span class="stars">★ Gold star</span></div>
       <button class="btn-chunky btn-primary" data-close>Awesome!</button></div>`);
   }
+}
+
+// New Wardrobe colors earned away from a practice round (a battle, another family
+// device, or answers given before the Wardrobe existed). They stay on Home (this
+// device only) until the trainer wears one, opens the Wardrobe or hides the card.
+function wardrobeNews(p) {
+  const fresh = wardrobeCheck(p);
+  let ids = [];
+  try { ids = JSON.parse(localStorage.getItem(WD_NEW(p)) || '[]'); } catch {}
+  for (const it of fresh) if (!ids.includes(it.id)) ids.push(it.id);
+  try { if (ids.length) localStorage.setItem(WD_NEW(p), JSON.stringify(ids)); } catch {}
+  return { items: ids.map(wearItem).filter(Boolean), fresh };
 }
 
 // A locked gym: say how to open it, with one tap to practice that table.
@@ -419,4 +449,33 @@ export function ballsHelp(p, opts = {}) {
     ${row('legend', 'Legend Ball', '×' + p.balls.legend, 'Never misses. Earn one each time a times table gets a new medal. Save it for a Kaimon you really want!')}
     <button class="btn-chunky btn-primary" data-close>Got it</button>
   </div>`, { ...opts, x: true });
+}
+
+// Every evolution not yet shown on this device, one after another. The first time
+// this runs on a device (or after an update from before levels), the ones that already
+// happened are just marked as seen: the old screen showed them.
+function evolutionMoments(p) {
+  const key = 'kaimon.evos.' + p.id;
+  let seen;
+  try { seen = JSON.parse(localStorage.getItem(key) || 'null'); } catch { seen = null; }
+  const all = Object.keys(p.evos || {});
+  const fresh = seen ? all.filter((k) => !seen.includes(k)) : [];
+  try { localStorage.setItem(key, JSON.stringify(all)); } catch {}
+  if (!fresh.length) return;
+  const R = roster(p);
+  const shows = fresh.map((k) => ({ from: byId(parseKey(k).id), to: R.all.get(p.evos[k].to) })).filter((x) => x.from && x.to).slice(0, 3);
+  const show = (i) => {
+    const x = shows[i];
+    if (!x) return;
+    const kairo = x.from.id === MYTHIC_ID;
+    evolveMoment({
+      from: x.from, to: x.to.species,
+      kicker: kairo ? 'A whole year with Kairo... and it&#8217;s glowing!' : `What? ${esc(x.from.name)} is evolving!`,
+      title: `${esc(x.from.name)} evolved into ${esc(x.to.species.name)}!`,
+      text: kairo ? `Kaidex #060, the very last page. Kairo grew up right alongside you. Lv ${x.to.level}!` : `All those right answers paid off. Lv ${x.to.level}!`,
+      btn: kairo ? 'Amazing!' : 'Awesome!',
+      onClose: () => setTimeout(() => show(i + 1), 250),
+    });
+  };
+  setTimeout(() => show(0), 400);
 }

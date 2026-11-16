@@ -16,7 +16,8 @@ export const typeIcon = (type, cls = '') => img(typeSrc(type), `type-ic ${cls}`)
 
 export const badgeImg = (table, cls = '') => img(`assets/badges/${table}.webp`, `badge-img ${cls}`);
 
-export const uiImg = (name, cls = '') => img(`assets/ui/${name}.webp`, `ui-img ${cls}`);
+export const uiSrc = (name) => `assets/ui/${name}.webp`;
+export const uiImg = (name, cls = '') => img(uiSrc(name), `ui-img ${cls}`);
 export const fxSrc = (name) => `assets/fx/${name}.webp`;
 
 // Trainers. Gym Leaders by table; six Team Papa grunts; Boss Papa.

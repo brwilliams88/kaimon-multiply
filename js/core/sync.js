@@ -1,7 +1,8 @@
 // Family sync with Supabase, using plain fetch (no library, works offline-first).
 // Any grown-up's email can start a family. Each family only sees its own rows; guests stay on the device.
 import { allProfiles, profileById, putProfile, newProfile, save, deviceId, syncState, setSyncState, deleteProfile, hiddenProfiles, unhideProfile } from './store.js';
-import { apply, emit } from './actions.js';
+import { apply, emit, evolveReady } from './actions.js';
+import { mergeMonsSnap, monsSnap } from './levels.js';
 import { mergeTowerSnap } from './tower.js'; import { mergeMegaSnap } from './megas.js'; // Hundred Tower and Mega hooks
 import { systemsSnap, mergeSystems } from './items.js'; // [systems] items, quests, Lightning Round
 
@@ -162,7 +163,7 @@ export function joinFamily(p) {
   p.family = true;
   p.updatedAt = Date.now();
   p.outbox = [];
-  emit(p, 'snap', { facts: p.facts, dex: p.dex, balls: p.balls, items: p.items, stats: p.stats, mythic: p.mythic, battles: p.battles, play: p.play, xp: p.xp, tips: p.tips, tower: p.tower, megas: p.megas, ...systemsSnap(p) }); // tower, megas: Hundred Tower and Mega hooks; [systems] items, rewards, Lightning best
+  emit(p, 'snap', { facts: p.facts, dex: p.dex, balls: p.balls, items: p.items, stats: p.stats, mythic: p.mythic, battles: p.battles, play: p.play, xp: p.xp, tips: p.tips, ...monsSnap(p), wardrobe: p.wardrobe || {}, tower: p.tower, megas: p.megas, ...systemsSnap(p) }); // tower, megas: Hundred Tower and Mega hooks; [systems] items, rewards, Lightning best
   save();
   syncNow();
 }
@@ -175,9 +176,11 @@ export function leaveFamily(p) {
 
 // Snapshot from another device: merge into this trainer.
 export function applySnapshot(p, d) {
+  mergeMonsSnap(p, d); // Kaimon levels (before dex counts change below)
   mergeTowerSnap(p, d.tower); mergeMegaSnap(p, d.megas); // Hundred Tower and Mega hooks
   p.xp = Math.max(p.xp || 0, d.xp || 0);
   for (const [n, t] of Object.entries(d.tips || {})) { p.tips = p.tips || {}; if (!p.tips[n] || t < p.tips[n]) p.tips[n] = t; }
+  for (const [n, t] of Object.entries(d.wardrobe || {})) { p.wardrobe = p.wardrobe || {}; if (!p.wardrobe[n] || t < p.wardrobe[n]) p.wardrobe[n] = t; }
   for (const [id, r] of Object.entries(d.facts || {})) {
     const cur = p.facts[id] || (p.facts[id] = { a: 0, c: 0, ms: 0, days: [], fastDays: [], lastMiss: 0 });
     cur.a += r.a || 0; cur.c += r.c || 0; cur.ms += r.ms || 0;

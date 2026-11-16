@@ -11,6 +11,7 @@ import { trainerArt } from './trainerArt.js';
 import { trickHTML } from './trickArt.js';
 import { limitReached, roundsToday, GOAL_ROUNDS } from '../core/playtime.js';
 import { partnerOf } from '../core/game.js';
+import { DUP_XP } from '../core/levels.js';
 import { voiceSupported, stop as stopVoice } from '../core/voice.js';
 import { micMode, micButton } from './micMode.js';
 import { sfx, setSound } from '../core/sound.js';
@@ -18,7 +19,8 @@ import { ballIcon, medal } from './home.js';
 import { trainerLook, trainerImg } from './avatars.js';
 import { ballSrc, sceneSrc, cssUrl, sceneKey, uiImg, itemImg, fxSrc, typeIcon, trainerFace, trainerBody, CARD_BACK } from '../core/assets.js';
 import { trickyPool, markTrickyDone } from '../core/nextup.js';
-import { fxImg, glowBall } from './moments.js';
+import { fxImg, glowBall, unlockCardHTML, wireUnlockCard } from './moments.js';
+import { wardrobeCheck } from './wardrobe.js';
 import { quick } from '../core/prefs.js';
 import { $, on, esc, sheet, wait, toast, soundButton, reducedMotion, setFlame } from './dom.js';
 import { secondChance, lanternGlow, scrollButton, openScroll } from './items.js'; import { hintedMs } from '../core/items.js'; import { afterRound } from './quests.js'; import { calmMode } from '../core/lightning.js'; // [systems] items, quests, Calm mode
@@ -248,6 +250,8 @@ export function renderPlay(root, go, { table, focus, guide } = {}) {
     S.xp = (S.xp || 0) + gained;
     const pl1 = partnerOf(p);
     if (pl1.level > pl0.level) setTimeout(() => toast(pl1.stage > pl0.stage ? `${pl0.species.name} is evolving! Check the home screen.` : `${pl1.species.name} reached Lv ${pl1.level}!`, 2600), 1400);
+    // The last Triple XP answer of the day: say so on the results (a toast here would cover the next card).
+    if (lv.boosted && lv.boostLeft === 0) S.boostEnd = true;
     S.answered++;
     S.results = S.results || [];
     S.results[S.n] = ok;
@@ -282,7 +286,7 @@ export function renderPlay(root, go, { table, focus, guide } = {}) {
       el.front.classList.remove('has-belt');
       el.front.classList.add('catching');
       el.front.innerHTML = (`
-        <div class="card-head"><span class="chip">${region.name}</span><span class="head-tags">${fast ? '<span class="chip card-type fast">Fast</span>' : ''}<span class="chip xp-chip">${itemImg('xp-star')}+${gained} XP</span></span></div>
+        <div class="card-head"><span class="chip">${region.name}</span><span class="head-tags">${fast ? '<span class="chip card-type fast">Fast</span>' : ''}<span class="chip xp-chip">${itemImg('xp-star')}+${gained} XP${lv.boosted ? '<span class="x3" aria-hidden="true">×3</span><span class="sr-only">, triple XP</span>' : ''}</span></span></div>
         <div class="qplate done"><span>${a}</span><span class="times">×</span><span>${b}</span><span class="eq">=</span><span class="ans">${ans}</span></div>
         <div class="catch-zone${glowBall(ball) ? ' ball-glow' : ''}">
           <div class="catch-art">${result?.isNew ? fxImg('badge-burst', 'catch-halo') : ''}${creatureArt(S.species, { shiny: result?.shiny })}</div>
@@ -389,11 +393,13 @@ export function renderPlay(root, go, { table, focus, guide } = {}) {
         const hard = s.rarity === 'rare' || s.rarity === 'legendary';
         const head = result.firstEver ? 'Your first catch!' : 'New Kaimon!';
         zone.insertAdjacentHTML('beforeend', `<div class="new-banner${result.firstEver ? ' first' : ''}" aria-hidden="true"><span class="nb-rays"></span><strong>${head}</strong><small>${hard ? 'A rare find! ' : ''}#${String(s.num).padStart(3, '0')} added to your Kaidex</small></div>`);
-        msg.innerHTML = `You caught ${esc(s.name)}!${shinyTag}`;
+        msg.innerHTML = `You caught ${esc(s.name)}! <span class="catch-xp">Lv ${result.lv}</span>${shinyTag}`;
       } else {
         sfx.caught();
-        msg.innerHTML = `Caught ${esc(s.name)}!${shinyTag}`;
+        // Already have one: yours gets stronger. Otherwise a new one joins at its own level.
+        msg.innerHTML = result.dup ? `Caught ${esc(s.name)}! <span class="catch-xp">+${DUP_XP} XP</span>${shinyTag}` : `Caught ${esc(s.name)}! <span class="catch-xp">Lv ${result.lv}</span>${shinyTag}`;
       }
+      if (result.evolved?.length) setTimeout(() => toast(`${byId(result.evolved[0].from.split('.')[0]).name} is evolving! Check the home screen.`, 2600), 900);
     } else {
       if (ballEl) ballEl.src = ballSrc(ball, true);
       zone.classList.add('escaped');
@@ -463,6 +469,8 @@ export function renderPlay(root, go, { table, focus, guide } = {}) {
     const newBest = S.best > bestBefore && S.best >= 3;
     const results = Array.from({ length: n }, (_, i) => !!S.results?.[i]);
     const shown = ups.slice(0, 8);
+    // A new Wardrobe color from this round's right answers.
+    const wear = guide ? [] : wardrobeCheck(p);
     root.innerHTML = `
       <section class="screen summary res res-${tone}">
         <div class="res-grid">
@@ -488,7 +496,8 @@ export function renderPlay(root, go, { table, focus, guide } = {}) {
               <span class="res-buddy-text">
                 <strong>${evolved ? `${esc(buddyBefore.species.name)} is evolving!` : leveled ? `${esc(buddy.species.name)} reached Lv ${buddy.level}!` : `${esc(buddy.species.name)} got stronger`}</strong>
                 <span class="bar xp-bar"><span style="width:${Math.round((buddy.into / buddy.need) * 100)}%"></span></span>
-                <small><span class="res-xp">${itemImg('xp-star', 'res-ic')}+${S.xp || 0} XP</span>${evolved ? ' Go Home to see it.' : ` ${buddy.need - buddy.into} XP to Lv ${buddy.level + 1}`}</small>
+                <small><span class="res-xp">${itemImg('xp-star', 'res-ic')}+${S.xp || 0} XP</span>${evolved ? ' Go Home to see it.' : buddy.max ? ' Top level!' : ` ${Math.ceil(buddy.need - buddy.into)} XP to Lv ${buddy.level + 1}`}</small>
+                ${S.boostEnd ? '<small class="res-boost">That was your last Triple XP for today. It comes back tomorrow!</small>' : ''}
               </span>
             </div>
           </div>
@@ -498,6 +507,7 @@ export function renderPlay(root, go, { table, focus, guide } = {}) {
               <span class="res-newmedal-text"><strong>${LEVEL_LABEL[b.tier]} medal for the ${b.t}s!</strong><small>You won a Legend Ball.</small></span>
               <span class="res-newmedal-ball" aria-hidden="true">${ballIcon('legend')}</span>
             </div>`).join('')}
+            ${wear.length ? unlockCardHTML(p, wear, { cls: 'res-wd' }) : ''}
             <section class="res-card res-sec">
               <h2 class="res-h">${ballIcon('capture')}Caught this round${uniq.length ? `<span class="res-count">${S.catches.length}</span>` : ''}</h2>
               ${uniq.length ? `<div class="res-catches">${uniq.map((c, i) => { const s = byId(c.id); return `<div class="res-catch${c.isNew ? ' new' : ''}" style="--i:${i}">${creatureArt(s, { shiny: c.shiny })}<span${s.name.length > 10 ? ' class="long"' : ''}>${esc(s.name)}</span>${c.isNew ? '<em>New!</em>' : ''}</div>`; }).join('')}</div>`
@@ -522,11 +532,12 @@ export function renderPlay(root, go, { table, focus, guide } = {}) {
         </div>
       </section>`;
     afterRound(p, root); // [systems] quest and milestone rewards
-    if (newBadges.length) setTimeout(() => sfx.levelUp(), 250);
+    if (newBadges.length || wear.length) setTimeout(() => sfx.levelUp(), 250);
     else if (party) setTimeout(() => sfx.win(), 250);
     on(root, 'click', '[data-again]', () => go(limitReached(p) ? 'home' : 'play', { table, focus }));
     on(root, 'click', '[data-home]', () => go('home', guide ? { guide: 'next' } : {}));
     if (G) G.results();
+    if (wear.length) wireUnlockCard(root.querySelector('.res-wd'), p, wear, { onOpen: () => go('trainer', { wardrobe: true }) });
     on(root, 'click', '[data-ambush]', () => go('battle', { kind: 'grunt', grunt }));
   }
 
