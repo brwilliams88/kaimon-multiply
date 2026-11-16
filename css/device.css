@@ -16,7 +16,7 @@
 .sheet .pe-steps h3 { margin: 0 0 6px; font-size: 19px; }
 .pe-steps ol { counter-reset: pe; list-style: none; margin: 0; padding: 0; }
 .pe-steps li { counter-increment: pe; position: relative; padding: 4px 0 8px 40px; min-height: 34px; font-size: 17px; }
-.pe-steps li::before { content: counter(pe); position: absolute; left: 0; top: 2px; width: 28px; height: 28px; border-radius: 50%; background: var(--coral); color: #fff; font-weight: 700; font-size: 15px; display: grid; place-items: center; border: 2.5px solid var(--ink); }
+.pe-steps li::before { content: counter(pe); position: absolute; left: 0; top: 2px; width: 28px; height: 28px; border-radius: 50%; background: var(--coral-deep, #C4421F); color: #fff; font-weight: 700; font-size: 15px; display: grid; place-items: center; border: 2.5px solid var(--ink); }
 .pe-step-ic { width: 20px; height: 20px; vertical-align: -4px; }
 .sheet .pe-note { margin: 4px 0 0; font-size: 14px; color: var(--ink-2); }
 .pe-note a { color: #1E6FD9; font-weight: 600; }

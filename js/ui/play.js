@@ -22,7 +22,7 @@ import { trickyPool, markTrickyDone } from '../core/nextup.js';
 import { fxImg, glowBall, unlockCardHTML, wireUnlockCard } from './moments.js';
 import { wardrobeCheck } from './wardrobe.js';
 import { quick } from '../core/prefs.js';
-import { $, on, esc, sheet, wait, toast, soundButton, reducedMotion, setFlame } from './dom.js';
+import { $, on, esc, sheet, wait, toast, soundButton, reducedMotion, setFlame, say } from './dom.js';
 import { firstGameGuide, finishFirstGame, wantsFirstGame, GUIDE_FACTS } from './firstGame.js';
 
 export function renderPlay(root, go, { table, focus, guide } = {}) {
@@ -161,6 +161,7 @@ export function renderPlay(root, go, { table, focus, guide } = {}) {
       <div class="card-wild${lingering ? ' stay' : ''}"><div class="wild-art">${creatureArt(species)}</div></div>
       ${beltHTML(species)}`;
     el.front.classList.toggle('has-belt', !!el.front.querySelector('.belt'));
+    say(`${lingering ? `${species.name} is still here.` : `Wild ${species.name}.`} What is ${a} times ${b}?`);
     el.stage.dataset.left = Math.max(0, Math.min(2, S.length - S.n - 1));
     if (S.n === 0 && !S.dealt && !quick(p)) {
       // The first card is dealt face down (the Kaimon card back), then flips up.
@@ -257,6 +258,7 @@ export function renderPlay(root, go, { table, focus, guide } = {}) {
       S.streak++;
       S.best = Math.max(S.best, S.streak);
       sfx.correct();
+      say(`Right! ${a} times ${b} is ${ans}.`);
       // The ball the player picked on the belt, or the free one (streaks upgrade it).
       let ball = ballForStreak(p, S.streak);
       if (S.pick !== 'free' && (p.balls[S.pick] || 0) > 0) { ball = S.pick; giveBall(p, S.pick, -1); }
@@ -333,6 +335,7 @@ export function renderPlay(root, go, { table, focus, guide } = {}) {
       G?.wrong();
       S.phase = 'learn';
       S.mustType = ans;
+      say(`Not quite. ${a} times ${b} is ${ans}. Type ${ans} to keep going.`);
       setInput('');
       el.val.dataset.ph = `Type ${ans}`;
       setInput('');
@@ -522,7 +525,7 @@ export function renderPlay(root, go, { table, focus, guide } = {}) {
         </div>
         <div class="res-actions${guide ? ' guided' : ''}">
           ${guide ? `<button class="btn-chunky res-again res-again-sm" data-again>Play again</button>
-          <button class="btn-chunky btn-primary btn-xl res-go-home" data-home>Go Home<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12 H18 M13 6.5 L18.5 12 L13 17.5" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>` : `<button class="btn-chunky res-home" data-home>Home</button>
+          <button class="btn-chunky btn-primary btn-xl res-go-home" data-home>Go home<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12 H18 M13 6.5 L18.5 12 L13 17.5" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>` : `<button class="btn-chunky res-home" data-home>Home</button>
           <button class="btn-chunky btn-primary btn-xl res-again" data-again>Play again<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12 H18 M13 6.5 L18.5 12 L13 17.5" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>`}
         </div>
       </section>`;

@@ -328,10 +328,10 @@ export function renderMeetPartner(root, go) {
       <div class="mentor-pic">${trainerBody('teacher-k', 'talking')}</div>
       <div class="speech">
         <p class="speech-who">Teacher K</p>
-        <p>Welcome, ${esc(p.name)}! Every trainer starts with a buddy Kaimon. Your buddy travels with you, gets stronger with every right answer, and leads your battle team. Pick one!</p>
+        <p>Welcome, ${esc(p.name)}! Every trainer starts with a Buddy Kaimon. Your Buddy travels with you, gets stronger with every right answer, and leads your battle team. Pick one!</p>
       </div>
       </div>
-      <div class="starters" role="radiogroup" aria-label="Choose your buddy">
+      <div class="starters" role="radiogroup" aria-label="Choose your Buddy">
         ${['kaimo', 'kaiko', 'kipbun'].map((id) => { const s = byId(id); const t = TYPES[s.type]; return `
           <button class="starter${pick === id ? ' on' : ''}" role="radio" aria-checked="${pick === id}" data-pick="${id}" style="--rc:${t.color};--rl:${t.light}">
             <span class="starter-art">${creatureArt(s)}</span>
@@ -340,7 +340,7 @@ export function renderMeetPartner(root, go) {
             <span class="starter-note">${STARTER_INFO[id]}</span>
           </button>`; }).join('')}
       </div>
-      <button class="btn-chunky btn-primary btn-xl" data-go ${pick ? '' : 'disabled'}>${pick ? 'Choose ' + byId(pick).name : 'Pick your buddy'}</button>
+      <button class="btn-chunky btn-primary btn-xl" data-go ${pick ? '' : 'disabled'}>${pick ? 'Choose ' + byId(pick).name : 'Pick your Buddy'}</button>
     </section>`;
   };
   draw();
