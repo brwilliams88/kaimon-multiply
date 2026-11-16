@@ -61,8 +61,17 @@ function go(name, params = {}) {
 // Images fade in as they arrive instead of popping in.
 document.addEventListener('load', (e) => { const t = e.target; if (t.tagName === 'IMG') t.classList.add('ld'); }, true);
 // iOS can still nudge a fixed page; stop drags on the title screen unless they're inside a sheet.
+// The same while a sheet (like the Menu) is open: only the sheet itself scrolls.
 document.addEventListener('touchmove', (e) => {
-  if (!document.documentElement.classList.contains('lock-screen')) return;
+  const html = document.documentElement;
+  if (html.classList.contains('sheet-open')) {
+    const sh = e.target.closest?.('.sheet');
+    if (sh && sh.scrollHeight > sh.clientHeight + 1) return;
+    if (sh) for (let el = e.target; el && el !== sh; el = el.parentElement) if (el.scrollHeight > el.clientHeight + 1 && /auto|scroll/.test(getComputedStyle(el).overflowY)) return;
+    e.preventDefault();
+    return;
+  }
+  if (!html.classList.contains('lock-screen')) return;
   if (e.target.closest?.('.sheet, .overlay, .fs-sheet, input, textarea')) return;
   for (let el = e.target; el && el !== document.body; el = el.parentElement) {
     if (el.scrollHeight > el.clientHeight + 1 && /auto|scroll/.test(getComputedStyle(el).overflowY)) return;
@@ -92,6 +101,8 @@ function sendWeeklyReports() {
 }
 setTimeout(sendWeeklyReports, 5000);
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') setTimeout(sendWeeklyReports, 3000); });
+// A device left open across Sunday morning still sends on time.
+setInterval(() => { if (document.visibilityState === 'visible') sendWeeklyReports(); }, 20 * 60 * 1000);
 // Emails tried with no internet wait on the device and go out once back online.
 const sendWaitingMail = () => { flushMailOutbox().catch(() => {}); sendWeeklyReports(); };
 window.addEventListener('online', () => setTimeout(sendWaitingMail, 3000));

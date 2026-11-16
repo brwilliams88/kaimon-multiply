@@ -1,7 +1,15 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.5.26';
+export const VERSION = '0.5.27';
 
 export const CHANGELOG = [
+  {
+    version: '0.5.27',
+    date: '2026-11-15',
+    title: "The Menu stays put",
+    items: [
+      "Fixed: scrolling while the Menu or another sheet was open could move the screen behind it. Now only the sheet scrolls.",
+    ],
+  },
   {
     version: '0.5.26',
     date: '2026-11-15',

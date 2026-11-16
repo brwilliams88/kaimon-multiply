@@ -19,6 +19,7 @@ export function toast(msg, ms = 2600) {
   t._h = setTimeout(() => t.classList.remove('show'), ms);
 }
 
+let openSheets = 0;
 // Bottom sheet / dialog. Returns a close function.
 // back: a sheet opened from another sheet (like the Menu). Its own buttons and
 // Escape return to the parent; tapping outside closes everything.
@@ -31,10 +32,13 @@ export function sheet(html, { onClose, cls = '', back = null, backLabel = 'Menu'
   wrap.innerHTML = `<div class="sheet ${cls}" role="dialog" aria-modal="true">${xbar}${top}${html}</div>`;
   document.body.appendChild(wrap);
   requestAnimationFrame(() => wrap.classList.add('open'));
+  // While a sheet is open the screen behind it stays still (see the touch guard in app.js).
+  openSheets++; document.documentElement.classList.add('sheet-open');
   let done = false;
   const close = (toParent = false) => {
     if (done) return;
     done = true;
+    if (--openSheets <= 0) { openSheets = 0; document.documentElement.classList.remove('sheet-open'); }
     wrap.classList.remove('open');
     setTimeout(() => wrap.remove(), 220);
     document.removeEventListener('keydown', onKey);
