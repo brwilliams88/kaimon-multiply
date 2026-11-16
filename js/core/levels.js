@@ -263,6 +263,10 @@ function legacyStage(p) {
 }
 
 // Kaimon ready to evolve now: [{ from: key, to: key }]. The caller records them.
+// [v1.1 items] Evolve Crystal: its 'use' event names the Buddy key (d.n); treat a
+// crystal used on m.key as `go = true` here, so it evolves the Buddy by species.
+// [v1.1 tower] Tower first-win XP: send b (Buddy key) with the battle event, like battle().
+// [v1.1 items] Power Snack heals half of mon.max, which is already the level HP.
 export function readyToEvolve(p, R = roster(p), now = Date.now()) {
   const out = [];
   for (const m of R.owned) {

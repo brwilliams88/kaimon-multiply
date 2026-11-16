@@ -62,8 +62,8 @@ export const dexState = (profile, id, R) => {
   return 'unknown';
 };
 
-// Kairos (Kairo's future form) stays off the Kaidex until a trainer first spots it.
-export const dexVisible = () => true; // all 60 show; Kairos stays a faint silhouette until spotted
+// Kairos (Kairo's future form) looks like any empty sleeve until a trainer first spots it.
+export const dexVisible = () => true; // all 60 show; Kairos is an ordinary empty sleeve until spotted
 
 export function dexCounts(profile) {
   let seen = 0, caught = 0, total = 0;
