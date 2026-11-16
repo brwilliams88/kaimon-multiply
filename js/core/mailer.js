@@ -4,6 +4,7 @@
 // turned reports on and added an email.
 import { allProfiles, setSetting, deviceId, syncState } from './store.js';
 import { weeklyReport, lastFullWeek, mondayOf } from './report.js';
+import { registerOutbox, outboxChanged } from './outbox.js';
 
 // The web app URL from Deploy > Manage deployments in Apps Script. Empty means
 // the sender is not set up yet: Grown-ups then offers "Copy report" instead.
@@ -47,7 +48,7 @@ export async function invite(p, to, { resend = false } = {}) {
 
 const OUTBOX = 'kaimon.mailOutbox';
 function readOutbox() { try { return JSON.parse(localStorage.getItem(OUTBOX) || '[]'); } catch { return []; } }
-function writeOutbox(list) { try { if (list.length) localStorage.setItem(OUTBOX, JSON.stringify(list)); else localStorage.removeItem(OUTBOX); } catch { /* private mode */ } }
+function writeOutbox(list) { try { if (list.length) localStorage.setItem(OUTBOX, JSON.stringify(list)); else localStorage.removeItem(OUTBOX); } catch { /* private mode */ } outboxChanged(); }
 function queueInvite(p, to) {
   const list = readOutbox().filter((x) => !(x.pid === p.id && x.to === to));
   list.push({ pid: p.id, to, t: Date.now() });
@@ -80,6 +81,7 @@ export function flushMailOutbox() {
   })().finally(() => { flushing = null; });
   return flushing;
 }
+registerOutbox('mail', { count: () => readOutbox().length, flush: flushMailOutbox, one: 'email', many: 'emails' });
 // Which emails said yes. Returns { confirmed: [], pending: [], stopped: [] }.
 export const recipientStatus = (p) => post({ type: 'status', to: p.settings.reportTo || [], pid: p.id });
 

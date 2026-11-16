@@ -21,6 +21,7 @@ import { shareGame, shareIcon } from './share.js';
 import { openPlayElsewhere, deviceIcon } from './playElsewhere.js';
 import { openFeedback } from './feedback.js';
 import { trainerChipSheet } from './onboarding.js';
+import { offlineBadgeHTML } from './offline.js';
 import { homeTour } from './firstGame.js';
 import { howToPlay } from './howToPlay.js';
 
@@ -367,7 +368,7 @@ function homeMenu(p, go) {
     ${row('data-m="feedback"', uiImg('kaizo-feedback'), 'Send feedback', 'Tell the maker what you love, or what bugs you')}
     <button class="menu-row menu-share" data-share><span class="menu-ic" aria-hidden="true">${shareIcon()}</span><span class="menu-txt"><strong>Share the game</strong><small>Send a friend the link</small></span></button>
     <button class="menu-row menu-grown" data-grownups><span class="menu-ic" aria-hidden="true">${uiImg('icon-grownups')}</span><span class="menu-txt"><strong>Grown-ups</strong><small>Settings and progress. Needs the grown-up PIN.</small></span></button>
-    <p class="menu-ver">Kaimon Multiply v${VERSION}</p>
+    <p class="menu-ver">Kaimon Multiply v${VERSION}${offlineBadgeHTML('menu-badge')}</p>
   </div>`, { cls: 'menu-sheet', x: true });
   sh.el.querySelector('[data-quick]').addEventListener('change', (e) => {
     setSetting(p, 'quick', e.target.checked);

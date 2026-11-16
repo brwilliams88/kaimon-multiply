@@ -2367,6 +2367,24 @@ body:has(.res) #toast:not(.show) { visibility: hidden; }
 .off-count b { color: var(--ink); }
 .sync-wait { margin: 6px 0 2px; padding: 10px 12px; border-radius: 14px; background: #EEF5FF; border: 2px solid #B6DBFF; font-size: 15px; line-height: 1.4; color: var(--ink); }
 @media (prefers-reduced-motion: reduce) { .off-bar > span { transition: none; } }
+/* Offline mode, finished: Works offline badge, download meter states, outbox, keep my data */
+.off-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.off-head .off-h { margin: 0; }
+.off-badge { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px 0 4px; border: 2.5px solid var(--ink); border-radius: 99px; background: #E3F5E5; color: var(--ink); font-size: 14px; font-weight: 600; white-space: nowrap; box-shadow: 0 2px 0 var(--ink); }
+.off-badge svg { width: 22px; height: 22px; padding: 3px; border-radius: 50%; background: var(--grass); color: #fff; box-shadow: inset 0 0 0 2px var(--ink); }
+.menu-ver { display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; }
+.menu-badge { height: 26px; font-size: 13px; box-shadow: none; border-width: 2px; }
+.menu-badge svg { width: 19px; height: 19px; }
+.off-bar > span { background-image: linear-gradient(110deg, rgba(255,255,255,.28) 25%, transparent 25% 50%, rgba(255,255,255,.28) 50% 75%, transparent 75%); background-size: 28px 100%; animation: off-flow 1.1s linear infinite; }
+.off-bar.paused > span { background-color: #8A94AB; background-image: none; animation: none; }
+@keyframes off-flow { to { background-position: 28px 0; } }
+@media (prefers-reduced-motion: reduce) { .off-bar > span { animation: none; } }
+.off-row .btn-sm { margin: 8px 0 4px; }
+.off-denied { margin-top: 6px; }
+.gu-wait { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 6px 14px 6px 8px; border: 2.5px solid var(--ink); border-radius: 99px; background: #FFF4CC; color: var(--ink); font-weight: 600; font-size: 15px; box-shadow: 0 3px 0 var(--ink); white-space: nowrap; }
+.gu-wait svg { width: 24px; height: 24px; }
+.is-offline .gu-offline { flex-wrap: wrap; gap: 10px; }
+[data-gu-waitslot]:empty { display: none; }
 
 .mic.no-net { position: relative; background: #E9EEF5; color: var(--ink-2); }
 .play-top .mic.no-net { background: #E9EEF5; color: #7B86A0; }
