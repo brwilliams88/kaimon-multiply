@@ -1,7 +1,17 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '1.0.4';
+export const VERSION = '1.0.5';
 
 export const CHANGELOG = [
+  {
+    version: '1.0.5',
+    date: '2026-11-16',
+    title: "Fun hats",
+    items: [
+      "New hats in the Wardrobe: the Kaizo Hood, the Papa Cap and the Kairo Crown!",
+      "Earn the Kaizo Hood with 750 right answers, the Papa Cap by beating Boss Papa, and the Kairo Crown with 3,000 right answers.",
+      "Kai and all the ready-made trainers can wear them. Your hat shows on Home, your License and Who's playing. In battles it waits in your bag.",
+    ],
+  },
   {
     version: '1.0.4',
     date: '2026-11-16',
