@@ -384,7 +384,200 @@ function cleanReport_(r, trainer, week) {
     bestStreak: int_(r.bestStreak, 999),
     prev: { minutes: int_(pr.minutes, 10080), cards: int_(pr.cards, 100000), accuracy: intOrNull_(pr.accuracy, 100) },
     change: { minutes: intOrNull_(ch.minutes, 10080, -10080), cards: intOrNull_(ch.cards, 100000, -100000), accuracy: intOrNull_(ch.accuracy, 100, -100) },
+    insights: cleanInsights_(r.insights),
   };
+}
+
+// ---------------------------------------------------------------- insights
+// "What to practice next" arrives as kind keys, table numbers, fact ids and
+// whole numbers (js/core/insights.js). Anything that doesn't fit a known
+// shape is dropped, and every word is built here from fixed templates.
+
+// Field checks: [min, max] for whole numbers, 'f' for a fact id like "7x8".
+var TIP_SPEC = {
+  misses: { need: { t: [1, 10], n: [1, 9999], of: [1, 9999] }, opt: { f: 'f', fn: [1, 9999] } },
+  tricky: { need: { t: [1, 10], f: 'f', n: [1, 9999] } },
+  dip: { need: { t: [1, 10], pct: [0, 100], prev: [0, 100] } },
+  rest: { need: { t: [1, 10], d: [1, 999] }, opt: { off: [1, 1] } },
+  slow: { need: { t: [1, 10], ds: [1, 999], fs: [1, 60] } },
+  almost: { need: { t: [1, 10], lv: [2, 5], n: [1, 9], f: 'f' }, opt: { f2: 'f' } },
+  explore: { need: { t: [1, 10], n: [0, 9] }, opt: { off: [1, 1] } },
+  comeback: { need: {}, opt: { t: [1, 10] } },
+  start: { need: { t: [1, 10] } },
+  keep: { need: {} },
+  'acc-up': { need: { pct: [0, 100], prev: [0, 100] }, cheer: true },
+  'table-up': { need: { t: [1, 10], pct: [0, 100], prev: [0, 100] }, cheer: true },
+  clean: { need: { n: [1, 100000] }, cheer: true },
+  days: { need: { n: [1, 7] }, cheer: true },
+  medals: { need: { n: [1, 100] }, cheer: true },
+  more: { need: { n: [1, 10080], prev: [1, 10080] }, cheer: true },
+};
+var HEAD_SPEC = {
+  'new': { need: {} }, empty: { need: {} }, first: { need: { n: [1, 100000] } },
+  up: { need: { pct: [0, 100], prev: [0, 100] } }, strong: { need: { pct: [0, 100], n: [1, 100000] } },
+  busy: { need: { n: [1, 100000], more: [1, 100000] } }, steady: { need: { n: [1, 100000] }, opt: { pct: [0, 100] } },
+};
+
+function field_(v, rule) {
+  if (rule === 'f') return typeof v === 'string' && /^(10|[1-9])x(10|[1-9])$/.test(v) ? v : null;
+  return typeof v === 'number' && isFinite(v) && Math.floor(v) === v && v >= rule[0] && v <= rule[1] ? v : null;
+}
+function shape_(x, specs) {
+  if (!x || typeof x !== 'object' || typeof x.k !== 'string' || !specs.hasOwnProperty(x.k)) return null;
+  var spec = specs[x.k], out = { k: x.k }, key, v;
+  for (key in spec.need) { v = field_(x[key], spec.need[key]); if (v === null) return null; out[key] = v; }
+  for (key in (spec.opt || {})) {
+    if (x[key] === undefined || x[key] === null) continue;
+    v = field_(x[key], spec.opt[key]); if (v === null) return null; out[key] = v;
+  }
+  return out;
+}
+function factTable_(f) { return +String(f).split('x')[0]; }
+function cleanTip_(x) {
+  var t = shape_(x, TIP_SPEC);
+  if (!t) return null;
+  // The numbers must agree with each other, too.
+  if (t.k === 'misses' && (t.n > t.of || (t.f && (factTable_(t.f) !== t.t || !t.fn || t.fn > t.n)) || (!t.f && t.fn))) return null;
+  if ((t.k === 'tricky' || t.k === 'almost') && factTable_(t.f) !== t.t) return null;
+  if (t.k === 'almost' && t.f2 && (factTable_(t.f2) !== t.t || t.f2 === t.f)) return null;
+  return t;
+}
+function cleanInsights_(x) {
+  if (!x || typeof x !== 'object') return null;
+  var tips = [], used = {};
+  (Array.isArray(x.tips) ? x.tips.slice(0, 2) : []).forEach(function (y) {
+    var t = cleanTip_(y);
+    if (!t || (t.t && used[t.t])) return;
+    if (t.t) used[t.t] = true;
+    tips.push(t);
+  });
+  var up = [];
+  (x.trend && Array.isArray(x.trend.up) ? x.trend.up.slice(0, 10) : []).forEach(function (t) { if (field_(t, [1, 10]) !== null && up.indexOf(t) < 0) up.push(t); });
+  var talk = cleanTalk_(x.talk);
+  if (!tips.length && !talk) return null;
+  var heart = shape_(x.heart && typeof x.heart === 'object' ? { k: 'heart', n: x.heart.n, prev: x.heart.prev } : null, { heart: { need: { n: [0, 100], prev: [0, 100] } } });
+  return { period: x.period === 'last7' ? 'last7' : 'week', head: shape_(x.head, HEAD_SPEC), tips: tips, up: up, talk: talk, heart: heart };
+}
+
+// "Talk about it": one question a week, as a style key, a fact id and a source key.
+var TALK_STYLES = ['way', 'turn', 'story', 'pattern'];
+var TALK_SRC = { tricky: 'A tricky one this week.', fixed: 'Getting stronger this week.', often: 'Practiced a lot this week.', start: 'An easy one to start.' };
+var TALK_TIP = 'Praise the thinking and sticking with it, not just the answer.';
+var STORY = [['packs', 'juice box', 'juice boxes'], ['bags', 'apple', 'apples'], ['boxes', 'crayon', 'crayons'], ['plates', 'cookie', 'cookies'], ['nests', 'egg', 'eggs'], ['jars', 'marble', 'marbles']];
+function talkFits_(k, a, b) {
+  if (k === 'way') return true;
+  if (k === 'turn') return a !== b && a > 1 && b > 1;
+  if (k === 'story') return a > 1 && b > 1;
+  if (k === 'pattern') return (a === 9 && b >= 2) || a === 5 || a === 10 || a === 2 || (a > 1 && b >= 3);
+  return false;
+}
+function cleanTalk_(x) {
+  if (!x || typeof x !== 'object' || TALK_STYLES.indexOf(x.k) < 0 || field_(x.f, 'f') === null) return null;
+  var ab = String(x.f).split('x').map(Number);
+  if (!talkFits_(x.k, ab[0], ab[1])) return null;
+  return { k: x.k, f: x.f, src: TALK_SRC.hasOwnProperty(x.src) ? x.src : '' };
+}
+// Words for the talk question: { lead, q, a } as plain text. Same templates as talkText() in js/core/insights.js.
+function talkText_(talk, name) {
+  if (!talk) return null;
+  var ab = String(talk.f).split('x').map(Number), a = ab[0], b = ab[1], ans = a * b;
+  var lead = TALK_SRC[talk.src] || '';
+  switch (talk.k) {
+    case 'way': return { lead: lead, q: 'Ask ' + name + ': how could you figure out ' + a + ' \u00d7 ' + b + ' if you forgot it?', a: 'One way: ' + trick_(a, b) };
+    case 'turn': return { lead: lead, q: 'Ask ' + name + ': is ' + a + ' \u00d7 ' + b + ' the same as ' + b + ' \u00d7 ' + a + '? Which one is easier to work out?', a: 'Yes, both are ' + ans + '. Turning a fact around is a great trick.' };
+    case 'story':
+      var st = STORY[ans % STORY.length];
+      return { lead: lead, q: 'Ask ' + name + ' to make up a story for ' + a + ' \u00d7 ' + b + '.', a: 'Like ' + a + ' ' + st[0] + ' with ' + b + ' ' + (b === 1 ? st[1] : st[2]) + ' in each. That makes ' + ans + ' ' + st[2] + '.' };
+    default:
+      if (a === 9 && b >= 2) return { lead: lead, q: 'Ask ' + name + ': what do you notice about the digits in the 9s answers? Try ' + a + ' \u00d7 ' + b + ' = ' + ans + '.', a: 'The digits add up to 9: ' + String(ans).split('').join(' + ') + ' = 9.' };
+      if (a === 5) return { lead: lead, q: 'Ask ' + name + ': what do you notice about how the 5s answers end?', a: 'They all end in 5 or 0, like ' + a + ' \u00d7 ' + b + ' = ' + ans + '.' };
+      if (a === 10) return { lead: lead, q: 'Ask ' + name + ': what do you notice about the 10s answers?', a: 'They all end in 0. ' + b + ' \u00d7 10 is ' + b + ' with a 0 on the end: ' + ans + '.' };
+      if (a === 2) return { lead: lead, q: 'Ask ' + name + ': what do you notice about the 2s answers?', a: 'They are all even numbers. ' + a + ' \u00d7 ' + b + ' is a double: ' + b + ' + ' + b + ' = ' + ans + '.' };
+      var list = []; for (var i = 1; i <= b; i++) list.push(a * i);
+      return { lead: lead, q: 'Ask ' + name + ' to count by ' + a + 's up to ' + a + ' \u00d7 ' + b + '.', a: list.join(', ') + '. Counting by ' + a + 's lands on ' + ans + '.' };
+  }
+}
+// "By heart: 42 of 100 (+6 this week)": facts answered right and fast lately.
+function heartText_(h, period) {
+  if (!h) return '';
+  var ch = h.n - h.prev, W = TIP_WORDS[period] || TIP_WORDS.week;
+  return 'By heart: ' + h.n + ' of 100' + (ch > 0 ? ' (+' + ch + ' ' + W.inn + ')' : '');
+}
+function heartHTML_(h, period) {
+  if (!h) return '';
+  var ch = h.n - h.prev, W = TIP_WORDS[period] || TIP_WORDS.week;
+  return '<div style="font-family:' + FONT + ';font-size:16px;line-height:24px;color:' + INK2 + ';margin:0 0 12px 0;">'
+    + '<span style="display:inline-block;width:20px;height:20px;line-height:18px;margin-right:6px;border:2px solid ' + INK + ';border-radius:6px;background:#CFE5FF;color:#0F4C9E;font-size:13px;font-weight:700;text-align:center;vertical-align:-3px;">&#10003;</span>'
+    + '<b style="color:' + INK + ';">By heart: ' + h.n + ' of 100</b> facts'
+    + (ch > 0 ? ' <span style="display:inline-block;padding:0 8px;border-radius:99px;background:#DDF3E0;color:#1E5E28;font-size:13px;font-weight:700;line-height:20px;white-space:nowrap;">+' + ch + ' ' + W.inn + '</span>' : '')
+    + '</div>';
+}
+
+// The "Talk about it" block (HTML), under What to practice next.
+function talkHTML_(talk, name, img, top) {
+  var w = talkText_(talk, name);
+  if (!w) return '';
+  return '<div style="' + (top ? 'margin-top:14px;padding-top:16px;border-top:2px dashed #D3DCEA;' : '') + 'font-family:' + FONT + ';color:' + INK + ';">'
+    + '<div style="font-size:17px;font-weight:700;line-height:22px;">Talk about it'
+    + '<span style="display:inline-block;margin-left:8px;padding:0 8px;border-radius:99px;background:' + SKY + ';color:#123F8C;font-size:12px;font-weight:700;line-height:19px;vertical-align:2px;">About 2 minutes</span></div>'
+    + (w.lead ? '<div style="font-size:14px;line-height:20px;color:' + INK2 + ';padding-top:2px;">' + esc_(w.lead) + '</div>' : '')
+    + '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate;margin-top:8px;"><tr>'
+    + '<td style="padding:12px 14px;background:#EEF6FF;border:2px solid #B6DBFF;border-radius:16px;font-family:' + FONT + ';">'
+    + '<div style="font-size:17px;font-weight:700;line-height:23px;color:' + INK + ';">' + esc_(w.q) + '</div>'
+    + '<div style="font-size:15px;line-height:21px;color:' + INK2 + ';padding-top:6px;"><b style="color:#123F8C;">If they get stuck:</b> ' + esc_(w.a) + '</div>'
+    + '</td></tr></table>'
+    + '<div style="font-size:13px;line-height:19px;color:' + INK2 + ';padding-top:8px;">' + esc_(TALK_TIP) + '</div>'
+    + '</div>';
+}
+
+// Words for one tip: { title, why, act } as plain text. Same templates as
+// tipText() in js/core/insights.js.
+var TIP_WORDS = { week: { inn: 'this week', prev: 'last week' }, last7: { inn: 'in the last 7 days', prev: 'the 7 days before' } };
+var LEVEL_WORDS = ['', '', 'Bronze', 'Silver', 'Gold', 'Star'];
+function fx_(f) { var p = String(f).split('x'); return p[0] + ' \u00d7 ' + p[1]; }
+function fxa_(f) { var p = String(f).split('x').map(Number); return p[0] + ' \u00d7 ' + p[1] + ' = ' + p[0] * p[1]; }
+function span_(d) { return d < 14 ? d + ' days' : Math.floor(d / 7) + ' weeks'; }
+function tipText_(tip, period) {
+  var W = TIP_WORDS[period] || TIP_WORDS.week, t = tip.t ? tip.t + 's' : '', hi5 = 'Worth a high five.';
+  switch (tip.k) {
+    case 'misses': return { title: 'Practice the ' + t, why: (tip.n === tip.of ? 'All ' + tip.n : tip.n + ' of the ' + tip.of) + ' misses ' + W.inn + ' were ' + t + (tip.f ? ' (' + fx_(tip.f) + ' most often)' : '') + '.', act: 'Play a few short rounds of just the ' + t + '.' };
+    case 'tricky': var ab = String(tip.f).split('x').map(Number); return { title: 'Learn ' + fxa_(tip.f), why: 'Missed ' + tip.n + ' times ' + W.inn + '.', act: 'Teacher K\'s trick: ' + trick_(ab[0], ab[1]) };
+    case 'dip': return { title: 'Review the ' + t, why: tip.pct + '% right ' + W.inn + ', from ' + tip.prev + '% ' + W.prev + '.', act: 'A short round of ' + t + ' a day brings it back.' };
+    case 'rest': return { title: 'Try the ' + t + ' again', why: 'Not practiced in ' + span_(tip.d) + '.', act: tip.off ? 'The ' + t + ' are off in Settings. Turn them on, or play one round.' : 'One round keeps those facts fresh.' };
+    case 'slow': return { title: 'Speed up the ' + t, why: 'Mostly right, but about ' + (tip.ds / 10).toFixed(1) + ' seconds each. Fast is ' + tip.fs + ' seconds or less.', act: 'Short daily rounds build speed. Fast answers earn Silver and Gold.' };
+    case 'almost': return { title: 'Almost ' + LEVEL_WORDS[tip.lv] + ' on the ' + t, why: tip.n + ' of 10 facts are ' + LEVEL_WORDS[tip.lv] + ' or better.', act: 'Practice ' + fx_(tip.f) + (tip.f2 ? ' and ' + fx_(tip.f2) : '') + ' to finish.' };
+    case 'explore': return tip.n
+      ? { title: 'Explore the ' + t, why: tip.n + ' of the 10 facts tried so far.', act: 'A few more ' + t + ' rounds fill in the rest.' }
+      : { title: 'Start the ' + t, why: 'Not tried yet. Ready for something new.', act: tip.off ? 'Turn on the ' + t + ' in Settings, or play one round.' : 'Play a ' + t + ' round to meet new facts.' };
+    case 'comeback': return { title: 'Play a short round', why: 'No cards ' + W.inn + '.', act: 'Five minutes a day keeps the facts fresh.' + (t ? ' The ' + t + ' are a good place to start.' : '') };
+    case 'start': return { title: 'Start with the ' + t, why: 'A friendly first table for quick wins.', act: 'Play one round together to see how it works.' };
+    case 'keep': return { title: 'Keep it going', why: 'No trouble spots ' + W.inn + '.', act: 'A short round each day keeps every fact fresh.' };
+    case 'acc-up': return { title: 'Great trend', why: tip.pct + '% right ' + W.inn + ', up from ' + tip.prev + '%.', act: hi5 };
+    case 'table-up': return { title: 'The ' + t + ' are getting stronger', why: tip.pct + '% right ' + W.inn + ', up from ' + tip.prev + '%.', act: hi5 };
+    case 'clean': return { title: 'No misses', why: tip.n + ' cards ' + W.inn + ' without a single miss.', act: 'Ready for a new table?' };
+    case 'days': return { title: 'Great habit', why: period === 'last7' ? 'Played on ' + tip.n + ' of the last 7 days.' : 'Played on ' + tip.n + ' days ' + W.inn + '.', act: 'Little and often is the best way to learn.' };
+    case 'medals': return { title: tip.n + ' new medals', why: 'Facts moved up a level ' + W.inn + '.', act: hi5 };
+    case 'more': return { title: 'More practice', why: tip.n + ' minutes ' + W.inn + ', up from ' + tip.prev + '.', act: hi5 };
+    default: return null;
+  }
+}
+function headText_(head, period) {
+  var W = TIP_WORDS[period] || TIP_WORDS.week;
+  switch (head && head.k) {
+    case 'new': return { title: 'Ready for a first round', sub: '' };
+    case 'empty': return { title: 'Time for a short round', sub: 'no cards ' + W.inn + '.' };
+    case 'first': return { title: period === 'last7' ? 'A great start' : 'A great first week', sub: head.n + ' cards so far.' };
+    case 'up': return { title: 'Sharper than ' + W.prev, sub: head.pct + '% right, up from ' + head.prev + '%.' };
+    case 'strong': return { title: 'Super accurate', sub: head.pct + '% right on ' + head.n + ' cards.' };
+    case 'busy': return { title: 'More practice than ' + W.prev, sub: head.n + ' cards, ' + head.more + ' more.' };
+    case 'steady': return { title: 'Steady practice', sub: head.n + ' cards' + (head.pct !== undefined ? ', ' + head.pct + '% right' : '') + '.' };
+    default: return null;
+  }
+}
+// The headline as one sentence. Same as headLine() in js/core/insights.js.
+function headLine_(head, period) {
+  var h = headText_(head, period);
+  return !h ? '' : h.sub ? h.title + ': ' + h.sub : h.title + '!';
 }
 
 // ---------------------------------------------------------------- email design
@@ -397,7 +590,6 @@ function esc_(s) {
   return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; });
 }
 function possessive_(name) { return name + (/s$/i.test(name) ? '\u2019' : '\u2019s'); }
-function pad3_(n) { return ('00' + n).slice(-3); }
 function plural_(n, one, many) { return n + ' ' + (n === 1 ? one : (many || one + 's')); }
 
 // A short "how to think about it" trick, same as the game's (js/core/facts.js).
@@ -420,28 +612,6 @@ function trick_(a, b) {
   }
 }
 
-// What Teacher K says at the bottom, from the numbers.
-function teacherNote_(d) {
-  var name = d.trainer, out = {};
-  if (!d.cards) {
-    out.head = 'We missed you this week, ' + name + '!';
-    out.body = 'Kaimon are waiting in every region. Five minutes a day keeps the facts strong.';
-  } else if (d.accuracy >= 90) {
-    out.head = 'Super sharp, ' + name + '!';
-    out.body = d.accuracy + '% right this week. Your brain is getting fast!';
-  } else if (d.accuracy >= 75) {
-    out.head = 'Great work, ' + name + '!';
-    out.body = 'You answered ' + d.cards + ' cards this week. Keep it up!';
-  } else {
-    out.head = 'Way to keep trying, ' + name + '!';
-    out.body = 'Tricky facts get easier every time you practice them.';
-  }
-  if (d.cards && d.change.cards > 0 && d.prev.cards > 0) out.body += ' That is ' + d.change.cards + ' more cards than last week!';
-  var t = d.trickiest[0], s = d.strongest[0];
-  if (t) out.tip = 'Tricky one to try: <b>' + t.a + ' \u00d7 ' + t.b + ' = ' + t.a * t.b + '</b>. ' + esc_(trick_(t.a, t.b));
-  else if (s) out.tip = 'You are super fast at <b>' + s.a + ' \u00d7 ' + s.b + '</b>. Can you teach it to a grown-up?';
-  return out;
-}
 
 function card_(inner, opt) {
   opt = opt || {};
@@ -451,23 +621,44 @@ function card_(inner, opt) {
 }
 function h2_(s) { return '<div style="font-family:' + FONT + ';font-size:19px;font-weight:700;line-height:24px;color:' + INK + ';margin:0 0 12px 0;">' + s + '</div>'; }
 
-function changeChip_(n, unit) {
-  if (n === null || n === undefined || n === 0) return '<div style="height:20px;line-height:20px;font-size:12px;color:#8A94AA;">&nbsp;</div>';
-  var up = n > 0;
-  return '<div style="height:20px;line-height:20px;"><span style="display:inline-block;font-family:' + FONT + ';font-size:12px;font-weight:700;line-height:18px;padding:0 8px;border-radius:99px;background:' + (up ? '#DDF3E0' : '#FFE1D8') + ';color:' + (up ? '#1E5E28' : '#9A2E12') + ';">'
-    + (up ? '&#9650; ' : '&#9660; ') + Math.abs(n) + (unit || '') + '</span></div>';
+
+
+
+// A quiet week: one table that is a good place to start again (from checked data).
+function startLine_(ins) {
+  var tip = ins && ins.tips.filter(function (x) { return x.k === 'comeback' && x.t; })[0];
+  return tip ? ' The ' + tip.t + 's are a good place to start.' : '';
 }
 
-function statTile_(big, small, label, chip) {
-  return '<td class="kstat" width="25%" valign="top" style="padding:0 4px;">'
-    + '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate;background:#FFFFFF;border:2px solid ' + INK + ';border-radius:16px;"><tr><td height="84" valign="top" style="height:84px;padding:12px 10px 10px 12px;font-family:' + FONT + ';color:' + INK + ';">'
-    + '<div style="font-size:32px;font-weight:700;line-height:34px;height:34px;">' + big + (small ? '<span style="font-size:17px;line-height:17px;color:' + INK2 + ';">' + small + '</span>' : '') + '</div>'
-    + '<div style="font-size:14px;line-height:18px;color:' + INK2 + ';padding:2px 0 6px 0;">' + label + '</div>' + chip
-    + '</td></tr></table></td>';
-}
-
-function chip_(text, bg, fg) {
-  return '<span style="display:inline-block;margin:0 6px 8px 0;padding:5px 11px;border:2px solid ' + INK + ';border-radius:12px;background:' + bg + ';color:' + fg + ';font-family:' + FONT + ';font-size:16px;font-weight:700;line-height:20px;white-space:nowrap;">' + text + '</span>';
+// The "What to practice next" card for the report email.
+function insightsHTML_(ins, img, name) {
+  if (!ins.tips.length) return talkHTML_(ins.talk, name, img, false);
+  var head = headLine_(ins.head, ins.period);
+  var out = h2_('What to practice next');
+  if (head) out += '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate;margin:0 0 14px 0;"><tr>'
+    + '<td style="padding:10px 14px;background:#FFF6D6;border:2px solid #F2D27A;border-radius:14px;font-family:' + FONT + ';font-size:16px;line-height:22px;color:' + INK2 + ';">'
+    + '<b style="color:' + INK + ';">' + esc_(head) + '</b></td></tr></table>';
+  out += heartHTML_(ins.heart, ins.period);
+  out += '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate;">';
+  ins.tips.forEach(function (tip, i) {
+    var w = tipText_(tip, ins.period);
+    if (!w) return;
+    var cheer = TIP_SPEC[tip.k].cheer === true;
+    var c = tip.t ? TYPE_COLORS[TABLE_TYPE[tip.t - 1]] : null;
+    var badge = c
+      ? '<div style="width:50px;height:50px;line-height:46px;border:2px solid ' + INK + ';border-radius:14px;background:' + c[1] + ';color:' + c[2] + ';font-family:' + FONT + ';font-size:19px;font-weight:700;text-align:center;">' + tip.t + 's</div>'
+      : '<div style="width:50px;height:50px;border:2px solid ' + INK + ';border-radius:14px;background:' + (cheer ? '#FFF8DC' : SKY) + ';text-align:center;"><img src="' + img(cheer ? 'star.png' : 'ball.png') + '" width="32" height="32" alt="" style="display:inline-block;margin-top:8px;border:0;"></div>';
+    var tag = '';
+    out += '<tr><td width="62" valign="top" style="padding:' + (i ? 12 : 2) + 'px 12px 12px 0;' + (i ? 'border-top:2px solid #EEF2F8;' : '') + '">' + badge + '</td>'
+      + '<td valign="top" style="padding:' + (i ? 12 : 2) + 'px 0 12px 0;' + (i ? 'border-top:2px solid #EEF2F8;' : '') + 'font-family:' + FONT + ';color:' + INK + ';">'
+      + '<div style="font-size:18px;font-weight:700;line-height:23px;">' + esc_(w.title) + tag + '</div>'
+      + '<div style="font-size:15px;line-height:21px;color:' + INK2 + ';padding-top:2px;">' + esc_(w.why) + '</div>'
+      + '<div style="font-size:15px;line-height:21px;font-weight:600;color:' + (cheer ? '#5C3B00' : '#123F8C') + ';padding-top:4px;">' + (cheer ? '' : '&#9656;&nbsp;') + esc_(w.act) + '</div>'
+      + '</td></tr>';
+  });
+  out += '</table>';
+  out += talkHTML_(ins.talk, name, img, true);
+  return out;
 }
 
 function renderReportEmail_(d, opt) {
@@ -475,8 +666,6 @@ function renderReportEmail_(d, opt) {
   var base = opt.base || ASSET_BASE, app = opt.appUrl || APP_URL;
   // ?v= makes Gmail fetch fresh copies when the pictures change (its image proxy caches by address).
   var img = function (f) { return base + f + '?v=' + IMG_VERSION; };
-  var note = teacherNote_(d);
-  var name = esc_(d.trainer);
   var empty = !d.cards && !d.minutes;
   var rows = [];
 
@@ -491,22 +680,17 @@ function renderReportEmail_(d, opt) {
     + '<div style="font-size:13px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#2D7FF9;line-height:18px;">' + (opt.test ? 'Test report' + (d.partial ? ' &middot; this week so far' : '') : 'Weekly report') + '</div>'
     + '<div style="font-size:30px;font-weight:700;line-height:36px;margin:2px 0;">' + esc_(possessive_(d.trainer)) + ' week</div>'
     + '<div style="font-size:17px;line-height:22px;color:' + INK2 + ';">' + esc_(d.label) + '</div>'
+    + (empty ? '' : '<div style="font-size:16px;line-height:22px;color:' + INK + ';padding-top:6px;"><span style="white-space:nowrap;"><b>' + d.cards + '</b> ' + (d.cards === 1 ? 'card' : 'cards') + ' &middot;</span> <span style="white-space:nowrap;"><b>' + (d.accuracy === null ? 0 : d.accuracy) + '%</b> right &middot;</span> <span style="white-space:nowrap;"><b>' + d.daysPlayed + '</b> of 7 days</span></div>')
     + '</td></tr></table></td></tr></table></td></tr>');
 
   if (empty) {
     rows.push(card_('<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>'
       + '<td width="96" valign="middle"><img src="' + img('kaizo-sleep.png') + '" width="84" height="84" alt="" style="display:block;width:84px;height:84px;border:0;"></td>'
-      + '<td valign="middle" style="font-family:' + FONT + ';color:' + INK + ';padding-left:10px;"><div style="font-size:20px;font-weight:700;line-height:26px;">No cards this week</div><div style="font-size:16px;line-height:22px;color:' + INK2 + ';">Kaizo is napping. A few minutes a day keeps the facts fresh.</div></td>'
+      + '<td valign="middle" style="font-family:' + FONT + ';color:' + INK + ';padding-left:10px;"><div style="font-size:20px;font-weight:700;line-height:26px;">No cards this week</div><div style="font-size:16px;line-height:22px;color:' + INK2 + ';">Kaizo is napping. A few minutes a day keeps the facts fresh.' + startLine_(d.insights) + '</div></td>'
       + '</tr></table>'));
+    // Talk about it, even in a quiet week
+    if (d.insights && d.insights.talk) rows.push(card_(talkHTML_(d.insights.talk, d.trainer, img, false), { pad: '20px 22px 18px 22px' }));
   } else {
-    // Big numbers
-    rows.push('<tr><td style="padding:16px 0 0 0;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 -4px;"><tr>'
-      + statTile_(d.minutes, '', 'minutes', changeChip_(d.change.minutes))
-      + statTile_(d.cards, '', 'cards', changeChip_(d.change.cards))
-      + statTile_(d.accuracy === null ? 0 : d.accuracy, '%', 'right', changeChip_(d.change.accuracy, '%'))
-      + statTile_(d.daysPlayed, '/7', 'days played', changeChip_(null))
-      + '</tr></table></td></tr>');
-
     // Days of the week
     var dots = d.daily.map(function (x) {
       var on = x.minutes > 0 || x.cards > 0;
@@ -516,78 +700,26 @@ function renderReportEmail_(d, opt) {
     }).join('');
     rows.push(card_(h2_('Minutes each day') + '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>' + dots + '</tr></table>', { pad: '18px 16px 16px 16px' }));
 
-    // Times tables
-    if (d.tables.length) {
-      var max = Math.max.apply(null, d.tables.map(function (t) { return t.answers; }));
-      var tr = d.tables.map(function (t) {
-        var c = TYPE_COLORS[TABLE_TYPE[t.table - 1]] || TYPE_COLORS.water;
-        var w = Math.max(4, Math.round((t.answers / max) * 100));
-        var accBg = t.accuracy >= 90 ? '#DDF3E0' : t.accuracy < 70 ? '#FFE1D8' : '#EEF2F8';
-        var accFg = t.accuracy >= 90 ? '#1E5E28' : t.accuracy < 70 ? '#9A2E12' : INK;
-        return '<tr>'
-          + '<td width="50" style="padding:5px 10px 5px 0;"><div style="width:46px;text-align:center;border:2px solid ' + INK + ';border-radius:10px;background:' + c[1] + ';color:' + c[2] + ';font-family:' + FONT + ';font-size:16px;font-weight:700;line-height:24px;">' + t.table + 's</div></td>'
-          + '<td style="padding:5px 0;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate;border:2px solid ' + INK + ';border-radius:99px;background:#EEF2F8;"><tr>'
-          + '<td width="' + w + '%" style="background:' + c[0] + ';height:14px;line-height:14px;font-size:0;border-radius:99px;">&nbsp;</td>' + (w < 100 ? '<td style="height:14px;line-height:14px;font-size:0;">&nbsp;</td>' : '') + '</tr></table></td>'
-          + '<td width="138" align="right" style="padding:5px 0 5px 10px;font-family:' + FONT + ';font-size:15px;color:' + INK2 + ';white-space:nowrap;"><b style="color:' + INK + ';">' + t.answers + '</b> ' + (t.answers === 1 ? 'card' : 'cards') + ' <span style="display:inline-block;min-width:44px;text-align:center;border-radius:99px;padding:1px 6px;background:' + accBg + ';color:' + accFg + ';font-weight:700;font-size:14px;">' + t.accuracy + '%</span></td>'
-          + '</tr>';
-      }).join('');
-      rows.push(card_(h2_('Times tables practiced') + '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">' + tr + '</table>'));
-    }
+    // What to practice next (built here from checked insight data)
+    if (d.insights && (d.insights.tips.length || d.insights.talk)) rows.push(card_(insightsHTML_(d.insights, img, d.trainer), { pad: '20px 22px 18px 22px' }));
 
-    // Strongest and tricky facts
-    if (d.strongest.length || d.trickiest.length) {
-      var strong = d.strongest.length ? d.strongest.map(function (x) { return chip_(x.a + ' &times; ' + x.b, '#DDF3E0', '#1E5E28'); }).join('') : '<div style="font-size:15px;color:' + INK2 + ';">Fast, right answers show up here.</div>';
-      var tricky = d.trickiest.length ? d.trickiest.map(function (x) { return chip_(x.a + ' &times; ' + x.b + ' = ' + x.a * x.b, '#FFE9E2', '#8A2A10'); }).join('') : '<div style="font-size:15px;color:' + INK2 + ';">No misses this week!</div>';
-      rows.push(card_('<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>'
-        + '<td class="kcol" width="50%" valign="top" style="padding-right:10px;">' + h2_('Strongest facts') + strong + '</td>'
-        + '<td class="kcol" width="50%" valign="top" style="padding-left:10px;">' + h2_('Tricky facts') + tricky + '</td>'
-        + '</tr></table>', { pad: '20px 22px 12px 22px' }));
-    }
-
-    // Wins: medals, catches, battles, streak
+    // Wins, compact: one row of small chips
     var wins = [];
     [['star', 'Star'], ['gold', 'Gold'], ['silver', 'Silver'], ['bronze', 'Bronze']].forEach(function (m) {
       if (d.medals[m[0]]) wins.push([img('medal-' + m[0] + '.png'), d.medals[m[0]], 'new ' + m[1]]);
     });
     if (d.caught) wins.push([img('ball.png'), d.caught, 'caught']);
+    if (d.newEntries.length) wins.push([img('balls.png'), d.newEntries.length, 'new in the Kaidex']);
     if (d.battles.won) wins.push([img('star.png'), d.battles.won, d.battles.won === 1 ? 'battle won' : 'battles won']);
     if (d.bestStreak) wins.push([img('streak.png'), d.bestStreak, 'best streak']);
-    var mons = d.caughtList.slice();
-    d.newEntries.forEach(function (s) { if (!mons.some(function (m) { return m.num === s.num; })) mons.push(s); });
-    mons = mons.slice(0, 6);
-    var isNew = d.newEntries.map(function (s) { return s.num; });
-    if (wins.length || mons.length) {
-      var w = '';
-      if (wins.length) {
-        w += '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td style="font-size:0;line-height:0;">' + wins.map(function (x) {
-          return '<table role="presentation" align="left" cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate;margin:0 8px 8px 0;background:#FFF8DC;border:2px solid ' + INK + ';border-radius:14px;"><tr>'
-            + '<td style="padding:6px 4px 6px 8px;"><img src="' + x[0] + '" width="32" height="32" alt="" style="display:block;width:32px;height:32px;border:0;"></td>'
-            + '<td style="padding:6px 12px 6px 4px;font-family:' + FONT + ';color:' + INK + ';"><div style="font-size:20px;font-weight:700;line-height:22px;">' + x[1] + '</div><div style="font-size:12px;line-height:15px;color:' + INK2 + ';white-space:nowrap;">' + x[2] + '</div></td></tr></table>';
-        }).join('') + '</td></tr></table>';
-      }
-      if (mons.length) {
-        w += '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:6px;"><tr>' + mons.map(function (s) {
-          return '<td class="kmon" width="' + Math.floor(100 / 6) + '%" align="center" valign="top" style="padding:8px 3px 0 3px;font-family:' + FONT + ';">'
-            + '<div style="border:2px solid ' + INK + ';border-radius:14px;background:#FFFFFF;padding:6px 2px 6px 2px;">'
-            + (isNew.indexOf(s.num) >= 0 ? '<div style="font-size:10px;font-weight:700;letter-spacing:.5px;line-height:14px;color:' + INK + ';"><span style="background:#FFD23F;border-radius:99px;padding:0 6px;">NEW</span></div>' : '<div style="font-size:10px;line-height:14px;">&nbsp;</div>')
-            + '<img src="' + img('kaimon/' + pad3_(s.num) + '.png') + '" width="56" height="56" alt="" style="display:block;width:56px;height:56px;margin:0 auto;border:0;">'
-            + '<div style="font-size:12px;font-weight:600;line-height:15px;color:' + INK + ';padding-top:2px;">' + esc_(s.name) + (s.n > 1 ? ' <span style="color:' + INK2 + ';">&times;' + s.n + '</span>' : '') + '</div></div></td>';
-        }).join('') + (mons.length < 6 ? '<td class="kfill" width="' + (6 - mons.length) * Math.floor(100 / 6) + '%">&nbsp;</td>' : '') + '</tr></table>';
-      }
-      w += '<div style="font-size:14px;color:' + INK2 + ';padding-top:12px;">Kaidex: <b style="color:' + INK + ';">' + d.dex.caught + '</b> of ' + d.dex.total + ' Kaimon caught so far</div>';
-      rows.push(card_(h2_('This week\u2019s wins') + w));
+    if (wins.length) {
+      rows.push(card_(h2_('This week’s wins') + '<div style="font-size:0;line-height:0;">' + wins.map(function (x) {
+        return '<table role="presentation" align="left" cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate;margin:0 8px 8px 0;background:#FFF8DC;border:2px solid ' + INK + ';border-radius:14px;"><tr>'
+          + '<td style="padding:5px 2px 5px 7px;"><img src="' + x[0] + '" width="26" height="26" alt="" style="display:block;width:26px;height:26px;border:0;"></td>'
+          + '<td style="padding:5px 10px 5px 4px;font-family:' + FONT + ';color:' + INK + ';font-size:15px;line-height:20px;white-space:nowrap;"><b>' + x[1] + '</b> <span style="color:' + INK2 + ';">' + x[2] + '</span></td></tr></table>';
+      }).join('') + '</div>', { pad: '18px 22px 10px 22px' }));
     }
   }
-
-  // Teacher K
-  rows.push(card_('<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>'
-    + '<td class="kteach" width="112" valign="top" style="padding-right:14px;"><img src="' + img('teacher-k.png') + '" width="112" height="112" alt="Teacher K" style="display:block;width:112px;height:112px;border:0;border-radius:18px;background:' + SKY + ';"></td>'
-    + '<td valign="middle" style="font-family:' + FONT + ';color:' + INK + ';">'
-    + '<div style="font-size:20px;font-weight:700;line-height:26px;">' + esc_(note.head) + '</div>'
-    + '<div style="font-size:16px;line-height:23px;padding-top:4px;">' + esc_(note.body) + '</div>'
-    + (note.tip ? '<div style="font-size:15px;line-height:22px;margin-top:10px;padding:10px 12px;background:#FFF8DC;border-radius:12px;">' + note.tip + '</div>' : '')
-    + '<div style="font-size:15px;font-weight:700;line-height:20px;padding-top:10px;color:#2D7FF9;">Teacher K</div>'
-    + '</td></tr></table>', { bg: '#F4FAFF' }));
 
   // Button
   rows.push('<tr><td align="center" style="padding:22px 0 4px 0;">'
@@ -651,9 +783,13 @@ function shell_(title, preheader, rows) {
 function reportText_(d) {
   var L = [possessive_(d.trainer) + ' weekly report: ' + d.label, ''];
   L.push('Minutes played: ' + d.minutes, 'Days played: ' + d.daysPlayed + ' of 7', 'Cards answered: ' + d.cards, 'Right: ' + (d.accuracy === null ? 0 : d.accuracy) + '%');
-  if (d.tables.length) { L.push('', 'Times tables:'); d.tables.forEach(function (t) { L.push('  ' + t.table + 's: ' + t.answers + ' cards, ' + t.accuracy + '% right'); }); }
-  if (d.strongest.length) L.push('', 'Strongest: ' + d.strongest.map(function (x) { return x.a + ' x ' + x.b; }).join(', '));
-  if (d.trickiest.length) L.push('Tricky: ' + d.trickiest.map(function (x) { return x.a + ' x ' + x.b + ' = ' + x.a * x.b; }).join(', '));
+  if (d.insights && d.insights.tips.length) {
+    L.push('', 'What to practice next:');
+    if (d.insights.heart) L.push('  ' + heartText_(d.insights.heart, d.insights.period));
+    d.insights.tips.forEach(function (tip) { var w = tipText_(tip, d.insights.period); if (w) L.push('  ' + w.title + '. ' + w.why + ' ' + w.act); });
+  }
+  var tk = d.insights && talkText_(d.insights.talk, d.trainer);
+  if (tk) L.push('', 'Talk about it (about 2 minutes): ' + tk.q, 'If they get stuck: ' + tk.a, TALK_TIP);
   if (d.caught) L.push('', 'Kaimon caught: ' + d.caught);
   L.push('Kaidex: ' + d.dex.caught + ' of ' + d.dex.total, '', 'Play: ' + APP_URL);
   return L.join('\n');
@@ -693,8 +829,12 @@ function sendTestEmails() {
     medals: { bronze: 4, silver: 2, gold: 1, star: 0, total: 7 }, caught: 6,
     caughtList: [{ id: 'gearpus', num: 37, name: 'Gearpus', type: 'metal', n: 2 }, { id: 'puddlepup', num: 10, name: 'Puddlepup', type: 'water', n: 1 }],
     newEntries: [{ id: 'puddlepup', num: 10, name: 'Puddlepup', type: 'water' }], dex: { caught: 23, total: 60 },
-    battles: { played: 3, won: 2 }, bestStreak: 14, prev: { minutes: 52, cards: 130, accuracy: 84 }, change: { minutes: 22, cards: 54, accuracy: 5 } };
-  var empty = { cards: 0, right: 0, minutes: 0, daysPlayed: 0, daily: [], tables: [], dex: { caught: 23, total: 60 } };
+    battles: { played: 3, won: 2 }, bestStreak: 14, prev: { minutes: 52, cards: 130, accuracy: 84 }, change: { minutes: 22, cards: 54, accuracy: 5 },
+    insights: { v: 1, period: 'week', head: { k: 'up', pct: 89, prev: 84 }, trend: { up: [8] },
+      heart: { n: 42, prev: 36 }, tips: [{ k: 'misses', t: 7, n: 10, of: 21, f: '7x8', fn: 5 }, { k: 'acc-up', pct: 89, prev: 84 }],
+      talk: { k: 'way', f: '6x9', src: 'tricky' } } };
+  var empty = { cards: 0, right: 0, minutes: 0, daysPlayed: 0, daily: [], tables: [], dex: { caught: 23, total: 60 },
+    insights: { v: 1, period: 'week', head: { k: 'empty' }, trend: { up: [] }, tips: [{ k: 'comeback', t: 7 }], talk: { k: 'story', f: '7x4', src: 'start' } } };
   var mails = [];
   mails.push({ subject: '[Test] Say yes to Kai’s weekly Kaimon report', htmlBody: renderInviteEmail_('Kai', PAGE_URL + '?a=yes&t=' + new Array(41).join('0'), {}) });
   [['', full], [' (a week with no play)', empty]].forEach(function (x) {
