@@ -25,6 +25,7 @@ import { shareGame, shareIcon } from './share.js';
 import { openPlayElsewhere, deviceIcon } from './playElsewhere.js';
 import { openFeedback } from './feedback.js';
 import { trainerChipSheet } from './onboarding.js';
+import { towerTile } from './tower.js'; // Hundred Tower hook
 import { questsCard, bindQuests, boltLockedNote } from './quests.js'; // [systems] daily quests, Lightning Round
 import { boltUnlocked, boltBest, calmMode } from '../core/lightning.js'; // [systems] Lightning Round in the Menu
 import { offlineBadgeHTML } from './offline.js';
@@ -227,6 +228,7 @@ export function renderHome(root, go, params = {}) {
               </span>
               <span class="rg-boss-face" aria-hidden="true">${trainerFace('boss-papa')}</span>
             </button>
+            ${towerTile(p)}<!-- Hundred Tower hook -->
           </div>
         </div>
         <p class="ver-foot">© 2026 Kaimon Games · Kaimon Multiply v${VERSION}</p>
@@ -289,6 +291,7 @@ export function renderHome(root, go, params = {}) {
   // Kairo waits on the home screen until it's caught. It can never be missed.
   if (p.battles.boss > 0 && !p.dex[MYTHIC_ID]?.caught) setTimeout(() => kairoWaiting(p, go), 600);
   on(root, 'click', '[data-dex]', () => { sfx.tap(); go('kaidex'); });
+  on(root, 'click', '[data-tower]', () => { unlock(); sfx.tap(); keepPlace(); go('tower'); }); // Hundred Tower hook
   on(root, 'click', '[data-quiz]', () => { unlock(); sfx.tap(); if (timesUp()) return; keepPlace(); go('battle', { kind: 'quiz' }); });
   on(root, 'click', '[data-trainer]', () => { sfx.tap(); trainerChipSheet(go); }); // trainer page or Switch trainer
   bindQuests(root, go); // [systems] daily quests

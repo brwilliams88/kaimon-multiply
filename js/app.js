@@ -8,6 +8,7 @@ import { renderKaidex } from './ui/kaidex.js';
 import { renderGrownups } from './ui/grownups.js';
 import { renderBattle } from './ui/battle.js';
 import { renderTrainer } from './ui/trainer.js';
+import { renderTower } from './ui/tower.js'; // Hundred Tower hook
 import { renderLightning } from './ui/lightning.js'; // [systems] Lightning Round
 import { VERSION } from './data/changelog.js';
 import { startAutoSync, completeLinkSignIn, syncNow } from './core/sync.js';
@@ -38,10 +39,11 @@ const SCREENS = {
   grownups: renderGrownups,
   battle: renderBattle,
   trainer: renderTrainer,
+  tower: renderTower, // Hundred Tower hook
   lightning: renderLightning, // [systems] Lightning Round
 };
 
-const NEEDS_PROFILE = new Set(['home', 'play', 'kaidex', 'grownups', 'meetPartner', 'battle', 'trainer', 'lightning']); // [systems] + lightning
+const NEEDS_PROFILE = new Set(['home', 'play', 'kaidex', 'grownups', 'meetPartner', 'battle', 'trainer', 'lightning', 'tower']); // [systems] + lightning, tower
 
 let navCount = 0;
 // Back from a screen opened from Home lands on the same spot of Home, not the top.

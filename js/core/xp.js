@@ -4,7 +4,7 @@
 // to level up is practicing the hard ones. Kaimon core: subject packs don't change it.
 import { levelRank } from './facts.js';
 
-export const XP = { right: 10, fast: 5, learning: 5, champ: 60, boss: 150, grunt: 30, quiz: 80 };
+export const XP = { right: 10, fast: 5, learning: 5, champ: 60, boss: 150, grunt: 30, quiz: 80, tower: 120 }; // tower: every Hundred Tower floor won
 
 // XP for one answer, decided before the answer updates the fact's level.
 export function answerXP(levelBefore, ok, ms, fastMs) {

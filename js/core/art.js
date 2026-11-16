@@ -147,8 +147,8 @@ export const shinyStar = (cls = '') => `<svg class="shiny-star ${cls}" viewBox="
 // Shiny Kaimon get twinkling sparkles on top of their art (shown only with .kart-shiny,
 // so the Kaidex can flip between normal and shiny colors).
 const SPARKLES = '<span class="sparkles" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>';
-export function creatureArt(s, { mode = 'full', shiny = false, mega = false } = {}) {
-  const cls = ['kart', 'kart-' + mode, shiny && mode === 'full' ? 'kart-shiny' : ''].join(' ');
+export function creatureArt(s, { mode = 'full', shiny = false, mega = !!s.megaForm } = {}) { // Mega hook: a Mega form draws its Mega art
+  const cls = ['kart', 'kart-' + mode, shiny && mode === 'full' ? 'kart-shiny' : '', mega && mode === 'full' && MEGA_ART.has(s.num) ? 'kart-mega' : ''].join(' '); // Mega hook: kart-mega
   const sp = mode === 'full' ? SPARKLES : '';
   if (REAL_ART.has(s.num)) {
     const src = kaimonSrc(s.num, { shiny: shiny && mode === 'full', mega: mega && MEGA_ART.has(s.num) });

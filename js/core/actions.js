@@ -7,6 +7,7 @@ import { dayRec } from './playtime.js';
 import { answerXP, XP } from './xp.js';
 import { byId as SPECIES_BY } from '../data/creatures.js';
 import { today } from './store.js';
+import { applyTowerBattle } from './tower.js'; import { applyMega } from './megas.js'; // Hundred Tower and Mega hooks
 import { applySystems, onSeen, shinyChance } from './items.js'; // [systems] items, quests, Lightning Round
 import { giveXP, applyCatch, applyEvo, applyBud, roster, buddyOf, nextGen, arrivalLevel, readyToEvolve, BOOST } from './levels.js';
 
@@ -86,6 +87,7 @@ export function apply(p, ev) {
     case 'bonus':
       dayRec(p, today(ev.t)).bonus += d.m || 0;
       break;
+    case 'mega': applyMega(p, d, ev.t); break; // Mega hook
     case 'evo': applyEvo(p, d, ev); break;  // a Kaimon evolved (levels.js)
     case 'bud': applyBud(p, d, ev); break;  // a new Buddy (levels.js)
     case 'tip':
@@ -116,6 +118,7 @@ export function apply(p, ev) {
         if (d.o === 'grunt') b.grunts++;
         if (d.o === 'quiz') b.quiz = Math.max(b.quiz || 0, ev.t);
       }
+      if (d.o === 'tower') applyTowerBattle(p, d, ev.t); // Hundred Tower hook
       break;
     }
     default: applySystems(p, ev); // [systems] 'use', 'prize', 'bolt' events
@@ -199,6 +202,9 @@ export function battle(p, kind, table, won, team) {
 }
 // Wardrobe: something earned by answering (or kept from before the Wardrobe existed).
 export const gotWear = (p, id, kept = false) => emit(p, 'got', kept ? { w: id, o: 1 } : { w: id });
+// Mega Evolution: use a Mega Crystal on a Kaimon (u), or switch its Mega form on or off.
+export const megaEvolve = (p, id) => emit(p, 'mega', { n: id, u: 1 });
+export const megaSwitch = (p, id, on) => emit(p, 'mega', { n: id, on: on ? 1 : 0 });
 
 // One-time guides (the guided first game): done or skipped once, never shown again.
 export const tipSeen = (p, name) => !!p.tips?.[name];
