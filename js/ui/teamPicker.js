@@ -65,7 +65,7 @@ export function teamSheet(p, onSave, opts = {}) {
         ${list.length ? `<button class="tp-switch${mode === 'buddy' ? ' on' : ''}" data-switch aria-pressed="${mode === 'buddy'}">${mode === 'buddy' ? 'Cancel' : 'Switch'}</button>` : ''}</div>
       ${slot(0)}${slot(1)}
     </div>
-    <p class="tp-help${mode === 'team' && picks.length >= 2 ? ' ready' : ''}${mode === 'buddy' ? ' buddy' : ''}" aria-live="polite">${esc(help())}</p>
+    <p class="tp-help${mode === 'team' && picks.length >= 2 ? ' ready' : ''}${mode === 'buddy' ? ' tp-buddy' : ''}" aria-live="polite">${esc(help())}</p>
     ${list.length ? `<div class="team-grid tp-grid${mode === 'buddy' ? ' pick-buddy' : ''}">${list.map((m) => {
       const k = picks.indexOf(m.id);
       const t = TYPES[m.species.type];

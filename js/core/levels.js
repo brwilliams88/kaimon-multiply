@@ -106,7 +106,8 @@ export function applyCatch(p, d) {
   if (!s) return;
   const r = rec(p, keyOf(d.n, d.g | 0));
   r.c++;
-  if (d.lv == null) r.a = Math.max(r.a, xpFor(migrationLevel(s)));
+  // The starter's old level lives in its old XP (legacyMons), so an old catch of it adds no start.
+  if (d.lv == null) { if (d.n !== (p.starter || 'kaimo')) r.a = Math.max(r.a, xpFor(migrationLevel(s))); }
   else if (d.dup) r.e += DUP_XP;
   else r.a = Math.max(r.a, xpFor(Math.min(CAP, d.lv | 0)));
 }
@@ -133,7 +134,7 @@ export function legacyMons(dex, xp, starter) {
   for (const [id, e] of Object.entries(dex || {})) {
     const s = byId(id);
     if (!s || !(e?.caught > 0)) continue;
-    M[id] = { 0: { a: xpFor(migrationLevel(s)), e: 0, c: e.caught } };
+    M[id] = { 0: { a: id === starter ? 0 : xpFor(migrationLevel(s)), e: 0, c: e.caught } };
   }
   if (starter && byId(starter)) {
     const byG = M[starter] || (M[starter] = {});

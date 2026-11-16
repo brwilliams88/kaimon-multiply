@@ -85,7 +85,7 @@ function sleeveHTML(p, s, lazy, R, bk) {
     if (lazy) art = art.replace('<img ', '<img loading="lazy" ');
   }
   const marks = st === 'caught'
-    ? `${e?.shiny ? `<span class="dex-shiny" title="Shiny caught">${shinyStar()}</span>` : ''}${s.mega ? '<span class="sl-mega" title="Has a Mega form">M</span>' : ''}${mon ? `<span class="sl-lv${mon.key === bk ? ' buddy' : ''}"${mon.key === bk ? ' title="Your Buddy"' : ''}>Lv ${mon.level}</span>` : ''}`
+    ? `${e?.shiny ? `<span class="dex-shiny" title="Shiny caught">${shinyStar()}</span>` : ''}${s.mega ? '<span class="sl-mega" title="Has a Mega form">M</span>' : ''}${mon ? `<span class="sl-lv${mon.key === bk ? ' sl-bud' : ''}"${mon.key === bk ? ' title="Your Buddy"' : ''}>Lv ${mon.level}</span>` : ''}`
     : '';
   const cls = ['dex-tile', 'sleeve', 'dex-' + st, e?.shiny && st === 'caught' ? 'dex-has-shiny' : '', mythic ? 'sl-mythic' : ''].filter(Boolean).join(' ');
   const label = st === 'unknown' ? `${num3(s.num)}, not found yet` : `${num3(s.num)} ${name}${st === 'seen' ? ', seen' : ''}${mon ? `, level ${mon.level}${mon.key === bk ? ', your Buddy' : ''}` : ''}`;

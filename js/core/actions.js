@@ -128,18 +128,26 @@ export function evolveReady(p) {
   return done;
 }
 
+// Daily boost: how many of today's first right answers (BOOST.n) are still to come.
+// Each one gives BOOST.x times the XP. Right answers in battles count too.
+export function boostLeft(p) {
+  const r = p.play?.[today()];
+  return Math.max(0, BOOST.n - (r?.c || 0));
+}
+
 // Convenience actions used by the screens.
 // team: in battles, the keys of the other two team Kaimon (they get half the XP).
 export function answer(p, factId, ok, ms, via, team) {
   const before = levelOf(p.facts[factId]);
   let x = answerXP(before, ok, ms, p.settings.fastMs || 5000);
-  // Daily boost: the first right answers each day give more XP.
-  if (x && (dayRec(p, today()).c || 0) < BOOST.n) x *= BOOST.x;
+  // Daily boost: the first right answers each day give more XP (Home shows how many are left).
+  const boosted = !!x && boostLeft(p) > 0;
+  if (boosted) x *= BOOST.x;
   const b = buddyOf(p).key;
   const d = { f: factId, ok: ok ? 1 : 0, ms: Math.round(ms), via, x, b };
   if (team?.length) d.s = team.filter((k) => k && k !== b);
   emit(p, 'a', d);
-  return { before, after: levelOf(p.facts[factId]), xp: x, evolved: evolveReady(p) };
+  return { before, after: levelOf(p.facts[factId]), xp: x, boosted, boostLeft: boostLeft(p), evolved: evolveReady(p) };
 }
 
 export const seen = (p, speciesId) => emit(p, 'seen', { n: speciesId });

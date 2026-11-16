@@ -234,6 +234,8 @@ export function renderPlay(root, go, { table, focus } = {}) {
     S.xp = (S.xp || 0) + gained;
     const pl1 = partnerOf(p);
     if (pl1.level > pl0.level) setTimeout(() => toast(pl1.stage > pl0.stage ? `${pl0.species.name} is evolving! Check the home screen.` : `${pl1.species.name} reached Lv ${pl1.level}!`, 2600), 1400);
+    // The last Triple XP answer of the day: say so on the results (a toast here would cover the next card).
+    if (lv.boosted && lv.boostLeft === 0) S.boostEnd = true;
     S.answered++;
     S.results = S.results || [];
     S.results[S.n] = ok;
@@ -264,7 +266,7 @@ export function renderPlay(root, go, { table, focus } = {}) {
       el.front.classList.remove('has-belt');
       el.front.classList.add('catching');
       el.front.innerHTML = (`
-        <div class="card-head"><span class="chip">${region.name}</span><span class="head-tags">${fast ? '<span class="chip card-type fast">Fast</span>' : ''}<span class="chip xp-chip">${itemImg('xp-star')}+${gained} XP</span></span></div>
+        <div class="card-head"><span class="chip">${region.name}</span><span class="head-tags">${fast ? '<span class="chip card-type fast">Fast</span>' : ''}<span class="chip xp-chip">${itemImg('xp-star')}+${gained} XP${lv.boosted ? '<span class="x3" aria-hidden="true">×3</span><span class="sr-only">, triple XP</span>' : ''}</span></span></div>
         <div class="qplate done"><span>${a}</span><span class="times">×</span><span>${b}</span><span class="eq">=</span><span class="ans">${ans}</span></div>
         <div class="catch-zone">
           <div class="catch-art">${creatureArt(S.species, { shiny: result?.shiny })}</div>
@@ -467,6 +469,7 @@ export function renderPlay(root, go, { table, focus } = {}) {
                 <strong>${evolved ? `${esc(buddyBefore.species.name)} is evolving!` : leveled ? `${esc(buddy.species.name)} reached Lv ${buddy.level}!` : `${esc(buddy.species.name)} got stronger`}</strong>
                 <span class="bar xp-bar"><span style="width:${Math.round((buddy.into / buddy.need) * 100)}%"></span></span>
                 <small><span class="res-xp">${itemImg('xp-star', 'res-ic')}+${S.xp || 0} XP</span>${evolved ? ' Go Home to see it.' : buddy.max ? ' Top level!' : ` ${Math.ceil(buddy.need - buddy.into)} XP to Lv ${buddy.level + 1}`}</small>
+                ${S.boostEnd ? '<small class="res-boost">That was your last Triple XP for today. It comes back tomorrow!</small>' : ''}
               </span>
             </div>
           </div>

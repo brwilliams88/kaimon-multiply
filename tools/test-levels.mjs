@@ -75,6 +75,15 @@ section('Old save migrates with nothing lost');
   for (const e of legacyAnswers) A.apply(q, e);
   const m = clone(q); delete m.mons; m.mons = L.legacyMons(m.dex, m.xp, m.starter);
   ok(summary(m) === summary(q), 'replaying old events = migrating the saved state');
+  // A save that lists the starter as caught too: the Buddy still keeps its exact level.
+  const dex2 = { ...legacy.dex, kaimo: { seen: 1, caught: 1, shiny: 0 } };
+  const r2 = L.roster({ starter: 'kaimo', mons: L.legacyMons(dex2, OLD_XP, 'kaimo'), evos: {} });
+  ok(L.resolve(r2, 'kaimo').level === oldLevel(OLD_XP), `a starter listed as caught keeps its old level (${L.resolve(r2, 'kaimo').level})`);
+  const q2 = fresh('pReplay2'); q2.family = false;
+  A.apply(q2, ev('catch', { n: 'kaimo', s: 0 }));
+  for (const e of legacyAnswers) A.apply(q2, e);
+  const m2 = clone(q2); m2.mons = L.legacyMons(m2.dex, m2.xp, m2.starter);
+  ok(summary(m2) === summary(q2), 'and replaying that old catch gives the same');
 }
 
 section('Repeat catches, arrival levels, team share');

@@ -11,7 +11,8 @@ import { nextUp, quizUseful } from '../core/nextup.js';
 import { VERSION } from '../data/changelog.js';
 import { trainerArt } from './trainerArt.js';
 import { ballImg, itemImg, sceneSrc, gymSrc, gymImg, badgeImg, cssUrl, uiImg, trainerFace, trainerBody, trainerKey, CARD_BACK, LOGO } from '../core/assets.js';
-import { evolveReady, ball as giveBall, caught as catchIt } from '../core/actions.js';
+import { evolveReady, boostLeft, ball as giveBall, caught as catchIt } from '../core/actions.js';
+import { BOOST } from '../core/levels.js';
 import { save, touch, setSetting } from '../core/store.js';
 import { syncNow } from '../core/sync.js';
 import { byId, MYTHIC_ID, FUTURE_ID } from '../data/creatures.js';
@@ -22,6 +23,16 @@ import { shareGame, shareIcon } from './share.js';
 import { openPlayElsewhere, deviceIcon } from './playElsewhere.js';
 import { openFeedback } from './feedback.js';
 import { trainerChipSheet } from './onboarding.js';
+
+// Daily boost: the first right answers each day give triple XP. Say how many are
+// left, so the extra XP is never a surprise (and its end isn't either).
+function boostChip(p) {
+  const left = boostLeft(p);
+  const why = `Your first ${BOOST.n} right answers each day give triple XP.`;
+  return left > 0
+    ? `<span class="boost-chip" title="${why}">${itemImg('xp-star')}<span>Triple XP: <b>${left}</b> left<span class="bc-wide"> today</span></span><span class="sr-only">. ${why}</span></span>`
+    : `<span class="boost-chip done" title="${why}">${itemImg('xp-star')}<span><span class="bc-wide">Triple XP is back tomorrow</span><span class="bc-narrow">Triple XP: <b>0</b> left</span></span><span class="sr-only">. ${why}</span></span>`;
+}
 
 export const medal = (tier) => tier
   ? `<span class="medal medal-${tier}" title="${LEVEL_LABEL[tier]} medal">${itemImg('medal-' + tier)}</span>`
@@ -182,6 +193,7 @@ export function renderHome(root, go, params = {}) {
               <span class="buddy-name">${partner.species.name}<span class="lv-tag">Lv ${partner.level}</span><button class="buddy-switch" data-buddyteam aria-label="Switch your Buddy">Switch</button></span>
               <span class="bar xp-bar" role="progressbar" aria-label="XP to the next level" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round((partner.into / partner.need) * 100)}"><span style="width:${Math.round((partner.into / partner.need) * 100)}%"></span></span>
               <small class="buddy-note">${partner.max ? 'Top level!' : `${Math.ceil(partner.need - partner.into)} XP to Lv ${partner.level + 1}`}${partner.evolveAt && !partner.max ? `. Evolves at Lv ${partner.evolveAt}` : ''}</small>
+              ${boostChip(p)}
             </span>
             ${todayRing(p)}
             <button class="balls-row" data-balls aria-label="Your balls. Tap to learn how to use them.">
@@ -422,7 +434,7 @@ function howItWorks(p, opts = {}) {
       <p>Wild Kaimon are hiding all over the world, and the only way to catch them is with <strong>multiplication</strong>. Every right answer throws a ball. The faster and smarter you get, the more you catch.</p>
       <p class="how-goal">Can you become a times table master and fill your whole Kaidex?</p>
     </div>
-    ${sec(creatureArt(buddy), 'Your Buddy', `${esc(buddy.name)} goes everywhere with you. Every right answer gives your Buddy XP. Every Kaimon has a level, and each kind evolves at its own level. Tap a Kaimon and pick Make Buddy to switch.`)}
+    ${sec(creatureArt(buddy), 'Your Buddy', `${esc(buddy.name)} goes everywhere with you. Every right answer gives your Buddy XP, and your first ${BOOST.n} right answers each day give triple XP. Every Kaimon has a level, and each kind evolves at its own level. Tap a Kaimon and pick Make Buddy to switch.`)}
     ${sec(card, 'Practice', 'All your times tables, mixed together. A wild Kaimon jumps onto each card. Answer right to throw a ball at it.')}
     ${sec(`${ballIcon('capture')}${ballIcon('super')}`, 'Balls', 'Fast answers throw harder. Super, Mega and Legend Balls catch rare Kaimon more easily. Win them with streaks and medals.')}
     ${sec(region, 'Regions', 'Each region is a times table with its own Kaimon. Get its facts right and fast on different days to earn its medal: Bronze, Silver, Gold, then Star.')}
