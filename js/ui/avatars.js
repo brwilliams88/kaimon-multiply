@@ -120,7 +120,13 @@ function migrateLook(L) {
   return { char, color };
 }
 // Trainers who never picked a look (only an old number) start as Kai, the default.
-export const charLook = (x) => (x && typeof x === 'object' ? migrateLook(x.char ? x : lookOf(x)) : { char: 'kai', color: 'green' });
+// A License color picked in the Wardrobe (card) rides along with the look.
+export const charLook = (x) => {
+  if (!x || typeof x !== 'object') return { char: 'kai', color: 'green' };
+  const L = migrateLook(x.char ? x : lookOf(x));
+  if (x.card && JACKETS[x.card]) L.card = x.card;
+  return L;
+};
 export const randomLook = () => {
   const pick = (a) => a[Math.floor(Math.random() * a.length)];
   return { char: 'm', head: pick(HEADS), outfit: pick(OUTFIT_KINDS), hair: pick(Object.keys(HAIR_TONES)), skin: Math.floor(Math.random() * SKIN_TONES.length), color: pick(Object.keys(JACKETS)) };

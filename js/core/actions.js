@@ -82,6 +82,12 @@ export function apply(p, ev) {
       p.tips = p.tips || {};
       if (!p.tips[d.n] || ev.t < p.tips[d.n]) p.tips[d.n] = ev.t;
       break;
+    case 'got': {
+      // d.w: a Wardrobe color or hat this trainer earned (d.o: kept from before the Wardrobe).
+      const w = p.wardrobe || (p.wardrobe = {});
+      if (!w[d.w] || ev.t < w[d.w]) w[d.w] = ev.t;
+      break;
+    }
     case 'stamp':
       p.stats.stars = (p.stats.stars || 0) + 1;
       break;
@@ -135,6 +141,8 @@ export const evolveKairo = (p) => emit(p, 'catch', { n: 'kairos', s: 0 });
 export const session = (p, ms, best, cont = false) => emit(p, 'sess', cont ? { ms: Math.round(ms), best, c: 1 } : { ms: Math.round(ms), best });
 export const openTime = (p, ms) => emit(p, 'open', { ms: Math.round(ms) });
 export const bonusTime = (p, m) => emit(p, 'bonus', { m });
+// Wardrobe: something earned by answering (or kept from before the Wardrobe existed).
+export const gotWear = (p, id, kept = false) => emit(p, 'got', kept ? { w: id, o: 1 } : { w: id });
 export const battle = (p, kind, table, won) => emit(p, 'battle', { o: kind, tb: table, w: won ? 1 : 0 });
 
 // One-time guides (the guided first game): done or skipped once, never shown again.

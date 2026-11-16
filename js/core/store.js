@@ -36,6 +36,7 @@ export function newProfile(name, avatar, id) {
     xp: 0,
     trophies: [],
     tips: {},
+    wardrobe: {},
     outbox: [],
   };
 }

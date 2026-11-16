@@ -7,7 +7,9 @@ import { bossUnlocked, quizReady, quizNextIn, champReady, gymOpen } from '../cor
 import { limitReached, cardsToday, roundSize, roundsToday, GOAL_ROUNDS } from '../core/playtime.js';
 import { nextUp, quizUseful } from '../core/nextup.js';
 import { VERSION } from '../data/changelog.js';
-import { evolveMoment, poseSwap, kairoArrive, kairoCaught, legendThrow } from './moments.js';
+import { evolveMoment, poseSwap, kairoArrive, kairoCaught, legendThrow, unlockCardHTML, wireUnlockCard } from './moments.js';
+import { wardrobeCheck, WD_NEW, clearWardrobeNews } from './wardrobe.js';
+import { byId as wearItem } from '../core/wardrobe.js';
 import { ballImg, itemImg, sceneSrc, gymSrc, gymImg, badgeImg, cssUrl, uiImg, trainerFace, trainerBody, trainerKey, CARD_BACK, LOGO } from '../core/assets.js';
 import { kairoEvolves } from '../core/game.js';
 import { evolveKairo, ball as giveBall, caught as catchIt } from '../core/actions.js';
@@ -149,6 +151,7 @@ export function renderHome(root, go, params = {}) {
   const beaten = p.settings.tables.filter((t) => p.battles.champs[t]).length;
   const open = bossUnlocked(p);
   const qReady = quizReady(p) && quizUseful(p), qNext = quizNextIn(p);
+  const wn = params.guide ? { items: [], fresh: [] } : wardrobeNews(p);
   root.innerHTML = `
     <section class="screen home home2">
       <header class="topbar">
@@ -162,6 +165,7 @@ export function renderHome(root, go, params = {}) {
       <div class="home-main">
         <div class="home-side">
           ${nextCard(p, nu)}
+          ${wn.items.length ? unlockCardHTML(p, wn.items, { close: true, cls: 'home-wd' }) : ''}
 
           <div class="actions">
           <button class="quick" data-play="mix" aria-label="Quick practice. Mixed times tables.">
@@ -289,6 +293,16 @@ export function renderHome(root, go, params = {}) {
     }
   } catch {}
 
+  // New Wardrobe colors: a card under Next up, with a little fanfare the first time.
+  if (wn.items.length) {
+    wireUnlockCard(root.querySelector('.home-wd'), p, wn.fresh, {
+      onWear: () => { clearWardrobeNews(p); const av = root.querySelector('.trainer-av'); if (av) av.innerHTML = avatarSVG(trainerLook(p)); },
+      onOpen: () => { clearWardrobeNews(p); go('trainer', { wardrobe: true }); },
+      onHide: () => clearWardrobeNews(p),
+    });
+    if (wn.fresh.length) setTimeout(() => sfx.levelUp(), 500);
+  }
+
   // Right after the guided first game: Teacher K shows where things are.
   if (params.guide === 'next') homeTour();
 
@@ -301,6 +315,18 @@ export function renderHome(root, go, params = {}) {
       <div class="celebrate-row"><span>${ballIcon('mega')} Mega Ball</span><span>${snackIcon()} 3 Power Snacks</span><span class="stars">★ Gold star</span></div>
       <button class="btn-chunky btn-primary" data-close>Awesome!</button></div>`);
   }
+}
+
+// New Wardrobe colors earned away from a practice round (a battle, another family
+// device, or answers given before the Wardrobe existed). They stay on Home (this
+// device only) until the trainer wears one, opens the Wardrobe or hides the card.
+function wardrobeNews(p) {
+  const fresh = wardrobeCheck(p);
+  let ids = [];
+  try { ids = JSON.parse(localStorage.getItem(WD_NEW(p)) || '[]'); } catch {}
+  for (const it of fresh) if (!ids.includes(it.id)) ids.push(it.id);
+  try { if (ids.length) localStorage.setItem(WD_NEW(p), JSON.stringify(ids)); } catch {}
+  return { items: ids.map(wearItem).filter(Boolean), fresh };
 }
 
 // A locked gym: say how to open it, with one tap to practice that table.

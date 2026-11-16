@@ -18,7 +18,8 @@ import { ballIcon, medal } from './home.js';
 import { trainerLook, trainerImg } from './avatars.js';
 import { ballSrc, sceneSrc, cssUrl, sceneKey, uiImg, itemImg, fxSrc, typeIcon, trainerFace, trainerBody, CARD_BACK } from '../core/assets.js';
 import { trickyPool, markTrickyDone } from '../core/nextup.js';
-import { fxImg, glowBall } from './moments.js';
+import { fxImg, glowBall, unlockCardHTML, wireUnlockCard } from './moments.js';
+import { wardrobeCheck } from './wardrobe.js';
 import { quick } from '../core/prefs.js';
 import { $, on, esc, sheet, wait, toast, soundButton, reducedMotion, setFlame } from './dom.js';
 import { firstGameGuide, finishFirstGame, wantsFirstGame, GUIDE_FACTS } from './firstGame.js';
@@ -458,6 +459,8 @@ export function renderPlay(root, go, { table, focus, guide } = {}) {
     const newBest = S.best > bestBefore && S.best >= 3;
     const results = Array.from({ length: n }, (_, i) => !!S.results?.[i]);
     const shown = ups.slice(0, 8);
+    // A new Wardrobe color from this round's right answers.
+    const wear = guide ? [] : wardrobeCheck(p);
     root.innerHTML = `
       <section class="screen summary res res-${tone}">
         <div class="res-grid">
@@ -493,6 +496,7 @@ export function renderPlay(root, go, { table, focus, guide } = {}) {
               <span class="res-newmedal-text"><strong>${LEVEL_LABEL[b.tier]} medal for the ${b.t}s!</strong><small>You won a Legend Ball.</small></span>
               <span class="res-newmedal-ball" aria-hidden="true">${ballIcon('legend')}</span>
             </div>`).join('')}
+            ${wear.length ? unlockCardHTML(p, wear, { cls: 'res-wd' }) : ''}
             <section class="res-card res-sec">
               <h2 class="res-h">${ballIcon('capture')}Caught this round${uniq.length ? `<span class="res-count">${S.catches.length}</span>` : ''}</h2>
               ${uniq.length ? `<div class="res-catches">${uniq.map((c, i) => { const s = byId(c.id); return `<div class="res-catch${c.isNew ? ' new' : ''}" style="--i:${i}">${creatureArt(s, { shiny: c.shiny })}<span${s.name.length > 10 ? ' class="long"' : ''}>${esc(s.name)}</span>${c.isNew ? '<em>New!</em>' : ''}</div>`; }).join('')}</div>`
@@ -516,11 +520,12 @@ export function renderPlay(root, go, { table, focus, guide } = {}) {
           <button class="btn-chunky btn-primary btn-xl res-again" data-again>Play again<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12 H18 M13 6.5 L18.5 12 L13 17.5" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>`}
         </div>
       </section>`;
-    if (newBadges.length) setTimeout(() => sfx.levelUp(), 250);
+    if (newBadges.length || wear.length) setTimeout(() => sfx.levelUp(), 250);
     else if (party) setTimeout(() => sfx.win(), 250);
     on(root, 'click', '[data-again]', () => go(limitReached(p) ? 'home' : 'play', { table, focus }));
     on(root, 'click', '[data-home]', () => go('home', guide ? { guide: 'next' } : {}));
     if (G) G.results();
+    if (wear.length) wireUnlockCard(root.querySelector('.res-wd'), p, wear, { onOpen: () => go('trainer', { wardrobe: true }) });
     on(root, 'click', '[data-ambush]', () => go('battle', { kind: 'grunt', grunt }));
   }
 

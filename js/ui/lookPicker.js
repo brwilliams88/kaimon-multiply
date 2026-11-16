@@ -3,6 +3,14 @@
 // Every change shows right away on the big preview.
 import { trainerImg, charLook, randomLook, CHARS, JACKETS, HEADS, HEAD_LABEL, OUTFIT_KINDS, OUTFIT_LABEL, HAIR_TONES, SKIN_TONES } from './avatars.js';
 import { sfx } from '../core/sound.js';
+import { toast } from './dom.js';
+import { STARTER_COLORS } from '../data/wardrobe.js';
+import { byId, howTo } from '../core/wardrobe.js';
+import { LOCK } from './wardrobe.js';
+
+// Jacket colors past the free three are earned by answering (see the Wardrobe).
+const starterOnly = (c) => STARTER_COLORS.includes(c);
+const lockedLine = (c) => { const it = byId(c); return it ? `${howTo(it)} to unlock ${it.name}!` : 'Keep answering to unlock this color!'; };
 
 const COLOR_NAME = { green: 'Green', teal: 'Teal', sky: 'Sky', blue: 'Blue', purple: 'Purple', pink: 'Pink', red: 'Red', orange: 'Orange', gold: 'Gold' };
 const HAIR_NAME = { black: 'Black', brown: 'Brown', chestnut: 'Chestnut', blond: 'Blond', red: 'Red', silver: 'Silver', blue: 'Blue', pink: 'Pink', purple: 'Purple' };
@@ -11,12 +19,17 @@ const TABS = [['trainer', 'Trainer'], ['hair', 'Hair'], ['outfit', 'Outfit'], ['
 const DICE = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="4" fill="none" stroke="currentColor" stroke-width="2.4"/><circle cx="8.5" cy="8.5" r="1.6" fill="currentColor"/><circle cx="15.5" cy="15.5" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="15.5" cy="8.5" r="1.6" fill="currentColor"/><circle cx="8.5" cy="15.5" r="1.6" fill="currentColor"/></svg>';
 const startCustom = (L) => ({ char: 'm', head: 'spiky', outfit: 'zip', hair: 'brown', skin: 2, color: L.color && L.char !== 'kai' ? L.color : 'blue' });
 
-const swatches = (name, entries, current, label) => `<div class="tc-swatches" role="radiogroup" aria-label="${label}">${entries.map(([k, hex, nm]) => `<button type="button" class="tc-color${String(current) === String(k) ? ' on' : ''}" data-${name}="${k}" style="--c:${hex}" role="radio" aria-checked="${String(current) === String(k)}" aria-label="${nm}"></button>`).join('')}</div>`;
+const swatches = (name, entries, current, label, owned = () => true) => `<div class="tc-swatches" role="radiogroup" aria-label="${label}">${entries.map(([k, hex, nm]) => {
+  const own = owned(k), on = String(current) === String(k);
+  return `<button type="button" class="tc-color${on ? ' on' : ''}${own ? '' : ' locked'}" data-${name}="${k}" style="--c:${hex}" role="radio" aria-checked="${on}" ${own ? '' : 'aria-disabled="true" '}aria-label="${nm}${own ? '' : ', locked'}">${own ? '' : LOCK}</button>`;
+}).join('')}</div>`;
 
-function panel(tab, L) {
+function panel(tab, L, owned) {
   const custom = L.char === 'm';
   const needCustom = (what) => `<div class="tc-need"><p>${what} works on a trainer you make yourself.</p><button type="button" class="btn-chunky btn-primary" data-make>Make your own trainer</button></div>`;
-  const jackets = swatches('color', Object.entries(JACKETS).map(([k, h]) => [k, h, COLOR_NAME[k]]), L.color, 'Jacket color');
+  const anyLocked = Object.keys(JACKETS).some((c) => !owned(c));
+  const jackets = swatches('color', Object.entries(JACKETS).map(([k, h]) => [k, h, COLOR_NAME[k]]), L.color, 'Jacket color', owned)
+    + (anyLocked ? '<p class="tc-note tc-unlock">Answer cards to unlock more colors!</p>' : '');
   const hairs = swatches('hair', Object.entries(HAIR_TONES).map(([k, h]) => [k, h, HAIR_NAME[k]]), L.hair, 'Hair color');
   if (tab === 'trainer') {
     return `<div class="tc-chars" role="radiogroup" aria-label="Trainers">
@@ -45,27 +58,30 @@ function panel(tab, L) {
   return `<p class="lp-label">Jacket color</p>${jackets}${custom ? `<p class="lp-label">Hair color</p>${hairs}` : ''}`;
 }
 
-export function lookPickerHTML(look, tab = 'trainer') {
+export function lookPickerHTML(look, tab = 'trainer', owned = starterOnly) {
   const L = charLook(look);
   return `<div class="lp tc" data-tab="${tab}">
     <div class="tc-stage"><div class="tc-preview">${trainerImg(L, 'base')}</div>
       <button type="button" class="tc-random" data-random>${DICE}<span>Surprise me</span></button></div>
     <div class="tc-side">
       <div class="tc-tabs" role="tablist" aria-label="Trainer creator">${TABS.map(([k, n]) => `<button type="button" role="tab" class="tc-tab${tab === k ? ' on' : ''}" data-tab="${k}" aria-selected="${tab === k}">${n}</button>`).join('')}</div>
-      <div class="tc-panel" role="tabpanel">${panel(tab, L)}</div>
+      <div class="tc-panel" role="tabpanel">${panel(tab, L, owned)}</div>
     </div>
   </div>`;
 }
 
 // Wire a picker inside el. onChange(look) runs on every change.
-export function wireLookPicker(el, look, onChange) {
+// opts.owned(color): which jacket colors this trainer has (new trainers: the free three).
+// opts.why(color): what a tap on a locked color says.
+export function wireLookPicker(el, look, onChange, { owned = starterOnly, why = lockedLine } = {}) {
   let L = charLook(look);
+  const keepColor = (c) => (JACKETS[c] && owned(c) ? c : 'green');
   let tab = 'trainer';
   const redraw = () => {
     const box = el.querySelector('.lp');
     const scroll = box.querySelector('.tc-chars')?.scrollLeft || 0;
     const pscroll = box.querySelector('.tc-panel')?.scrollTop || 0;
-    box.outerHTML = lookPickerHTML(L, tab);
+    box.outerHTML = lookPickerHTML(L, tab, owned);
     const ch = el.querySelector('.tc-chars'); if (ch) ch.scrollLeft = scroll;
     const pn = el.querySelector('.tc-panel'); if (pn) pn.scrollTop = pscroll;
     bind();
@@ -76,15 +92,18 @@ export function wireLookPicker(el, look, onChange) {
       if (!t || t.disabled) return;
       const ds = t.dataset;
       if (ds.tab) { tab = ds.tab; sfx.tap(); return redraw(); }
-      if ('make' in ds) { if (L.char !== 'm') { L = startCustom(L); onChange?.(L); } tab = 'hair'; sfx.tap(); return redraw(); }
-      if ('random' in ds) { L = randomLook(); }
-      else if (ds.char) L = { char: ds.char, color: ds.char === 'kai' ? 'green' : (JACKETS[L.color] ? L.color : 'green') };
+      if ('make' in ds) { if (L.char !== 'm') { L = { ...startCustom(L), ...(L.card ? { card: L.card } : {}) }; onChange?.(L); } tab = 'hair'; sfx.tap(); return redraw(); }
+      const prev = L;
+      if (ds.color && !owned(ds.color)) { sfx.tap(); toast(why(ds.color), 2400); return; }
+      if ('random' in ds) { L = randomLook(); const mine = Object.keys(JACKETS).filter(owned); L.color = mine[Math.floor(Math.random() * mine.length)] || 'green'; }
+      else if (ds.char) L = { char: ds.char, color: keepColor(L.color) };
       else if (ds.head) L = { ...L, head: ds.head };
       else if (ds.outfit) L = { ...L, outfit: ds.outfit };
       else if (ds.hair) L = { ...L, hair: ds.hair };
       else if (ds.skin != null) L = { ...L, skin: +ds.skin };
       else if (ds.color) L = { ...L, color: ds.color };
       else return;
+      if (prev.card && !L.card) L.card = prev.card; // the License color stays put
       sfx.tap();
       onChange?.(L);
       redraw();
