@@ -1,0 +1,81 @@
+/* [types] Type matchups: the Types guide, the team picker arrows, the VS screen tip
+   and the Super effective / Not very effective pops in battle. */
+
+/* Shared bits: arrows and type chips. */
+.ty-arrow { width: 14px; height: 14px; flex: none; display: inline-block; vertical-align: -2px; }
+.ty-arrow.up { fill: #3FA34D; }
+.ty-arrow.down { fill: #F07A5A; }
+.ty-chip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 11px 2px 3px; border: 2px solid var(--ink); border-radius: 99px; background: var(--tl); color: var(--ti); font-weight: 700; font-size: 15px; line-height: 1.2; white-space: nowrap; }
+.ty-chip .ty-chip-ic { width: 24px; height: 24px; object-fit: contain; flex: none; }
+
+/* ---------- Types guide ---------- */
+.types-sheet.sheet { width: min(100%, 560px); }
+@media (min-width: 700px) { .types-sheet.sheet { width: min(100%, 780px); } }
+.types-guide h2 { margin-top: 0; }
+.tg-how { margin: 0 0 10px; background: #FFF5D6; border: 2px solid var(--ink); border-radius: 14px; padding: 8px 12px; font-weight: 600; line-height: 1.35; }
+.tg-how b { color: #2E8A3B; }
+.tg-key { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 0 2px 12px; font-size: 14px; font-weight: 700; color: var(--ink-2); }
+.tg-key > span { display: inline-flex; align-items: center; gap: 5px; }
+.tg-list { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
+@media (min-width: 700px) { .tg-list { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; } }
+.tg-card { border: 3px solid var(--ink); border-radius: 20px; background: var(--paper); box-shadow: 0 4px 0 var(--ink); overflow: hidden; padding-bottom: 10px; text-align: left; }
+.tg-card.focus { box-shadow: 0 0 0 4px var(--sun), 0 4px 0 4px var(--ink); }
+.tg-head { display: flex; align-items: center; gap: 10px; padding: 6px 12px 6px 8px; background: var(--tl); border-bottom: 3px solid var(--ink); }
+.tg-head .tg-ic { width: 42px; height: 42px; object-fit: contain; filter: drop-shadow(0 2px 0 rgba(20, 33, 61, .25)); }
+.tg-head strong { font-size: 22px; color: #fff; -webkit-text-stroke: 5px var(--ink); paint-order: stroke fill; letter-spacing: .3px; }
+.tg-card.focus .tg-head::after { content: 'Your foe'; margin-left: auto; padding: 1px 10px; background: var(--sun); border: 2px solid var(--ink); border-radius: 99px; font-size: 13px; font-weight: 700; color: var(--ink); }
+.tg-row { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 8px; padding: 10px 12px 0; }
+.tg-lab { display: inline-flex; align-items: center; gap: 5px; min-width: 128px; font-size: 14px; font-weight: 700; color: var(--ink-2); }
+.tg-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.tg-why { list-style: none; margin: 6px 12px 0; padding: 0; font-size: 15px; line-height: 1.35; color: var(--ink); }
+.tg-why li { position: relative; padding-left: 16px; }
+.tg-why li::before { content: ''; position: absolute; left: 3px; top: .5em; width: 7px; height: 7px; border-radius: 50%; background: var(--tc); border: 1.5px solid var(--ink); }
+.tg-note { margin: 14px 2px 0; font-size: 14px; color: var(--ink-2); line-height: 1.35; }
+.types-guide .tg-done { display: block; width: min(100%, 320px); margin: 14px auto 0; }
+
+/* ---------- Team picker: what you're up against ---------- */
+.tp-vs { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 6px 8px; margin: -4px auto 12px; padding: 6px 14px; border: 2px solid var(--ink); border-radius: 99px; background: #F4F7FB; font: inherit; font-size: 15px; font-weight: 700; color: var(--ink); cursor: pointer; }
+.tp-vs:active { transform: translateY(1px); }
+.tp-vs-key { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; color: var(--ink-2); font-weight: 600; }
+.tp-vs-key .ty-arrow:last-of-type { margin-left: 6px; }
+.tp-art, .tp2 .team-opt .to-art { position: relative; }
+.tp-edge { position: absolute; right: -4px; top: -2px; width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--ink); display: grid; place-items: center; box-shadow: 0 2px 0 var(--ink); z-index: 1; }
+.tp-edge.up { background: #DDF3E0; }
+.tp-edge.down { background: #FFE6DD; }
+.tp-edge .ty-arrow { width: 14px; height: 14px; }
+.tp-edge.down .ty-arrow { margin-top: 1px; }
+
+/* ---------- VS screen tip ---------- */
+.vsi-types { display: flex; align-items: center; gap: 8px; width: min(100%, 420px); margin: 0 0 10px; padding: 6px 8px 6px 6px; background: var(--paper); border: 3px solid var(--ink); border-radius: 18px; box-shadow: 0 4px 0 var(--ink); font: inherit; color: var(--ink); text-align: left; cursor: pointer; }
+.vsi-types:active { transform: translateY(2px); box-shadow: 0 2px 0 var(--ink); }
+.vsi-types.tone-good { background: #E9F8EC; }
+.vsi-types.tone-warn { background: #FFF1E8; }
+.vsi-types .vt-ic { width: 36px; height: 36px; object-fit: contain; flex: none; filter: drop-shadow(0 2px 0 rgba(20, 33, 61, .2)); }
+.vt-txt { display: flex; flex-direction: column; min-width: 0; flex: 1; line-height: 1.15; }
+.vt-txt strong { font-size: 16px; }
+.vt-txt small { font-size: 13px; font-weight: 600; color: var(--ink-2); margin-top: 1px; }
+.vt-more { flex: none; padding: 3px 10px; background: var(--sky, #CFE8FF); border: 2px solid var(--ink); border-radius: 99px; font-size: 13px; font-weight: 700; }
+@media (min-width: 700px) and (max-aspect-ratio: 1/1) { .vsi-types { width: min(100%, 480px); } .vt-txt strong { font-size: 18px; } .vt-txt small { font-size: 14px; } .vsi-types .vt-ic { width: 42px; height: 42px; } }
+
+/* ---------- In battle: Super effective / Not very effective ----------
+   On its own it sits where callouts go (over the foe's half). Under a callout it is a
+   tag (.co-eff) that rides along with the callout's own motion. */
+.eff-pop, .co-eff { display: inline-flex; align-items: center; gap: 5px; padding: 2px 12px 3px 4px; border: 3px solid var(--ink); border-radius: 99px; pointer-events: none; white-space: nowrap; font-family: Fredoka, sans-serif; font-weight: 700; line-height: 1.1; }
+.eff-pop { position: absolute; z-index: 6; left: 50%; top: 27%; transform: translate(-50%, -50%); }
+.co-eff { position: relative; margin-top: 10px; transform: rotate(4deg); }
+.eff-pop.strong, .co-eff.strong { background: var(--tc); color: #fff; -webkit-text-stroke: 4px var(--ink); paint-order: stroke fill; font-size: clamp(18px, min(5.4cqw, 5.4cqh), 28px); box-shadow: 0 4px 0 var(--ink); }
+.eff-pop.weak, .co-eff.weak { background: #EEF1F6; color: var(--ink-2); border-width: 2.5px; border-color: #8A95AA; font-size: clamp(15px, min(4cqw, 4cqh), 20px); padding: 1px 10px 2px 4px; }
+.eff-pop.strong { animation: eff-in 1.25s cubic-bezier(.3, 1.4, .5, 1) both; }
+.eff-pop.weak { animation: eff-soft 1.25s ease-out both; }
+.eff-pop .eff-ic, .co-eff .eff-ic { width: 1.4em; height: 1.4em; object-fit: contain; flex: none; }
+.eff-pop.strong .eff-ic, .co-eff.strong .eff-ic { filter: drop-shadow(0 2px 0 var(--ink)); }
+.eff-pop.weak .eff-ic, .co-eff.weak .eff-ic { filter: saturate(.5); opacity: .85; }
+.eff-pop.quick { animation-duration: .9s; }
+@keyframes eff-in { 0% { opacity: 0; transform: translate(-50%, -50%) scale(.5) rotate(-3deg); } 14% { opacity: 1; transform: translate(-50%, -50%) scale(1.12) rotate(-3deg); } 24% { transform: translate(-50%, -50%) scale(1) rotate(-3deg); } 78% { opacity: 1; transform: translate(-50%, -50%) rotate(-3deg); } 100% { opacity: 0; transform: translate(-50%, -75%) rotate(-3deg); } }
+@keyframes eff-soft { 0% { opacity: 0; transform: translate(-50%, -30%); } 18% { opacity: 1; transform: translate(-50%, -50%); } 78% { opacity: 1; transform: translate(-50%, -50%); } 100% { opacity: 0; transform: translate(-50%, -50%); } }
+@keyframes eff-fade { 0%, 100% { opacity: 0; } 15%, 80% { opacity: 1; } }
+.dmg.eff-strong { font-size: 42px; }
+.dmg.crit.eff-strong { font-size: 52px; }
+.dmg.eff-weak { font-size: 26px; color: #E4E9F2; }
+@media (prefers-reduced-motion: reduce) { .eff-pop.strong, .eff-pop.weak { animation: eff-fade 1.1s linear both; transform: translate(-50%, -50%); } }
+.menu-ic .menu-type-ic { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 2px 0 rgba(20, 33, 61, .2)); }

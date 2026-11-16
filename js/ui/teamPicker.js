@@ -1,9 +1,11 @@
 // Pick your battle team: your Buddy leads, and you choose two more Kaimon you own.
 // Switch makes another Kaimon your Buddy (it then leads every battle and gets the most XP).
-import { TYPES } from '../data/creatures.js';
+import { TYPES, regionOf } from '../data/creatures.js';
+import { edgeVs } from '../data/types.js'; // [types]
+import { arrowSVG, typeChip, typesGuide } from './typesGuide.js'; // [types]
 import { creatureArt } from '../core/art.js';
 import { roster, buddyOf, ownedList, current } from '../core/levels.js';
-import { teamMons, teamPicks } from '../core/battle.js';
+import { teamMons, teamPicks, nextGym } from '../core/battle.js';
 import { makeBuddy } from '../core/actions.js';
 import { touch, save } from '../core/store.js';
 import { syncNow } from '../core/sync.js';
@@ -36,7 +38,20 @@ export function setBuddy(p, m) {
   return true;
 }
 
+// [types] What the team is up against: opts.vs ({ types, label }) from a battle, or
+// the next gym. Each Kaimon gets a small up arrow (strong) or down arrow (weak).
+function versus(p, vs) {
+  if (vs) return vs.types?.length ? vs : null;
+  const t = nextGym(p);
+  return t ? { types: [regionOf(t).type], label: 'Next gym' } : null;
+}
+const edgeTag = (vs, s) => {
+  const e = vs && edgeVs(s, vs.types);
+  return e ? `<span class="tp-edge ${e}" title="${e === 'up' ? 'Strong' : 'Weak'} against ${esc(vs.types.map((t) => TYPES[t].name).join(' and '))}">${arrowSVG(e)}<span class="sr-only">${e === 'up' ? 'Strong' : 'Weak'} against this foe</span></span>` : '';
+};
+
 export function teamSheet(p, onSave, opts = {}) {
+  const vs = versus(p, opts.vs); // [types]
   let R = roster(p);
   let buddy = buddyOf(p, R);
   let picks = teamPicks(p, R).map((m) => m.id);
@@ -53,15 +68,16 @@ export function teamSheet(p, onSave, opts = {}) {
     const m = picks[i] && current(R, picks[i]);
     const pop = just === i ? ' pop' : '';
     return m
-      ? `<button class="tp-slot${pop}" data-unpick="${m.id}" style="--rl:${TYPES[m.species.type].light}" aria-label="Take ${esc(m.species.name)} off the team"><span class="tp-num">${i + 2}</span><span class="tp-art">${creatureArt(m.species)}</span><span class="tp-name${m.species.name.length > 11 ? ' long' : ''}">${esc(m.species.name)}</span>${lvTag(m)}<span class="tp-x" aria-hidden="true">×</span></button>`
+      ? `<button class="tp-slot${pop}" data-unpick="${m.id}" style="--rl:${TYPES[m.species.type].light}" aria-label="Take ${esc(m.species.name)} off the team"><span class="tp-num">${i + 2}</span><span class="tp-art">${creatureArt(m.species)}${edgeTag(vs, m.species)}</span><span class="tp-name${m.species.name.length > 11 ? ' long' : ''}">${esc(m.species.name)}</span>${lvTag(m)}<span class="tp-x" aria-hidden="true">×</span></button>`
       : `<div class="tp-slot empty"><span class="tp-num">${i + 2}</span><span class="tp-art"></span><span class="tp-name">Pick one</span></div>`;
   };
   const draw = () => {
     const list = others();
     return `
     <h2>${mode === 'buddy' ? 'Pick a Buddy' : 'Battle team'}</h2>
+    ${vs ? `<button class="tp-vs" data-types><span class="tp-vs-who">${esc(vs.label)}:</span>${vs.types.map((t) => typeChip(t)).join('')}<span class="tp-vs-key">${arrowSVG('up')}strong ${arrowSVG('down')}weak</span></button>` : ''}
     <div class="tp-team">
-      <div class="tp-slot lead${just === 'b' ? ' pop' : ''}" style="--rl:${TYPES[buddy.species.type].light}"><span class="tp-num">1</span><span class="tp-art">${creatureArt(buddy.species)}</span><span class="tp-name${buddy.species.name.length > 11 ? ' long' : ''}">${esc(buddy.species.name)}</span><span class="tp-lv">Buddy · Lv ${buddy.level}</span>
+      <div class="tp-slot lead${just === 'b' ? ' pop' : ''}" style="--rl:${TYPES[buddy.species.type].light}"><span class="tp-num">1</span><span class="tp-art">${creatureArt(buddy.species)}${edgeTag(vs, buddy.species)}</span><span class="tp-name${buddy.species.name.length > 11 ? ' long' : ''}">${esc(buddy.species.name)}</span><span class="tp-lv">Buddy · Lv ${buddy.level}</span>
         ${list.length ? `<button class="tp-switch${mode === 'buddy' ? ' on' : ''}" data-switch aria-pressed="${mode === 'buddy'}">${mode === 'buddy' ? 'Cancel' : 'Switch'}</button>` : ''}</div>
       ${slot(0)}${slot(1)}
     </div>
@@ -71,7 +87,7 @@ export function teamSheet(p, onSave, opts = {}) {
       const t = TYPES[m.species.type];
       const on = mode === 'team' && k >= 0;
       return `<button class="team-opt${on ? ' on' : ''}" ${mode === 'buddy' ? `data-buddy="${m.key}"` : `data-pick="${m.id}" aria-pressed="${on}"`} style="--rl:${t.light};--rc:${t.color}">
-        <span class="to-art">${creatureArt(m.species)}</span><span class="to-name${m.species.name.length > 11 ? ' long' : ''}">${esc(m.species.name)}</span>${lvTag(m)}
+        <span class="to-art">${creatureArt(m.species)}${edgeTag(vs, m.species)}</span><span class="to-name${m.species.name.length > 11 ? ' long' : ''}">${esc(m.species.name)}</span>${lvTag(m)}
         ${on ? `<span class="to-check" aria-hidden="true">${k + 2}</span>` : ''}</button>`;
     }).join('')}</div>
     <p class="team-note">Your Buddy gets XP from every right answer and always battles first. In battles, your team gets XP too.</p>`
@@ -94,6 +110,7 @@ export function teamSheet(p, onSave, opts = {}) {
   const box = sh.el.querySelector('.team-sheet');
   const redraw = () => { const scroll = sh.el.scrollTop; box.innerHTML = draw(); sh.el.scrollTop = scroll; };
   box.addEventListener('click', (e) => {
+    if (e.target.closest('[data-types]')) { sfx.tap(); return typesGuide({ focus: vs?.types[0], back: () => {}, backLabel: 'Team' }); } // [types]
     if (e.target.closest('[data-switch]')) { sfx.tap(); mode = mode === 'buddy' ? 'team' : 'buddy'; just = null; return redraw(); }
     const bk = e.target.closest('[data-buddy]')?.dataset.buddy;
     if (bk) {

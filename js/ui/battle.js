@@ -23,6 +23,7 @@ import { quick } from '../core/prefs.js';
 import { limitReached } from '../core/playtime.js';
 import { startMusic, stopMusic, setPinch } from '../core/music.js';
 import { $, on, esc, sheet, reducedMotion, soundButton, setFlame, fitText, say } from './dom.js';
+import { vsHint, matchType } from '../data/types.js'; import { typesGuide } from './typesGuide.js'; // [types] type matchups
 import { canSnack, useSnack, itemCount } from '../core/items.js'; import { towerCrystal } from '../core/tower.js'; import { itemIcon } from './items.js'; // [systems] Power Snack
 
 // Special hit-back moves for the big opponents. Papazilla lifts.
@@ -108,6 +109,13 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt, wild 
     return `${papaMark}<span><small>Ambush!</small><strong>Team Papa</strong><em>Today’s workout: beat 1 Kaimon</em></span>`;
   }
 
+  // [types] One short type tip on the VS screen. Tap it for the Types guide.
+  function typesHintHTML() {
+    const h = vsHint(mine, opp.team);
+    if (!h) return '';
+    return `<button class="vsi-types tone-${h.tone}" data-types data-focus="${h.d}" aria-label="${esc(`${h.text} ${h.sub}`.trim())} Tap for the Types guide.">${typeIcon(h.a, 'vt-ic')}<span class="vt-txt"><strong>${esc(h.text)}</strong>${h.sub ? `<small>${esc(h.sub)}</small>` : ''}</span><span class="vt-more">Types</span></button>`;
+  }
+
   root.innerHTML = `
     <section class="screen play battle v2 battle-${kind}${isWild ? (calm ? ' calm-mode' : '') : ' intro-on'}">
       <header class="play-top">
@@ -146,6 +154,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt, wild 
                 </div>
               </div>
               <div class="vsi-actions">
+                ${typesHintHTML()}
                 <button class="btn-chunky btn-primary btn-xl" data-start>Battle!</button>
                 <button class="link-btn vsi-later" data-leave>Not now</button>
               </div>
@@ -286,15 +295,27 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt, wild 
   }
   // A big, readable callout for the moments that matter: a special move, a perfect
   // answer, Papazilla. It never holds up the battle.
-  function callout(text, { type = null, at = 'foe', crit = false, sub = '', big = false } = {}) {
+  function callout(text, { type = null, at = 'foe', crit = false, sub = '', big = false, eff = null, effType = null } = {}) {
     el.fx.querySelectorAll('.callout').forEach((n) => n.remove());
     const c = document.createElement('div');
     const t = type && TYPES[type];
     c.className = `callout at-${at}${t ? ' typed' : ''}${crit ? ' crit' : ''}${big ? ' big' : ''}${quick(p) ? ' quick' : ''}`;
     if (t) c.style.cssText = `--tc:${t.color};--ti:${t.ink};--tl:${t.light}`;
-    c.innerHTML = `<span class="co-plate">${t ? typeIcon(type, 'co-ic') : ''}<span class="co-text">${esc(text)}</span></span>${sub ? `<span class="co-sub">${esc(sub)}</span>` : ''}`;
+    c.innerHTML = `<span class="co-plate">${t ? typeIcon(type, 'co-ic') : ''}<span class="co-text">${esc(text)}</span></span>${sub ? `<span class="co-sub">${esc(sub)}</span>` : ''}${eff ? effTag(eff, effType) : ''}`; // [types] eff: a matchup tag under it
     el.fx.appendChild(c);
     setTimeout(() => c.remove(), 1100);
+  }
+  // [types] Super effective (your type is strong against the foe) or Not very effective
+  // (weak). Small and gone in about a second; it never holds up the battle. With a
+  // callout (a special move or a critical hit) it rides under it, so they never collide.
+  const effTag = (eff, type, cls = 'co-eff') => { const t = TYPES[type] || TYPES.dragon; return `<span class="${cls} ${eff}" style="--tc:${t.color};--tl:${t.light};--ti:${t.ink}">${typeIcon(type, 'eff-ic')}<span>${eff === 'strong' ? 'Super effective!' : 'Not very effective...'}</span></span>`; };
+  function effPop(eff, type) {
+    el.fx.querySelectorAll('.eff-pop').forEach((n) => n.remove());
+    const w = document.createElement('div');
+    w.innerHTML = effTag(eff, type, `eff-pop${quick(p) ? ' quick' : ''}`);
+    const n = w.firstElementChild;
+    el.fx.appendChild(n);
+    setTimeout(() => n.remove(), 1300);
   }
   // Team Papa and Boss Papa can't help themselves: a dad joke from the corner.
   function joke(text, ms = 4200) {
@@ -471,12 +492,12 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt, wild 
       el.qcard.classList.add('right');
       el.q.innerHTML = `<span>${a}</span><span class="times">×</span><span>${b}</span><span class="eq">=</span><span class="ans">${ans}</span>`;
       const me = mine[S.me], foe = opp.team[S.foe];
-      const hit = attack(me, pw, S.streak);
-      const move = moveName(me.species);
+      const hit = attack(me, pw, S.streak, foe); // [types] x1.5 strong, x0.75 weak
+      const move = moveName(me.species), effType = matchType(me.species);
       el.msg.textContent = hit.special ? `${powerLabel(pw)}! ${me.species.name} used ${move}!` : `${powerLabel(pw)}! ${me.species.name} attacks!`;
       if (hit.special) sfx.special();
-      if (hit.special) callout(`${move}!`, { type: me.species.type, crit: hit.crit, sub: hit.crit ? 'Critical!' : '' });
-      else if (hit.crit) callout('Critical!', { crit: true });
+      if (hit.special) callout(`${move}!`, { type: me.species.type, crit: hit.crit, sub: hit.crit ? 'Critical!' : '', eff: hit.eff, effType });
+      else if (hit.crit) callout('Critical!', { crit: true, eff: hit.eff, effType });
       const lunge = anim(el.meMon, 'lunge', q ? 200 : 260);
       await nap(q ? 90 : 120);
       hitFx(el.foeMon, me.species.type, hit.special || hit.crit);
@@ -484,7 +505,8 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt, wild 
       hit.crit ? sfx.crit() : sfx.hit();
       foe.hp -= hit.dmg;
       if (isWild) foe.hp = Math.max(1, foe.hp); // [wild] worn out, never knocked out: it still has to be caught
-      popNumber(el.foeMon, '-' + hit.dmg, hit.crit ? 'crit' : '');
+      popNumber(el.foeMon, '-' + hit.dmg, (hit.crit ? 'crit' : '') + (hit.eff ? ' eff-' + hit.eff : ''));
+      if (hit.eff) { if (!hit.special && !hit.crit) effPop(hit.eff, effType); say(hit.eff === 'strong' ? 'Super effective!' : 'Not very effective.'); } // [types]
       anim(el.foeMon, 'shake', 420);
       drawHp(el.foeHp, opp.team, S.foe, true);
       const last = S.foe === opp.team.length - 1;
@@ -952,8 +974,15 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt, wild 
       crew = mine = myTeam(p);
       const row = root.querySelector('.team-change');
       if (row) row.innerHTML = mine.map((m) => `<span class="mini">${creatureArt(m.species)}</span>`).join('') + '<span class="tc-label">Change team</span>';
+      const hint = root.querySelector('.vsi-types'), tip = typesHintHTML(); // [types] the tip follows the new team
+      if (hint) hint.outerHTML = tip; else if (tip) root.querySelector('[data-start]')?.insertAdjacentHTML('beforebegin', tip);
       drawMons();
-    });
+    }, { vs: { types: [...new Set(opp.team.map((m) => matchType(m.species)).filter(Boolean))], label: opp.name } });
+  });
+  on(root, 'click', '[data-types]', (e, b) => { // [types] the Types guide, from the VS screen
+    if (S.phase !== 'intro') return;
+    sfx.tap();
+    typesGuide({ focus: b.dataset.focus || null });
   });
   on(root, 'click', '[data-snack]', (e) => { // [systems] Power Snack
     e.stopPropagation();

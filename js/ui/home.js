@@ -31,6 +31,8 @@ import { boltUnlocked, boltBest, calmMode } from '../core/lightning.js'; // [sys
 import { offlineBadgeHTML } from './offline.js';
 import { homeTour } from './firstGame.js';
 import { howToPlay } from './howToPlay.js';
+import { typesGuide } from './typesGuide.js'; // [types]
+import { typeIcon } from '../core/assets.js'; // [types]
 
 // Daily boost: the first right answers each day give triple XP. Say how many are
 // left, so the extra XP is never a surprise (and its end isn't either).
@@ -416,6 +418,7 @@ function homeMenu(p, go) {
     ${calmMode(p) ? '' : row(`data-m="bolt"${boltUnlocked(p) ? '' : ' data-locked'}`, itemImg('time-freeze', 'menu-bolt-img'), 'Lightning Round', boltUnlocked(p) ? (boltBest(p) ? `60-second sprint. Your best: ${boltBest(p)}` : '60-second sprint. Grown-ups can play too!') : boltLockedNote(p)) /* [systems] */}
     ${row('data-m="how"', uiImg('icon-howto'), 'How to play', 'Teacher K explains everything')}
     ${row('data-m="balls"', ballIcon('capture'), 'Ball guide', 'Which ball to throw, and how to earn more')}
+    ${row('data-m="types"', typeIcon('water', 'menu-type-ic'), 'Types', 'Which Kaimon hit hardest in battles')}
     ${row('data-m="switch"', uiImg('icon-trainers'), 'Title screen', 'Switch trainer or add a new one')}
     ${row('data-m="device"', deviceIcon(), 'Play on another device', 'A QR code for an iPad or phone')}
     ${row('data-m="feedback"', uiImg('kaizo-feedback'), 'Send feedback', 'Tell the maker what you love, or what bugs you')}
@@ -436,6 +439,7 @@ function homeMenu(p, go) {
     const back = () => setTimeout(() => homeMenu(p, go), 120);
     if (m === 'how') setTimeout(() => howToPlay(p, { back }), 200);
     if (m === 'balls') setTimeout(() => ballsHelp(p, { back }), 200);
+    if (m === 'types') setTimeout(() => typesGuide({ back }), 200); // [types]
     if (m === 'device') setTimeout(() => openPlayElsewhere({ back }), 200);
     if (m === 'feedback') setTimeout(() => openFeedback({ place: 'menu', back }), 200);
     if (m === 'switch') go('welcome');
