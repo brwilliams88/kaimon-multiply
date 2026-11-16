@@ -1,7 +1,19 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.6.6';
+export const VERSION = '0.6.7';
 
 export const CHANGELOG = [
+  {
+    version: '0.6.7',
+    date: '2026-11-16',
+    title: "Better offline play",
+    items: [
+      "A Works offline badge shows in the Menu once every picture is saved.",
+      "The offline download meter shows progress better. It pauses when the internet drops, starts again by itself, and has a Try again button if some pictures didn't download.",
+      "New in Grown-ups: Keep my data asks the browser to keep progress safe on this device.",
+      "Emails and feedback sent with no internet wait on the device and go out by themselves when it is back. Grown-ups shows how many are waiting to send.",
+      "If a round starts with no internet and Mic mode on, the game says the mic is resting and to use the number pad.",
+    ],
+  },
   {
     version: '0.6.6',
     date: '2026-11-16',
