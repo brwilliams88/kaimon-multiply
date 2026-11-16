@@ -3114,3 +3114,18 @@ button.tp-slot:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--in
 .hp-bot { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-top: 3px; min-height: 14px; }
 .hp-bot .hp-num { margin-top: 0; }
 .battle .hp-bot .hp-dots i { width: 14px; height: 14px; }
+
+/* ===== Grown-ups tabs: Progress, Settings, Family, Help ===== */
+.gu-tabs { position: sticky; top: calc(6px + var(--safe-t)); z-index: 5; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; padding: 4px; border: 3px solid var(--ink); border-radius: 99px; background: #fff; box-shadow: 0 4px 0 var(--ink); max-width: 640px; width: 100%; align-self: center; }
+.gu-tab { min-height: 44px; padding: 6px 8px; border: 0; border-radius: 99px; background: transparent; font-size: 17px; font-weight: 700; color: var(--ink-2); transition: background-color .18s, color .18s; }
+.gu-tab[aria-selected="true"] { background: var(--ink); color: #fff; }
+@media (hover: hover) { .gu-tab:hover:not([aria-selected="true"]) { background: #EEF2F8; color: var(--ink); } }
+.gu-pane[hidden] { display: none !important; }
+.gu-slot:empty { display: none; }
+.gu-slot-panel:not(:has(.gu-slot > *)) { display: none; }
+@media (max-width: 420px) { .gu-tab { font-size: 15px; padding: 6px 4px; } }
+@media (prefers-reduced-motion: no-preference) { .gu-pane:not([hidden]) { animation: gu-pane-in .22s cubic-bezier(.2, .8, .3, 1); } @keyframes gu-pane-in { from { opacity: 0; transform: translateY(6px); } } }
+.pt-line { margin: 0; font-size: 15px; line-height: 1.45; color: var(--ink-2); }
+.pt-line b { color: var(--ink); font-size: 17px; }
+.cl-more { margin-top: 4px; }
+.cl-more summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; font-weight: 700; color: #123F8C; }

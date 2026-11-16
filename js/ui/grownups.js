@@ -55,20 +55,22 @@ function runPinPad(root, go, title, sub, onDone, extra) {
   });
 }
 
-export function renderGrownups(root, go) {
+export function renderGrownups(root, go, params = {}) {
+  // Opening Grown-ups starts on Progress (or the tab asked for).
+  guTab = GU_TABS.some(([id]) => id === params.tab) ? params.tab : 'progress';
   if (!hasPin()) {
     let first = null;
     const ask = (sub) => runPinPad(root, go, 'Set a parent PIN', sub, async (v) => {
       if (!first) { first = v; ask('Type the same 4 digits again.'); return; }
       if (v !== first) { first = null; toast('Those didn\u2019t match. Try again.'); ask('Choose 4 digits only grown-ups know.'); return; }
-      await setPin(v); unlockedUntil = Date.now() + 10 * 60 * 1000; toast('Parent PIN set'); renderGrownups(root, go);
+      await setPin(v); unlockedUntil = Date.now() + 10 * 60 * 1000; toast('Parent PIN set'); renderGrownups(root, go, { tab: guTab });
     });
     ask('Choose 4 digits only grown-ups know. It guards settings and the Good Work Stamp.');
     return;
   }
   if (Date.now() > unlockedUntil) {
     runPinPad(root, go, 'Grown-ups only', 'Enter the parent PIN.', async (v) => {
-      if (await checkPin(v)) { unlockedUntil = Date.now() + 10 * 60 * 1000; renderGrownups(root, go); }
+      if (await checkPin(v)) { unlockedUntil = Date.now() + 10 * 60 * 1000; renderGrownups(root, go, { tab: guTab }); }
       else { toast('That PIN isn\u2019t right.'); }
     }, '<button class="link-btn" data-forgot>Forgot the PIN?</button>');
     on(root, 'click', '[data-forgot]', () => forgotPin(root, go));
@@ -92,7 +94,7 @@ function forgotPin(root, go) {
   sh.el.querySelector('[data-verify]').addEventListener('click', (e) => busy(e.currentTarget, 'Checking...', async () => {
     const code = cleanCode(sh.el.querySelector('[data-code]').value);
     if (!codeOk(code)) return toast('Type the code from the email.');
-    try { await verifyCode(email(), code, { existingOnly: true }); clearPin(); sh.close(); toast('PIN cleared. Choose a new one.'); renderGrownups(root, go); }
+    try { await verifyCode(email(), code, { existingOnly: true }); clearPin(); sh.close(); toast('PIN cleared. Choose a new one.'); renderGrownups(root, go, { tab: guTab }); }
     catch (err) { toast(err.message); }
   }));
 }
@@ -300,6 +302,10 @@ function bindProgress(panel, p, go) {
   });
 }
 
+const clHTML = (c) => `<div class="cl"><p class="cl-head"><strong>v${c.version}</strong> ${esc(c.title)}<span>${c.date}</span></p><ul>${c.items.map((i) => `<li>${esc(i)}</li>`).join('')}</ul></div>`;
+const GU_TABS = [['progress', 'Progress'], ['settings', 'Settings'], ['family', 'Family'], ['help', 'Help']];
+let guTab = 'progress'; // the open tab, kept while the app is open
+
 function renderMain(root, go) {
   // Fresh element on every redraw so button handlers never stack up.
   const fresh = root.cloneNode(false);
@@ -317,28 +323,35 @@ function renderMain(root, go) {
       </header>
       <div class="gu-offline">${offlineChipHTML(p)}</div>
 
-      <div class="gu-grid">
+      <nav class="gu-tabs" role="tablist" aria-label="Grown-ups sections">
+        ${GU_TABS.map(([id, label]) => `<button class="gu-tab" role="tab" id="gu-tab-${id}" aria-controls="gu-pane-${id}" aria-selected="${guTab === id}" tabindex="${guTab === id ? 0 : -1}" data-gu-tab="${id}">${label}</button>`).join('')}
+      </nav>
+      <div class="gu-pane gu-grid gu-pane-progress" role="tabpanel" id="gu-pane-progress" aria-labelledby="gu-tab-progress" data-gu-pane="progress"${guTab === 'progress' ? '' : ' hidden'}>
         <div class="panel gu-progress" data-progress>${progressHTML(p)}</div>
-
-        <div class="panel">
-          <h2>Settings</h2>
-          <p class="field-label">Tables to practice</p>
-          <div class="table-toggles">${[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((t) => `<button class="tt${s.tables.includes(t) ? ' on' : ''}" data-t="${t}" aria-pressed="${s.tables.includes(t)}">${t}s</button>`).join('')}</div>
-          <label class="row"><span>Cards per session</span><select data-set="sessionLength">${[10, 15, 20, 30].map((n) => `<option ${s.sessionLength === n ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
-          <label class="row"><span>Counts as fast</span><select data-set="fastMs">${[3000, 4000, 5000, 6000, 8000].map((n) => `<option value="${n}" ${s.fastMs === n ? 'selected' : ''}>${n / 1000} seconds</option>`).join('')}</select></label>
-          <label class="row"><span>Sound<small class="row-note">Also in the kids' Menu and on the speaker button in the game. Plays even when the phone is on silent.</small></span><input type="checkbox" class="switch" data-set="sound" ${s.sound ? 'checked' : ''}></label>
-          <div class="row"><span class="note" data-soundmsg>No sound on an iPhone? Turn the volume up with the side buttons, then tap Test sound.</span><button class="btn-chunky btn-sm" data-soundtest>Test sound</button></div>
-          <label class="row"><span>Music<small class="row-note">Plays on Home and in battles, never during practice cards. Sound effects stay on. Turning Sound off silences both.</small></span><input type="checkbox" class="switch" data-set="music" ${s.music !== false ? 'checked' : ''}></label>
-          <label class="row"><span>Voice answers <span class="beta-tag">Beta</span><small class="row-note">Kids turn on Mic mode with the mic button and say the answer. The phone asks to use the microphone the first time each day. On iPhone, the mic has its own volume: if sounds seem quiet after using it, press volume up while a sound plays.</small></span><input type="checkbox" class="switch" data-set="voice" ${s.voice ? 'checked' : ''}></label>
-          <p class="note">${voiceSupported() ? 'Voice works on this device. Kids tap the mic button to turn Mic mode on, then say each answer.' : 'Voice isn’t available here. On iPad and iPhone it may work in Safari but not from the home screen icon; the number pad always works.'}</p>
-          <p class="note"><b>Mic privacy.</b> Mic mode only listens while a card is waiting for an answer, and stops as soon as it hears a number. It turns off by itself after 2 minutes without a spoken answer, when the app is closed or hidden, and when your child leaves practice or a battle. Speech goes to the device's own speech service (Apple on iPhone and iPad, Google in Chrome) to turn it into a number. Kaimon never records or saves audio.</p>
-        </div>
 
         <div class="panel">
           <h2 class="h-ic">${itemImg('good-work-stamp')}Good Work Stamp</h2>
           <p class="note">Did ${esc(p.name)} bring home a great math test or worksheet? Give a Good Work Stamp: a Mega Ball, 3 Power Snacks and a gold star.</p>
           <button class="btn-chunky btn-primary" data-stamp>Give ${esc(p.name)} a Good Work Stamp</button>
           ${p.trophies.length ? `<div class="trophies">${p.trophies.slice().reverse().map((t) => `<figure class="trophy">${t.img ? `<img src="${t.img}" alt="">` : '<span class="trophy-star">★</span>'}<figcaption>${esc(t.note || 'Good work')}<small>${new Date(t.t).toLocaleDateString()}</small></figcaption></figure>`).join('')}</div>` : ''}
+        </div>
+      </div>
+      <div class="gu-pane gu-grid gu-pane-settings" role="tabpanel" id="gu-pane-settings" aria-labelledby="gu-tab-settings" data-gu-pane="settings"${guTab === 'settings' ? '' : ' hidden'}>
+        <div class="panel">
+          <h2>Practice</h2>
+          <p class="field-label">Tables to practice</p>
+          <div class="table-toggles">${[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((t) => `<button class="tt${s.tables.includes(t) ? ' on' : ''}" data-t="${t}" aria-pressed="${s.tables.includes(t)}">${t}s</button>`).join('')}</div>
+          <label class="row"><span>Cards per session</span><select data-set="sessionLength">${[10, 15, 20, 30].map((n) => `<option ${s.sessionLength === n ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
+          <label class="row"><span>Counts as fast</span><select data-set="fastMs">${[3000, 4000, 5000, 6000, 8000].map((n) => `<option value="${n}" ${s.fastMs === n ? 'selected' : ''}>${n / 1000} seconds</option>`).join('')}</select></label>
+        </div>
+
+        <div class="panel">
+          <h2>Sound and voice</h2>
+          <label class="row"><span>Sound<small class="row-note">Also in the kids' Menu and on the speaker button in the game. Plays even when the phone is on silent.</small></span><input type="checkbox" class="switch" data-set="sound" ${s.sound ? 'checked' : ''}></label>
+          <div class="row"><span class="note" data-soundmsg>No sound on an iPhone? Turn the volume up with the side buttons, then tap Test sound.</span><button class="btn-chunky btn-sm" data-soundtest>Test sound</button></div>
+          <label class="row"><span>Music<small class="row-note">Plays on Home and in battles, never during practice cards. Sound effects stay on. Turning Sound off silences both.</small></span><input type="checkbox" class="switch" data-set="music" ${s.music !== false ? 'checked' : ''}></label>
+          <label class="row"><span>Voice answers <span class="beta-tag">Beta</span><small class="row-note">Kids turn on Mic mode with the mic button and say the answer. The phone asks to use the microphone the first time each day. On iPhone, the mic has its own volume: if sounds seem quiet after using it, press volume up while a sound plays.</small></span><input type="checkbox" class="switch" data-set="voice" ${s.voice ? 'checked' : ''}></label>
+          <p class="note">${voiceSupported() ? 'Voice works on this device. Kids tap the mic button to turn Mic mode on, then say each answer.' : 'Voice isn’t available here. On iPad and iPhone it may work in Safari but not from the home screen icon; the number pad always works.'}</p>
         </div>
 
         <div class="panel playtime">
@@ -358,12 +371,7 @@ function renderMain(root, go) {
             const limY = lim ? H - (lim * 60000 / max) * (H - 4) : null;
             return `
             <h2>Play time</h2>
-            <div class="gu-stats">
-              <div><strong>${m(todayD.open)}</strong><span>min today</span></div>
-              <div><strong>${m(week.reduce((t, d) => t + d.open, 0))}</strong><span>min this week</span></div>
-              <div><strong>${avg}</strong><span>min a day when played</span></div>
-              <div><strong>${todayD.a}</strong><span>answers today</span></div>
-            </div>
+            <p class="pt-line"><b>${m(todayD.open)}</b> min today · <b>${m(week.reduce((t, d) => t + d.open, 0))}</b> min in the last 7 days · about <b>${avg}</b> min a day when played</p>
             <figure class="pt-chart">
               <svg viewBox="0 0 ${W} ${H + 34}" role="img" aria-label="Minutes played each day for the last 14 days">
                 ${days.map((d, i) => {
@@ -389,15 +397,12 @@ function renderMain(root, go) {
           })()}
         </div>
 
-        <div class="panel wr-panel" data-wrpanel>${reportPanelHTML(p)}</div>
-
-        <div class="panel" data-syncpanel></div>
-
         <div class="panel off-panel" data-offpanel>${offlinePanelHTML()}</div>
-
+      </div>
+      <div class="gu-pane gu-grid gu-pane-family" role="tabpanel" id="gu-pane-family" aria-labelledby="gu-tab-family" data-gu-pane="family"${guTab === 'family' ? '' : ' hidden'}>
         <div class="panel trainers-panel">
           <h2>Trainers on this device</h2>
-          <p class="note">Tap a trainer to see their progress here.</p>
+          <p class="note">Tap a trainer to see their progress.</p>
           <div class="tm-list">${allProfiles().map((x) => `
             <div class="tm${x.id === p.id ? ' on' : ''}">
               <button class="tm-main" data-tm-switch="${x.id}" aria-label="Show ${esc(x.name)}">
@@ -419,23 +424,68 @@ function renderMain(root, go) {
           </div>
         </div>
 
+        <div class="panel" data-syncpanel></div>
+
+        <div class="panel wr-panel" data-wrpanel>${reportPanelHTML(p)}</div>
+      </div>
+      <div class="gu-pane gu-grid gu-pane-help" role="tabpanel" id="gu-pane-help" aria-labelledby="gu-tab-help" data-gu-pane="help"${guTab === 'help' ? '' : ' hidden'}>
+        <div class="panel">
+          <h2 class="h-ic">${itemImg('hint-lamp')}How to play</h2>
+          <p class="note">Kids answer times table cards to catch Kaimon, earn badges from each Gym Leader and battle with answers. Teacher K explains it all under <b>Menu, How to play</b> on the Home screen.</p>
+          <!-- a "How to play" button can open the same sheet here once home.js exports it -->
+          <div class="gu-slot" data-slot="howto"></div>
+        </div>
+
         <div class="panel">
           <h2>Install on this device</h2>
           ${canPromptInstall() && !isInstalled() ? '<button class="btn-chunky btn-primary" data-install>Install Kaimon</button>' : ''}
           ${installHelpHTML()}
           <p class="note">For another device, open <strong>brwilliams88.github.io/kaimon-multiply</strong> there.</p>
+          <!-- growth branch: the "Play on another device" row goes in this slot -->
+          <div class="gu-slot" data-slot="another-device"></div>
           ${isInstalled() ? '<div class="row"><span class="note">Kaimon got a new app icon in v0.5.0.</span><button class="btn-chunky btn-sm" data-newicon>New icon help</button></div>' : ''}
+        </div>
+
+        <div class="panel gu-slot-panel">
+          <h2>Feedback</h2>
+          <!-- growth branch: the feedback and rating rows go in this slot -->
+          <div class="gu-slot" data-slot="feedback"></div>
+        </div>
+
+        <div class="panel">
+          <h2>Privacy</h2>
+          <p class="step-title">Mic</p>
+          <p class="note">Mic mode only listens while a card is waiting for an answer, and stops as soon as it hears a number. It turns off by itself after 2 minutes without a spoken answer, when the app is closed or hidden, and when your child leaves practice or a battle. Speech goes to the device's own speech service (Apple on iPhone and iPad, Google in Chrome) to turn it into a number. Kaimon never records or saves audio.</p>
+          <p class="step-title">Progress</p>
+          <p class="note">Guest trainers stay on this device. Family trainers sync only within your family. Weekly reports are built on the device and the summary is not kept on a server.</p>
+          <!-- growth branch: the analytics off switch row goes in this slot -->
+          <div class="gu-slot" data-slot="analytics"></div>
         </div>
 
         <div class="panel whatsnew">
           <h2>What's new</h2>
           <div class="row"><span class="note" data-upd-msg>This device has v${VERSION}.</span><button class="btn-chunky btn-sm" data-update>Check for updates</button></div>
-          ${CHANGELOG.map((c) => `<div class="cl"><p class="cl-head"><strong>v${c.version}</strong> ${esc(c.title)}<span>${c.date}</span></p><ul>${c.items.map((i) => `<li>${esc(i)}</li>`).join('')}</ul></div>`).join('')}
-        </div>
+          ${CHANGELOG.slice(0, 3).map(clHTML).join('')}
+          ${CHANGELOG.length > 3 ? `<details class="cl-more"><summary>Older updates</summary>${CHANGELOG.slice(3).map(clHTML).join('')}</details>` : ''}
       </div>
     </section>`;
 
   on(root, 'click', '[data-back]', () => go('home'));
+  const showTab = (id, focus) => {
+    guTab = id;
+    root.querySelectorAll('[data-gu-tab]').forEach((t) => { const sel = t.dataset.guTab === id; t.setAttribute('aria-selected', sel); t.tabIndex = sel ? 0 : -1; if (sel && focus) t.focus(); });
+    root.querySelectorAll('[data-gu-pane]').forEach((pane) => { pane.hidden = pane.dataset.guPane !== id; });
+    const bar = root.querySelector('.gu-tabs');
+    if (bar && bar.getBoundingClientRect().top < 0) window.scrollTo(0, window.scrollY + bar.getBoundingClientRect().top - 8);
+  };
+  on(root, 'click', '[data-gu-tab]', (e, el) => showTab(el.dataset.guTab));
+  root.querySelector('.gu-tabs')?.addEventListener('keydown', (e) => {
+    const i = GU_TABS.findIndex(([id]) => id === guTab);
+    const j = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: GU_TABS.length - 1 }[e.key];
+    if (j === undefined) return;
+    e.preventDefault();
+    showTab(GU_TABS[(j + GU_TABS.length) % GU_TABS.length][0], true);
+  });
   on(root, 'click', '[data-newicon]', () => showIconNotice());
   on(root, 'click', '[data-soundtest]', () => {
     const msg = root.querySelector('[data-soundmsg]');
@@ -582,7 +632,7 @@ function renderMain(root, go) {
     });
   });
   const after = () => (allProfiles().length ? renderMain(root, go) : go('welcome'));
-  on(root, 'click', '[data-tm-switch]', (e, el) => { switchProfile(el.dataset.tmSwitch); renderMain(root, go); window.scrollTo(0, 0); });
+  on(root, 'click', '[data-tm-switch]', (e, el) => { switchProfile(el.dataset.tmSwitch); guTab = 'progress'; renderMain(root, go); window.scrollTo(0, 0); });
   on(root, 'click', '[data-tm-rename]', (e, el) => {
     const x = allProfiles().find((y) => y.id === el.dataset.tmRename);
     const sh = sheet(`<h2>Rename ${esc(x.name)}</h2><input class="field" maxlength="16" value="${esc(x.name)}" data-newname><p class="note">${x.family ? 'The new name shows on every family device.' : 'Only on this device.'}</p><div class="sheet-actions"><button class="btn-chunky btn-primary" data-do>Save</button><button class="btn-chunky" data-close>Cancel</button></div>`);
