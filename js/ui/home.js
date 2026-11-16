@@ -420,8 +420,8 @@ function homeMenu(p, go) {
     ${row('data-m="balls"', ballIcon('capture'), 'Ball guide', 'Which ball to throw, and how to earn more')}
     ${row('data-m="types"', typeIcon('water', 'menu-type-ic'), 'Types', 'Which Kaimon hit hardest in battles')}
     ${row('data-m="switch"', uiImg('icon-trainers'), 'Title screen', 'Switch trainer or add a new one')}
-    ${row('data-m="device"', deviceIcon(), 'Play on another device', 'A QR code for an iPad or phone')}
-    ${row('data-m="feedback"', uiImg('kaizo-feedback'), 'Send feedback', 'Tell the maker what you love, or what bugs you')}
+    ${row('data-m="device"', deviceIcon(), 'Play on another device', 'Open the game on an iPad, phone or Chromebook')}
+    ${row('data-m="feedback"', uiImg('kaizo-feedback'), 'Send feedback', 'Tell the maker what you love and what you don\u2019t')}
     <button class="menu-row menu-share" data-share><span class="menu-ic" aria-hidden="true">${shareIcon()}</span><span class="menu-txt"><strong>Share the game</strong><small>Send a friend the link</small></span></button>
     <button class="menu-row menu-grown" data-grownups><span class="menu-ic" aria-hidden="true">${uiImg('icon-grownups')}</span><span class="menu-txt"><strong>Grown-ups</strong><small>Settings and progress. Needs the grown-up PIN.</small></span></button>
     <p class="menu-ver">Kaimon Multiply v${VERSION}${offlineBadgeHTML('menu-badge')}</p>

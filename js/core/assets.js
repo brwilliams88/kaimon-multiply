@@ -35,7 +35,23 @@ export function trainerSrc(key, pose = 'base') {
   if (!FULL_POSES.has(key)) pose = pose === 'won' ? 'talking' : pose === 'lost' ? 'base' : pose;
   return `assets/trainers/${key}/${pose}.webp`;
 }
-export const trainerFace = (key, cls = '') => img(`assets/trainers/${key}/face.webp`, `face-img ${cls}`);
+// Player trainers (kai, p01 to p14, and the make-your-own looks). A Wardrobe hat has
+// its own art for the two poses where a trainer stands still: base-<hat>.webp is
+// 512 x 576 (64 px more on top for the hat; the bottom 512 rows line up with
+// base.webp) and face-<hat>.webp is 192 like face.webp. Every other pose is hatless.
+export const HAT_POSES = ['base', 'face'];
+export const playerSrc = (folder, pose = 'base', hat = '') => `assets/trainers/${folder}/${hat && HAT_POSES.includes(pose) ? `${pose}-${hat}` : pose}.webp`;
+// Round face crops. Boss Papa's face.webp sits low and to the right with his hat cut
+// off, so his circle is cut from his full body art: x, y are the middle of his head
+// and hat, w is how much of the art's width shows (all as parts of the art). The
+// circle around it must clip (overflow: hidden), as every face circle does.
+const FACE_CROP = { 'boss-papa': { x: 274 / 512, y: 102 / 512, w: 228 / 512 } };
+export function trainerFace(key, cls = '') {
+  const c = FACE_CROP[key];
+  if (!c) return img(`assets/trainers/${key}/face.webp`, `face-img ${cls}`);
+  const pct = (n) => `${(n * 100).toFixed(2)}%`;
+  return img(trainerSrc(key, 'base'), `face-img face-crop ${cls}`).replace('<img ', `<img style="--fc-s:${(1 / c.w).toFixed(3)};--fc-x:${pct(0.5 - c.x)};--fc-y:${pct(0.5 - c.y)}" `);
+}
 export const trainerBody = (key, pose = 'base', cls = '') => img(trainerSrc(key, pose), `body-img ${cls}`);
 
 // Scenes. Regions use their table number. Opaque, about 1280 wide; thumbs are 480 wide.

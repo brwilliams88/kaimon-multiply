@@ -38,6 +38,105 @@ export function browser() {
   return 'other';
 }
 
+// Apps like Facebook open links in their own little browser. It can't add Kaimon
+// to the Home Screen, and anything played there is saved inside that app only,
+// so we help people hop to a real browser before they start.
+export function inAppBrowser() {
+  const ua = navigator.userAgent;
+  if (/FBAN\/Messenger|MessengerForiOS|MessengerLite|Orca-Android/i.test(ua)) return 'Messenger';
+  if (/FBAN|FBAV|FB_IAB|FB4A|FBIOS/.test(ua)) return 'Facebook';
+  if (/Instagram/.test(ua)) return 'Instagram';
+  if (/LinkedInApp/.test(ua)) return 'LinkedIn';
+  if (/musical_ly|BytedanceWebview|TikTok/i.test(ua)) return 'TikTok';
+  if (/Snapchat/.test(ua)) return 'Snapchat';
+  if (/Pinterest/.test(ua)) return 'Pinterest';
+  if (/\bLine\//.test(ua)) return 'LINE';
+  if (/Android/.test(ua) && /; wv\)/.test(ua)) return 'this app';
+  return null;
+}
+
+const isApple = (pf) => pf === 'iphone' || pf === 'ipad';
+
+// A link that asks the phone to open this page in its real browser. Safari on
+// iOS 17 and newer answers x-safari-https. Android opens Chrome with an intent,
+// and falls back to this page if Chrome isn't there.
+export function openOutsideURL(pf = platform(), href = location.href) {
+  if (isApple(pf)) return 'x-safari-' + href;
+  if (pf === 'android') {
+    const u = new URL(href);
+    return `intent://${u.host}${u.pathname}${u.search}#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=${encodeURIComponent(href)};end`;
+  }
+  return href;
+}
+
+export function outsideSteps(app = inAppBrowser() || 'this app', pf = platform()) {
+  const real = isApple(pf) ? 'Safari' : 'Chrome';
+  const menu = isApple(pf) ? '<strong>•••</strong>' : DOTS;
+  return [
+    `Tap the menu ${menu} at the top right of ${app}. On some phones it's at the bottom.`,
+    `Tap <strong>Open in external browser</strong> or <strong>Open in ${real}</strong>.`,
+    `Then follow the steps there to add Kaimon to your Home Screen.`,
+  ];
+}
+
+async function copyText(text) {
+  try { await navigator.clipboard.writeText(text); return true; } catch {}
+  const ta = document.createElement('textarea');
+  ta.value = text; ta.setAttribute('readonly', ''); ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0';
+  document.body.appendChild(ta); ta.select();
+  let ok = false; try { ok = document.execCommand('copy'); } catch {}
+  ta.remove(); return ok;
+}
+
+// Wires the "Open in Safari/Chrome" and "Copy link" buttons inside `root`.
+// If the open button doesn't take us away, the steps get a nudge.
+export function wireOutside(root, pf = platform()) {
+  root.querySelector('[data-outside]')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    let left = false;
+    const away = () => { if (document.hidden) left = true; };
+    document.addEventListener('visibilitychange', away);
+    location.href = openOutsideURL(pf);
+    setTimeout(() => {
+      document.removeEventListener('visibilitychange', away);
+      if (!left) root.querySelector('[data-outside-miss]')?.removeAttribute('hidden');
+    }, 1800);
+  });
+  const copy = root.querySelector('[data-copylink]');
+  copy?.addEventListener('click', async () => {
+    const ok = await copyText(location.href);
+    copy.textContent = ok ? 'Link copied!' : 'Copy failed. Use the steps above.';
+    root.querySelector('[data-copy-next]')?.removeAttribute('hidden');
+  });
+}
+
+export function outsideHTML({ app = inAppBrowser() || 'this app', pf = platform() } = {}) {
+  const real = isApple(pf) ? 'Safari' : 'Chrome';
+  return `
+    <button class="btn-chunky btn-primary btn-xl" data-outside>Open in ${real}</button>
+    <p class="note" data-outside-miss hidden>Didn't open? No problem. Use these steps:</p>
+    <ol class="ins-steps">${outsideSteps(app, pf).map((s) => `<li>${s}</li>`).join('')}</ol>
+    <p class="note">Or copy the link and paste it into ${real}:</p>
+    <button class="btn-chunky" type="button" data-copylink>Copy link</button>
+    <p class="note" data-copy-next hidden>Now open <strong>${real}</strong>, tap the address bar, paste, and go.</p>`;
+}
+
+const OUT_SEEN = 'kaimon.outsideSeen';
+
+export function outsideSheet() {
+  const app = inAppBrowser() || 'this app', pf = platform();
+  const real = isApple(pf) ? 'Safari' : 'Chrome';
+  const sh = sheet(`
+    <div class="ins">
+      <h2>Open Kaimon in ${real}</h2>
+      <p>You're in ${app}'s browser. It can't put Kaimon on your Home Screen, and progress made here stays stuck inside ${app}. Open it in ${real} first, then add it to your Home Screen.</p>
+      ${outsideHTML({ app, pf })}
+      <div class="sheet-actions"><button class="btn-chunky" data-close>Play here anyway</button></div>
+    </div>`);
+  wireOutside(sh.el, pf);
+  return sh;
+}
+
 const BROWSER_NAME = { chrome: 'Chrome', edge: 'Edge', samsung: 'Samsung Internet', firefox: 'Firefox', safari: 'Safari', other: 'this browser' };
 
 export function steps(pf = platform(), br = browser()) {
@@ -97,12 +196,15 @@ export async function promptInstall() {
 
 export function installHelpHTML() {
   if (isInstalled()) return `<p class="note">Kaimon is installed on this device. It works offline.</p>`;
+  const app = inAppBrowser();
+  if (app) return `<p class="note">You're in ${app}'s browser, which can't install apps. Open Kaimon in ${isApple(platform()) ? 'Safari' : 'Chrome'} first:</p><ol class="ins-steps">${outsideSteps(app).map((s) => `<li>${s}</li>`).join('')}</ol>`;
   return `<ol class="ins-steps">${steps().map((s) => `<li>${s}</li>`).join('')}</ol>`;
 }
 
 const WORKS = { iphone: 'Safari and Chrome both work.', ipad: 'Safari and Chrome both work.', android: 'Chrome, Samsung Internet and Edge all work.', chromebook: 'Use Chrome.', computer: 'Chrome, Edge and Safari work.' };
 
 export function installSheet({ first = false } = {}) {
+  if (inAppBrowser()) return outsideSheet();
   const pf = platform();
   const where = { iphone: 'iPhone', ipad: 'iPad', android: 'phone', chromebook: 'Chromebook', computer: 'computer' }[pf];
   const sh = sheet(`
@@ -124,6 +226,17 @@ export function installSheet({ first = false } = {}) {
 // and only counts as seen once it has actually been shown.
 export function maybeShowInstall() {
   if (isInstalled()) return;
+  // In Facebook and friends, ask every new visit (once per visit): the normal
+  // install steps can't work there, and a save made there is hard to move.
+  if (inAppBrowser()) {
+    try { if (sessionStorage.getItem(OUT_SEEN)) return; } catch {}
+    setTimeout(() => {
+      if (document.querySelector('.sheet-wrap.open') || document.getElementById('app')?.dataset.screen !== 'welcome') return;
+      try { sessionStorage.setItem(OUT_SEEN, '1'); } catch {}
+      outsideSheet();
+    }, 600);
+    return;
+  }
   try { if (localStorage.getItem(SEEN)) return; } catch { return; }
   setTimeout(() => {
     if (document.querySelector('.sheet-wrap.open') || document.getElementById('app')?.dataset.screen !== 'welcome') return;
