@@ -68,7 +68,7 @@ export function showIconNotice() {
         <li>Press and hold the Kaimon icon on the home screen. Tap <strong>Remove App</strong>, then <strong>Delete App</strong>.</li>
         <li>Open Safari and go to <strong>${shortUrl}</strong>.</li>
         <li>Tap the Share button, then <strong>Add to Home Screen</strong>.</li>
-        ${synced ? '<li>Open Kaimon and tap <strong>Family device? Sign in</strong> to bring your trainers back.</li>' : ''}
+        ${synced ? '<li>Open Kaimon Multiply and tap <strong>Family device? Sign in</strong> to bring your trainers back.</li>' : ''}
       </ol>
     </details>
     <div class="sheet-actions">

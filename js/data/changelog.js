@@ -1,7 +1,18 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.5.17';
+export const VERSION = '0.5.18';
 
 export const CHANGELOG = [
+  {
+    version: '0.5.18',
+    date: '2026-11-15',
+    title: "Play offline",
+    items: [
+      "After one visit online, the whole game plays with no internet, including all 620 pictures. Grown-ups shows a \"Ready to play offline\" meter while pictures download.",
+      "When the internet drops, a message says you are offline and a no-signal chip shows on Home. When it comes back, a message says you are back online, syncs your progress, and says when it is done.",
+      "The mic needs the internet, so with no signal the Mic button rests and the number pad works as usual. Mic mode comes back by itself when the internet does.",
+      "The game asks the browser to keep your progress safe, and Grown-ups shows whether it is protected.",
+    ],
+  },
   {
     version: '0.5.17',
     date: '2026-11-15',
