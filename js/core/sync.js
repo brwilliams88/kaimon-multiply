@@ -79,7 +79,24 @@ export async function getUpdates() { return !!(await api('/rest/v1/rpc/get_updat
 export async function ensureUpdates() { return !!(await api('/rest/v1/rpc/ensure_updates', { method: 'POST', body: {}, token: await token() })); }
 export async function setUpdates(want) { return api('/rest/v1/rpc/set_updates', { method: 'POST', body: { want: !!want }, token: await token() }); }
 
+// Maker tools. Is the signed-in grown-up on the admin list? Asked once per email per visit.
+let adminCache = null;
+export function amAdminCached() { const st = syncState(); return !!(st && adminCache && adminCache.email === st.email && adminCache.yes); }
+export async function amAdmin() {
+  const st = syncState();
+  if (!st?.refresh) return false;
+  if (adminCache && adminCache.email === st.email) return adminCache.yes;
+  const yes = !!(await api('/rest/v1/rpc/is_admin', { method: 'POST', body: {}, token: await token() }));
+  adminCache = { email: st.email, yes };
+  return yes;
+}
+export async function makerSummary(days = 7) { return api('/rest/v1/rpc/usage_summary', { method: 'POST', body: { days }, token: await token() }); }
+// Hands the full dashboard (admin.html) a short-lived pass, so it opens without a second
+// sign-in. No refresh token goes along, so the two never trip over each other's sign-in.
+export async function makerPass() { const access = await token(); const st = syncState(); return { email: st.email, access, refresh: null, exp: st.exp }; }
+
 export function signOut() {
+  adminCache = null;
   setSyncState(null);
   notify();
 }

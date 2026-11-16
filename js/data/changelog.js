@@ -1,7 +1,16 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '1.0.2';
+export const VERSION = '1.0.3';
 
 export const CHANGELOG = [
+  {
+    version: '1.0.3',
+    date: '2026-11-16',
+    title: "Maker tab",
+    items: [
+      "Grown-ups has a new Maker tab, only for the game's maker. It shows players, minutes, rounds, home screen installs, ratings, where new players came from and their devices, with a button to open the full dashboard.",
+      "The full dashboard now opens straight from the Maker tab, without signing in again.",
+    ],
+  },
   {
     version: '1.0.2',
     date: '2026-11-16',
