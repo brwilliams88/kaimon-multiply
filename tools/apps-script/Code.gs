@@ -453,8 +453,64 @@ function cleanInsights_(x) {
   });
   var up = [];
   (x.trend && Array.isArray(x.trend.up) ? x.trend.up.slice(0, 10) : []).forEach(function (t) { if (field_(t, [1, 10]) !== null && up.indexOf(t) < 0) up.push(t); });
-  if (!tips.length) return null;
-  return { period: x.period === 'last7' ? 'last7' : 'week', head: shape_(x.head, HEAD_SPEC), tips: tips, up: up };
+  var talk = cleanTalk_(x.talk);
+  if (!tips.length && !talk) return null;
+  return { period: x.period === 'last7' ? 'last7' : 'week', head: shape_(x.head, HEAD_SPEC), tips: tips, up: up, talk: talk };
+}
+
+// "Talk about it": one question a week, as a style key, a fact id and a source key.
+var TALK_STYLES = ['way', 'turn', 'story', 'pattern'];
+var TALK_SRC = { tricky: 'A tricky one this week.', fixed: 'Getting stronger this week.', often: 'Practiced a lot this week.', start: 'An easy one to start.' };
+var TALK_TIP = 'Praise the thinking and sticking with it, not just the answer.';
+var STORY = [['packs', 'juice box', 'juice boxes'], ['bags', 'apple', 'apples'], ['boxes', 'crayon', 'crayons'], ['plates', 'cookie', 'cookies'], ['nests', 'egg', 'eggs'], ['jars', 'marble', 'marbles']];
+function talkFits_(k, a, b) {
+  if (k === 'way') return true;
+  if (k === 'turn') return a !== b && a > 1 && b > 1;
+  if (k === 'story') return a > 1 && b > 1;
+  if (k === 'pattern') return (a === 9 && b >= 2) || a === 5 || a === 10 || a === 2 || (a > 1 && b >= 3);
+  return false;
+}
+function cleanTalk_(x) {
+  if (!x || typeof x !== 'object' || TALK_STYLES.indexOf(x.k) < 0 || field_(x.f, 'f') === null) return null;
+  var ab = String(x.f).split('x').map(Number);
+  if (!talkFits_(x.k, ab[0], ab[1])) return null;
+  return { k: x.k, f: x.f, src: TALK_SRC.hasOwnProperty(x.src) ? x.src : '' };
+}
+// Words for the talk question: { lead, q, a } as plain text. Same templates as talkText() in js/core/insights.js.
+function talkText_(talk, name) {
+  if (!talk) return null;
+  var ab = String(talk.f).split('x').map(Number), a = ab[0], b = ab[1], ans = a * b;
+  var lead = TALK_SRC[talk.src] || '';
+  switch (talk.k) {
+    case 'way': return { lead: lead, q: 'Ask ' + name + ': how could you figure out ' + a + ' \u00d7 ' + b + ' if you forgot it?', a: 'One way: ' + trick_(a, b) };
+    case 'turn': return { lead: lead, q: 'Ask ' + name + ': is ' + a + ' \u00d7 ' + b + ' the same as ' + b + ' \u00d7 ' + a + '? Which one is easier to work out?', a: 'Yes, both are ' + ans + '. Turning a fact around is a great trick.' };
+    case 'story':
+      var st = STORY[ans % STORY.length];
+      return { lead: lead, q: 'Ask ' + name + ' to make up a story for ' + a + ' \u00d7 ' + b + '.', a: 'Like ' + a + ' ' + st[0] + ' with ' + b + ' ' + (b === 1 ? st[1] : st[2]) + ' in each. That makes ' + ans + ' ' + st[2] + '.' };
+    default:
+      if (a === 9 && b >= 2) return { lead: lead, q: 'Ask ' + name + ': what do you notice about the digits in the 9s answers? Try ' + a + ' \u00d7 ' + b + ' = ' + ans + '.', a: 'The digits add up to 9: ' + String(ans).split('').join(' + ') + ' = 9.' };
+      if (a === 5) return { lead: lead, q: 'Ask ' + name + ': what do you notice about how the 5s answers end?', a: 'They all end in 5 or 0, like ' + a + ' \u00d7 ' + b + ' = ' + ans + '.' };
+      if (a === 10) return { lead: lead, q: 'Ask ' + name + ': what do you notice about the 10s answers?', a: 'They all end in 0. ' + b + ' \u00d7 10 is ' + b + ' with a 0 on the end: ' + ans + '.' };
+      if (a === 2) return { lead: lead, q: 'Ask ' + name + ': what do you notice about the 2s answers?', a: 'They are all even numbers. ' + a + ' \u00d7 ' + b + ' is a double: ' + b + ' + ' + b + ' = ' + ans + '.' };
+      var list = []; for (var i = 1; i <= b; i++) list.push(a * i);
+      return { lead: lead, q: 'Ask ' + name + ' to count by ' + a + 's up to ' + a + ' \u00d7 ' + b + '.', a: list.join(', ') + '. Counting by ' + a + 's lands on ' + ans + '.' };
+  }
+}
+// The "Talk about it" block (HTML), under What to practice next.
+function talkHTML_(talk, name, img, top) {
+  var w = talkText_(talk, name);
+  if (!w) return '';
+  return '<div style="' + (top ? 'margin-top:14px;padding-top:16px;border-top:2px dashed #D3DCEA;' : '') + 'font-family:' + FONT + ';color:' + INK + ';">'
+    + '<div style="font-size:17px;font-weight:700;line-height:22px;">Talk about it'
+    + '<span style="display:inline-block;margin-left:8px;padding:0 8px;border-radius:99px;background:' + SKY + ';color:#123F8C;font-size:12px;font-weight:700;line-height:19px;vertical-align:2px;">About 2 minutes</span></div>'
+    + (w.lead ? '<div style="font-size:14px;line-height:20px;color:' + INK2 + ';padding-top:2px;">' + esc_(w.lead) + '</div>' : '')
+    + '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate;margin-top:8px;"><tr>'
+    + '<td style="padding:12px 14px;background:#EEF6FF;border:2px solid #B6DBFF;border-radius:16px;font-family:' + FONT + ';">'
+    + '<div style="font-size:17px;font-weight:700;line-height:23px;color:' + INK + ';">' + esc_(w.q) + '</div>'
+    + '<div style="font-size:15px;line-height:21px;color:' + INK2 + ';padding-top:6px;"><b style="color:#123F8C;">If they get stuck:</b> ' + esc_(w.a) + '</div>'
+    + '</td></tr></table>'
+    + '<div style="font-size:13px;line-height:19px;color:' + INK2 + ';padding-top:8px;">' + esc_(TALK_TIP) + '</div>'
+    + '</div>';
 }
 
 // Words for one tip: { title, why, act } as plain text. Same templates as
@@ -592,7 +648,8 @@ function startLine_(ins) {
 }
 
 // The "What to practice next" card for the report email.
-function insightsHTML_(ins, img) {
+function insightsHTML_(ins, img, name) {
+  if (!ins.tips.length) return talkHTML_(ins.talk, name, img, false);
   var head = headText_(ins.head, ins.period);
   var out = h2_('What to practice next');
   if (head) out += '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate;margin:0 0 14px 0;"><tr>'
@@ -622,6 +679,7 @@ function insightsHTML_(ins, img) {
     var c = TYPE_COLORS[TABLE_TYPE[t - 1]];
     return '<span style="display:inline-block;margin:0 4px 4px 0;padding:0 8px;border:2px solid ' + INK + ';border-radius:10px;background:' + c[1] + ';color:' + c[2] + ';font-weight:700;line-height:20px;">' + t + 's</span>';
   }).join('') + '</div>';
+  out += talkHTML_(ins.talk, name, img, true);
   return out;
 }
 
@@ -653,6 +711,8 @@ function renderReportEmail_(d, opt) {
       + '<td width="96" valign="middle"><img src="' + img('kaizo-sleep.png') + '" width="84" height="84" alt="" style="display:block;width:84px;height:84px;border:0;"></td>'
       + '<td valign="middle" style="font-family:' + FONT + ';color:' + INK + ';padding-left:10px;"><div style="font-size:20px;font-weight:700;line-height:26px;">No cards this week</div><div style="font-size:16px;line-height:22px;color:' + INK2 + ';">Kaizo is napping. A few minutes a day keeps the facts fresh.' + startLine_(d.insights) + '</div></td>'
       + '</tr></table>'));
+    // Talk about it, even in a quiet week
+    if (d.insights && d.insights.talk) rows.push(card_(talkHTML_(d.insights.talk, d.trainer, img, false), { pad: '20px 22px 18px 22px' }));
   } else {
     // Big numbers
     rows.push('<tr><td style="padding:16px 0 0 0;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 -4px;"><tr>'
@@ -700,7 +760,7 @@ function renderReportEmail_(d, opt) {
     }
 
     // What to practice next (built here from checked insight data)
-    if (d.insights && d.insights.tips.length) rows.push(card_(insightsHTML_(d.insights, img), { pad: '20px 22px 14px 22px' }));
+    if (d.insights && (d.insights.tips.length || d.insights.talk)) rows.push(card_(insightsHTML_(d.insights, img, d.trainer), { pad: '20px 22px 18px 22px' }));
 
     // Wins: medals, catches, battles, streak
     var wins = [];
@@ -816,6 +876,8 @@ function reportText_(d) {
     L.push('', 'What to practice next:');
     d.insights.tips.forEach(function (tip) { var w = tipText_(tip, d.insights.period); if (w) L.push('  ' + w.title + '. ' + w.why + ' ' + w.act); });
   }
+  var tk = d.insights && talkText_(d.insights.talk, d.trainer);
+  if (tk) L.push('', 'Talk about it (about 2 minutes): ' + tk.q, 'If they get stuck: ' + tk.a, TALK_TIP);
   if (d.caught) L.push('', 'Kaimon caught: ' + d.caught);
   L.push('Kaidex: ' + d.dex.caught + ' of ' + d.dex.total, '', 'Play: ' + APP_URL);
   return L.join('\n');
@@ -857,9 +919,10 @@ function sendTestEmails() {
     newEntries: [{ id: 'puddlepup', num: 10, name: 'Puddlepup', type: 'water' }], dex: { caught: 23, total: 60 },
     battles: { played: 3, won: 2 }, bestStreak: 14, prev: { minutes: 52, cards: 130, accuracy: 84 }, change: { minutes: 22, cards: 54, accuracy: 5 },
     insights: { v: 1, period: 'week', head: { k: 'up', pct: 89, prev: 84 }, trend: { up: [8] },
-      tips: [{ k: 'misses', t: 7, n: 10, of: 21, f: '7x8', fn: 5 }, { k: 'rest', t: 9, d: 16 }, { k: 'acc-up', pct: 89, prev: 84 }] } };
+      tips: [{ k: 'misses', t: 7, n: 10, of: 21, f: '7x8', fn: 5 }, { k: 'rest', t: 9, d: 16 }, { k: 'acc-up', pct: 89, prev: 84 }],
+      talk: { k: 'way', f: '7x8', src: 'tricky' } } };
   var empty = { cards: 0, right: 0, minutes: 0, daysPlayed: 0, daily: [], tables: [], dex: { caught: 23, total: 60 },
-    insights: { v: 1, period: 'week', head: { k: 'empty' }, trend: { up: [] }, tips: [{ k: 'comeback', t: 7 }] } };
+    insights: { v: 1, period: 'week', head: { k: 'empty' }, trend: { up: [] }, tips: [{ k: 'comeback', t: 7 }], talk: { k: 'story', f: '7x4', src: 'start' } } };
   var mails = [];
   mails.push({ subject: '[Test] Say yes to Kai’s weekly Kaimon report', htmlBody: renderInviteEmail_('Kai', PAGE_URL + '?a=yes&t=' + new Array(41).join('0'), {}) });
   [['', full], [' (a week with no play)', empty]].forEach(function (x) {

@@ -13,7 +13,7 @@ import { active, save, exportBackup, importBackup, deleteProfile, allProfiles, h
 import { status as syncStatus, requestCode, verifyCode, signOut, syncNow, joinFamily, leaveFamily, onSyncChange, ensureUpdates, setUpdates } from '../core/sync.js';
 import { goodWorkStamp } from '../core/actions.js';
 import { levelOf, factId, LEVEL_LABEL, LEVELS, RULES, countAtLeast, trickFor } from '../core/facts.js';
-import { insights, tipText, headText, tableNotes, factInfo, isCheer } from '../core/insights.js';
+import { insights, tipText, headText, tableNotes, factInfo, isCheer, talkText, TALK_TIP } from '../core/insights.js';
 import { REGIONS, TYPES } from '../data/creatures.js';
 import { voiceSupported } from '../core/voice.js';
 import { CHANGELOG, VERSION } from '../data/changelog.js';
@@ -136,6 +136,7 @@ function playLabel(tip) {
 
 function insightsHTML(p, ins) {
   const head = headText(ins.head, ins.period);
+  const talk = talkText(ins.talk, p.name);
   const [acc, accPrev] = ins.trend.acc, [min, minPrev] = ins.trend.min;
   const arrow = (d, unit, what) => (d ? `<em class="nx-d ${d > 0 ? 'up' : 'down'}"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="${d > 0 ? 'M6 2 L10.5 8.5 H1.5 Z' : 'M6 10 L10.5 3.5 H1.5 Z'}" fill="currentColor"/></svg>${Math.abs(d)}${unit}<span class="sr"> ${d > 0 ? 'more' : 'less'} ${what} than the 7 days before</span></em>` : '');
   const trend = [];
@@ -173,6 +174,16 @@ function insightsHTML(p, ins) {
         }).join('')}
       </ol>
       ${trend.length ? `<div class="nx-trend" aria-label="Trends">${trend.join('')}</div>` : ''}
+      ${talk ? `<div class="nx-talk">
+        <span class="nx-talk-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v8a2.5 2.5 0 0 1-2.5 2.5H11l-4.2 3.6c-.5.4-1.3.1-1.3-.6V16h0A2.5 2.5 0 0 1 4 13.5z" fill="currentColor" stroke="#14213D" stroke-width="1.8" stroke-linejoin="round"/><circle cx="8.6" cy="9.6" r="1.2" fill="#14213D"/><circle cx="12" cy="9.6" r="1.2" fill="#14213D"/><circle cx="15.4" cy="9.6" r="1.2" fill="#14213D"/></svg></span>
+        <div class="nx-talk-body">
+          <p class="nx-talk-h">Talk about it <span>About 2 minutes</span></p>
+          ${talk.lead ? `<p class="nx-talk-lead">${esc(talk.lead)}</p>` : ''}
+          <p class="nx-talk-q">${esc(talk.q)}</p>
+          <p class="nx-talk-a"><b>If they get stuck:</b> ${esc(talk.a)}</p>
+          <p class="nx-talk-tip">${esc(TALK_TIP)}</p>
+        </div>
+      </div>` : ''}
     </section>`;
 }
 

@@ -2,7 +2,7 @@
 // local time. Pure functions of the trainer's saved progress, so every family
 // device builds the same report. Used by the Grown-ups panel and the email.
 import { SPECIES, byId } from '../data/creatures.js';
-import { insights, tipText, headText } from './insights.js';
+import { insights, tipText, headText, talkText, TALK_TIP } from './insights.js';
 
 const DAY_MS = 86400000;
 const pad = (n) => String(n).padStart(2, '0');
@@ -200,6 +200,8 @@ export function reportText(r) {
     L.push('', 'What to practice next' + (h ? `: ${h.title}` : ''));
     for (const tip of r.insights.tips) { const w = tipText(tip, r.insights.period); if (w) L.push(`  ${w.title}. ${w.why} ${w.act}`); }
   }
+  const tk = talkText(r.insights?.talk, r.trainer);
+  if (tk) L.push('', `Talk about it (about 2 minutes): ${tk.q}`, `If they get stuck: ${tk.a}`, TALK_TIP);
   L.push('', `Kaimon caught: ${r.caught}${r.newEntries.length ? `, ${r.newEntries.length} new in the Kaidex (${r.newEntries.map((s) => s.name).join(', ')})` : ''}`);
   L.push(`Kaidex: ${r.dex.caught} of ${r.dex.total}`);
   if (r.battles.played) L.push(`Battles won: ${r.battles.won} of ${r.battles.played}`);

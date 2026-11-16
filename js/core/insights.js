@@ -47,7 +47,7 @@ function tally(p, start, n, facts) {
   }
   // Older saves have no per-fact tallies: count each fact last missed in the window once.
   if (!tallied) for (const [f, r] of Object.entries(facts)) if (FACT_ID.test(f) && r?.lastMiss >= t0 && r.lastMiss < t1) miss[f] = 1;
-  return { cards, right, acc: pct(right, cards), minutes: Math.round(ms / 60000), days, tallied, tb, miss, medals: Object.keys(up).length };
+  return { cards, right, acc: pct(right, cards), minutes: Math.round(ms / 60000), days, tallied, tb, miss, medals: Object.keys(up).length, up: Object.keys(up).filter((f) => FACT_ID.test(f)) };
 }
 
 // Lifetime numbers for one table, from the fact records.
@@ -102,7 +102,7 @@ export function insights(p, { start, days = 7, now = Date.now(), period } = {}) 
   // A brand new trainer.
   if (!ever) {
     const t = ORDER.find((x) => on.includes(x)) || on[0] || 2;
-    return { ...base, head: { k: 'new' }, tips: [{ k: 'start', t }] };
+    return { ...base, head: { k: 'new' }, tips: [{ k: 'start', t }], talk: { k: 'story', f: '2x3', src: 'start' } };
   }
 
   const practice = [], cheers = [];
@@ -195,7 +195,74 @@ export function insights(p, { start, days = 7, now = Date.now(), period } = {}) 
   else if (cur.acc >= 90 && cur.cards >= 20) head = { k: 'strong', pct: cur.acc, n: cur.cards };
   else if (prev.cards > 0 && cur.cards > prev.cards) head = { k: 'busy', n: cur.cards, more: cur.cards - prev.cards };
   else head = { k: 'steady', n: cur.cards, pct: cur.acc };
-  return { ...base, head, tips: picked };
+  return { ...base, head, tips: picked, talk: pickTalk(s0, cur, picked, days) };
+}
+
+// ---------------------------------------------------------------- talk about it
+// One short math talk question a week for a grown-up and the trainer (about 2
+// minutes). Built from the trainer's week: a fact they found tricky, one they
+// just got better at, or their most practiced table. The style rotates by week
+// and the same week always gives the same question, so a resent email matches.
+export const TALK_STYLES = ['way', 'turn', 'story', 'pattern'];
+export const TALK_SOURCES = ['tricky', 'fixed', 'often', 'start'];
+// Number of the Sunday to Saturday week holding day d.
+const weekNo = (d) => { const x = new Date(d); x.setDate(x.getDate() - x.getDay()); return Math.floor(Date.UTC(x.getFullYear(), x.getMonth(), x.getDate()) / DAY / 7); };
+
+function pickTalk(s0, cur, tips, days) {
+  // The week of the window's last day: a rolling 7 days matches this week's email.
+  const wk = weekNo(addDays(s0, days - 1));
+  let f, src;
+  const missed = Object.entries(cur.miss).sort((x, y) => y[1] - x[1] || byFact(x[0], y[0]))[0];
+  if (missed) { f = missed[0]; src = 'tricky'; }
+  else if (cur.up.length) { f = cur.up.slice().sort(byFact)[wk % cur.up.length]; src = 'fixed'; }
+  else {
+    const top = Object.entries(cur.tb).sort((x, y) => y[1][0] - x[1][0] || x[0] - y[0])[0];
+    const t = top ? +top[0] : tips.find((x) => x.t)?.t || 2;
+    f = `${t}x${3 + (wk % 7)}`; src = top ? 'often' : 'start';
+  }
+  const [a, b] = f.split('x').map(Number);
+  // Rotate styles, skipping ones that don't fit this fact.
+  for (let i = 0; i < TALK_STYLES.length; i++) {
+    const k = TALK_STYLES[(wk + i) % TALK_STYLES.length];
+    if (talkFits(k, a, b)) return { k, f, src };
+  }
+  return { k: 'way', f, src };
+}
+
+// Which styles make sense for a fact (no "turn 3 × 3 around", no "1 packs").
+export function talkFits(k, a, b) {
+  if (k === 'way') return true;
+  if (k === 'turn') return a !== b && a > 1 && b > 1;
+  if (k === 'story') return a > 1 && b > 1;
+  if (k === 'pattern') return (a === 9 && b >= 2) || a === 5 || a === 10 || a === 2 || (a > 1 && b >= 3);
+  return false;
+}
+
+const STORY = [['packs', 'juice box', 'juice boxes'], ['bags', 'apple', 'apples'], ['boxes', 'crayon', 'crayons'], ['plates', 'cookie', 'cookies'], ['nests', 'egg', 'eggs'], ['jars', 'marble', 'marbles']];
+const TALK_SRC = { tricky: 'A tricky one this week.', fixed: 'Getting stronger this week.', often: 'Practiced a lot this week.', start: 'An easy one to start.' };
+export const TALK_TIP = 'Praise the thinking and sticking with it, not just the answer.';
+
+// { lead, q, a } for the talk question. Plain text. Keep in step with talkText_ in Code.gs.
+export function talkText(talk, name = 'your child') {
+  if (!talk || !TALK_STYLES.includes(talk.k) || !FACT_ID.test(talk.f)) return null;
+  const [a, b] = talk.f.split('x').map(Number), ans = a * b;
+  if (!talkFits(talk.k, a, b)) return null;
+  const lead = TALK_SRC[talk.src] || '';
+  switch (talk.k) {
+    case 'way': return { lead, q: `Ask ${name}: how could you figure out ${a} × ${b} if you forgot it?`, a: `One way: ${trickFor(talk.f)}` };
+    case 'turn': return { lead, q: `Ask ${name}: is ${a} × ${b} the same as ${b} × ${a}? Which one is easier to work out?`, a: `Yes, both are ${ans}. Turning a fact around is a great trick.` };
+    case 'story': {
+      const [g, one, many] = STORY[ans % STORY.length];
+      return { lead, q: `Ask ${name} to make up a story for ${a} × ${b}.`, a: `Like ${a} ${g} with ${b} ${b === 1 ? one : many} in each. That makes ${ans} ${many}.` };
+    }
+    default: {
+      if (a === 9 && b >= 2) return { lead, q: `Ask ${name}: what do you notice about the digits in the 9s answers? Try ${a} × ${b} = ${ans}.`, a: `The digits add up to 9: ${String(ans).split('').join(' + ')} = 9.` };
+      if (a === 5) return { lead, q: `Ask ${name}: what do you notice about how the 5s answers end?`, a: `They all end in 5 or 0, like ${a} × ${b} = ${ans}.` };
+      if (a === 10) return { lead, q: `Ask ${name}: what do you notice about the 10s answers?`, a: `They all end in 0. ${b} × 10 is ${b} with a 0 on the end: ${ans}.` };
+      if (a === 2) return { lead, q: `Ask ${name}: what do you notice about the 2s answers?`, a: `They are all even numbers. ${a} × ${b} is a double: ${b} + ${b} = ${ans}.` };
+      return { lead, q: `Ask ${name} to count by ${a}s up to ${a} × ${b}.`, a: `${Array.from({ length: b }, (_, i) => a * (i + 1)).join(', ')}. Counting by ${a}s lands on ${ans}.` };
+    }
+  }
 }
 
 // ---------------------------------------------------------------- words
