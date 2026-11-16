@@ -230,6 +230,7 @@ let timer = 0;
 const DUCK = 0.12; // music level while the mic listens
 const FADE = 0.9; // crossfade between screens (s)
 const live = () => players.filter((p) => p.until === Infinity);
+const micModeBattle = () => live().some((p) => p.track !== 'menu') && !!document.querySelector('[data-mic].mode-on');
 
 function ensureTimer() {
   if (!timer && players.length && document.visibilityState !== 'hidden') timer = setInterval(tick, 25);
@@ -258,7 +259,7 @@ function follow(ctx) {
   const keep = live().map((p) => ({ track: p.track, pinch: p.pinch, step: p.step }));
   players.splice(0).forEach((p) => { try { p.out.disconnect(); } catch {} });
   for (const k of keep) players.push(Object.assign(makePlayer(graph, k.track, ctx.currentTime + 0.05, 0.3), { pinch: k.pinch, step: k.step }));
-  graph.duckTo = micBusy() ? DUCK : 1;
+  graph.duckTo = micBusy() || micModeBattle() ? DUCK : 1;
   graph.duck.gain.value = graph.duckTo;
 }
 
@@ -268,8 +269,10 @@ function tick() {
   follow(ctx);
   if (ctx.state !== 'running') return;
   const now = ctx.currentTime;
-  // Duck while the mic listens; back to full volume once it lets go.
-  const want = micBusy() ? DUCK : 1;
+  // Duck while the mic listens; back to full volume once it lets go. With Mic mode
+  // on in a battle, stay low for the whole battle instead of dipping and swelling
+  // between answers.
+  const want = micBusy() || micModeBattle() ? DUCK : 1;
   if (want !== graph.duckTo) {
     graph.duckTo = want;
     graph.duck.gain.cancelScheduledValues(now);
