@@ -6,14 +6,14 @@
 // and whole numbers. The weekly report email carries it like that, and the
 // Apps Script (tools/apps-script/Code.gs, tipText_) builds its own words from
 // the same templates as tipText() here. It never takes words from a device.
-import { factsForTables, levelOf, levelRank, LEVEL_LABEL, RULES, trickFor } from './facts.js';
+import { factsForTables, levelOf, levelRank, RULES, trickFor } from './facts.js';
 
 const DAY = 86400000;
 const FACT_ID = /^(10|[1-9])x(10|[1-9])$/;
 export const TABLES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 // A friendly order to meet new tables in (easy patterns first).
 const ORDER = [2, 5, 10, 1, 3, 4, 9, 6, 8, 7];
-export const MAX_TIPS = 3;
+export const MAX_TIPS = 2;
 // Practice tips nudge what to work on. Cheers are good news.
 export const PRACTICE = ['misses', 'tricky', 'dip', 'rest', 'slow', 'almost', 'explore', 'comeback', 'start', 'keep'];
 export const CHEERS = ['acc-up', 'table-up', 'clean', 'days', 'medals', 'more'];
@@ -165,28 +165,14 @@ export function insights(p, { start, days = 7, now = Date.now(), period } = {}) 
   const fresh = ORDER.find((t) => !T[t].tried && on.includes(t)) || ORDER.find((t) => !T[t].tried);
   if (ready && fresh && cur.cards) add(practice, { k: 'explore', t: fresh, n: 0, ...(on.includes(fresh) ? {} : { off: 1 }) }, 45);
 
-  // Pick: up to 2 practice tips plus the best cheer, one tip per table.
+  // Pick: the best practice tip and the best piece of good news. That's all.
   practice.sort((a, b) => b.score - a.score || (a.tip.t || 0) - (b.tip.t || 0));
   cheers.sort((a, b) => b.score - a.score || (a.tip.t || 0) - (b.tip.t || 0));
-  const picked = [], used = new Set();
-  const room = cheers.length ? MAX_TIPS - 1 : MAX_TIPS;
-  // Two passes: first one tip of each kind (a mix of reasons), then the best of the rest.
-  for (const pass of [0, 1]) {
-    for (const { tip } of practice) {
-      if (picked.length >= room) break;
-      if (picked.includes(tip) || (tip.t && used.has(tip.t))) continue;
-      if (!pass && picked.some((x) => x.k === tip.k)) continue;
-      if (tip.t) used.add(tip.t);
-      picked.push(tip);
-    }
-  }
-  if (!picked.length && cur.cards) picked.push({ k: 'keep' });
-  for (const { tip } of cheers) {
-    if (picked.length >= MAX_TIPS) break;
-    if (tip.t && used.has(tip.t)) continue;
-    picked.push(tip);
-    if (picked.filter((x) => CHEERS.includes(x.k)).length >= (practice.length ? 1 : 2)) break;
-  }
+  const picked = [];
+  if (practice.length) picked.push(practice[0].tip);
+  else if (cur.cards) picked.push({ k: 'keep' });
+  const cheer = cheers.find(({ tip }) => !(tip.t && picked.some((x) => x.t === tip.t)));
+  if (cheer) picked.push(cheer.tip);
 
   // Headline: always good news first.
   let head;
@@ -212,14 +198,18 @@ const weekNo = (d) => { const x = new Date(d); x.setDate(x.getDate() - x.getDay(
 function pickTalk(s0, cur, tips, days) {
   // The week of the window's last day: a rolling 7 days matches this week's email.
   const wk = weekNo(addDays(s0, days - 1));
+  // Never the same fact a tip already names.
+  const named = new Set(tips.flatMap((x) => [x.f, x.f2]).filter(Boolean));
   let f, src;
-  const missed = Object.entries(cur.miss).sort((x, y) => y[1] - x[1] || byFact(x[0], y[0]))[0];
+  const missed = Object.entries(cur.miss).sort((x, y) => y[1] - x[1] || byFact(x[0], y[0])).find(([g]) => !named.has(g));
+  const ups = cur.up.filter((g) => !named.has(g)).sort(byFact);
   if (missed) { f = missed[0]; src = 'tricky'; }
-  else if (cur.up.length) { f = cur.up.slice().sort(byFact)[wk % cur.up.length]; src = 'fixed'; }
+  else if (ups.length) { f = ups[wk % ups.length]; src = 'fixed'; }
   else {
     const top = Object.entries(cur.tb).sort((x, y) => y[1][0] - x[1][0] || x[0] - y[0])[0];
     const t = top ? +top[0] : tips.find((x) => x.t)?.t || 2;
-    f = `${t}x${3 + (wk % 7)}`; src = top ? 'often' : 'start';
+    for (let i = 0; i < 10 && (!f || named.has(f)); i++) f = `${t}x${3 + ((wk + i) % 7)}`;
+    src = top ? 'often' : 'start';
   }
   const [a, b] = f.split('x').map(Number);
   // Rotate styles, skipping ones that don't fit this fact.
@@ -313,44 +303,23 @@ export function headText(head, period = 'week') {
   const W = WORDS[period] || WORDS.week;
   const wk = period === 'last7' ? 'A great start' : 'A great first week';
   switch (head?.k) {
-    case 'new': return { title: 'Ready for a first round', sub: 'Insights show up here after a few cards.' };
-    case 'empty': return { title: 'Time for a short round', sub: `No cards ${W.in}. Five minutes a day keeps the facts fresh.` };
-    case 'first': return { title: wk, sub: `${head.n} cards so far. Every card counts.` };
+    case 'new': return { title: 'Ready for a first round', sub: '' };
+    case 'empty': return { title: 'Time for a short round', sub: `no cards ${W.in}.` };
+    case 'first': return { title: wk, sub: `${head.n} cards so far.` };
     case 'up': return { title: `Sharper than ${W.prev}`, sub: `${head.pct}% right, up from ${head.prev}%.` };
     case 'strong': return { title: 'Super accurate', sub: `${head.pct}% right on ${head.n} cards.` };
-    case 'busy': return { title: `More practice than ${W.prev}`, sub: `${head.n} cards, ${head.more} more than ${W.prev}.` };
+    case 'busy': return { title: `More practice than ${W.prev}`, sub: `${head.n} cards, ${head.more} more.` };
     case 'steady': return { title: 'Steady practice', sub: `${head.n} cards${head.pct != null ? `, ${head.pct}% right` : ''}.` };
     default: return null;
   }
 }
 
-// A short note for each times table, for the progress list in Grown-ups.
-// tone: 'focus' (worth practice), 'good' (going well) or 'plain'.
-export function tableNotes(p, ins, now = Date.now()) {
-  const tips = ins?.tips || [];
-  return TABLES.map((t) => {
-    const x = tableFacts(p, t, now);
-    const counts = [0, 0, 0, 0, 0, 0];
-    for (const r of x.ranks) counts[r]++;
-    const tip = tips.find((y) => y.t === t && y.k !== 'comeback' && y.k !== 'start');
-    let note, tone = 'plain';
-    if (tip) {
-      tone = isCheer(tip) ? 'good' : 'focus';
-      note = { misses: 'Most misses lately', tricky: `Tricky: ${fx(tip.f)}`, dip: 'Due for a review', rest: `Resting ${span(tip.d)}`, slow: 'Right but slow', almost: `Almost all ${LV[tip.lv]}`, explore: tip.n ? `${tip.n} of 10 tried` : 'Next to try', 'table-up': 'Getting stronger' }[tip.k];
-    }
-    const fastMs = p.settings?.fastMs || 5000;
-    if (!note) {
-      if (!x.tried) note = 'Not tried yet';
-      else if (x.idle != null && x.idle >= 14) note = `Resting ${span(x.idle)}`;
-      else if (x.tried >= 5 && x.timed >= 5 && x.acc >= 85 && x.median > fastMs) { note = 'Right but slow'; tone = 'focus'; }
-      else if (x.min >= 2) { note = `All ${LEVEL_LABEL[['new', 'learning', 'bronze', 'silver', 'gold', 'star'][x.min]]}${x.min < 5 ? ' or better' : ''}`; tone = 'good'; }
-      else if ((ins?.trend?.up || []).includes(t)) { note = 'Getting stronger'; tone = 'good'; }
-      else if (x.tried < 10) note = `${x.tried} of 10 tried`;
-      else note = `${x.ranks.filter((r) => r >= 2).length} of 10 at Bronze+`;
-    }
-    return { t, note, tone, counts, tried: x.tried };
-  });
+// The headline as one sentence. Keep in step with headLine_ in Code.gs.
+export function headLine(head, period = 'week') {
+  const h = headText(head, period);
+  return !h ? '' : h.sub ? `${h.title}: ${h.sub}` : `${h.title}!`;
 }
+
 
 // Everything Grown-ups shows for one fact: level, numbers and the next step.
 // next: { lv, have, need, what: 'days' | 'fast' | 'clean' } or null at Star.

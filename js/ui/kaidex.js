@@ -1,9 +1,9 @@
 import { active } from '../core/store.js';
 import { SPECIES, TYPES, REGIONS, byId, lineOf, MYTHIC_ID, FUTURE_ID } from '../data/creatures.js';
 import { creatureArt, shinyStar, setShiny } from '../core/art.js';
-import { typeIcon, uiImg } from '../core/assets.js';
+import { typeIcon } from '../core/assets.js';
 import { dexState, dexCounts, dexVisible } from '../core/game.js';
-import { esc, on, sheet } from './dom.js';
+import { esc, on, sheet, reducedMotion } from './dom.js';
 import { sfx } from '../core/sound.js';
 
 const num3 = (n) => '#' + String(n).padStart(3, '0');
@@ -48,52 +48,170 @@ function regionLabel(s) {
   return REGIONS.find((r) => r.table === s.region).name;
 }
 
+// Binder layout: sleeves per page, and pages side by side (2 = an open binder).
+export function binderLayout(w = innerWidth, h = innerHeight) {
+  if (w > h && h < 600) return { cols: 5, rows: 2, pages: 1 };
+  if (w >= 900 && w > h) return { cols: 3, rows: 3, pages: 2 };
+  if (w >= 600) return { cols: 4, rows: 4, pages: 1 };
+  return { cols: 3, rows: 3, pages: 1 };
+}
+
+const FILTERS = [
+  { f: 'all', label: 'All', title: 'All Kaimon', test: () => true },
+  { f: 'starters', label: 'Starters', title: 'Starters', test: (s) => s.region === 0 },
+  ...REGIONS.map((r) => ({ f: String(r.table), label: `${r.table}s`, title: r.name, rc: TYPES[r.type].color, test: (s) => s.region === r.table })),
+  { f: 'special', label: 'Special', title: 'Special Kaimon', test: (s) => typeof s.region !== 'number' },
+];
+
+// One card sleeve. Caught: the card with art. Seen: a silhouette. Unseen: an empty
+// numbered sleeve. Kairos stays a faint silhouette until it is spotted.
+function sleeveHTML(p, s, lazy) {
+  const st = dexState(p, s.id);
+  const e = p.dex[s.id];
+  const name = shownName(s, st);
+  const t = TYPES[s.type];
+  const mythic = s.region === 'mythic';
+  const faint = st === 'unknown' && s.id === FUTURE_ID;
+  let art = '';
+  if (st !== 'unknown' || faint) {
+    art = creatureArt(s, { mode: st === 'caught' ? 'full' : st, shiny: false });
+    if (lazy) art = art.replace('<img ', '<img loading="lazy" ');
+  }
+  const marks = st === 'caught'
+    ? `${e?.shiny ? `<span class="dex-shiny" title="Shiny caught">${shinyStar()}</span>` : ''}${s.mega ? '<span class="sl-mega" title="Has a Mega form">M</span>' : ''}`
+    : '';
+  const cls = ['dex-tile', 'sleeve', 'dex-' + st, e?.shiny && st === 'caught' ? 'dex-has-shiny' : '', mythic ? 'sl-mythic' : '', faint ? 'sl-faint' : ''].filter(Boolean).join(' ');
+  const label = st === 'unknown' && !faint ? `${num3(s.num)}, not found yet` : `${num3(s.num)} ${name}${st === 'seen' ? ', seen' : ''}`;
+  return `<button class="${cls}" data-n="${s.id}" style="--rc:${t.color};--rl:${t.light}" aria-label="${esc(label)}">
+    <span class="sl-card">
+      <span class="dex-num">${num3(s.num)}</span>
+      ${art ? `<span class="sl-art">${art}</span>` : `<span class="sl-big" aria-hidden="true">${String(s.num).padStart(3, '0')}</span>`}
+      ${st === 'unknown' && !faint ? '' : `<span class="dex-name">${esc(name)}</span>`}
+      ${st === 'caught' ? `<span class="sl-type" aria-hidden="true">${typeIcon(s.type)}</span>` : ''}
+      ${marks}
+    </span>
+  </button>`;
+}
+
 export function renderKaidex(root, go) {
   const p = active();
   let filter = 'all';
-  const draw = () => {
-    // Keep the filter row where the player left it.
-    const keep = root.querySelector('.chips')?.scrollLeft || 0;
-    const c = dexCounts(p);
-    const shinyTotal = Object.values(p.dex).reduce((t, x) => t + (x.shiny || 0), 0);
-    const list = SPECIES.filter((s) => dexVisible(p, s)).filter((s) => filter === 'all' || (filter === 'special' ? typeof s.region !== 'number' : filter === 'starters' ? s.region === 0 : s.region === +filter));
-    root.innerHTML = `
-      <section class="screen kaidex">
-        <header class="topbar">
-          <button class="icon-btn" data-back aria-label="Back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 L8 12 L15 19" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-          <h1 class="screen-title">Kaidex</h1>
-          <p class="dex-count"><span class="dc-main"><strong>${c.caught}</strong> of ${c.total} caught</span><span class="dc-sub"><span>${c.seen} seen</span><button class="dc-shiny${shinyTotal ? ' has' : ''}" data-shinyhelp aria-label="${shinyTotal} shiny. What is shiny?">${shinyStar()}${shinyTotal} shiny</button></span></p>
-        </header>
-        <div class="chips" role="tablist" aria-label="Filter">
-          <button class="chip${filter === 'all' ? ' on' : ''}" data-f="all">All</button>
-          <button class="chip${filter === 'starters' ? ' on' : ''}" data-f="starters">Starters</button>
-          ${REGIONS.map((r) => `<button class="chip${filter === String(r.table) ? ' on' : ''}" data-f="${r.table}" style="--rc:${TYPES[r.type].color}">${r.table}s</button>`).join('')}
-          <button class="chip${filter === 'special' ? ' on' : ''}" data-f="special">Special</button>
-        </div>
-        <div class="dex-grid">
-          ${list.map((s) => {
-            const st = dexState(p, s.id);
-            const e = p.dex[s.id];
-            const name = shownName(s, st);
-            return `<button class="dex-tile dex-${st}${e?.shiny ? ' dex-has-shiny' : ''}" data-n="${s.id}" style="--rc:${TYPES[s.type].color};--rl:${TYPES[s.type].light}" aria-label="${num3(s.num)} ${esc(name)}">
-              <span class="dex-num">${num3(s.num)}</span>
-              ${creatureArt(s, { mode: st === 'caught' ? 'full' : st, shiny: false })}
-              <span class="dex-name">${esc(name)}</span>
-              ${e?.shiny ? `<span class="dex-shiny" title="Shiny caught">${shinyStar()}</span>` : ''}
-            </button>`;
-          }).join('')}
-        </div>
-      </section>`;
-    const chips = root.querySelector('.chips');
-    chips.scrollLeft = keep;
-    const cur = chips.querySelector('.chip.on');
-    if (cur && (cur.offsetLeft < chips.scrollLeft || cur.offsetLeft + cur.offsetWidth > chips.scrollLeft + chips.clientWidth)) cur.scrollIntoView({ inline: 'nearest', block: 'nearest' });
+  let L = binderLayout();
+  let idx = 0; // which view (page or open spread) is showing
+  const c = dexCounts(p);
+  const shinyTotal = Object.values(p.dex).reduce((t, x) => t + (x.shiny || 0), 0);
+  const listOf = (f) => SPECIES.filter((s) => dexVisible(p, s)).filter(FILTERS.find((x) => x.f === f).test);
+  const doneOf = (f) => { const l = listOf(f); return l.length && l.every((s) => dexState(p, s.id) === 'caught'); };
+  root.innerHTML = `
+    <section class="screen kaidex binder-screen">
+      <header class="topbar">
+        <button class="icon-btn" data-back aria-label="Back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 L8 12 L15 19" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <h1 class="screen-title">Kaidex</h1>
+        <p class="dex-count"><span class="dc-main"><strong>${c.caught}</strong> of ${c.total} caught</span><span class="dc-sub"><span>${c.seen} seen</span><button class="dc-shiny${shinyTotal ? ' has' : ''}" data-shinyhelp aria-label="${shinyTotal} shiny. What is shiny?">${shinyStar()}${shinyTotal} shiny</button></span></p>
+      </header>
+      <div class="chips" role="tablist" aria-label="Binder tabs">
+        ${FILTERS.map((x) => `<button class="chip${x.f === filter ? ' on' : ''}${doneOf(x.f) && x.f !== 'all' ? ' done' : ''}" role="tab" aria-selected="${x.f === filter}" data-f="${x.f}"${x.rc ? ` style="--rc:${x.rc}"` : ''}>${x.label}</button>`).join('')}
+      </div>
+      <div class="binder-head"><h2 class="bh-title"></h2><span class="bh-count"></span></div>
+      <div class="binder"><div class="binder-view" tabindex="-1"></div></div>
+      <nav class="binder-nav" aria-label="Pages">
+        <button class="bn-arrow" data-pg="-1" aria-label="Previous page"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 L8 12 L15 19" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <div class="bn-mid"><div class="bn-dots"></div><span class="bn-label" aria-live="polite"></span></div>
+        <button class="bn-arrow" data-pg="1" aria-label="Next page"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5 L16 12 L9 19" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      </nav>
+    </section>`;
+  const view = root.querySelector('.binder-view');
+  const dots = root.querySelector('.bn-dots');
+  const label = root.querySelector('.bn-label');
+  const prev = root.querySelector('[data-pg="-1"]'), next = root.querySelector('[data-pg="1"]');
+  let views = 1;
+  const per = () => L.cols * L.rows;
+
+  const drawBinder = (keepFirst = 0) => {
+    const list = listOf(filter);
+    const fx = FILTERS.find((x) => x.f === filter);
+    root.querySelector('.bh-title').textContent = fx.title;
+    const caughtHere = list.filter((s) => dexState(p, s.id) === 'caught').length;
+    root.querySelector('.bh-count').innerHTML = `<strong>${caughtHere}</strong> of ${list.length}`;
+    const pages = [];
+    for (let i = 0; i < Math.max(1, list.length); i += per()) pages.push(list.slice(i, i + per()));
+    while (pages.length % L.pages) pages.push([]);
+    views = pages.length / L.pages;
+    idx = Math.min(views - 1, Math.floor(keepFirst / (per() * L.pages)));
+    const page = (items, pi) => {
+      const side = L.pages === 2 ? (pi % 2 ? ' bp-right' : ' bp-left') : '';
+      const lazy = Math.floor(pi / L.pages) !== idx;
+      const pockets = per() - items.length;
+      return `<div class="binder-page${side}"><div class="bp-paper"><span class="bp-rings" aria-hidden="true"><i></i><i></i><i></i></span><div class="bp-grid">
+        ${items.map((s) => sleeveHTML(p, s, lazy)).join('')}${'<span class="sleeve pocket" aria-hidden="true"><span class="sl-card"></span></span>'.repeat(pockets)}
+      </div></div></div>`;
+    };
+    const spreads = [];
+    for (let v = 0; v < views; v++) spreads.push(`<div class="binder-spread${L.pages === 2 ? ' two' : ''}" role="group" aria-label="Page ${v + 1} of ${views}">${pages.slice(v * L.pages, v * L.pages + L.pages).map((it, k) => page(it, v * L.pages + k)).join('')}</div>`);
+    view.style.setProperty('--cols', L.cols);
+    view.style.setProperty('--rows', L.rows);
+    view.innerHTML = spreads.join('');
+    view.scrollLeft = idx * view.clientWidth;
+    dots.innerHTML = views > 1 ? Array.from({ length: views }, (_, i) => `<button class="bn-dot" data-pgto="${i}" aria-label="Page ${i + 1}"></button>`).join('') : '';
+    root.querySelector('.binder-nav').classList.toggle('one', views < 2);
+    sync();
   };
-  draw();
+  const sync = () => {
+    dots.querySelectorAll('.bn-dot').forEach((d, i) => { d.classList.toggle('on', i === idx); d.setAttribute('aria-current', i === idx ? 'page' : 'false'); });
+    label.textContent = `Page ${idx + 1} of ${views}`;
+    prev.disabled = idx <= 0;
+    next.disabled = idx >= views - 1;
+  };
+  const goTo = (i) => {
+    i = Math.max(0, Math.min(views - 1, i));
+    if (i === idx && Math.abs(view.scrollLeft - i * view.clientWidth) < 2) return;
+    idx = i; sync();
+    view.scrollTo({ left: i * view.clientWidth, behavior: reducedMotion() ? 'auto' : 'smooth' });
+  };
+  let raf = 0;
+  view.addEventListener('scroll', () => {
+    if (raf) return;
+    raf = requestAnimationFrame(() => {
+      raf = 0;
+      const i = Math.round(view.scrollLeft / Math.max(1, view.clientWidth));
+      if (i !== idx) { idx = i; sync(); }
+    });
+  }, { passive: true });
+
+  drawBinder();
   on(root, 'click', '[data-back]', () => go('home'));
-  on(root, 'click', '[data-f]', (e, el) => { sfx.tap(); filter = el.dataset.f; draw(); });
+  on(root, 'click', '[data-f]', (e, el) => {
+    if (el.dataset.f === filter) return;
+    sfx.tap(); filter = el.dataset.f;
+    root.querySelectorAll('[data-f]').forEach((b) => { b.classList.toggle('on', b === el); b.setAttribute('aria-selected', b === el); });
+    drawBinder();
+    view.classList.remove('turn'); void view.offsetWidth; view.classList.add('turn');
+    const chips = root.querySelector('.chips');
+    if (el.offsetLeft < chips.scrollLeft || el.offsetLeft + el.offsetWidth > chips.scrollLeft + chips.clientWidth) el.scrollIntoView({ inline: 'nearest', block: 'nearest' });
+  });
+  on(root, 'click', '[data-pg]', (e, el) => { sfx.tap(); goTo(idx + +el.dataset.pg); });
+  on(root, 'click', '[data-pgto]', (e, el) => { sfx.tap(); goTo(+el.dataset.pgto); });
   on(root, 'click', '[data-n]', (e, el) => { sfx.tap(); showEntry(p, byId(el.dataset.n)); });
   on(root, 'click', '[data-shinyhelp]', () => { sfx.tap(); shinyHelp(p); });
+  // Arrow keys turn pages; a new screen size can change how many sleeves fit.
+  const onKey = (e) => {
+    if (!view.isConnected) { document.removeEventListener('keydown', onKey); return; }
+    if (document.documentElement.classList.contains('sheet-open')) return;
+    if (e.key === 'ArrowRight') goTo(idx + 1);
+    else if (e.key === 'ArrowLeft') goTo(idx - 1);
+  };
+  document.addEventListener('keydown', onKey);
+  let rz = 0;
+  const onResize = () => {
+    if (!view.isConnected) { removeEventListener('resize', onResize); return; }
+    clearTimeout(rz);
+    rz = setTimeout(() => {
+      const n = binderLayout();
+      if (n.cols !== L.cols || n.rows !== L.rows || n.pages !== L.pages) { const first = idx * per() * L.pages; L = n; drawBinder(first); }
+      else view.scrollLeft = idx * view.clientWidth;
+    }, 120);
+  };
+  addEventListener('resize', onResize);
 }
 
 function showEntry(p, s) {

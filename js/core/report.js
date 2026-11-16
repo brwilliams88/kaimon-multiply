@@ -2,7 +2,7 @@
 // local time. Pure functions of the trainer's saved progress, so every family
 // device builds the same report. Used by the Grown-ups panel and the email.
 import { SPECIES, byId } from '../data/creatures.js';
-import { insights, tipText, headText, talkText, heartText, TALK_TIP } from './insights.js';
+import { insights, tipText, headLine, talkText, heartText, TALK_TIP } from './insights.js';
 
 const DAY_MS = 86400000;
 const pad = (n) => String(n).padStart(2, '0');
@@ -196,8 +196,8 @@ export function reportText(r) {
   if (r.trickiest.length) L.push('', 'Tricky facts to practice: ' + r.trickiest.map((x) => `${x.a} x ${x.b} = ${x.a * x.b}`).join(', '));
   if (r.medals.total) L.push('', `New medals: ${['star', 'gold', 'silver', 'bronze'].filter((k) => r.medals[k]).map((k) => `${r.medals[k]} ${k[0].toUpperCase() + k.slice(1)}`).join(', ')}`);
   if (r.insights?.tips?.length) {
-    const h = headText(r.insights.head, r.insights.period);
-    L.push('', 'What to practice next' + (h ? `: ${h.title}` : ''));
+    const h = headLine(r.insights.head, r.insights.period);
+    L.push('', 'What to practice next', ...(h ? [`  ${h}`] : []));
     if (r.insights.heart) L.push(`  ${heartText(r.insights.heart, r.insights.period)}`);
     for (const tip of r.insights.tips) { const w = tipText(tip, r.insights.period); if (w) L.push(`  ${w.title}. ${w.why} ${w.act}`); }
   }

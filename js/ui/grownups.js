@@ -12,8 +12,8 @@ import { bonusTime } from '../core/actions.js';
 import { active, save, exportBackup, importBackup, deleteProfile, allProfiles, hasPin, setPin, checkPin, clearPin } from '../core/store.js';
 import { status as syncStatus, requestCode, verifyCode, signOut, syncNow, joinFamily, leaveFamily, onSyncChange, ensureUpdates, setUpdates } from '../core/sync.js';
 import { goodWorkStamp } from '../core/actions.js';
-import { levelOf, factId, LEVEL_LABEL, LEVELS, RULES, countAtLeast, trickFor } from '../core/facts.js';
-import { insights, tipText, headText, tableNotes, factInfo, isCheer, talkText, TALK_TIP, FLUENCY, FLUENCY_LABEL } from '../core/insights.js';
+import { factId, LEVEL_LABEL, trickFor } from '../core/facts.js';
+import { insights, tipText, headLine, heartText, factInfo, isCheer, talkText, TALK_TIP, FLUENCY_LABEL } from '../core/insights.js';
 import { REGIONS, TYPES } from '../data/creatures.js';
 import { voiceSupported } from '../core/voice.js';
 import { CHANGELOG, VERSION } from '../data/changelog.js';
@@ -22,7 +22,6 @@ import { reportPanelHTML, bindReportPanel } from './reportPanel.js';
 import { offlineChipHTML, offlinePanelHTML, bindOfflinePanel, pendingNote } from './offline.js';
 import { isOnline, onOfflineChange } from '../core/offline.js';
 
-const mins = (ms) => Math.round(ms / 60000);
 
 let unlockedUntil = 0;
 
@@ -119,143 +118,94 @@ function resizePhoto(file) {
 }
 
 // ---------------------------------------------------------------- progress
-// The trainer's progress panel: Insights (what to practice next), lifetime
-// numbers and the times table grid. Tapping a fact shows its details.
+// The trainer's progress panel, kept to a quick read: one headline, at most
+// two tips, the times table grid (Levels or By heart) and one talk question.
 
 const typeVars = (t) => { const ty = TYPES[REGIONS[t - 1]?.type] || TYPES.water; return `--tc:${ty.color};--tl:${ty.light};--ti:${ty.ink}`; };
-const PIPS = { bronze: 1, silver: 2, gold: 3 };
-const levelMark = (lvl) => (lvl === 'star'
-  ? '<svg class="tg-star" viewBox="0 0 12 12" aria-hidden="true"><path d="M6 .8l1.55 3.3 3.6.45-2.65 2.5.7 3.55L6 8.85 2.8 10.6l.7-3.55L.85 4.55l3.6-.45z"/></svg>'
-  : PIPS[lvl] ? `<i class="tg-pips" aria-hidden="true">${'<b></b>'.repeat(PIPS[lvl])}</i>` : '');
-const LEVEL_NOTE = { new: 'Not tried yet', learning: 'Started', bronze: 'Right on 2 days', silver: 'Fast on 5 days', gold: 'Fast on 10 days', star: 'Fast on 20 days' };
+const CHEVRON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5 L16 12 L9 19" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+let gridView = 'level'; // remembered while the app is open
 
 function playLabel(tip) {
-  if (!tip.t || isCheer(tip) || tip.k === 'keep') return tip.k === 'comeback' ? 'Play a round' : '';
+  if (tip.k === 'comeback') return 'Play a round';
+  if (!tip.t || isCheer(tip) || tip.k === 'keep') return '';
   return `Play the ${tip.t}s`;
 }
 
 function insightsHTML(p, ins) {
-  const head = headText(ins.head, ins.period);
-  const talk = talkText(ins.talk, p.name);
-  const [acc, accPrev] = ins.trend.acc, [min, minPrev] = ins.trend.min;
-  const arrow = (d, unit, what) => (d ? `<em class="nx-d ${d > 0 ? 'up' : 'down'}"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="${d > 0 ? 'M6 2 L10.5 8.5 H1.5 Z' : 'M6 10 L10.5 3.5 H1.5 Z'}" fill="currentColor"/></svg>${Math.abs(d)}${unit}<span class="sr"> ${d > 0 ? 'more' : 'less'} ${what} than the 7 days before</span></em>` : '');
-  const trend = [];
-  if (acc != null) trend.push(`<span class="nx-chip"><b>${acc}%</b> right${accPrev != null ? arrow(acc - accPrev, '%', 'right') : ''}</span>`);
-  if (min || minPrev) trend.push(`<span class="nx-chip"><b>${min}</b> min${minPrev ? arrow(min - minPrev, '', 'minutes') : ''}</span>`);
-  if (ins.trend.up.length) trend.push(`<span class="nx-chip good">Stronger: ${ins.trend.up.slice(0, 3).map((t) => `<i class="nx-t" style="${typeVars(t)}">${t}s</i>`).join('')}</span>`);
   return `
     <section class="nx" aria-labelledby="nx-h-${esc(p.id)}">
-      <header class="nx-head">
-        <span class="nx-ic">${itemImg('hint-lamp')}</span>
-        <div class="nx-ht">
-          <p class="nx-kicker">Insights<span> · last 7 days</span></p>
-          <h3 id="nx-h-${esc(p.id)}">${esc(head?.title || 'Insights')}</h3>
-          ${head?.sub ? `<p class="nx-sub">${esc(head.sub)}</p>` : ''}
-        </div>
-      </header>
-      <ol class="nx-tips">
+      <p class="nx-kicker">${itemImg('hint-lamp')}<span>Last 7 days</span></p>
+      <h3 class="nx-line" id="nx-h-${esc(p.id)}">${esc(headLine(ins.head, ins.period))}</h3>
+      <ul class="nx-tips">
         ${ins.tips.map((tip, i) => {
           const w = tipText(tip, ins.period);
           if (!w) return '';
-          const good = isCheer(tip);
-          const label = playLabel(tip);
+          const good = isCheer(tip), label = playLabel(tip);
           const badge = tip.t
             ? `<span class="nx-badge" style="${typeVars(tip.t)}">${tip.t}s</span>`
             : `<span class="nx-badge ${good ? 'cheer' : 'plain'}">${itemImg(good ? 'xp-star' : 'streak-flame')}</span>`;
           return `<li class="nx-tip ${good ? 'good' : 'focus'}" style="--i:${i}"${tip.f ? ` data-nx-fact="${esc(tip.f)}"` : ''}>
             ${badge}
             <div class="nx-body">
-              <p class="nx-title">${esc(w.title)}${good ? '<span class="nx-tag">Good news</span>' : ''}</p>
-              <p class="nx-why">${esc(w.why)}</p>
-              <p class="nx-act">${esc(w.act)}</p>
-              ${label ? `<button class="btn-chunky btn-sm nx-go" data-nx-play="${tip.t || ''}">${label}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5 L16 12 L9 19" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>` : ''}
+              <p class="nx-title">${esc(w.title)}</p>
+              <p class="nx-why">${esc(w.why)} <span class="nx-act">${esc(w.act)}</span></p>
+              ${label ? `<button class="btn-chunky btn-sm nx-go" data-nx-play="${tip.t || ''}">${label}${CHEVRON}</button>` : ''}
             </div>
           </li>`;
         }).join('')}
-      </ol>
-      ${trend.length ? `<div class="nx-trend" aria-label="Trends">${trend.join('')}</div>` : ''}
-      ${talk ? `<div class="nx-talk">
-        <span class="nx-talk-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v8a2.5 2.5 0 0 1-2.5 2.5H11l-4.2 3.6c-.5.4-1.3.1-1.3-.6V16h0A2.5 2.5 0 0 1 4 13.5z" fill="currentColor" stroke="#14213D" stroke-width="1.8" stroke-linejoin="round"/><circle cx="8.6" cy="9.6" r="1.2" fill="#14213D"/><circle cx="12" cy="9.6" r="1.2" fill="#14213D"/><circle cx="15.4" cy="9.6" r="1.2" fill="#14213D"/></svg></span>
-        <div class="nx-talk-body">
-          <p class="nx-talk-h">Talk about it <span>About 2 minutes</span></p>
-          ${talk.lead ? `<p class="nx-talk-lead">${esc(talk.lead)}</p>` : ''}
-          <p class="nx-talk-q">${esc(talk.q)}</p>
-          <p class="nx-talk-a"><b>If they get stuck:</b> ${esc(talk.a)}</p>
-          <p class="nx-talk-tip">${esc(TALK_TIP)}</p>
-        </div>
-      </div>` : ''}
+      </ul>
     </section>`;
 }
 
-const FL_ICON = {
-  heart: '<svg class="tg-fl" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.4 6.4 4.9 8.8 9.6 3.4" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-  figuring: '<svg class="tg-fl" viewBox="0 0 12 12" aria-hidden="true"><circle cx="2.6" cy="6" r="1.35" fill="currentColor"/><circle cx="6" cy="6" r="1.35" fill="currentColor"/><circle cx="9.4" cy="6" r="1.35" fill="currentColor"/></svg>',
-  learning: '<svg class="tg-fl" viewBox="0 0 12 12" aria-hidden="true"><path d="M6 10.4V5.6M6 6.6C6 4.4 4.3 3.1 2.2 3.3c-.1 2.1 1.6 3.4 3.8 3.3zm0 0c0-2.2 1.7-3.6 3.8-3.4.1 2.1-1.6 3.5-3.8 3.4z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-};
-let gridView = 'level'; // remembered while the app is open
-
-function flBar(row, total = 10) {
-  return `<span class="tg-flbar" aria-hidden="true">${FLUENCY.map((g) => (row[g] ? `<i class="fl-${g}" style="flex:${row[g]}"></i>` : '')).join('')}</span>`;
+function talkHTML(p, ins) {
+  const t = talkText(ins.talk, p.name);
+  if (!t) return '';
+  return `
+    <section class="nx-talk" aria-label="Talk about it">
+      <span class="nx-talk-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v8a2.5 2.5 0 0 1-2.5 2.5H11l-4.2 3.6c-.5.4-1.3.1-1.3-.6V16A2.5 2.5 0 0 1 4 13.5z" fill="currentColor" stroke="#14213D" stroke-width="1.8" stroke-linejoin="round"/><circle cx="8.6" cy="9.6" r="1.2" fill="#14213D"/><circle cx="12" cy="9.6" r="1.2" fill="#14213D"/><circle cx="15.4" cy="9.6" r="1.2" fill="#14213D"/></svg></span>
+      <div class="nx-talk-body">
+        <p class="nx-talk-h">Talk about it <span>About 2 minutes</span></p>
+        <p class="nx-talk-q">${esc(t.q)}</p>
+        <p class="nx-talk-a"><b>If they get stuck:</b> ${esc(t.a)}</p>
+        <p class="nx-talk-tip">${esc(TALK_TIP)}</p>
+      </div>
+    </section>`;
 }
 
-function gridHTML(p, notes, now, ins) {
+function gridHTML(p, now, ins) {
   const rows = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-  const info = {};
-  for (const a of rows) for (const b of rows) info[factId(a, b)] = factInfo(p, factId(a, b), now);
-  const all = Object.values(info);
-  const bronze = all.filter((x) => levelRankOf(x.level) >= 2).length, lately = all.filter((x) => x.missedLately).length;
-  const fl = { heart: 0, figuring: 0, learning: 0 }, flt = {};
-  for (const a of rows) { flt[a] = { heart: 0, figuring: 0, learning: 0 }; for (const b of rows) { const g = info[factId(a, b)].fluency; fl[g]++; flt[a][g]++; } }
-  const ch = ins?.heart ? ins.heart.n - ins.heart.prev : 0;
   const cell = (a, b) => {
-    const x = info[factId(a, b)];
+    const x = factInfo(p, factId(a, b), now);
     const label = `${a} times ${b} is ${a * b}. ${LEVEL_LABEL[x.level]}. ${FLUENCY_LABEL[x.fluency]}.${x.missedLately ? ' Missed in the last 7 days.' : ''}`;
-    return `<td><button class="tg-cell lv-${x.level} fl-${x.fluency}${x.missedLately ? ' miss' : ''}" data-fact="${a}x${b}" tabindex="${a === 1 && b === 1 ? 0 : -1}" aria-label="${label}" style="--d:${(a + b) * 14}ms"><span class="tg-n">${a * b}</span>${levelMark(x.level)}${FL_ICON[x.fluency]}</button></td>`;
+    return `<td><button class="tg-cell lv-${x.level} fl-${x.level === 'new' ? 'new' : x.fluency}" data-fact="${a}x${b}" tabindex="${a === 1 && b === 1 ? 0 : -1}" aria-label="${label}" style="--d:${(a + b) * 14}ms">${a * b}</button></td>`;
   };
-  const tone = { focus: 'Worth practice', good: 'Going well', plain: '' };
-  const flNote = (t) => `${flBar(flt[t])}<b>${flt[t].heart}</b> by heart`;
+  const key = (cls, label) => `<li><i class="tg-sw ${cls}" aria-hidden="true"></i>${label}</li>`;
   return `
     <section class="tg" data-view="${gridView}" aria-labelledby="tg-h-${esc(p.id)}">
       <div class="tg-top">
         <h3 id="tg-h-${esc(p.id)}">Times table</h3>
-        <div class="tg-views" role="group" aria-label="Show">
+        <div class="tg-views" role="group" aria-label="Color the grid by">
           <button class="tg-view" data-tg-view="level" aria-pressed="${gridView === 'level'}">Levels</button>
           <button class="tg-view" data-tg-view="fluency" aria-pressed="${gridView === 'fluency'}">By heart</button>
         </div>
       </div>
-      <p class="tg-sum tg-only-level"><span><b>${bronze}</b> of 100 at Bronze or better</span>${lately ? `<span class="tg-sum-miss"><i aria-hidden="true"></i>${lately} missed lately</span>` : ''}</p>
-      <div class="tg-flsum tg-only-fl">
-        <p class="tg-flhead"><span><b>${fl.heart}</b> of 100 by heart</span>${ch ? `<em class="nx-d ${ch > 0 ? 'up' : 'down'}"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="${ch > 0 ? 'M6 2 L10.5 8.5 H1.5 Z' : 'M6 10 L10.5 3.5 H1.5 Z'}" fill="currentColor"/></svg>${ch > 0 ? '+' : ''}${ch} in the last 7 days</em>` : '<em class="nx-d flat">Same as the 7 days before</em>'}</p>
-        <span class="tg-flbar big" role="img" aria-label="${fl.heart} by heart, ${fl.figuring} figuring it out, ${fl.learning} still learning">${FLUENCY.map((g) => (fl[g] ? `<i class="fl-${g}" style="flex:${fl[g]}"></i>` : '')).join('')}</span>
-      </div>
+      <p class="tg-heart"><b>${esc(heartText(ins.heart, 'last7'))}</b></p>
       <div class="tg-layout">
         <div class="tg-main">
           <table class="tg-grid">
             <caption class="sr">All 100 facts. Rows are the times tables, columns are what they are multiplied by. Tap a fact for details.</caption>
-            <thead><tr><th class="tg-corner" scope="col"><span aria-hidden="true">×</span><span class="sr">Table</span></th>${rows.map((b) => `<th class="tg-ch" scope="col" data-col="${b}">${b}</th>`).join('')}<th class="tg-nh" scope="col"><span class="sr">Note</span></th></tr></thead>
-            <tbody>${rows.map((a) => { const n = notes[a - 1]; return `<tr data-row="${a}"><th class="tg-rh" scope="row" style="${typeVars(a)}"><span>${a}</span></th>${rows.map((b) => cell(a, b)).join('')}<td class="tg-note ${n.tone}"><span class="tg-only-level">${n.tone !== 'plain' ? `<i class="sr">${tone[n.tone]}: </i>` : ''}${esc(n.note)}</span><span class="tg-only-fl tg-flnote">${flNote(a)}</span></td></tr>`; }).join('')}</tbody>
+            <thead><tr><th class="tg-corner" scope="col"><span aria-hidden="true">×</span><span class="sr">Table</span></th>${rows.map((b) => `<th class="tg-ch" scope="col" data-col="${b}">${b}</th>`).join('')}</tr></thead>
+            <tbody>${rows.map((a) => `<tr data-row="${a}"><th class="tg-rh" scope="row" style="${typeVars(a)}"><span>${a}</span></th>${rows.map((b) => cell(a, b)).join('')}</tr>`).join('')}</tbody>
           </table>
-          <ul class="tg-legend tg-only-level" aria-label="Levels">
-            ${LEVELS.map((l) => `<li><span class="tg-key tg-cell lv-${l}" aria-hidden="true">${levelMark(l)}</span>${LEVEL_LABEL[l]}</li>`).join('')}
-            <li><span class="tg-key tg-cell lv-learning miss" aria-hidden="true"></span>Missed lately</li>
-          </ul>
-          <ul class="tg-legend tg-fllegend tg-only-fl" aria-label="By heart groups">
-            <li><span class="tg-key tg-cell fl-heart" aria-hidden="true">${FL_ICON.heart}</span><span><b>Knows by heart</b> ${fl.heart}<small>Right and fast lately</small></span></li>
-            <li><span class="tg-key tg-cell fl-figuring" aria-hidden="true">${FL_ICON.figuring}</span><span><b>Figuring it out</b> ${fl.figuring}<small>Right, but slow. Probably counting.</small></span></li>
-            <li><span class="tg-key tg-cell fl-learning" aria-hidden="true">${FL_ICON.learning}</span><span><b>Still learning</b> ${fl.learning}<small>New, or missed in the last 7 days</small></span></li>
-          </ul>
+          <ul class="tg-legend tg-only-level" aria-label="Levels">${key('lv-new', 'Not tried')}${key('lv-learning', 'Learning')}${key('lv-bronze', 'Bronze')}${key('lv-silver', 'Silver')}${key('lv-gold', 'Gold')}${key('lv-star', 'Star')}</ul>
+          <ul class="tg-legend tg-only-fl" aria-label="By heart">${key('fl-heart', 'By heart')}${key('fl-figuring', 'Figuring it out')}${key('fl-learning', 'Still learning')}</ul>
         </div>
         <div class="tg-side">
           <div class="tg-detail" data-tg-detail aria-live="polite">${detailHTML(p, null, now)}</div>
-          ${notes.some((n) => n.tried) ? `<div class="tg-notes">
-            <p class="tg-notes-h">By table</p>
-            <ul>${notes.map((n) => `<li class="${n.tone}"><span class="tg-nt" style="${typeVars(n.t)}">${n.t}s</span><span class="tg-bar tg-only-level" aria-hidden="true">${n.counts.map((c, i) => (c ? `<i class="lv-${LEVELS[i]}" style="flex:${c}"></i>` : '')).reverse().join('')}</span><span class="tg-nn tg-only-level">${n.tone !== 'plain' ? `<i class="sr">${tone[n.tone]}: </i>` : ''}${esc(n.note)}</span>${flBar(flt[n.t]).replace('tg-flbar', 'tg-flbar tg-only-fl')}<span class="tg-nn tg-only-fl"><b>${flt[n.t].heart}</b> by heart${flt[n.t].figuring ? `, ${flt[n.t].figuring} figuring` : ''}</span></li>`).join('')}</ul>
-          </div>` : ''}
         </div>
       </div>
     </section>`;
 }
-const levelRankOf = (lvl) => LEVELS.indexOf(lvl);
 
 function ago(days) {
   if (days == null) return 'Never';
@@ -267,26 +217,27 @@ function ago(days) {
 }
 
 function detailHTML(p, f, now) {
-  if (!f) return `<div class="fd-empty"><span class="fd-empty-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 11V5.5a1.5 1.5 0 0 1 3 0V11m0-1.5V4a1.5 1.5 0 0 1 3 0v6m0-1a1.5 1.5 0 0 1 3 0v4.5a6.5 6.5 0 0 1-6.5 6.5h-.6a6 6 0 0 1-4.8-2.4L4.3 13.6a1.6 1.6 0 0 1 2.4-2.1L9 13.6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><p><strong>Tap any fact</strong><br>See its level, speed and last miss.</p></div>`;
+  if (!f) return `<p class="fd-empty"><strong>Tap any fact</strong> to see its level, speed and last miss.</p>`;
   const x = factInfo(p, f, now);
   const sec = (ms) => (ms / 1000).toFixed(1);
   const medal = ['bronze', 'silver', 'gold', 'star'].includes(x.level) ? itemImg('medal-' + x.level) : '';
   const nx = x.next;
+  const left = nx ? nx.need - nx.have : 0, d = left === 1 ? 'day' : 'days';
   const nextText = !nx ? 'Top level. Amazing!'
     : nx.what === 'answer' ? 'Answer it once to start.'
-    : nx.what === 'days' ? `Right on ${nx.need - nx.have} more ${nx.need - nx.have === 1 ? 'day' : 'days'} for ${LEVEL_LABEL[nx.lv]}.`
-    : nx.what === 'fast' ? `Fast on ${nx.need - nx.have} more ${nx.need - nx.have === 1 ? 'day' : 'days'} for ${LEVEL_LABEL[nx.lv]}.`
-    : `${nx.need - nx.have} more ${nx.need - nx.have === 1 ? 'day' : 'days'} with no misses for Star.`;
+    : nx.what === 'days' ? `Right on ${left} more ${d} for ${LEVEL_LABEL[nx.lv]}.`
+    : nx.what === 'fast' ? `Fast on ${left} more ${d} for ${LEVEL_LABEL[nx.lv]}.`
+    : `${left} more ${d} with no misses for Star.`;
   const pct = nx ? Math.round((Math.min(nx.have, nx.need) / nx.need) * 100) : 100;
   const speedNote = x.avgMs == null ? '' : x.avgMs <= x.fastMs ? 'fast' : 'not fast yet';
   return `
     <div class="fd" data-f="${x.f}">
       <div class="fd-top">
         <p class="fd-eq"><span>${x.a} × ${x.b}</span> = <b>${x.answer}</b></p>
-        <span class="fd-tags"><span class="fd-lv lv-${x.level}">${medal}${LEVEL_LABEL[x.level]}</span><span class="fd-fl fl-${x.fluency}">${FL_ICON[x.fluency]}${FLUENCY_LABEL[x.fluency]}</span></span>
+        <span class="fd-tags"><span class="fd-lv lv-${x.level}">${medal}${LEVEL_LABEL[x.level]}</span>${x.level !== 'new' ? `<span class="fd-fl fl-${x.fluency}"><i aria-hidden="true"></i>${FLUENCY_LABEL[x.fluency]}</span>` : ''}${x.missedLately ? '<span class="fd-miss">Missed lately</span>' : ''}</span>
       </div>
       <div class="fd-next">
-        <span class="fd-bar lv-${nx ? nx.lv : 'star'}" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}" aria-label="Progress to the next level"><i style="width:${pct}%"></i></span>
+        <span class="fd-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}" aria-label="Progress to the next level"><i style="width:${pct}%"></i></span>
         <span>${nextText}</span>
       </div>
       <dl class="fd-stats">
@@ -301,18 +252,10 @@ function detailHTML(p, f, now) {
 
 function progressHTML(p, now = Date.now()) {
   const ins = insights(p, { now });
-  const notes = tableNotes(p, ins, now);
-  const acc = p.stats.answers ? Math.round((p.stats.correct / p.stats.answers) * 100) : 0;
   return `<h2 class="h-ic">${itemImg('medal-gold')}${esc(p.name)}'s progress</h2>
     ${insightsHTML(p, ins)}
-    <div class="gu-stats">
-      <div><strong>${p.stats.answers}</strong><span>answers</span></div>
-      <div><strong>${acc}%</strong><span>right</span></div>
-      <div><strong>${mins(p.stats.msPlayed)}</strong><span>minutes</span></div>
-      <div><strong>${countAtLeast(p, 'silver')}</strong><span>at Silver+</span></div>
-    </div>
-    ${gridHTML(p, notes, now, ins)}
-    <p class="note">Levels count separate days. Bronze: right on ${RULES.bronzeDays} days. Silver, Gold and Star: right within ${p.settings.fastMs / 1000} seconds on ${RULES.silverDays}, ${RULES.goldDays} and ${RULES.starDays} days. Star also needs no misses in the last ${RULES.starCleanDays} days.</p>`;
+    ${gridHTML(p, now, ins)}
+    ${talkHTML(p, ins)}`;
 }
 
 function bindProgress(panel, p, go) {
@@ -321,7 +264,7 @@ function bindProgress(panel, p, go) {
   const grid = panel.querySelector('.tg-grid');
   const cells = [...panel.querySelectorAll('.tg-grid [data-fact]')];
   const select = (el, focus) => {
-    cells.forEach((c) => { const on = c === el; c.classList.toggle('sel', on); c.setAttribute('aria-pressed', on); c.tabIndex = on ? 0 : -1; });
+    cells.forEach((c) => { const sel = c === el; c.classList.toggle('sel', sel); c.setAttribute('aria-pressed', sel); c.tabIndex = sel ? 0 : -1; });
     const [a, b] = el.dataset.fact.split('x');
     grid.querySelectorAll('.hl').forEach((h) => h.classList.remove('hl'));
     grid.querySelector(`[data-col="${b}"]`)?.classList.add('hl');
@@ -336,7 +279,7 @@ function bindProgress(panel, p, go) {
     panel.querySelector('.tg').dataset.view = gridView;
     panel.querySelectorAll('[data-tg-view]').forEach((b) => b.setAttribute('aria-pressed', b === el));
   });
-  // Start on the fact the top insight is about, so the details are useful right away.
+  // Start on the fact the practice tip is about, so the details are useful right away.
   const first = panel.querySelector('[data-nx-fact]')?.dataset.nxFact;
   const start = first && panel.querySelector(`.tg-grid [data-fact="${first}"]`);
   if (start) select(start);

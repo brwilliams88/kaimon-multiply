@@ -445,7 +445,7 @@ function cleanTip_(x) {
 function cleanInsights_(x) {
   if (!x || typeof x !== 'object') return null;
   var tips = [], used = {};
-  (Array.isArray(x.tips) ? x.tips.slice(0, 3) : []).forEach(function (y) {
+  (Array.isArray(x.tips) ? x.tips.slice(0, 2) : []).forEach(function (y) {
     var t = cleanTip_(y);
     if (!t || (t.t && used[t.t])) return;
     if (t.t) used[t.t] = true;
@@ -508,7 +508,7 @@ function heartHTML_(h, period) {
   var ch = h.n - h.prev, W = TIP_WORDS[period] || TIP_WORDS.week;
   return '<div style="font-family:' + FONT + ';font-size:16px;line-height:24px;color:' + INK2 + ';margin:0 0 12px 0;">'
     + '<span style="display:inline-block;width:20px;height:20px;line-height:18px;margin-right:6px;border:2px solid ' + INK + ';border-radius:6px;background:#CFE5FF;color:#0F4C9E;font-size:13px;font-weight:700;text-align:center;vertical-align:-3px;">&#10003;</span>'
-    + '<b style="color:' + INK + ';">By heart: ' + h.n + ' of 100</b> facts, right and fast lately'
+    + '<b style="color:' + INK + ';">By heart: ' + h.n + ' of 100</b> facts'
     + (ch > 0 ? ' <span style="display:inline-block;padding:0 8px;border-radius:99px;background:#DDF3E0;color:#1E5E28;font-size:13px;font-weight:700;line-height:20px;white-space:nowrap;">+' + ch + ' ' + W.inn + '</span>' : '')
     + '</div>';
 }
@@ -564,15 +564,20 @@ function tipText_(tip, period) {
 function headText_(head, period) {
   var W = TIP_WORDS[period] || TIP_WORDS.week;
   switch (head && head.k) {
-    case 'new': return { title: 'Ready for a first round', sub: 'Insights show up here after a few cards.' };
-    case 'empty': return { title: 'Time for a short round', sub: 'No cards ' + W.inn + '. Five minutes a day keeps the facts fresh.' };
-    case 'first': return { title: period === 'last7' ? 'A great start' : 'A great first week', sub: head.n + ' cards so far. Every card counts.' };
+    case 'new': return { title: 'Ready for a first round', sub: '' };
+    case 'empty': return { title: 'Time for a short round', sub: 'no cards ' + W.inn + '.' };
+    case 'first': return { title: period === 'last7' ? 'A great start' : 'A great first week', sub: head.n + ' cards so far.' };
     case 'up': return { title: 'Sharper than ' + W.prev, sub: head.pct + '% right, up from ' + head.prev + '%.' };
     case 'strong': return { title: 'Super accurate', sub: head.pct + '% right on ' + head.n + ' cards.' };
-    case 'busy': return { title: 'More practice than ' + W.prev, sub: head.n + ' cards, ' + head.more + ' more than ' + W.prev + '.' };
+    case 'busy': return { title: 'More practice than ' + W.prev, sub: head.n + ' cards, ' + head.more + ' more.' };
     case 'steady': return { title: 'Steady practice', sub: head.n + ' cards' + (head.pct !== undefined ? ', ' + head.pct + '% right' : '') + '.' };
     default: return null;
   }
+}
+// The headline as one sentence. Same as headLine() in js/core/insights.js.
+function headLine_(head, period) {
+  var h = headText_(head, period);
+  return !h ? '' : h.sub ? h.title + ': ' + h.sub : h.title + '!';
 }
 
 // ---------------------------------------------------------------- email design
@@ -585,7 +590,6 @@ function esc_(s) {
   return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; });
 }
 function possessive_(name) { return name + (/s$/i.test(name) ? '\u2019' : '\u2019s'); }
-function pad3_(n) { return ('00' + n).slice(-3); }
 function plural_(n, one, many) { return n + ' ' + (n === 1 ? one : (many || one + 's')); }
 
 // A short "how to think about it" trick, same as the game's (js/core/facts.js).
@@ -608,28 +612,6 @@ function trick_(a, b) {
   }
 }
 
-// What Teacher K says at the bottom, from the numbers.
-function teacherNote_(d) {
-  var name = d.trainer, out = {};
-  if (!d.cards) {
-    out.head = 'We missed you this week, ' + name + '!';
-    out.body = 'Kaimon are waiting in every region. Five minutes a day keeps the facts strong.';
-  } else if (d.accuracy >= 90) {
-    out.head = 'Super sharp, ' + name + '!';
-    out.body = d.accuracy + '% right this week. Your brain is getting fast!';
-  } else if (d.accuracy >= 75) {
-    out.head = 'Great work, ' + name + '!';
-    out.body = 'You answered ' + d.cards + ' cards this week. Keep it up!';
-  } else {
-    out.head = 'Way to keep trying, ' + name + '!';
-    out.body = 'Tricky facts get easier every time you practice them.';
-  }
-  if (d.cards && d.change.cards > 0 && d.prev.cards > 0) out.body += ' That is ' + d.change.cards + ' more cards than last week!';
-  var t = d.trickiest[0], s = d.strongest[0];
-  if (t) out.tip = 'Tricky one to try: <b>' + t.a + ' \u00d7 ' + t.b + ' = ' + t.a * t.b + '</b>. ' + esc_(trick_(t.a, t.b));
-  else if (s) out.tip = 'You are super fast at <b>' + s.a + ' \u00d7 ' + s.b + '</b>. Can you teach it to a grown-up?';
-  return out;
-}
 
 function card_(inner, opt) {
   opt = opt || {};
@@ -639,24 +621,8 @@ function card_(inner, opt) {
 }
 function h2_(s) { return '<div style="font-family:' + FONT + ';font-size:19px;font-weight:700;line-height:24px;color:' + INK + ';margin:0 0 12px 0;">' + s + '</div>'; }
 
-function changeChip_(n, unit) {
-  if (n === null || n === undefined || n === 0) return '<div style="height:20px;line-height:20px;font-size:12px;color:#8A94AA;">&nbsp;</div>';
-  var up = n > 0;
-  return '<div style="height:20px;line-height:20px;"><span style="display:inline-block;font-family:' + FONT + ';font-size:12px;font-weight:700;line-height:18px;padding:0 8px;border-radius:99px;background:' + (up ? '#DDF3E0' : '#FFE1D8') + ';color:' + (up ? '#1E5E28' : '#9A2E12') + ';">'
-    + (up ? '&#9650; ' : '&#9660; ') + Math.abs(n) + (unit || '') + '</span></div>';
-}
 
-function statTile_(big, small, label, chip) {
-  return '<td class="kstat" width="25%" valign="top" style="padding:0 4px;">'
-    + '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate;background:#FFFFFF;border:2px solid ' + INK + ';border-radius:16px;"><tr><td height="84" valign="top" style="height:84px;padding:12px 10px 10px 12px;font-family:' + FONT + ';color:' + INK + ';">'
-    + '<div style="font-size:32px;font-weight:700;line-height:34px;height:34px;">' + big + (small ? '<span style="font-size:17px;line-height:17px;color:' + INK2 + ';">' + small + '</span>' : '') + '</div>'
-    + '<div style="font-size:14px;line-height:18px;color:' + INK2 + ';padding:2px 0 6px 0;">' + label + '</div>' + chip
-    + '</td></tr></table></td>';
-}
 
-function chip_(text, bg, fg) {
-  return '<span style="display:inline-block;margin:0 6px 8px 0;padding:5px 11px;border:2px solid ' + INK + ';border-radius:12px;background:' + bg + ';color:' + fg + ';font-family:' + FONT + ';font-size:16px;font-weight:700;line-height:20px;white-space:nowrap;">' + text + '</span>';
-}
 
 // A quiet week: one table that is a good place to start again (from checked data).
 function startLine_(ins) {
@@ -667,11 +633,11 @@ function startLine_(ins) {
 // The "What to practice next" card for the report email.
 function insightsHTML_(ins, img, name) {
   if (!ins.tips.length) return talkHTML_(ins.talk, name, img, false);
-  var head = headText_(ins.head, ins.period);
+  var head = headLine_(ins.head, ins.period);
   var out = h2_('What to practice next');
   if (head) out += '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate;margin:0 0 14px 0;"><tr>'
     + '<td style="padding:10px 14px;background:#FFF6D6;border:2px solid #F2D27A;border-radius:14px;font-family:' + FONT + ';font-size:16px;line-height:22px;color:' + INK2 + ';">'
-    + '<b style="color:' + INK + ';">' + esc_(head.title) + '.</b> ' + esc_(head.sub) + '</td></tr></table>';
+    + '<b style="color:' + INK + ';">' + esc_(head) + '</b></td></tr></table>';
   out += heartHTML_(ins.heart, ins.period);
   out += '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate;">';
   ins.tips.forEach(function (tip, i) {
@@ -682,9 +648,7 @@ function insightsHTML_(ins, img, name) {
     var badge = c
       ? '<div style="width:50px;height:50px;line-height:46px;border:2px solid ' + INK + ';border-radius:14px;background:' + c[1] + ';color:' + c[2] + ';font-family:' + FONT + ';font-size:19px;font-weight:700;text-align:center;">' + tip.t + 's</div>'
       : '<div style="width:50px;height:50px;border:2px solid ' + INK + ';border-radius:14px;background:' + (cheer ? '#FFF8DC' : SKY) + ';text-align:center;"><img src="' + img(cheer ? 'star.png' : 'ball.png') + '" width="32" height="32" alt="" style="display:inline-block;margin-top:8px;border:0;"></div>';
-    var tag = cheer
-      ? '<span style="display:inline-block;margin-left:6px;padding:0 8px;border-radius:99px;background:#FFF1C2;color:#5C3B00;font-size:12px;font-weight:700;line-height:18px;vertical-align:2px;">Good news</span>'
-      : '';
+    var tag = '';
     out += '<tr><td width="62" valign="top" style="padding:' + (i ? 12 : 2) + 'px 12px 12px 0;' + (i ? 'border-top:2px solid #EEF2F8;' : '') + '">' + badge + '</td>'
       + '<td valign="top" style="padding:' + (i ? 12 : 2) + 'px 0 12px 0;' + (i ? 'border-top:2px solid #EEF2F8;' : '') + 'font-family:' + FONT + ';color:' + INK + ';">'
       + '<div style="font-size:18px;font-weight:700;line-height:23px;">' + esc_(w.title) + tag + '</div>'
@@ -693,10 +657,6 @@ function insightsHTML_(ins, img, name) {
       + '</td></tr>';
   });
   out += '</table>';
-  if (ins.up.length) out += '<div style="font-family:' + FONT + ';font-size:14px;line-height:20px;color:' + INK2 + ';padding-top:2px;">Getting stronger: ' + ins.up.map(function (t) {
-    var c = TYPE_COLORS[TABLE_TYPE[t - 1]];
-    return '<span style="display:inline-block;margin:0 4px 4px 0;padding:0 8px;border:2px solid ' + INK + ';border-radius:10px;background:' + c[1] + ';color:' + c[2] + ';font-weight:700;line-height:20px;">' + t + 's</span>';
-  }).join('') + '</div>';
   out += talkHTML_(ins.talk, name, img, true);
   return out;
 }
@@ -706,8 +666,6 @@ function renderReportEmail_(d, opt) {
   var base = opt.base || ASSET_BASE, app = opt.appUrl || APP_URL;
   // ?v= makes Gmail fetch fresh copies when the pictures change (its image proxy caches by address).
   var img = function (f) { return base + f + '?v=' + IMG_VERSION; };
-  var note = teacherNote_(d);
-  var name = esc_(d.trainer);
   var empty = !d.cards && !d.minutes;
   var rows = [];
 
@@ -722,6 +680,7 @@ function renderReportEmail_(d, opt) {
     + '<div style="font-size:13px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#2D7FF9;line-height:18px;">' + (opt.test ? 'Test report' + (d.partial ? ' &middot; this week so far' : '') : 'Weekly report') + '</div>'
     + '<div style="font-size:30px;font-weight:700;line-height:36px;margin:2px 0;">' + esc_(possessive_(d.trainer)) + ' week</div>'
     + '<div style="font-size:17px;line-height:22px;color:' + INK2 + ';">' + esc_(d.label) + '</div>'
+    + (empty ? '' : '<div style="font-size:16px;line-height:22px;color:' + INK + ';padding-top:6px;"><span style="white-space:nowrap;"><b>' + d.cards + '</b> ' + (d.cards === 1 ? 'card' : 'cards') + ' &middot;</span> <span style="white-space:nowrap;"><b>' + (d.accuracy === null ? 0 : d.accuracy) + '%</b> right &middot;</span> <span style="white-space:nowrap;"><b>' + d.daysPlayed + '</b> of 7 days</span></div>')
     + '</td></tr></table></td></tr></table></td></tr>');
 
   if (empty) {
@@ -732,14 +691,6 @@ function renderReportEmail_(d, opt) {
     // Talk about it, even in a quiet week
     if (d.insights && d.insights.talk) rows.push(card_(talkHTML_(d.insights.talk, d.trainer, img, false), { pad: '20px 22px 18px 22px' }));
   } else {
-    // Big numbers
-    rows.push('<tr><td style="padding:16px 0 0 0;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 -4px;"><tr>'
-      + statTile_(d.minutes, '', 'minutes', changeChip_(d.change.minutes))
-      + statTile_(d.cards, '', 'cards', changeChip_(d.change.cards))
-      + statTile_(d.accuracy === null ? 0 : d.accuracy, '%', 'right', changeChip_(d.change.accuracy, '%'))
-      + statTile_(d.daysPlayed, '/7', 'days played', changeChip_(null))
-      + '</tr></table></td></tr>');
-
     // Days of the week
     var dots = d.daily.map(function (x) {
       var on = x.minutes > 0 || x.cards > 0;
@@ -749,81 +700,26 @@ function renderReportEmail_(d, opt) {
     }).join('');
     rows.push(card_(h2_('Minutes each day') + '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>' + dots + '</tr></table>', { pad: '18px 16px 16px 16px' }));
 
-    // Times tables
-    if (d.tables.length) {
-      var max = Math.max.apply(null, d.tables.map(function (t) { return t.answers; }));
-      var tr = d.tables.map(function (t) {
-        var c = TYPE_COLORS[TABLE_TYPE[t.table - 1]] || TYPE_COLORS.water;
-        var w = Math.max(4, Math.round((t.answers / max) * 100));
-        var accBg = t.accuracy >= 90 ? '#DDF3E0' : t.accuracy < 70 ? '#FFE1D8' : '#EEF2F8';
-        var accFg = t.accuracy >= 90 ? '#1E5E28' : t.accuracy < 70 ? '#9A2E12' : INK;
-        return '<tr>'
-          + '<td width="50" style="padding:5px 10px 5px 0;"><div style="width:46px;text-align:center;border:2px solid ' + INK + ';border-radius:10px;background:' + c[1] + ';color:' + c[2] + ';font-family:' + FONT + ';font-size:16px;font-weight:700;line-height:24px;">' + t.table + 's</div></td>'
-          + '<td style="padding:5px 0;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate;border:2px solid ' + INK + ';border-radius:99px;background:#EEF2F8;"><tr>'
-          + '<td width="' + w + '%" style="background:' + c[0] + ';height:14px;line-height:14px;font-size:0;border-radius:99px;">&nbsp;</td>' + (w < 100 ? '<td style="height:14px;line-height:14px;font-size:0;">&nbsp;</td>' : '') + '</tr></table></td>'
-          + '<td width="138" align="right" style="padding:5px 0 5px 10px;font-family:' + FONT + ';font-size:15px;color:' + INK2 + ';white-space:nowrap;"><b style="color:' + INK + ';">' + t.answers + '</b> ' + (t.answers === 1 ? 'card' : 'cards') + ' <span style="display:inline-block;min-width:44px;text-align:center;border-radius:99px;padding:1px 6px;background:' + accBg + ';color:' + accFg + ';font-weight:700;font-size:14px;">' + t.accuracy + '%</span></td>'
-          + '</tr>';
-      }).join('');
-      rows.push(card_(h2_('Times tables practiced') + '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">' + tr + '</table>'));
-    }
-
-    // Strongest and tricky facts
-    if (d.strongest.length || d.trickiest.length) {
-      var strong = d.strongest.length ? d.strongest.map(function (x) { return chip_(x.a + ' &times; ' + x.b, '#DDF3E0', '#1E5E28'); }).join('') : '<div style="font-size:15px;color:' + INK2 + ';">Fast, right answers show up here.</div>';
-      var tricky = d.trickiest.length ? d.trickiest.map(function (x) { return chip_(x.a + ' &times; ' + x.b + ' = ' + x.a * x.b, '#FFE9E2', '#8A2A10'); }).join('') : '<div style="font-size:15px;color:' + INK2 + ';">No misses this week!</div>';
-      rows.push(card_('<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>'
-        + '<td class="kcol" width="50%" valign="top" style="padding-right:10px;">' + h2_('Strongest facts') + strong + '</td>'
-        + '<td class="kcol" width="50%" valign="top" style="padding-left:10px;">' + h2_('Tricky facts') + tricky + '</td>'
-        + '</tr></table>', { pad: '20px 22px 12px 22px' }));
-    }
-
     // What to practice next (built here from checked insight data)
     if (d.insights && (d.insights.tips.length || d.insights.talk)) rows.push(card_(insightsHTML_(d.insights, img, d.trainer), { pad: '20px 22px 18px 22px' }));
 
-    // Wins: medals, catches, battles, streak
+    // Wins, compact: one row of small chips
     var wins = [];
     [['star', 'Star'], ['gold', 'Gold'], ['silver', 'Silver'], ['bronze', 'Bronze']].forEach(function (m) {
       if (d.medals[m[0]]) wins.push([img('medal-' + m[0] + '.png'), d.medals[m[0]], 'new ' + m[1]]);
     });
     if (d.caught) wins.push([img('ball.png'), d.caught, 'caught']);
+    if (d.newEntries.length) wins.push([img('balls.png'), d.newEntries.length, 'new in the Kaidex']);
     if (d.battles.won) wins.push([img('star.png'), d.battles.won, d.battles.won === 1 ? 'battle won' : 'battles won']);
     if (d.bestStreak) wins.push([img('streak.png'), d.bestStreak, 'best streak']);
-    var mons = d.caughtList.slice();
-    d.newEntries.forEach(function (s) { if (!mons.some(function (m) { return m.num === s.num; })) mons.push(s); });
-    mons = mons.slice(0, 6);
-    var isNew = d.newEntries.map(function (s) { return s.num; });
-    if (wins.length || mons.length) {
-      var w = '';
-      if (wins.length) {
-        w += '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td style="font-size:0;line-height:0;">' + wins.map(function (x) {
-          return '<table role="presentation" align="left" cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate;margin:0 8px 8px 0;background:#FFF8DC;border:2px solid ' + INK + ';border-radius:14px;"><tr>'
-            + '<td style="padding:6px 4px 6px 8px;"><img src="' + x[0] + '" width="32" height="32" alt="" style="display:block;width:32px;height:32px;border:0;"></td>'
-            + '<td style="padding:6px 12px 6px 4px;font-family:' + FONT + ';color:' + INK + ';"><div style="font-size:20px;font-weight:700;line-height:22px;">' + x[1] + '</div><div style="font-size:12px;line-height:15px;color:' + INK2 + ';white-space:nowrap;">' + x[2] + '</div></td></tr></table>';
-        }).join('') + '</td></tr></table>';
-      }
-      if (mons.length) {
-        w += '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:6px;"><tr>' + mons.map(function (s) {
-          return '<td class="kmon" width="' + Math.floor(100 / 6) + '%" align="center" valign="top" style="padding:8px 3px 0 3px;font-family:' + FONT + ';">'
-            + '<div style="border:2px solid ' + INK + ';border-radius:14px;background:#FFFFFF;padding:6px 2px 6px 2px;">'
-            + (isNew.indexOf(s.num) >= 0 ? '<div style="font-size:10px;font-weight:700;letter-spacing:.5px;line-height:14px;color:' + INK + ';"><span style="background:#FFD23F;border-radius:99px;padding:0 6px;">NEW</span></div>' : '<div style="font-size:10px;line-height:14px;">&nbsp;</div>')
-            + '<img src="' + img('kaimon/' + pad3_(s.num) + '.png') + '" width="56" height="56" alt="" style="display:block;width:56px;height:56px;margin:0 auto;border:0;">'
-            + '<div style="font-size:12px;font-weight:600;line-height:15px;color:' + INK + ';padding-top:2px;">' + esc_(s.name) + (s.n > 1 ? ' <span style="color:' + INK2 + ';">&times;' + s.n + '</span>' : '') + '</div></div></td>';
-        }).join('') + (mons.length < 6 ? '<td class="kfill" width="' + (6 - mons.length) * Math.floor(100 / 6) + '%">&nbsp;</td>' : '') + '</tr></table>';
-      }
-      w += '<div style="font-size:14px;color:' + INK2 + ';padding-top:12px;">Kaidex: <b style="color:' + INK + ';">' + d.dex.caught + '</b> of ' + d.dex.total + ' Kaimon caught so far</div>';
-      rows.push(card_(h2_('This week\u2019s wins') + w));
+    if (wins.length) {
+      rows.push(card_(h2_('This week’s wins') + '<div style="font-size:0;line-height:0;">' + wins.map(function (x) {
+        return '<table role="presentation" align="left" cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate;margin:0 8px 8px 0;background:#FFF8DC;border:2px solid ' + INK + ';border-radius:14px;"><tr>'
+          + '<td style="padding:5px 2px 5px 7px;"><img src="' + x[0] + '" width="26" height="26" alt="" style="display:block;width:26px;height:26px;border:0;"></td>'
+          + '<td style="padding:5px 10px 5px 4px;font-family:' + FONT + ';color:' + INK + ';font-size:15px;line-height:20px;white-space:nowrap;"><b>' + x[1] + '</b> <span style="color:' + INK2 + ';">' + x[2] + '</span></td></tr></table>';
+      }).join('') + '</div>', { pad: '18px 22px 10px 22px' }));
     }
   }
-
-  // Teacher K
-  rows.push(card_('<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>'
-    + '<td class="kteach" width="112" valign="top" style="padding-right:14px;"><img src="' + img('teacher-k.png') + '" width="112" height="112" alt="Teacher K" style="display:block;width:112px;height:112px;border:0;border-radius:18px;background:' + SKY + ';"></td>'
-    + '<td valign="middle" style="font-family:' + FONT + ';color:' + INK + ';">'
-    + '<div style="font-size:20px;font-weight:700;line-height:26px;">' + esc_(note.head) + '</div>'
-    + '<div style="font-size:16px;line-height:23px;padding-top:4px;">' + esc_(note.body) + '</div>'
-    + (note.tip ? '<div style="font-size:15px;line-height:22px;margin-top:10px;padding:10px 12px;background:#FFF8DC;border-radius:12px;">' + note.tip + '</div>' : '')
-    + '<div style="font-size:15px;font-weight:700;line-height:20px;padding-top:10px;color:#2D7FF9;">Teacher K</div>'
-    + '</td></tr></table>', { bg: '#F4FAFF' }));
 
   // Button
   rows.push('<tr><td align="center" style="padding:22px 0 4px 0;">'
@@ -887,9 +783,6 @@ function shell_(title, preheader, rows) {
 function reportText_(d) {
   var L = [possessive_(d.trainer) + ' weekly report: ' + d.label, ''];
   L.push('Minutes played: ' + d.minutes, 'Days played: ' + d.daysPlayed + ' of 7', 'Cards answered: ' + d.cards, 'Right: ' + (d.accuracy === null ? 0 : d.accuracy) + '%');
-  if (d.tables.length) { L.push('', 'Times tables:'); d.tables.forEach(function (t) { L.push('  ' + t.table + 's: ' + t.answers + ' cards, ' + t.accuracy + '% right'); }); }
-  if (d.strongest.length) L.push('', 'Strongest: ' + d.strongest.map(function (x) { return x.a + ' x ' + x.b; }).join(', '));
-  if (d.trickiest.length) L.push('Tricky: ' + d.trickiest.map(function (x) { return x.a + ' x ' + x.b + ' = ' + x.a * x.b; }).join(', '));
   if (d.insights && d.insights.tips.length) {
     L.push('', 'What to practice next:');
     if (d.insights.heart) L.push('  ' + heartText_(d.insights.heart, d.insights.period));
@@ -938,8 +831,8 @@ function sendTestEmails() {
     newEntries: [{ id: 'puddlepup', num: 10, name: 'Puddlepup', type: 'water' }], dex: { caught: 23, total: 60 },
     battles: { played: 3, won: 2 }, bestStreak: 14, prev: { minutes: 52, cards: 130, accuracy: 84 }, change: { minutes: 22, cards: 54, accuracy: 5 },
     insights: { v: 1, period: 'week', head: { k: 'up', pct: 89, prev: 84 }, trend: { up: [8] },
-      heart: { n: 42, prev: 36 }, tips: [{ k: 'misses', t: 7, n: 10, of: 21, f: '7x8', fn: 5 }, { k: 'rest', t: 9, d: 16 }, { k: 'acc-up', pct: 89, prev: 84 }],
-      talk: { k: 'way', f: '7x8', src: 'tricky' } } };
+      heart: { n: 42, prev: 36 }, tips: [{ k: 'misses', t: 7, n: 10, of: 21, f: '7x8', fn: 5 }, { k: 'acc-up', pct: 89, prev: 84 }],
+      talk: { k: 'way', f: '6x9', src: 'tricky' } } };
   var empty = { cards: 0, right: 0, minutes: 0, daysPlayed: 0, daily: [], tables: [], dex: { caught: 23, total: 60 },
     insights: { v: 1, period: 'week', head: { k: 'empty' }, trend: { up: [] }, tips: [{ k: 'comeback', t: 7 }], talk: { k: 'story', f: '7x4', src: 'start' } } };
   var mails = [];
