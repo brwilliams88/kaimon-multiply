@@ -3,7 +3,7 @@
 import { active, save } from '../core/store.js';
 import { regionOf, TYPES, byId, MYTHIC_ID } from '../data/creatures.js';
 import { creatureArt } from '../core/art.js';
-import { factsForTables, pickNext, answerOf, parseFact, hintLadder } from '../core/facts.js';
+import { factsForTables, pickNext, onAnswer, answerOf, parseFact, hintLadder } from '../core/facts.js';
 import { answer, ball as giveBall, battle as recordBattle, session, caught as catchIt } from '../core/actions.js';
 import { myTeam, opponent, attack, powerFor, powerLabel, moveName, HIT_BACK, rewardFor } from '../core/battle.js';
 import { BALLS } from '../core/game.js';
@@ -226,6 +226,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt } = {}
     const ok = parseInt(S.input, 10) === ans;
     const [a, b] = parseFact(S.fact);
     answer(p, S.fact, ok, ms, via);
+    onAnswer(S, S.fact, ok);
     S.answered++;
     save();
 
@@ -269,7 +270,6 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt } = {}
       S.streak = 0; updateStreak();
       cancelAnimationFrame(S.raf);
       sfx.wrong();
-      S.requeue.push({ id: S.fact, at: S.n + 3 });
       const foe = opp.team[S.foe], me = mine[S.me];
       el.qcard.classList.add('wrong');
       el.q.innerHTML = `<span>${a}</span><span class="times">×</span><span>${b}</span><span class="eq">=</span><span class="ans">${ans}</span>`;

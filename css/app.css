@@ -946,6 +946,36 @@ button.balls-row:hover { background: rgba(20, 33, 61, .06); }
   .hint-scroll .trick { font-size: 13.5px; }
 }
 
+/* Picture hints: a dot array beside Teacher K's trick (js/ui/trickArt.js) */
+.trick-row { display: flex; align-items: center; gap: clamp(8px, 2.6cqw, 16px); margin-top: clamp(4px, 1.4cqh, 10px); }
+.trick-row .trick { margin: 0; flex: 1; min-width: 0; }
+.trick-row .trick-tag { white-space: nowrap; }
+.trick-art { --ta-u: clamp(.42px, .2cqh, 1.2px); flex: none; width: min(calc(var(--ta-w) * var(--ta-u)), 58%); height: auto; aspect-ratio: var(--ta-w) / var(--ta-h); overflow: visible; }
+.face.back:has(.trick-art) .answer-reveal { font-size: clamp(30px, 12cqh, 96px); }
+.face.back:has(.trick.turn):has(.trick-art) .answer-reveal { font-size: clamp(28px, 10cqh, 90px); }
+.trick-art circle { stroke: #14213D; stroke-width: 1.5; }
+.trick-art .ta-a circle { fill: var(--rc, #2BB3A3); }
+.trick-art .ta-b circle { fill: var(--rl, #D5F4F0); }
+.trick-art .ta-g circle { fill: #fff; fill-opacity: .55; stroke-opacity: .45; stroke-dasharray: 2.2 1.8; }
+.trick-art .ta-x circle { fill: #fff; stroke-opacity: .7; }
+.trick-art .ta-strike { stroke: var(--coral, #F25F4C); stroke-width: 3.2; stroke-linecap: round; }
+.trick-art .ta-cut { stroke: #14213D; stroke-width: 2; stroke-dasharray: 4 3; stroke-linecap: round; }
+.trick-art text { font-family: Fredoka, system-ui, sans-serif; font-weight: 700; font-size: 19px; fill: #14213D; dominant-baseline: central; }
+.trick-art .ta-g-lab, .trick-art .ta-x-lab { font-weight: 600; fill: #3A4763; }
+.trick-art .ta-tot { font-size: 19px; }
+.hint-scroll .trick.turn { margin-top: clamp(3px, 1cqh, 10px); }
+.trick.turn + .trick-row { margin-top: clamp(3px, 1cqh, 10px); }
+.turn-tag { background: #DDF3E0; }
+@media (prefers-reduced-motion: no-preference) {
+  .trick-art .ta-row { animation: taPop .32s cubic-bezier(.3, 1.5, .5, 1) calc(var(--d) + 520ms) backwards; transform-box: fill-box; transform-origin: center; }
+  .trick-art .ta-cut, .trick-art .ta-strike { animation: taWipe .3s ease-out calc(var(--d) + 520ms) backwards; transform-box: fill-box; transform-origin: left center; }
+  .trick-art text { animation: taFade .3s ease-out calc(var(--d) + 520ms) backwards; }
+}
+@keyframes taPop { from { opacity: 0; transform: scale(.6); } }
+@keyframes taWipe { from { transform: scaleX(0); } }
+@keyframes taFade { from { opacity: 0; transform: translateX(-4px); } }
+@container (max-height: 520px) { .trick-art { --ta-u: clamp(.42px, .165cqh, 1px); } .trick.turn + .trick-row .trick-art { --ta-u: clamp(.42px, .135cqh, 1px); } }
+
 /* v0.3.22 sheets opened from the Menu have a way back */
 .sheet-back { display: inline-flex; align-items: center; gap: 2px; align-self: flex-start; margin: -4px 0 6px -6px; padding: 6px 10px 6px 4px; border: 0; background: none; font: inherit; font-weight: 700; font-size: 17px; color: #1E6FD9; cursor: pointer; border-radius: 10px; }
 .sheet-back svg { width: 20px; height: 20px; }
