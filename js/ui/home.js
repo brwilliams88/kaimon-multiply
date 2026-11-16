@@ -230,7 +230,7 @@ function homeMenu(p, go) {
     ${row('data-m="switch"', uiImg('icon-trainers'), 'Title screen', 'Switch trainer or add a new one')}
     <button class="menu-row menu-grown hold" data-grownups aria-label="Grown-ups: press and hold"><span class="menu-ic" aria-hidden="true">${uiImg('icon-grownups')}</span><span class="menu-txt"><strong>Grown-ups</strong><small>Press and hold. Needs the grown-up PIN.</small></span><span class="hold-ring" aria-hidden="true"></span></button>
     <p class="menu-ver">Kaimon Multiply v${VERSION}</p>
-  </div>`, { cls: 'menu-sheet' });
+  </div>`, { cls: 'menu-sheet', x: true });
   sh.el.querySelector('[data-quick]').addEventListener('change', (e) => {
     setSetting(p, 'quick', e.target.checked);
     syncNow();
@@ -270,7 +270,7 @@ function howItWorks(p, opts = {}) {
     ${sec(trainerArt({ kind: 'champ', table: 2 }), 'Gym battles', 'Your Buddy and your two strongest Kaimon battle a Gym Leader. Every right answer is an attack! The little balls by each name show how many Kaimon each side has left. Win all the badges to face Boss Papa at Papa’s Gym.')}
     ${sec(kaidexIcon(), 'Kaidex', `Every Kaimon you catch goes in your Kaidex. There are ${dexCounts(p).total} to find, and some are very rare.`)}
     <button class="btn-chunky btn-primary btn-xl how-go" data-close>Let's go!</button>
-  </div>`, { ...opts, cls: 'how-sheet' });
+  </div>`, { ...opts, cls: 'how-sheet', x: true });
 }
 
 export const kaidexIcon = () => uiImg('kaidex-a', 'kdx-ic');
@@ -286,5 +286,5 @@ export function ballsHelp(p, opts = {}) {
     ${row('mega', 'Mega Ball', '×' + p.balls.mega, 'Even better, for rare Kaimon. Win one by beating a Gym Leader the first time or with a Good Work Stamp. A 10-answer streak gives a free Mega throw.')}
     ${row('legend', 'Legend Ball', '×' + p.balls.legend, 'Never misses. Earn one each time a times table gets a new medal. Save it for a Kaimon you really want!')}
     <button class="btn-chunky btn-primary" data-close>Got it</button>
-  </div>`, opts);
+  </div>`, { ...opts, x: true });
 }

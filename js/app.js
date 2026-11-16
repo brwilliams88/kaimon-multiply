@@ -41,15 +41,20 @@ function go(name, params = {}) {
   const root = old.cloneNode(false);
   old.replaceWith(root);
   root.dataset.screen = name;
+  document.body.dataset.screen = name;
   root.removeAttribute('style');
   const p = active();
   if (p) setSound(p.settings.sound);
   SCREENS[name](root, go, params);
+  // A quick fade-and-rise between screens (none with Reduce Motion).
+  root.firstElementChild?.classList.add('screen-in');
   window.scrollTo(0, 0);
   if (name === 'welcome' || name === 'home') maybeIconNotice();
   // The title screen is one fixed screen: no rubber-band scrolling on iPhone.
   document.documentElement.classList.toggle('lock-screen', name === 'welcome');
 }
+// Images fade in as they arrive instead of popping in.
+document.addEventListener('load', (e) => { const t = e.target; if (t.tagName === 'IMG') t.classList.add('ld'); }, true);
 // iOS can still nudge a fixed page; stop drags on the title screen unless they're inside a sheet.
 document.addEventListener('touchmove', (e) => {
   if (!document.documentElement.classList.contains('lock-screen')) return;

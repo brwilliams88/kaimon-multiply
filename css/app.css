@@ -1878,3 +1878,16 @@ html.lock-screen #app { height: 100%; }
 .sheet-x { position: absolute; right: -6px; top: -4px; width: 44px; height: 44px; display: grid; place-items: center; padding: 0; border: 2.5px solid var(--ink); border-radius: 50%; background: var(--paper); color: var(--ink); box-shadow: 0 3px 0 var(--ink); }
 .sheet-x svg { width: 20px; height: 20px; }
 .sheet-x:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--ink); }
+/* v0.5.14 Polish pass: toasts, screen transitions, image fade-in, heading counts */
+#toast { top: auto; bottom: calc(18px + var(--safe-b)); transform: translate(-50%, 160%); background: var(--paper); color: var(--ink); border: 2.5px solid var(--ink); box-shadow: 0 4px 0 var(--ink); font-size: 17px; padding: 10px 18px; }
+#toast.show { transform: translate(-50%, 0); }
+body[data-screen="play"] #toast, body[data-screen="battle"] #toast { bottom: auto; top: calc(68px + var(--safe-t)); transform: translate(-50%, -220%); }
+body[data-screen="play"] #toast.show, body[data-screen="battle"] #toast.show { transform: translate(-50%, 0); }
+@media (prefers-reduced-motion: no-preference) {
+  .screen-in { animation: screen-in .2s cubic-bezier(.2, .9, .3, 1) both; }
+  @keyframes screen-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+  .kart img:not(.ld), .pl-img:not(.ld):not([src^="data:"]), .body-img:not(.ld) { opacity: 0; }
+  .kart img, .pl-img, .body-img { transition: opacity .16s ease-out; }
+}
+.section-title .tr-count { -webkit-text-stroke: 0; text-shadow: none; color: var(--ink-2); background: var(--paper); border: 2px solid var(--ink); border-radius: 99px; padding: 1px 10px; font-size: 15px; vertical-align: middle; letter-spacing: 0; }
+.sheet > .sheet-xbar + h2, .sheet > .sheet-xbar + * > h2:first-child { padding-right: 46px; }

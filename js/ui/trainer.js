@@ -88,7 +88,7 @@ export function renderTrainer(root, go) {
     // Every change saves right away, so closing the sheet any way keeps the new look.
     let changed = false;
     const sh = sheet(`<h2>Change look</h2><div class="tr-lp">${lookPickerHTML(trainerLook(p))}</div>
-      <div class="sheet-actions"><button class="btn-chunky btn-primary" data-close>Done</button></div>`, {
+      <div class="sheet-actions"><button class="btn-chunky btn-primary" data-close>Done</button></div>`, { x: true,
       onClose: () => { if (changed) { syncNow(); draw(); toast('Looking good!', 1400); } },
     });
     wireLookPicker(sh.el.querySelector('.tr-lp'), trainerLook(p), (L) => {

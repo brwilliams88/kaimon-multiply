@@ -1,7 +1,18 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.5.13';
+export const VERSION = '0.5.14';
 
 export const CHANGELOG = [
+  {
+    version: '0.5.14',
+    date: '2026-11-15',
+    title: "Smoother screens and messages",
+    items: [
+      "Messages (like \"Team saved!\") now pop up at the bottom as a light card instead of covering the top of the screen. In practice and battles they show just under the top bar so they never cover the number pad.",
+      "Screens fade in smoothly when you move between them, and pictures fade in as they load instead of popping in. Both are off when Reduce Motion is on.",
+      "The longer sheets (Menu, How to play, Ball guide, Battle team, Change look) have a close X in the top corner that stays put while you scroll.",
+      "Fixed the badge count on the trainer page, which showed as \"3of10\".",
+    ],
+  },
   {
     version: '0.5.13',
     date: '2026-11-15',

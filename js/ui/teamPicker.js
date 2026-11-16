@@ -50,7 +50,7 @@ export function teamSheet(p, onSave, opts = {}) {
     touch(p); save();
     changed = true;
   };
-  const sh = sheet(`<div class="team-sheet">${draw()}</div>`, { cls: 'team-sheet-wrap', ...opts,
+  const sh = sheet(`<div class="team-sheet">${draw()}</div>`, { cls: 'team-sheet-wrap', x: true, ...opts,
     onClose: () => { if (changed) { syncNow(); onSave?.(); toast('Team saved!', 1400); } opts.onClose?.(); } });
   const box = sh.el.querySelector('.team-sheet');
   box.addEventListener('click', (e) => {

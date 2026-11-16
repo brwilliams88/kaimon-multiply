@@ -2,6 +2,13 @@
 
 All notable changes. Versioning: `0.MINOR.0` marks a roadmap phase, `0.x.PATCH` is any shipped change a player or parent can notice, and `1.0.0` is the public launch. See "Versioning" in CLAUDE.md. The in-app version history (Grown-ups > What's new) reads from `js/data/changelog.js`; keep both in sync. Each release is tagged in git as `vX.Y.Z`.
 
+## v0.5.14 (2026-11-15) Smoother screens and messages
+
+- Messages (like "Team saved!") now pop up at the bottom as a light card instead of covering the top of the screen. In practice and battles they show just under the top bar so they never cover the number pad.
+- Screens fade in smoothly when you move between them, and pictures fade in as they load instead of popping in. Both are off when Reduce Motion is on.
+- The longer sheets (Menu, How to play, Ball guide, Battle team, Change look) have a close X in the top corner that stays put while you scroll.
+- Fixed the badge count on the trainer page, which showed as "3of10".
+
 ## v0.5.13 (2026-11-15) Make your own trainer
 
 - A much bigger trainer creator. Make your own trainer: 12 hairstyles (including a cap and a beanie), 3 outfits (zip jacket, hoodie or varsity jacket), 7 skin tones, 9 hair colors and 9 jacket colors.
