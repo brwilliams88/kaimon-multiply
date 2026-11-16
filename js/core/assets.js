@@ -46,6 +46,9 @@ export function sceneKey({ table, kind } = {}) {
   return 'training';
 }
 export const sceneSrc = (key, thumb = false) => `assets/scenes/${thumb ? 'thumb/' : ''}${key}.webp`;
+// Gym buildings: one per table, plus 'papa' (Papa's Gym). Same sizes as scenes.
+export const gymSrc = (key, thumb = false) => `assets/scenes/gyms/${thumb ? 'thumb/' : ''}${key}.webp`;
+export const gymImg = (key, cls = '') => img(gymSrc(key, true), `gym-img ${cls}`);
 
 export const LOGO = 'assets/brand/logo.webp';
 export const CARD_BACK = 'assets/brand/card-back.webp';

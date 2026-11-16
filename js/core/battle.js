@@ -158,6 +158,9 @@ export function champReady(profile, table) {
   return levelRank(tableTier(profile, table) || 'learning') >= 2;
 }
 
+// A gym opens once its table has a Bronze medal (and stays open once its badge is won).
+export const gymOpen = (profile, table) => !!profile.battles.champs[table] || champReady(profile, table);
+
 // Rewards for a win, given before the win is recorded.
 export function rewardFor(profile, kind, table) {
   if (kind === 'boss') return profile.battles.boss ? { ball: 'mega', n: 1 } : { ball: 'legend', n: 1, mythic: true };

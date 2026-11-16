@@ -1,7 +1,21 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.5.32';
+export const VERSION = '0.5.33';
 
 export const CHANGELOG = [
+  {
+    version: '0.5.33',
+    date: '2026-11-15',
+    title: "Kaidex binder and Trainer License",
+    items: [
+      "The Kaidex is now a binder you can page through: swipe or tap the arrows. Caught Kaimon sit in card sleeves, ones you have seen show as shadows, and empty sleeves show their number.",
+      "New Trainer License on the trainer page, with your face, rank, Kaidex count, best streak and medals.",
+      "Earn License extras by playing: a patch for each Gym badge, a frame that gets fancier as more facts reach Bronze, Silver, Gold and Star, and gold trim for all 10 badges.",
+      "New badge case: tap a badge to see how to win it.",
+      "Picking your battle team is simpler: your buddy leads, tap two more, and it saves as you go.",
+      "The Bag now shows every item you have, with a short line about each one.",
+      "Badges now always mean Gym Leader wins, and medals mean how well you know a times table. Trainer ranks count badges.",
+    ],
+  },
   {
     version: '0.5.32',
     date: '2026-11-15',
