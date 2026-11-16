@@ -3220,6 +3220,10 @@ button.buddy-art:active { transform: translateY(2px); }
 .gu-pane[hidden] { display: none !important; }
 .gu-slot:empty { display: none; }
 .gu-slot-panel:not(:has(.gu-slot > *)) { display: none; }
+.gu-collect { margin-top: 6px; }
+.gu-collect summary { cursor: pointer; font-weight: 600; color: var(--ink); padding: 6px 0; }
+.gu-collect ul { margin: 4px 0 8px; padding-left: 20px; color: var(--ink-2); font-size: 15px; line-height: 1.4; }
+.gu-collect li + li { margin-top: 3px; }
 @media (max-width: 420px) { .gu-tab { font-size: 15px; padding: 6px 4px; } }
 @media (prefers-reduced-motion: no-preference) { .gu-pane:not([hidden]) { animation: gu-pane-in .22s cubic-bezier(.2, .8, .3, 1); } @keyframes gu-pane-in { from { opacity: 0; transform: translateY(6px); } } }
 .pt-line { margin: 0; font-size: 15px; line-height: 1.45; color: var(--ink-2); }
