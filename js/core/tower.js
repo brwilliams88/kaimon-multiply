@@ -11,7 +11,7 @@ import { factsForTables, parseFact } from './facts.js';
 import { quizFacts, bossUnlocked } from './battle.js';
 import { creatureArt } from './art.js';
 import { ballImg } from './assets.js';
-import { CRYSTAL } from './megas.js';
+import { grantMegaCrystal } from './items.js';
 
 // Bottom floor first. hp: the guardian's HP (a Gym Leader's Kaimon has about 60).
 export const FLOORS = [
@@ -114,9 +114,9 @@ export function towerOpponent(p, n) {
 }
 
 // ---------- events ----------
-// A 'battle' event with o: 'tower'. Counts tries and wins per floor. The first win on
-// a floor also gives a Mega Crystal. Applying events in any order on any device gives
-// the same result: only the first win of a floor gives the crystal.
+// A 'battle' event with o: 'tower'. Counts tries and wins per floor. The Mega Crystal
+// for a floor's first win is not given here: towerCrystal() claims it with a keyed
+// 'got' event ('tower-N'), so it can only ever be given once, on any device.
 export function applyTowerBattle(p, d, t) {
   const n = +d.tb;
   if (!floorOf(n)) return;
@@ -124,15 +124,15 @@ export function applyTowerBattle(p, d, t) {
   const f = T.floors[n] || (T.floors[n] = { p: 0, w: 0 });
   f.p++;
   if (!d.w) return;
-  if (!f.w) {
-    f.first = t;
-    p.items = p.items || {};
-    p.items[CRYSTAL] = (p.items[CRYSTAL] || 0) + 1;
-  }
+  if (!f.w) f.first = t;
   f.w++;
   f.last = Math.max(f.last || 0, t);
   p.xp = (p.xp || 0) + TOWER_XP;
 }
+
+// After a won Tower battle: the floor's Mega Crystal, once ever (items.js keeps the claim).
+// Returns the 'got' event, or null if this floor's crystal was already given.
+export const towerCrystal = (p, n) => floorOf(+n) ? grantMegaCrystal(p, 'tower-' + n, 1) : null;
 
 // Family sync: a trainer's progress so far, sent as one snapshot, added to another device's.
 export function mergeTowerSnap(p, tower) {

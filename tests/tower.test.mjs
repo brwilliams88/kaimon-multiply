@@ -100,7 +100,7 @@ test('rewards: first win gives a Legend Ball to catch with, rematches a Mega Bal
   assert.deepEqual(rewardFor(p, 'tower', 1), { ball: 'mega', n: 1 });
 });
 
-test('event apply: wins give XP and the first win of a floor gives one Mega Crystal', () => {
+test('event apply: wins give XP; the Mega Crystal comes only from towerCrystal (once per floor)', () => {
   const p = fresh({ boss: true });
   const xp0 = p.xp;
   apply(p, towerWin(1, 0));
@@ -110,24 +110,31 @@ test('event apply: wins give XP and the first win of a floor gives one Mega Crys
   assert.equal(p.xp, xp0);
   assert.equal(p.battles.played, 1);
   apply(p, towerWin(1));
-  assert.equal(M.crystals(p), 1);
+  assert.equal(M.crystals(p), 0, 'the battle event itself gives no crystal');
   assert.equal(p.xp, xp0 + T.TOWER_XP);
   assert.ok(p.tower.floors[1].first);
+  assert.ok(T.towerCrystal(p, 1));
+  assert.equal(M.crystals(p), 1);
+  assert.ok(p.got['tower-1'], 'claimed with the key tower-1');
   apply(p, towerWin(1));
-  assert.equal(M.crystals(p), 1, 'rematch wins do not give more crystals');
+  assert.equal(T.towerCrystal(p, 1), null, 'rematch wins do not give more crystals');
+  assert.equal(M.crystals(p), 1);
   assert.equal(p.tower.floors[1].w, 2);
   assert.equal(p.battles.wins, 2);
+  assert.equal(T.towerCrystal(p, 7), null, 'unknown floors give nothing');
   apply(p, ev('battle', { o: 'tower', tb: 7, w: 1 }));
   assert.equal(p.tower.floors[7], undefined, 'unknown floors are ignored');
 });
 
-test('event merge: two devices clearing the same floor end with the same crystals', () => {
+test('event merge: two devices clearing the same floor end with one crystal', () => {
   const a = ev('battle', { o: 'tower', tb: 1, w: 1 }, 1000);
   const b = ev('battle', { o: 'tower', tb: 1, w: 1 }, 2000);
+  const ga = ev('got', { r: 'tower-1', g: [['i', 'megaCrystal', 1]] }, 1001);
+  const gb = ev('got', { r: 'tower-1', g: [['i', 'megaCrystal', 1]] }, 2001);
   const p1 = fresh({ boss: true }), p2 = fresh({ boss: true }), p3 = fresh({ boss: true });
-  apply(p1, a); apply(p1, b);
-  apply(p2, b); apply(p2, a);
-  apply(p3, a); apply(p3, b);
+  for (const e of [a, ga, b, gb]) apply(p1, e);
+  for (const e of [b, gb, a, ga]) apply(p2, e);
+  for (const e of [a, b, ga, gb]) apply(p3, e);
   for (const p of [p1, p2, p3]) { assert.equal(M.crystals(p), 1); assert.equal(p.tower.floors[1].w, 2); }
 });
 

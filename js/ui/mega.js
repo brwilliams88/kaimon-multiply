@@ -21,7 +21,7 @@ const megaSpecies = () => MEGA_IDS.map((id) => SPECIES.find((s) => s.id === id))
 function whereCrystals(p) {
   if (!towerOpen(p)) return `Mega Crystals are found in the Hundred Tower. ${towerLockedLine(p)}`;
   if (!towerDone(p)) return 'Beat a new floor of the Hundred Tower to find a Mega Crystal.';
-  return 'You found every crystal in the Hundred Tower. Keep answering to find more.';
+  return 'You found every crystal in the Hundred Tower!';
 }
 // The trainer needs this Kaimon first: catch it, or grow it from its first form.
 function getItFirst(s) {

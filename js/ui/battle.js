@@ -21,7 +21,7 @@ import { quick } from '../core/prefs.js';
 import { limitReached } from '../core/playtime.js';
 import { startMusic, stopMusic, setPinch } from '../core/music.js';
 import { $, on, esc, sheet, reducedMotion, soundButton, setFlame, fitText } from './dom.js';
-import { canSnack, useSnack, itemCount } from '../core/items.js'; import { itemIcon } from './items.js'; // [systems] Power Snack
+import { canSnack, useSnack, itemCount } from '../core/items.js'; import { towerCrystal } from '../core/tower.js'; import { itemIcon } from './items.js'; // [systems] Power Snack
 
 // Special hit-back moves for the big opponents. Papazilla lifts.
 const FOE_MOVES = { papa: 'Dumbbell Drop', legend: 'Hundred Blast', mythic: 'Dream Burst' };
@@ -600,6 +600,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt } = {}
     recordBattle(p, kind, opp.table, won);
     const bonusXP = (p.xp || 0) - xpBefore;
     if (reward) giveBall(p, reward.ball, reward.n);
+    if (won && kind === 'tower') towerCrystal(p, opp.table); // Hundred Tower: a floor's first win gives a Mega Crystal, once ever
     endTime();
     save();
     syncNow();
