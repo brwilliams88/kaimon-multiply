@@ -41,7 +41,17 @@ const SCREENS = {
 
 const NEEDS_PROFILE = new Set(['home', 'play', 'kaidex', 'grownups', 'meetPartner', 'battle', 'trainer']);
 
+let navCount = 0;
+// Back from a screen opened from Home lands on the same spot of Home, not the top.
+// (Battles keep their own spot; see keepPlace in home.js.)
+const FROM_HOME = new Set(['kaidex', 'trainer', 'grownups', 'play']);
+let homePlace = null; // { to, y }
 function go(name, params = {}) {
+  const from = document.body.dataset.screen;
+  const fromY = window.scrollY || 0;
+  if (from === 'home' && FROM_HOME.has(name)) homePlace = { to: name, y: fromY };
+  const backTo = name === 'home' && homePlace && homePlace.to === from && !params.celebrate && !params.guide ? homePlace.y : null;
+  if (name !== homePlace?.to) homePlace = null;
   stopVoice();
   coachEnd(); // Teacher K's coach marks belong to the screen they were shown on
   if (NEEDS_PROFILE.has(name) && !active()) name = 'welcome';
@@ -51,6 +61,7 @@ function go(name, params = {}) {
   old.replaceWith(root);
   root.dataset.screen = name;
   document.body.dataset.screen = name;
+  document.body.dataset.nav = String(++navCount); // sheets only put the scroll back on the screen they opened on
   root.removeAttribute('style');
   const p = active();
   if (p) setSound(p.settings.sound);
@@ -59,6 +70,7 @@ function go(name, params = {}) {
   // A quick fade-and-rise between screens (none with Reduce Motion).
   root.firstElementChild?.classList.add('screen-in');
   window.scrollTo(0, 0);
+  if (backTo) { window.scrollTo(0, backTo); requestAnimationFrame(() => { if (document.body.dataset.nav === String(navCount) && Math.abs(window.scrollY - backTo) > 1) window.scrollTo(0, backTo); }); }
   if (name === 'welcome' || name === 'home') maybeIconNotice();
   if (name === 'home') maybeAskRating(); // gentle one-time Rate the game, after a happy moment
   afterScreen(name, root); // offline chip, storage protection, a waiting "Back online" note

@@ -41,10 +41,12 @@ async function copyText(text) {
   // Older browsers, or when the clipboard API is blocked.
   const ta = document.createElement('textarea');
   ta.value = text; ta.setAttribute('readonly', ''); ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0';
-  document.body.appendChild(ta); ta.select();
+  const was = document.activeElement; // keep focus (and the page) where it was
+  document.body.appendChild(ta); ta.focus({ preventScroll: true }); ta.select();
   let ok = false;
   try { ok = document.execCommand('copy'); } catch {}
   ta.remove();
+  if (was && was !== document.body && was.isConnected) was.focus({ preventScroll: true });
   return ok;
 }
 
