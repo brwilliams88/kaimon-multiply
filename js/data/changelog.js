@@ -1,7 +1,20 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.6.7';
+export const VERSION = '0.6.8';
 
 export const CHANGELOG = [
+  {
+    version: '0.6.8',
+    date: '2026-11-16',
+    title: "Every Kaimon levels up",
+    items: [
+      "Every Kaimon you own now has its own level. Make any of them your Buddy from the Kaidex, or with Switch on Home.",
+      "Your first 20 right answers each day give Triple XP. Home shows how many are left today.",
+      "In battles, your other two team Kaimon get half the XP.",
+      "Catching a Kaimon you already have gives it +50 XP. The Kaidex still counts every catch.",
+      "How to play has a new card about your Buddy and Triple XP.",
+      "Old saves keep every Kaimon, and your Buddy keeps its level.",
+    ],
+  },
   {
     version: '0.6.7',
     date: '2026-11-16',

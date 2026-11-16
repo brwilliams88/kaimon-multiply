@@ -2,6 +2,15 @@
 
 All notable changes. Versioning: `0.MINOR.0` marks a roadmap phase, `0.x.PATCH` is any shipped change a player or parent can notice, and `1.0.0` is the public launch. See "Versioning" in CLAUDE.md. The in-app version history (Grown-ups > What's new) reads from `js/data/changelog.js`; keep both in sync. Each release is tagged in git as `vX.Y.Z`.
 
+## v0.6.8 (2026-11-16) Every Kaimon levels up
+
+- Every Kaimon you own now has its own level. Make any of them your Buddy from the Kaidex, or with Switch on Home.
+- Your first 20 right answers each day give Triple XP. Home shows how many are left today.
+- In battles, your other two team Kaimon get half the XP.
+- Catching a Kaimon you already have gives it +50 XP. The Kaidex still counts every catch.
+- How to play has a new card about your Buddy and Triple XP.
+- Old saves keep every Kaimon, and your Buddy keeps its level.
+
 ## v0.6.7 (2026-11-16) Better offline play
 
 - A Works offline badge shows in the Menu once every picture is saved.
