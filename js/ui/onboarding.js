@@ -36,16 +36,14 @@ export function renderWelcome(root, go) {
         <h2 class="welcome-q" id="who-q">Who's playing?</h2>
         <div class="who-car">
           <div class="who-list" role="group" aria-labelledby="who-q">
-            ${profiles.map((p, i) => `<button class="who-card${i === start ? ' sel' : ''}" data-id="${p.id}" data-i="${i}" style="--i:${i}" aria-label="Play as ${esc(p.name)}. ${dexCounts(p).caught} Kaimon caught.${p.family ? ' Family trainer.' : ''}">
+            ${profiles.map((p, i) => `<button class="who-card${i === start ? ' sel' : ''}" data-id="${p.id}" data-i="${i}" style="--i:${i}" aria-label="${esc(p.name)}. ${dexCounts(p).caught} Kaimon caught.${p.family ? ' Family trainer.' : ''}" aria-pressed="${i === start}">
               ${p.id === lastId && profiles.length > 1 ? '<span class="who-last" aria-hidden="true">Last played</span>' : ''}
               <span class="who-av">${avatarSVG(trainerLook(p))}</span>
               <span class="who-text"><span class="who-name">${esc(p.name)}</span><span class="who-meta">${p.family ? `<span class="who-fam" title="Family sync">${cloudIcon()}</span>` : ''}${dexCounts(p).caught} caught</span></span>
-              <span class="who-go" aria-hidden="true">Play${playIcon()}</span>
             </button>`).join('')}
             <button class="who-card who-new" data-new data-i="${profiles.length}" style="--i:${profiles.length}" aria-label="New trainer">
               <span class="who-av who-plus">${plusIcon()}</span>
               <span class="who-text"><span class="who-name">New trainer</span><span class="who-meta">Add a friend</span></span>
-              <span class="who-go" aria-hidden="true">Start${playIcon()}</span>
             </button>
           </div>
         </div>
@@ -53,7 +51,8 @@ export function renderWelcome(root, go) {
           <button class="who-arrow" data-step="-1" aria-label="Previous trainer" tabindex="-1">${chevron(-1)}</button>
           <span class="who-dots" aria-hidden="true">${profiles.map((p, i) => `<i data-dot="${i}"></i>`).join('')}<i data-dot="${profiles.length}"></i></span>
           <button class="who-arrow" data-step="1" aria-label="Next trainer" tabindex="-1">${chevron(1)}</button>
-        </div>` : `
+        </div>
+        <button class="btn-chunky btn-primary btn-xl who-play" data-play><span class="who-play-label"></span>${playIcon()}</button>` : `
         <p class="welcome-line">Answer times tables. Catch Kaimon. Fill your Kaidex.</p>
         <button class="btn-chunky btn-primary btn-xl" data-new>Start</button>`}
       ${st.signedIn ? '' : '<button class="link-btn fam-signin" data-famsignin>Family device? Sign in for family sync</button>'}
@@ -68,7 +67,9 @@ export function renderWelcome(root, go) {
   const off = onSyncChange(() => { if (!root.isConnected || root.dataset.screen !== 'welcome') return off(); if (sig() !== before) { off(); go('welcome'); } });
   const enter = (id) => { unlock(); sfx.tap(); switchProfile(id); go(active().starter ? 'home' : 'meetPartner'); };
   const car = profiles.length ? whoCarousel(root, start, profiles) : null;
-  on(root, 'click', '[data-id]', (e, el) => { if (car?.dragged()) return; enter(el.dataset.id); });
+  // Tapping a trainer only picks it; the big Play button starts the game.
+  on(root, 'click', '[data-id]', (e, el) => { if (car?.dragged()) return; sfx.tap(); car.pick(+el.dataset.i); });
+  on(root, 'click', '[data-play]', () => { const p = profiles[car.sel()]; if (p) enter(p.id); else { unlock(); sfx.tap(); go('newTrainer'); } });
   on(root, 'click', '[data-famsignin]', () => { unlock(); sfx.tap(); familySignInSheet(() => go('welcome')); });
   on(root, 'click', '[data-new]', () => { if (car?.dragged()) return; unlock(); sfx.tap(); go('newTrainer'); });
 }
@@ -76,13 +77,17 @@ export function renderWelcome(root, go) {
 // "Who's playing?" trainer picker. Portrait: a swipe carousel where the selected card
 // sits in the middle and its neighbors peek in from the sides. When every card fits,
 // they simply sit in a centered row. Landscape: a list down the left panel.
-// The selected card wears a Play tag. Arrow keys, the arrow buttons and the dots move
-// the selection; Enter plays it, and tapping any card goes straight in.
+// Pick first, then play: tapping or swiping to a card selects it, and the big Play
+// button under the cards starts the game for that trainer. Arrow keys, the arrow
+// buttons and the dots move the selection; Enter or Space presses Play. The New
+// trainer card opens the trainer creator right away.
 function whoCarousel(root, start, profiles) {
   const car = $('.who-car', root);
   const list = $('.who-list', car);
   const cards = [...list.children];
   const nav = $('.who-nav', root);
+  const playBtn = $('.who-play', root);
+  const label = $('.who-play-label', playBtn);
   const dots = [...nav.querySelectorAll('[data-dot]')];
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   let sel = start, mode = '', raf = 0, aim = null, blockTap = false, drag = null;
@@ -90,17 +95,35 @@ function whoCarousel(root, start, profiles) {
   const vertical = () => getComputedStyle(list).flexDirection === 'column';
   const setSel = (i) => {
     sel = Math.max(0, Math.min(cards.length - 1, i));
-    cards.forEach((c, k) => c.classList.toggle('sel', k === sel));
+    cards.forEach((c, k) => { c.classList.toggle('sel', k === sel); if (c.dataset.id) c.setAttribute('aria-pressed', k === sel); });
     dots.forEach((d, k) => d.classList.toggle('on', k === sel));
     nav.querySelector('[data-step="-1"]').disabled = sel === 0;
     nav.querySelector('[data-step="1"]').disabled = sel === cards.length - 1;
+    setLabel();
+  };
+  // "Play as Kai", or just "Play" when a long name would not fit on the button.
+  const setLabel = (anim = true) => {
+    const p = profiles[sel];
+    const text = p ? `Play as ${p.name}` : 'Make a new trainer';
+    if (label.dataset.text === text) return;
+    label.dataset.text = text;
+    label.textContent = text;
+    playBtn.classList.toggle('is-new', !p);
+    playBtn.setAttribute('aria-label', text);
+    if (p && label.scrollWidth > label.clientWidth + 1) label.textContent = 'Play';
+    if (anim && !reduce) { label.classList.remove('swap'); void label.offsetWidth; label.classList.add('swap'); }
   };
   // Where the list must scroll to so card i sits in the middle.
+  // Carousel: card i in the middle. List: rows start on a row edge, and the list
+  // scrolls only as far as needed to show row i in full.
+  let rows = 0; // whole rows the landscape list shows (0 when they all fit)
   const target = (i) => {
     const c = cards[i];
-    return vertical()
-      ? c.offsetTop - (list.clientHeight - c.offsetHeight) / 2
-      : c.offsetLeft - (list.clientWidth - c.offsetWidth) / 2;
+    if (!vertical()) return c.offsetLeft - (list.clientWidth - c.offsetWidth) / 2;
+    if (!rows) return 0;
+    const top = cards.findIndex((x) => x.offsetTop - cards[0].offsetTop >= list.scrollTop - 2);
+    const t = Math.max(0, Math.min(i, Math.max(top, i - rows + 1), cards.length - rows));
+    return cards[t].offsetTop - cards[0].offsetTop;
   };
   const scrollToCard = (i, smooth = true) => {
     const t = target(i);
@@ -132,7 +155,19 @@ function whoCarousel(root, start, profiles) {
   const layout = () => {
     if (!car.isConnected) { removeEventListener('resize', layout); return; }
     let m;
-    if (vertical()) m = list.scrollHeight > list.clientHeight + 1 ? 'list over' : 'list';
+    if (vertical()) {
+      // When the rows don't all fit, show whole rows plus half of the next, so the
+      // list never ends on a thin sliver of a row.
+      list.style.removeProperty('max-height');
+      rows = 0;
+      m = list.scrollHeight > list.clientHeight + 1 ? 'list over' : 'list';
+      if (m === 'list over') {
+        const cs = getComputedStyle(list), pt = parseFloat(cs.paddingTop), gap = parseFloat(cs.rowGap) || 0;
+        const rowH = cards[0].offsetHeight + gap;
+        rows = Math.max(1, Math.floor((list.clientHeight - pt - rowH / 2) / rowH));
+        list.style.maxHeight = Math.floor(pt + rows * rowH + rowH / 2) + 'px';
+      }
+    }
     else {
       // Cards may shrink a little (to 82%) so a short row fits with no scrolling.
       car.style.removeProperty('--cw');
@@ -146,6 +181,7 @@ function whoCarousel(root, start, profiles) {
     if (m !== mode) { mode = m; car.dataset.mode = m; nav.hidden = m !== 'carousel'; }
     scrollToCard(sel, false);
     paint();
+    label.dataset.text = ''; setLabel(false);
   };
 
   setSel(start);
@@ -177,7 +213,7 @@ function whoCarousel(root, start, profiles) {
   });
   // Tabbing onto a card selects it and brings it to the middle (not on a tap: the card must stay put under the finger).
   list.addEventListener('focusin', (e) => { const c = e.target.closest('[data-i]'); if (c && +c.dataset.i !== sel && c.matches(':focus-visible')) { setSel(+c.dataset.i); scrollToCard(sel); } });
-  // Arrow keys move between trainers; Enter plays the selected one.
+  // Arrow keys move between trainers; Enter or Space presses Play.
   const onKey = (e) => {
     if (!car.isConnected) { removeEventListener('keydown', onKey); return; }
     if (document.querySelector('.sheet-wrap') || e.target.closest?.('input, textarea, select')) return;
@@ -187,11 +223,12 @@ function whoCarousel(root, start, profiles) {
       setSel(e.key === 'Home' ? 0 : e.key === 'End' ? cards.length - 1 : sel + (fwd ? 1 : -1));
       scrollToCard(sel);
       if (list.contains(document.activeElement)) cards[sel].focus({ preventScroll: true });
-    } else if (e.key === 'Enter' && !e.target.closest?.('button, a')) { e.preventDefault(); cards[sel].click(); }
+    } else if ((e.key === 'Enter' || e.key === ' ') && (!e.target.closest?.('button, a') || e.target.closest('[data-id]'))) { e.preventDefault(); playBtn.click(); }
   };
   addEventListener('keydown', onKey);
 
-  return { dragged: () => blockTap };
+  const pick = (i) => { if (i !== sel) { setSel(i); } scrollToCard(sel); };
+  return { dragged: () => blockTap, sel: () => sel, pick };
 }
 
 const chevron = (d) => `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${d < 0 ? 'M14.5 5 L7.5 12 L14.5 19' : 'M9.5 5 L16.5 12 L9.5 19'}" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`;

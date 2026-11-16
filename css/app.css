@@ -2343,7 +2343,7 @@ html.sheet-open, html.sheet-open body { overflow: hidden; overscroll-behavior: n
 .title-panel .who-car .who-list {
   position: relative; display: flex; flex-direction: row; flex-wrap: nowrap; align-items: stretch; justify-content: flex-start; gap: var(--gap);
   width: 100%; max-width: none; margin: 0; min-height: 0;
-  padding: 14px calc(50% - var(--cw) / 2) 24px;
+  padding: 14px calc(50% - var(--cw) / 2) 16px;
   overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; scrollbar-width: none;
   scroll-snap-type: x mandatory;
 }
@@ -2392,7 +2392,7 @@ html.sheet-open, html.sheet-open body { overflow: hidden; overscroll-behavior: n
 .title-panel .who-nav { display: flex; align-items: center; justify-content: center; gap: 14px; margin: -8px 0 0; min-height: 12px; }
 .title-panel .who-nav[hidden] { display: none; }
 .who-arrow { display: none; }
-@media (min-width: 600px), (hover: hover) and (pointer: fine) {
+@media (min-width: 600px) {
   .title-panel .who-nav { margin: -4px 0 0; }
   .who-arrow {
     display: grid; place-items: center; flex: none; width: 44px; height: 44px; padding: 0; border-radius: 50%;
@@ -2408,49 +2408,59 @@ html.sheet-open, html.sheet-open body { overflow: hidden; overscroll-behavior: n
 .who-dots i::before { content: ''; position: absolute; inset: -12px -4px; }
 .who-dots i.on { width: 24px; background: var(--ink); }
 
-/* The selected card wears a Play tag on its bottom edge */
-.who-go { position: absolute; z-index: 1; left: 50%; bottom: -15px; translate: -50% 0; display: inline-flex; align-items: center; gap: 4px; padding: 3px 12px 4px 14px; border: 2.5px solid var(--ink); border-radius: 99px; background: var(--coral); color: #fff; font-size: 15px; font-weight: 700; line-height: 1.1; white-space: nowrap; pointer-events: none; opacity: 0; scale: .4; transition: opacity .15s, scale .25s cubic-bezier(.3, 1.6, .5, 1); }
-.who-go svg { width: 13px; height: 13px; }
-.who-card.sel .who-go { opacity: 1; scale: 1; }
+/* Play: starts the game for the selected trainer */
+.title-panel .who-play { align-self: center; width: min(100%, 340px); min-height: 58px; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 8px 22px; font-size: 23px; }
+.who-play-label { display: inline-block; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.who-play-ic { width: 20px; height: 20px; flex: none; }
+.who-play.is-new .who-play-ic { display: none; }
+.who-play-label.swap { animation: whoSwap .22s ease-out; }
+@keyframes whoSwap { from { opacity: 0; transform: translateY(6px); } }
 /* Cards rise in one after another */
 .who-car .who-card { animation: whoIn .45s cubic-bezier(.3, 1.35, .5, 1) both; animation-delay: calc(80ms + var(--i, 0) * 55ms); }
 @keyframes whoIn { from { opacity: 0; transform: translateY(16px); } }
 @media (prefers-reduced-motion: reduce) {
-  .who-car .who-card { animation: none; }
-  .who-card, .who-dots i, .who-go { transition: none; }
+  .who-car .who-card, .who-play-label.swap { animation: none; }
+  .who-card, .who-dots i { transition: none; }
 }
 
 /* Portrait: room for the cards and the Play button */
 @media (max-aspect-ratio: 1/1) {
-  .title-panel { max-height: 56dvh; gap: 10px; padding-bottom: 12px; align-self: stretch; min-width: 0; }
-  .title-panel .fam-signin { padding: 4px 8px; font-size: 16px; }
+  .title-panel { max-height: 56dvh; gap: 8px; padding-top: 14px; padding-bottom: 10px; align-self: stretch; min-width: 0; }
+  .title-panel .fam-signin { padding: 2px 8px; font-size: 16px; }
+  .title-panel .who-car .who-list { padding-top: 13px; padding-bottom: 13px; }
+  .title-panel .who-car { --av: 54px; }
+  .who-card { padding-top: 11px; padding-bottom: 10px; gap: 6px; }
+  .title-panel .who-play { min-height: 54px; font-size: 22px; }
 }
 @media (max-aspect-ratio: 1/1) and (min-width: 600px) {
   .title-panel { width: min(92%, 720px); align-self: center; }
   .title-panel .who-car { --cw: 126px; --av: 74px; margin: 0 -20px; }
   .title-panel .who-card .who-name { font-size: 20px; }
   .title-panel .who-card .who-meta { font-size: 14px; }
+  .title-panel .who-play { width: min(100%, 380px); min-height: 62px; font-size: 24px; }
 }
 
 /* Landscape: a list down the left panel. Up to four trainers fit with no scrolling. */
 @media (min-aspect-ratio: 1/1) {
   .title-panel { display: flex; flex-direction: column; max-height: calc(93dvh - min(38vw, 520px) / 2.31 - 16px - var(--safe-b)); bottom: calc(4% + var(--safe-b)); gap: 10px; padding: 14px 14px 10px; }
   .title-panel .who-car { margin: 0 -14px; }
-  .title-panel .who-car .who-list { flex-direction: column; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; padding: 10px 14px 12px; gap: 14px; scroll-snap-type: y proximity; flex: 0 1 auto; }
+  .title-panel .who-car .who-list { flex-direction: column; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; padding: 10px 14px 12px; gap: 12px; scroll-snap-type: y proximity; flex: 0 1 auto; }
   .who-car[data-mode="list over"] { --fs: 22px; --fe: 26px; }
+  .who-car[data-mode="list over"] .who-list { scroll-snap-type: y mandatory; scroll-padding-top: 10px; }
+  .who-car[data-mode="list over"] .who-card { scroll-snap-align: start; }
   .who-car[data-mode="list over"].at-start { --fs: 0px; }
   .who-car[data-mode="list over"].at-end { --fe: 0px; }
   .who-car[data-mode="list over"] .who-list {
     -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 var(--fs), #000 calc(100% - var(--fe)), transparent 100%);
     mask-image: linear-gradient(180deg, transparent 0, #000 var(--fs), #000 calc(100% - var(--fe)), transparent 100%);
   }
-  .who-card { flex: 0 0 auto; width: auto; flex-direction: row; gap: 12px; padding: 6px 12px 6px 7px; border-radius: 18px; scale: none; }
+  .who-card { flex: 0 0 auto; width: auto; flex-direction: row; gap: 12px; padding: 4px 12px 4px 6px; border-radius: 18px; scale: none; }
   .who-card.sel { translate: 0 -2px; box-shadow: 0 6px 0 var(--ink); }
   .who-card.sel:active { transform: translateY(5px); }
   .title-panel .who-car { --av: 46px; }
   .title-panel .who-card .who-text { align-items: flex-start; text-align: left; flex: 1; }
   .title-panel .who-card .who-name { font-size: 19px; }
-  .who-go { left: auto; right: 10px; bottom: auto; top: 50%; translate: 0 -50%; }
+  .title-panel .who-play { width: 100%; min-height: 54px; font-size: 21px; }
   .who-last { top: -10px; left: auto; right: 16px; translate: none; }
   .title-panel .fam-signin { padding: 2px 8px; font-size: 15px; }
 }
