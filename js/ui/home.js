@@ -461,10 +461,10 @@ export function ballsHelp(p, opts = {}) {
   sheet(`<div class="balls-help">
     <h2>Your balls</h2>
     ${!(p.balls.super || p.balls.mega || p.balls.legend) ? `<div class="bh-empty">${uiImg('empty-bag')}<p>No special balls yet. Win them in Gym battles, with streaks and with medals!</p></div>` : ''}
-    <p class="bh-how">When a wild Kaimon appears, tap the ball you want to throw. It gets a gold ring. Then answer: a right answer throws it.</p>
+    <p class="bh-how">When a wild Kaimon appears, tap the ball you want to throw. It gets a gold ring. Then answer: a right answer throws it. A ball with a little flame comes from your streak, so it doesn’t use one of yours.</p>
     ${row('capture', 'Capture Ball', '∞', 'Free, and you never run out. Good for most Kaimon.')}
-    ${row('super', 'Super Ball', '×' + p.balls.super, 'Much better at catching. Win one from Gym Leaders. A 5-answer streak also gives you a free Super throw.')}
-    ${row('mega', 'Mega Ball', '×' + p.balls.mega, 'Even better, for rare Kaimon. Win one by beating a Gym Leader the first time or with a Good Work Stamp. A 10-answer streak gives a free Mega throw.')}
+    ${row('super', 'Super Ball', '×' + p.balls.super, 'Much better at catching. Win one from Gym Leaders. Get 5 right in a row and you throw Super Balls without using yours.')}
+    ${row('mega', 'Mega Ball', '×' + p.balls.mega, 'Even better, for rare Kaimon. Win one by beating a Gym Leader the first time or with a Good Work Stamp. Get 10 right in a row and you throw Mega Balls without using yours.')}
     ${row('legend', 'Legend Ball', '×' + p.balls.legend, 'Never misses. Earn one each time a times table gets a new medal. Save it for a Kaimon you really want!')}
     <button class="btn-chunky btn-primary" data-close>Got it</button>
   </div>`, { ...opts, x: true });

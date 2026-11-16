@@ -24,9 +24,12 @@ import { trickyPool, markTrickyDone } from '../core/nextup.js';
 import { fxImg, glowBall, unlockCardHTML, wireUnlockCard } from './moments.js';
 import { wardrobeCheck } from './wardrobe.js';
 import { quick } from '../core/prefs.js';
-import { $, on, esc, sheet, wait, toast, soundButton, reducedMotion, setFlame, say } from './dom.js';
-import { secondChance, lanternGlow, scrollButton, openScroll } from './items.js'; import { hintedMs } from '../core/items.js'; import { afterRound } from './quests.js'; import { calmMode } from '../core/lightning.js'; // [systems] items, quests, Calm mode
+import { $, on, esc, sheet, wait, toast, soundButton, reducedMotion, setFlame, say, wirePad } from './dom.js';
+import { secondChance, lanternGlow, offerHint, openScroll } from './items.js'; import { hintedMs, hintPlan, hintDue } from '../core/items.js'; import { hintWorthy } from '../core/facts.js'; import { afterRound } from './quests.js'; import { calmMode } from '../core/lightning.js'; // [systems] items, quests, Calm mode
 import { firstGameGuide, finishFirstGame, wantsFirstGame, GUIDE_FACTS } from './firstGame.js';
+
+// The belt's streak ball wears a little flame (it comes from your streak, and it's free).
+const FLAME = '<svg viewBox="0 0 24 24"><path d="M12 1.8c.9 3.2-1.2 5-2.7 6.8C7.7 10.5 6.6 12.3 6.6 14.6a5.4 5.4 0 0 0 10.8 0c0-2.9-1.5-4.8-2.6-6.2-.3 1.6-1.1 2.5-2.1 3 .5-3.1-.1-6.5-.7-9.6z" fill="#FF8A3D" stroke="#14213D" stroke-width="1.8" stroke-linejoin="round"/></svg>';
 
 export function renderPlay(root, go, { table, focus, guide } = {}) {
   const p = active();
@@ -59,7 +62,7 @@ export function renderPlay(root, go, { table, focus, guide } = {}) {
         <div class="pips" aria-hidden="true">${Array.from({ length: S.length }, () => '<span></span>').join('')}</div>
         ${guide ? '<button class="pill guide-skip" data-guide-skip>Skip</button>' : ''}
         ${soundButton(p.settings.sound)}
-        <div class="streak" data-tier="0" aria-live="polite" title="Streak: right answers in a row"><span class="streak-flame" aria-hidden="true"><svg viewBox="0 0 24 24"><path class="fl-out" d="M12 1.8c.9 3.2-1.2 5-2.7 6.8C7.7 10.5 6.6 12.3 6.6 14.6a5.4 5.4 0 0 0 10.8 0c0-2.9-1.5-4.8-2.6-6.2-.3 1.6-1.1 2.5-2.1 3 .5-3.1-.1-6.5-.7-9.6z" stroke="#14213D" stroke-width="1.5" stroke-linejoin="round"/><path class="fl-in" d="M12.1 10.6c.4 1.7-.6 2.6-1.3 3.5-.5.6-.9 1.3-.9 2.1a2.2 2.2 0 0 0 4.4 0c0-1.3-.7-2.1-1.2-2.8-.2.7-.5 1-1 1.2.2-1.4 0-2.7 0-4z"/></svg></span><span class="streak-num">0</span><span class="streak-ball" hidden></span><span class="sr-only streak-sr"></span></div>
+        <div class="streak" data-tier="0" aria-live="polite" title="Streak: right answers in a row"><span class="streak-flame" aria-hidden="true"><svg viewBox="0 0 24 24"><path class="fl-out" d="M12 1.8c.9 3.2-1.2 5-2.7 6.8C7.7 10.5 6.6 12.3 6.6 14.6a5.4 5.4 0 0 0 10.8 0c0-2.9-1.5-4.8-2.6-6.2-.3 1.6-1.1 2.5-2.1 3 .5-3.1-.1-6.5-.7-9.6z" stroke="#14213D" stroke-width="1.5" stroke-linejoin="round"/><path class="fl-in" d="M12.1 10.6c.4 1.7-.6 2.6-1.3 3.5-.5.6-.9 1.3-.9 2.1a2.2 2.2 0 0 0 4.4 0c0-1.3-.7-2.1-1.2-2.8-.2.7-.5 1-1 1.2.2-1.4 0-2.7 0-4z"/></svg></span><span class="streak-num">0</span><span class="sr-only streak-sr"></span></div>
       </header>
       <div class="play-body">
         <div class="stage">
@@ -90,7 +93,7 @@ export function renderPlay(root, go, { table, focus, guide } = {}) {
   const el = {
     inner: $('.card-inner', root), front: $('.front', root), back: $('.back', root),
     val: $('.answer-val', root), hint: $('.answer-hint', root), pips: [...root.querySelectorAll('.pips span')],
-    streak: $('.streak-num', root), streakBall: $('.streak-ball', root), stage: $('.stage', root), mic: $('[data-mic]', root),
+    streak: $('.streak-num', root), stage: $('.stage', root), mic: $('[data-mic]', root),
     fly: $('.mythic-fly', root), donePile: $('.done-pile', root),
   };
 
@@ -112,17 +115,28 @@ export function renderPlay(root, go, { table, focus, guide } = {}) {
     root.querySelectorAll('.answer-val').forEach((x) => { x.textContent = v || ''; x.classList.toggle('empty', !v); });
   }
 
-  // Streak: a flame and the number of right answers in a row. A long streak makes
-  // the free throw a better ball, shown beside the flame.
+  // Streak: just a flame and the number of right answers in a row. When a streak
+  // makes the throws a better ball (5 in a row: Super, 10: Mega; ballForStreak),
+  // a short note pops in under the flame, and the belt's first ball shows it.
   function updateStreak() {
     el.streak.textContent = S.streak;
     const box = el.streak.closest('.streak');
-    const nextBall = ballForStreak(p, S.streak + 1);
+    const ball = ballForStreak(p, S.streak);
     box.classList.toggle('hot', S.streak >= 3);
     setFlame(box, S.streak);
-    el.streakBall.hidden = nextBall === 'capture';
-    el.streakBall.innerHTML = nextBall === 'capture' ? '' : `${ballIcon(nextBall)}<small>free</small>`;
-    box.querySelector('.streak-sr').textContent = `${S.streak} right in a row${nextBall === 'capture' ? '' : `. Next throw: free ${BALLS[nextBall].name}`}`;
+    box.querySelector('.streak-sr').textContent = `${S.streak} right in a row${ball === 'capture' ? '' : `. You throw ${BALLS[ball].name}s now`}`;
+    if (S.streak > 0 && ball !== ballForStreak(p, S.streak - 1)) streakNote(box, ball);
+  }
+  let noteTimer = 0;
+  function streakNote(box, ball) {
+    root.querySelector('.streak-note')?.remove();
+    clearTimeout(noteTimer);
+    const n = document.createElement('div');
+    n.className = 'streak-note';
+    n.setAttribute('role', 'status');
+    n.innerHTML = `${ballIcon(ball)}<span><b>${S.streak} in a row!</b> You throw ${BALLS[ball].name}s now.</span>`;
+    box.after(n);
+    noteTimer = setTimeout(() => { n.classList.add('out'); setTimeout(() => n.remove(), reducedMotion() ? 0 : 300); }, 1600);
   }
 
   // Ball belt: the free ball (better on a streak) plus any special balls you own.
@@ -135,7 +149,7 @@ export function renderPlay(root, go, { table, focus, guide } = {}) {
     if (!owned.length && free === 'capture') return '';
     S.freeKind = free;
     const rare = ['rare', 'legendary'].includes(species.rarity);
-    const btn = (k, count, isFree) => `<button class="belt-ball${isFree ? ' on' : ''}" data-ball="${isFree ? 'free' : k}" aria-pressed="${isFree}" aria-label="${BALLS[k].name}${isFree ? (k === 'capture' ? '' : ', free streak ball') : `, ${count} left`}">${ballIcon(k)}${isFree ? (k === 'capture' ? '' : '<span class="bb-badge free">free</span>') : `<span class="bb-badge">${count}</span>`}</button>`;
+    const btn = (k, count, isFree) => `<button class="belt-ball${isFree ? ' on' : ''}" data-ball="${isFree ? 'free' : k}" aria-pressed="${isFree}" aria-label="${BALLS[k].name}${isFree ? (k === 'capture' ? '' : ', from your streak, free') : `, ${count} left`}">${ballIcon(k)}${isFree ? (k === 'capture' ? '' : `<span class="bb-badge streak-badge" aria-hidden="true">${FLAME}</span>`) : `<span class="bb-badge">${count}</span>`}</button>`;
     return `<div class="belt${rare && owned.length ? ' rare' : ''}" role="group" aria-label="Pick a ball. A right answer throws it.">
       <span class="belt-name" aria-hidden="true">${BALLS[free].name}</span>
       <span class="belt-balls">${btn(free, 0, true)}${owned.map((k) => btn(k, p.balls[k], false)).join('')}</span>
@@ -172,7 +186,7 @@ export function renderPlay(root, go, { table, focus, guide } = {}) {
     el.front.innerHTML = `
       <div class="card-head"><span class="chip wild-chip" aria-live="polite">${lingering ? `<strong>${esc(species.name)}</strong> is still here!` : `Wild <strong>${esc(species.name)}</strong>${known ? '' : ' <span class="wild-new">New!</span>'}`}</span><span class="chip card-type" title="${esc(region.name)}">${typeIcon(region.type)}${t.name}</span></div>
       <div class="qplate"><span>${a}</span><span class="times">×</span><span>${b}</span><span class="eq">=</span><span class="answer-val empty" data-ph="?"></span><span class="power-strip" aria-hidden="true"><span class="power-fill"></span></span></div>
-      <div class="card-wild${lingering ? ' stay' : ''}${S.wildBattle ? ' strong' : ''}"><div class="wild-art">${creatureArt(species)}<span class="wild-lv" aria-label="Level ${S.wildLv}">Lv ${S.wildLv}</span></div>${S.wildBattle ? '<span class="wild-strong"><span>Strong one!</span> <span>Battle it first</span></span>' : ''}${scrollButton(p) /* [systems] Hint Scroll */}</div>
+      <div class="card-wild${lingering ? ' stay' : ''}${S.wildBattle ? ' strong' : ''}"><div class="wild-art">${creatureArt(species)}<span class="wild-lv" aria-label="Level ${S.wildLv}">Lv ${S.wildLv}</span></div>${S.wildBattle ? '<span class="wild-strong"><span>Strong one!</span> <span>Battle it first</span></span>' : ''}</div>
       ${beltHTML(species)}`;
     el.front.classList.toggle('has-belt', !!el.front.querySelector('.belt'));
     say(`${lingering ? `${species.name} is still here.` : `Wild ${species.name}.`} What is ${a} times ${b}?`);
@@ -203,10 +217,16 @@ export function renderPlay(root, go, { table, focus, guide } = {}) {
     el.val.dataset.ph = '?';
     S.phase = 'ask';
     S.mustType = null;
-    S.shownAt = performance.now();
+    S.shownAt = S.lastKey = performance.now();
+    // Teacher K's hint is never on a card when it is dealt. It pops in later, only
+    // when it can help: a new fact or one missed lately or often (soon), or after
+    // a few seconds with no key pressed on any card (core/items.js hintPlan).
+    S.hintPlan = guide ? null : hintPlan(p, { n: S.n, worthy: hintWorthy(p, id), lastOffer: S.lastOffer });
+    armHint();
     runPower();
     S.mic?.ready();
     el.pips.forEach((pip, i) => pip.className = i < S.n ? (S.results?.[i] ? 'done ok' : 'done') : i === S.n ? 'now' : '');
+    flushKeys();
     if (G) { if (S.n > 0) G.deal(S.n, S.streak); return; }
     maybeMythic();
     lanternGlow(p, root); // [systems] Lucky Lantern
@@ -216,11 +236,16 @@ export function renderPlay(root, go, { table, focus, guide } = {}) {
   function runPower() {
     cancelAnimationFrame(S.raf);
     const fill = $('.front .power-fill', root);
+    // A transform (no layout) and a class change only when the color step changes,
+    // so the meter costs next to nothing while a kid is typing.
+    let cls = '', w = -1;
     const tick = () => {
       if (S.phase !== 'ask' || !fill.isConnected) return;
       const pw = powerFor(performance.now() - S.shownAt);
-      fill.style.width = (pw * 100) + '%';
-      fill.className = 'power-fill' + (pw >= 0.9 ? ' max' : pw >= 0.6 ? ' hi' : '');
+      const c = pw >= 0.9 ? 'power-fill max' : pw >= 0.6 ? 'power-fill hi' : 'power-fill';
+      if (c !== cls) fill.className = cls = c;
+      const nw = Math.round(pw * 400) / 400;
+      if (nw !== w) fill.style.transform = `scaleX(${w = nw})`;
       S.raf = requestAnimationFrame(tick);
     };
     tick();
@@ -248,12 +273,15 @@ export function renderPlay(root, go, { table, focus, guide } = {}) {
     if (G?.waiting) { G.waiting = false; S.shownAt = performance.now(); }
     G?.answered();
     stopVoice();
+    clearTimeout(hintTimer);
     S.phase = 'result';
+    S.skip = false;
+    S.answeredAt = performance.now();
     const ms0 = performance.now() - S.shownAt;
     const ms = S.hinted === S.n ? hintedMs(p, ms0) : ms0; // [systems] a hinted answer is never a fast one
     const ans = answerOf(S.fact);
     const ok = parseInt(S.input, 10) === ans;
-    if (!ok && await secondChance(p, S)) { answer(p, S.fact, false, ms, via); onAnswer(S, S.fact, false); save(); S.phase = 'ask'; setInput(''); S.shownAt = performance.now(); runPower(); S.mic?.ready(); return; } // [systems] Second Chance Charm: the miss counts, the streak and the Kaimon stay
+    if (!ok && await secondChance(p, S)) { answer(p, S.fact, false, ms, via); onAnswer(S, S.fact, false); save(); S.phase = 'ask'; setInput(''); S.shownAt = S.lastKey = performance.now(); armHint(); runPower(); S.mic?.ready(); return; } // [systems] Second Chance Charm: the miss counts, the streak and the Kaimon stay
     const [a, b] = parseFact(S.fact);
     const region = regionOf(a);
     const xp0 = p.xp || 0, pl0 = partnerOf(p);
@@ -342,7 +370,8 @@ export function renderPlay(root, go, { table, focus, guide } = {}) {
         const line = el.front.querySelector('.wild-chip');
         if (line) line.innerHTML = `Oh no! <strong>${esc(S.species.name)}</strong> ran away!`;
         setTimeout(() => sfx.escape(), 380);
-        await wait(1150);
+        await nap(reducedMotion() ? 150 : 1150); // a tap skips ahead to the lesson
+        S.wake = null;
       }
       el.back.innerHTML = `
         <div class="card-head"><span class="chip">Not quite</span></div>
@@ -623,17 +652,52 @@ export function renderPlay(root, go, { table, focus, guide } = {}) {
   document.addEventListener('visibilitychange', flushTime);
   const endTime = () => { S.done = true; document.removeEventListener('visibilitychange', flushTime); session(p, Date.now() - S.startedAt, S.best, !!S.flushed); };
   // Input handlers
-  on(root, 'click', '[data-k]', (e, k) => {
-    const v = k.dataset.k;
-    if (S.phase === 'done') { advance(); return; }
-    if (v === 'go') return submit('pad');
-    if (S.phase !== 'ask' && S.phase !== 'learn') return;
+  // Number pad: every tap lands on finger down (dom.js wirePad). Taps while a card
+  // is busy are never just lost:
+  // - during the throw (or the "ran away" moment): a tap skips ahead, like tapping
+  //   the card (but not a double tap of the check key right after answering);
+  // - once the catch is shown: a tap moves on to the next card;
+  // - while the next card slides in: digits wait and land on the new card.
+  function typeKey(v, quiet = false) {
     if (S.phase === 'ask') G?.key();
-    sfx.tap();
+    if (!quiet) v === 'del' ? sfx.keyDel() : sfx.key(v);
     if (v === 'del') setInput(S.input.slice(0, -1));
     else if (S.input.length < 3) setInput(S.input + v);
+    if (S.phase === 'ask') { S.lastKey = performance.now(); armHint(); }
     if (S.phase === 'learn' && S.input.length >= String(S.mustType).length) checkRetype();
+  }
+  S.queued = [];
+  function flushKeys() {
+    const q = S.queued; S.queued = [];
+    if (S.phase === 'ask' || S.phase === 'learn') q.forEach((v) => typeKey(v, true));
+  }
+  wirePad(root, (v) => {
+    if (S.phase === 'done') { advance(); return; }
+    if (S.phase === 'result') {
+      if (!S.skip && performance.now() - (S.answeredAt || 0) > 400) { S.skip = true; S.wake?.(); }
+      return;
+    }
+    if (S.phase === 'moving') {
+      if (v !== 'go' && S.queued.length < 3) { S.queued.push(v); v === 'del' ? sfx.keyDel() : sfx.key(v); }
+      return;
+    }
+    if (v === 'go') return submit('pad');
+    if (S.phase !== 'ask' && S.phase !== 'learn') return;
+    typeKey(v);
   });
+  // Teacher K's hint pops in when it is due (see next()). One timer, moved along
+  // by every key press.
+  let hintTimer = 0;
+  function armHint() {
+    clearTimeout(hintTimer);
+    if (S.phase !== 'ask' || !S.hintPlan || S.hinted === S.n || el.front.querySelector('[data-scroll]')) return;
+    const at = hintDue(S.hintPlan, { shownAt: S.shownAt, lastKey: S.lastKey, typed: !!S.input });
+    const card = S.n;
+    hintTimer = setTimeout(() => {
+      if (S.phase !== 'ask' || S.n !== card || S.hinted === S.n) return;
+      if (offerHint(p, el.front)) S.lastOffer = S.n;
+    }, Math.max(0, at - performance.now()));
+  }
   on(root, 'click', '.card3d', () => {
     if (S.phase === 'done') advance();
     else if (S.phase === 'result' && !S.skip) { S.skip = true; S.wake?.(); }
@@ -670,7 +734,7 @@ export function renderPlay(root, go, { table, focus, guide } = {}) {
     S.mic = micMode({
       btn: el.mic, profile: p, say: bubble,
       waiting: () => S.phase === 'ask' || S.phase === 'learn',
-      onPartial: (n) => setInput(String(n)),
+      onPartial: (n) => { setInput(String(n)); if (S.phase === 'ask') { S.lastKey = performance.now(); armHint(); } },
       onResult: (n) => { setInput(String(n)); if (S.phase === 'learn') checkRetype(); else if (S.phase === 'ask') submit('voice'); },
     });
     S.mic.ready();

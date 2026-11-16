@@ -22,7 +22,7 @@ import { creatureArt } from '../core/art.js';
 import { BOLT_SVG } from './quests.js';
 import { rewardIcon, rewardName } from './items.js';
 import { trainerImg, trainerLook } from './avatars.js';
-import { $, $$, on, esc, sheet, soundButton, reducedMotion, toast } from './dom.js';
+import { $, $$, on, esc, sheet, soundButton, reducedMotion, toast, wirePad } from './dom.js';
 
 const R = 46, CIRC = 2 * Math.PI * R;
 const KEYPAD = `<div class="pad" role="group" aria-label="Number pad">
@@ -184,6 +184,9 @@ export function renderLightning(root, go) {
     if (!calm) { el.card.classList.remove('deal'); void el.card.offsetWidth; el.card.classList.add('deal'); }
     S.shownAt = performance.now();
     S.phase = 'ask';
+    // Digits tapped in the blink after a right answer land on this card.
+    const q = S.queued || []; S.queued = [];
+    q.forEach(key);
   }
 
   function tick() {
@@ -245,7 +248,7 @@ export function renderLightning(root, go) {
       setPips();
       if (!calm) { el.plus.classList.remove('go'); void el.plus.offsetWidth; el.plus.classList.add('go'); }
       el.card.classList.add('hit');
-      S.phase = 'show';
+      S.phase = 'show'; S.queued = []; S.hitShow = true;
       setTimeout(() => { if (S.phase === 'show') nextCard(); }, calm ? 120 : 160);
     } else {
       // A miss is calm: no buzzer, no red. Just the answer for a moment.
@@ -256,7 +259,7 @@ export function renderLightning(root, go) {
       el.val.textContent = ans;
       el.val.classList.remove('empty');
       el.fb.textContent = 'Now you know it!';
-      S.phase = 'show';
+      S.phase = 'show'; S.queued = []; S.hitShow = false;
       setTimeout(() => { if (S.phase === 'show') nextCard(); }, 900);
     }
     if (S.answered % 5 === 0) save();
@@ -363,6 +366,8 @@ export function renderLightning(root, go) {
   // Input: keypad taps and a keyboard. Answers check by themselves once they
   // have enough digits, so fast fingers aren't slowed down.
   function key(v) {
+    // The short flash after a right answer: keep the digits for the next card.
+    if (S.phase === 'show' && S.hitShow && v !== 'go') { if ((S.queued ||= []).length < 3) S.queued.push(v); return; }
     if (S.phase !== 'ask') return;
     if (v === 'go') return submit();
     if (v === 'del') return setInput(S.input.slice(0, -1));
@@ -370,10 +375,7 @@ export function renderLightning(root, go) {
     setInput(S.input + v);
     if (S.input.length >= String(answerOf(S.fact)).length) submit();
   }
-  on(root, 'pointerdown', '[data-k]', (e, k) => { e.preventDefault(); k.classList.add('down'); key(k.dataset.k); });
-  on(root, 'pointerup', '[data-k]', (e, k) => k.classList.remove('down'));
-  on(root, 'pointerleave', '[data-k]', (e, k) => k.classList.remove('down'));
-  on(root, 'click', '[data-k]', (e, k) => { if (e.detail === 0) key(k.dataset.k); }); // keyboard and switch access
+  wirePad(root, (v) => key(v)); // finger down, one press per tap (dom.js)
   on(root, 'click', '[data-start]', () => { unlock(); if (limitReached(p)) { toast('That’s today’s Kaimon time!'); return go('home'); } countdown(); });
   on(root, 'click', '[data-again]', () => { sfx.tap(); go(limitReached(p) ? 'home' : 'lightning'); });
   on(root, 'click', '[data-home]', () => { sfx.tap(); go('home'); });

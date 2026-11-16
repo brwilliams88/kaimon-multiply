@@ -22,7 +22,7 @@ import { sceneSrc, cssUrl, sceneKey, fxSrc, typeIcon, badgeImg, ballSrc } from '
 import { quick } from '../core/prefs.js';
 import { limitReached } from '../core/playtime.js';
 import { startMusic, stopMusic, setPinch } from '../core/music.js';
-import { $, on, esc, sheet, reducedMotion, soundButton, setFlame, fitText, say } from './dom.js';
+import { $, on, esc, sheet, reducedMotion, soundButton, setFlame, fitText, say, wirePad } from './dom.js';
 import { vsHint, matchType } from '../data/types.js'; import { typesGuide } from './typesGuide.js'; // [types] type matchups
 import { canSnack, useSnack, itemCount } from '../core/items.js'; import { towerCrystal } from '../core/tower.js'; import { itemIcon } from './items.js'; // [systems] Power Snack
 
@@ -123,7 +123,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt, wild 
         ${isWild ? `<div class="vs-chip wild-chip-top"><span class="vs-av wild-av">${creatureArt(opp.team[0].species)}</span><span><strong>Wild ${esc(opp.name)}</strong><small class="wild-turns" aria-live="polite"></small></span></div>`
         : `<div class="vs-chip"><span class="vs-av">${trainerArt(opp)}</span><span><strong>${esc(opp.name)}</strong><small>${esc(opp.ui?.chip || (opp.kind === 'champ' ? `${opp.table}s Gym Leader` : opp.kind === 'boss' ? 'The final gym' : opp.kind === 'quiz' ? 'Pop Quiz' : 'Team Papa'))}</small></span></div>`}
         ${soundButton(p.settings.sound)}
-        <div class="streak" data-tier="0" aria-live="polite" title="Streak: right answers in a row" aria-label="Streak"><span class="streak-flame" aria-hidden="true"><svg viewBox="0 0 24 24"><path class="fl-out" d="M12 1.8c.9 3.2-1.2 5-2.7 6.8C7.7 10.5 6.6 12.3 6.6 14.6a5.4 5.4 0 0 0 10.8 0c0-2.9-1.5-4.8-2.6-6.2-.3 1.6-1.1 2.5-2.1 3 .5-3.1-.1-6.5-.7-9.6z" stroke="#14213D" stroke-width="1.5" stroke-linejoin="round"/><path class="fl-in" d="M12.1 10.6c.4 1.7-.6 2.6-1.3 3.5-.5.6-.9 1.3-.9 2.1a2.2 2.2 0 0 0 4.4 0c0-1.3-.7-2.1-1.2-2.8-.2.7-.5 1-1 1.2.2-1.4 0-2.7 0-4z"/></svg></span><span class="streak-num">0</span><span class="streak-ball" hidden></span></div>
+        <div class="streak" data-tier="0" aria-live="polite" title="Streak: right answers in a row" aria-label="Streak"><span class="streak-flame" aria-hidden="true"><svg viewBox="0 0 24 24"><path class="fl-out" d="M12 1.8c.9 3.2-1.2 5-2.7 6.8C7.7 10.5 6.6 12.3 6.6 14.6a5.4 5.4 0 0 0 10.8 0c0-2.9-1.5-4.8-2.6-6.2-.3 1.6-1.1 2.5-2.1 3 .5-3.1-.1-6.5-.7-9.6z" stroke="#14213D" stroke-width="1.5" stroke-linejoin="round"/><path class="fl-in" d="M12.1 10.6c.4 1.7-.6 2.6-1.3 3.5-.5.6-.9 1.3-.9 2.1a2.2 2.2 0 0 0 4.4 0c0-1.3-.7-2.1-1.2-2.8-.2.7-.5 1-1 1.2.2-1.4 0-2.7 0-4z"/></svg></span><span class="streak-num">0</span></div>
       </header>
       <div class="play-body">
         <div class="arena">
@@ -181,7 +181,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt, wild 
     arena: $('.arena', root), q: $('.q', root), qcard: $('.q-card', root), msg: $('.b-msg', root),
     foeMon: $('.foe-mon', root), meMon: $('.me-mon', root), foeHp: $('.hp-foe', root), meHp: $('.hp-me', root),
     power: $('.q-card .power-strip', root), powerFill: $('.q-card .power-fill', root), fx: $('.fx', root),
-    val: $('.answer-val', root), hint: $('.answer-hint', root), streak: $('.streak-num', root), streakBall: $('.streak-ball', root),
+    val: $('.answer-val', root), hint: $('.answer-hint', root), streak: $('.streak-num', root),
     mic: $('[data-mic]', root), intro: $('.intro', root),
   };
 
@@ -405,15 +405,17 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt, wild 
     const tick = () => {
       if (S.phase !== 'ask') return;
       const pw = powerFor(performance.now() - S.shownAt);
-      el.powerFill.style.width = (pw * 100) + '%';
-      el.powerFill.className = 'power-fill' + (pw >= 0.9 ? ' max' : pw >= 0.6 ? ' hi' : '');
+      // A transform (no layout), and a class change only when the color step changes.
+      const c = pw >= 0.9 ? 'power-fill max' : pw >= 0.6 ? 'power-fill hi' : 'power-fill';
+      if (el.powerFill.className !== c) el.powerFill.className = c;
+      el.powerFill.style.transform = `scaleX(${Math.round(pw * 400) / 400})`;
       S.raf = requestAnimationFrame(tick);
     };
     tick();
   }
   function lockPower(pw) {
     cancelAnimationFrame(S.raf);
-    el.powerFill.style.width = (pw * 100) + '%';
+    el.powerFill.style.transform = `scaleX(${pw})`;
     el.power.classList.add('locked');
   }
 
@@ -437,6 +439,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt, wild 
     S.shownAt = performance.now();
     startPower();
     S.mic?.ready();
+    flushKeys();
   }
 
   // The other side sends out its next Kaimon. Papazilla gets a proper entrance.
@@ -573,6 +576,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt, wild 
       setInput('');
       el.val.dataset.ph = `Type ${ans}`;
       S.mic?.ready();
+      flushKeys();
     }
   }
 
@@ -993,14 +997,29 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt, wild 
     drawSnack();
   });
   on(root, 'click', '[data-leave]', () => { sfx.tap(); go('home'); });
-  on(root, 'click', '[data-k]', (e, k) => {
-    const v = k.dataset.k;
-    if (v === 'go') return submit('pad');
-    if (S.phase !== 'ask' && S.phase !== 'learn') return;
-    sfx.tap();
+  // Number pad: every tap lands on finger down (dom.js wirePad). A tap during an
+  // attack skips the rest of it, and a digit tapped then (or while the next card
+  // comes up) waits and lands on the next question, so no tap is lost.
+  function typeKey(v, quiet = false) {
+    if (!quiet) v === 'del' ? sfx.keyDel() : sfx.key(v);
     if (v === 'del') setInput(S.input.slice(0, -1));
     else if (S.input.length < 3) setInput(S.input + v);
     if (S.phase === 'learn' && S.input.length >= String(S.mustType).length) checkRetype();
+  }
+  S.queued = [];
+  function flushKeys() {
+    const q = S.queued; S.queued = [];
+    q.forEach((v) => { if (S.phase === 'ask' || S.phase === 'learn') typeKey(v, true); });
+  }
+  wirePad(root, (v) => {
+    if (busy() || S.phase === 'moving') {
+      skip();
+      if (v !== 'go' && S.queued.length < 3) { S.queued.push(v); v === 'del' ? sfx.keyDel() : sfx.key(v); }
+      return;
+    }
+    if (v === 'go') return submit('pad');
+    if (S.phase !== 'ask' && S.phase !== 'learn') return;
+    typeKey(v);
   });
   on(root, 'click', '[data-exit]', () => {
     if (isWild) { // [wild] let it go: it runs off, and the answers still count

@@ -286,7 +286,17 @@ export function trickyFacts(profile, tables, now = Date.now()) {
   return out.sort((a, b) => b[1] - a[1]).map(([id]) => id);
 }
 
-// Skip-count ladder used by the Hint Scroll.
+// A fact where Teacher K's hint could help: 'new' (never answered), or 'missed'
+// (missed in the last few days, or often: under 70% right after 3 or more tries).
+export function hintWorthy(profile, id, now = Date.now()) {
+  const rec = profile.facts?.[id];
+  if (!rec || !rec.a) return 'new';
+  if (rec.lastMiss && now - rec.lastMiss < RECENT_MISS_MS) return 'missed';
+  if (rec.a >= 3 && rec.c / rec.a < 0.7) return 'missed';
+  return null;
+}
+
+// Skip-count ladder used by Teacher K's hint and the lesson after a miss.
 export function hintLadder(id) {
   const [a, b] = parseFact(id);
   return Array.from({ length: b }, (_, i) => a * (i + 1));

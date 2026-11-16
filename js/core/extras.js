@@ -63,7 +63,7 @@ export const BALL_INFO = {
 };
 export const ITEM_INFO = {
   snack: { name: 'Power Snack', art: 'power-snack', does: 'In a battle, tap it, then get a card right. Your Kaimon eats it and heals half its HP.', earn: 'Daily quests, Gym wins and Good Work Stamps.' },
-  scroll: { name: 'Hint Scroll', art: null, does: 'Stuck on a card? Open it to see Teacher K’s trick before you answer.', earn: 'Daily quests and right-answer milestones.' },
+  scroll: { name: 'Teacher K Hint', art: null, does: 'Stuck on a card? Teacher K pops up to help. Tap her to see her trick before you answer.', earn: 'Daily quests and right-answer milestones.' },
   charm: { name: 'Second Chance Charm', art: 'sparkle-charm', does: 'Miss a card on a streak of 3 or more? Try it once more and keep your streak.', earn: 'Daily quests, long streaks and Gold medals.' },
   lantern: { name: 'Lucky Lantern', art: 'hint-lamp', does: 'Light it, then practice. Rare and shiny Kaimon show up more for 15 cards.', earn: 'Daily quests, right-answer milestones and Silver medals.' },
   evolve: { name: 'Evolve Crystal', art: 'evolution-crystal', does: 'Evolves your Buddy right now, when it is 3 levels or less from evolving.', earn: 'Right-answer milestones and Lightning Round bests.' },

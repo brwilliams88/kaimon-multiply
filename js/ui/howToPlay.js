@@ -7,7 +7,7 @@ import { byId, SPECIES } from '../data/creatures.js';
 import { ballImg, itemImg, badgeImg, uiImg, trainerFace, trainerBody, sceneSrc, gymSrc, cssUrl } from '../core/assets.js';
 import { esc, sheet, reducedMotion } from './dom.js';
 import { sfx } from '../core/sound.js';
-import { scrollArt } from './items.js'; import { calmMode } from '../core/lightning.js'; // [systems] quests, items, Lightning Round
+import { hintArt } from './items.js'; import { calmMode } from '../core/lightning.js'; // [systems] quests, items, Lightning Round
 
 const chevron = (d) => `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${d < 0 ? 'M14.5 5 L7.5 12 L14.5 19' : 'M9.5 5 L16.5 12 L9.5 19'}" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 const ARROW = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12 H18 M13 6.5 L18.5 12 L13 17.5" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
@@ -28,10 +28,10 @@ function cards(p) {
     },
     {
       key: 'streak', title: 'Streaks light the flame',
-      text: 'Get answers right in a row to grow your flame. Big streaks give free Super and Mega throws!',
+      text: 'Get answers right in a row to grow your flame. 5 in a row and you throw Super Balls. 10 in a row and you throw Mega Balls!',
       art: `<div class="hd-art hd-warm">
         <span class="hd-flame">${itemImg('streak-flame')}<b>5</b></span>
-        <span class="hd-free">${ballImg('super')}<small>free</small></span>
+        <span class="hd-free">${ballImg('super')}<small>Super</small></span>
         <span class="hd-kaizo">${uiImg('kaizo-cheer')}</span>
       </div>`,
     },
@@ -91,9 +91,9 @@ function cards(p) {
     },
     { // [systems]
       key: 'quests', title: 'Quests and items',
-      text: 'Three small quests every day, all done by answering. They give XP, balls and items like the Hint Scroll. Find items in the Bag on your trainer page.',
+      text: 'Three small quests every day, all done by answering. They give XP, balls and items like a Teacher K Hint. Find items in the Bag on your trainer page.',
       art: `<div class="hd-art hd-sky">
-        <span class="hd-row">${[scrollArt(), itemImg('power-snack'), itemImg('sparkle-charm'), itemImg('hint-lamp')].map((x, i) => `<span class="hd-it" style="--i:${i}">${x}</span>`).join('')}</span>
+        <span class="hd-row">${[hintArt(), itemImg('power-snack'), itemImg('sparkle-charm'), itemImg('hint-lamp')].map((x, i) => `<span class="hd-it" style="--i:${i}">${x}</span>`).join('')}</span>
       </div>`,
     },
     ...(calmMode(p) ? [] : [{ // [systems]

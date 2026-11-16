@@ -9,7 +9,7 @@
 //                       Claims are keyed, so two devices can never claim one twice.
 //
 // Names, art and kid lines come from ITEM_INFO in extras.js (one source of truth).
-// Saved item keys: snack (Power Snack), scroll (Hint Scroll), charm, lantern,
+// Saved item keys: snack (Power Snack), scroll (Teacher K Hint), charm, lantern,
 // evolve (Evolve Crystal) and megaCrystal (the Tower's Mega Crystal).
 import { emit, evolveReady } from './actions.js';
 import { buddyOf, nextForm, giveXP } from './levels.js';
@@ -168,11 +168,29 @@ export function useSnack(p, team, i = 0) {
   return { healed, hp, ev };
 }
 
-// ---- Hint Scroll (practice) -------------------------------------------------------
+// ---- Teacher K Hint (practice; saved key 'scroll', it used to be the Hint Scroll) --
 
-// One scroll shows Teacher K's trick on the card before you answer. The answer
+// One hint shows Teacher K's trick on the card before you answer. The answer
 // still counts as practice, but never as a fast one (see hintedMs).
 export const canScroll = (p) => itemCount(p, 'scroll') > 0;
+// When Teacher K pops in on a card (she is never there when a card is dealt):
+// - never on the first card of a round, and only while there is a hint in the bag;
+// - a card that needs it (worthy: a new fact, or one missed lately or often; facts.js
+//   hintWorthy): HINT_SOON after the card shows, if nothing is typed yet. Not on two
+//   cards in a row this way, so she doesn't sit on every card;
+// - any card: after HINT_WAIT with no key pressed (the player is stuck).
+// One hint per card at most, and each one costs a hint from the bag.
+export const HINT_SOON = 1500;
+export const HINT_WAIT = 5000;
+export function hintPlan(p, { n = 0, worthy = false, lastOffer = null } = {}) {
+  if (!canScroll(p) || n < 1) return null;
+  return { soon: worthy && lastOffer !== n - 1 ? HINT_SOON : null, wait: HINT_WAIT };
+}
+// The time (same clock as shownAt and lastKey) when the hint is due.
+export function hintDue(plan, { shownAt = 0, lastKey = shownAt, typed = false } = {}) {
+  const idle = Math.max(shownAt, lastKey) + plan.wait;
+  return plan.soon != null && !typed ? Math.min(shownAt + plan.soon, idle) : idle;
+}
 export const useScroll = (p, factId) => canScroll(p) ? emit(p, 'use', { i: 'scroll', f: factId }) : null;
 // The time saved for a hinted answer: at least just over "fast", so a hint can
 // help a kid catch the Kaimon but never moves a fact toward Silver, Gold or Star.

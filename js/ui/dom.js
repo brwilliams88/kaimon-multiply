@@ -252,3 +252,34 @@ export function fitText(el, min = 11) {
     el.style.fontSize = size + 'px';
   }
 }
+
+// Number pad keys ([data-k]) answer on finger down, not on finger up: a click on a
+// phone waits for the finger to lift and is lost if the finger slides a little, so
+// taps felt slow or went missing. press(value, key, event) runs once per tap.
+// - pointerdown: the press, and the key's pressed look ('down') right away.
+// - click: only for a click with no pointerdown before it (keyboard, switch access,
+//   screen readers, and the screens' own key.click() for typed digits). The click a
+//   phone sends after a handled pointerdown is skipped, so a tap never counts twice,
+//   while two fast taps of the same digit still count as two.
+export function wirePad(root, press) {
+  const owed = new WeakMap(); // key -> clicks still to skip, and when the last tap was
+  const keyOf = (e) => { const k = e.target.closest?.('[data-k]'); return k && root.contains(k) && !k.disabled ? k : null; };
+  root.addEventListener('pointerdown', (e) => {
+    const k = keyOf(e);
+    if (!k || e.button > 0) return;
+    e.preventDefault(); // no focus ring, no text selection, no copied mouse events
+    k.classList.add('down');
+    const o = owed.get(k), now = performance.now();
+    owed.set(k, { n: (o && now - o.at < 1000 ? o.n : 0) + 1, at: now });
+    press(k.dataset.k, k, e);
+  });
+  const lift = (e) => { const k = keyOf(e); if (k && !(e.type === 'pointerout' && k.contains(e.relatedTarget))) k.classList.remove('down'); };
+  for (const t of ['pointerup', 'pointercancel', 'pointerout']) root.addEventListener(t, lift);
+  root.addEventListener('click', (e) => {
+    const k = keyOf(e);
+    if (!k) return;
+    const o = owed.get(k);
+    if (e.detail !== 0 && o && o.n > 0 && performance.now() - o.at < 1000) { o.n--; return; }
+    press(k.dataset.k, k, e);
+  });
+}

@@ -96,7 +96,7 @@ html.wild-open, html.wild-open body { overflow: hidden; }
 .hd-whp i { display: block; width: 22%; height: 100%; background: var(--coral); }
 .hd-wball { right: 44%; bottom: 46%; width: 12%; }
 
-/* With a Hint Scroll button in the corner, the tag stays centered and clear of it. */
+/* With Teacher K's hint button in the corner, the tag stays centered and clear of it. */
 .card-wild.strong:has(.scroll-btn) .wild-strong { max-width: calc(100% - 164px); }
 .wild-strong { flex-wrap: wrap; column-gap: .3em; row-gap: 0; }
 .wild-strong > span { white-space: nowrap; }
