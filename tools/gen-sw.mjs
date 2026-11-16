@@ -38,59 +38,142 @@ const ART_CACHE = 'kaimon-art';
 const ASSETS = ${JSON.stringify(['./', ...core], null, 2)};
 const ART = ${JSON.stringify(art)};
 const artKey = (path) => new URL(path + '?v=' + ART[path], self.registration.scope).href;
+const scopePath = () => new URL(self.registration.scope).pathname;
+const pathOf = (url) => { const u = new URL(url); return u.pathname.startsWith(scopePath()) ? decodeURIComponent(u.pathname.slice(scopePath().length)) : ''; };
+// Shown in place of a picture that isn't saved yet while offline, so nothing looks broken.
+const BLANK = '<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/>';
+
+// Pictures already saved, by path: { path: Set of content hashes }.
+async function savedArt(art) {
+  const have = new Map();
+  for (const req of await art.keys()) {
+    const u = new URL(req.url), path = pathOf(req.url);
+    if (!have.has(path)) have.set(path, new Set());
+    have.get(path).add(u.searchParams.get('v'));
+  }
+  return have;
+}
 
 self.addEventListener('install', (e) => {
-  // cache: 'reload' skips the browser's HTTP cache, so a new version never stores old files.
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS.map((u) => new Request(u, { cache: 'reload' })))));
+  e.waitUntil((async () => {
+    // cache: 'reload' skips the browser's HTTP cache, so a new version never stores old files.
+    const c = await caches.open(CACHE);
+    await c.addAll(ASSETS.map((u) => new Request(u, { cache: 'reload' })));
+    // Pictures that changed in this version download now, before the update is
+    // ready, so an update can never leave a saved picture missing offline.
+    const art = await caches.open(ART_CACHE);
+    const have = await savedArt(art);
+    for (const [path, hash] of Object.entries(ART)) {
+      const vs = have.get(path);
+      if (!vs || vs.has(hash)) continue;
+      const r = await fetch(path, { cache: 'reload' });
+      if (!r.ok) throw new Error('Could not get ' + path);
+      await art.put(artKey(path), r);
+    }
+  })());
 });
 
 self.addEventListener('activate', (e) => {
   e.waitUntil((async () => {
     for (const k of await caches.keys()) if (k !== CACHE && k !== ART_CACHE) await caches.delete(k);
-    // Drop art that is no longer used, or that changed.
+    // Drop art that is no longer used, or that changed. An old copy stays until
+    // its new copy is saved, so offline play never loses a picture.
     const art = await caches.open(ART_CACHE);
-    const keep = new Set(Object.keys(ART).map(artKey));
-    for (const req of await art.keys()) if (!keep.has(req.url)) await art.delete(req);
+    const have = await savedArt(art);
+    for (const req of await art.keys()) {
+      const path = pathOf(req.url), v = new URL(req.url).searchParams.get('v');
+      if (!ART[path] || (v !== ART[path] && have.get(path)?.has(ART[path]))) await art.delete(req);
+    }
     await self.clients.claim();
   })());
 });
 
+// Tell every open Kaimon page how many pictures are saved for offline play.
+async function tell(msg) {
+  for (const c of await self.clients.matchAll({ type: 'window', includeUncontrolled: true })) c.postMessage(msg);
+}
+async function artCount() {
+  const have = await savedArt(await caches.open(ART_CACHE));
+  const paths = Object.keys(ART);
+  const missing = paths.filter((p) => !have.get(p)?.has(ART[p]));
+  return { total: paths.length, done: paths.length - missing.length, missing, have };
+}
+
 // Fill the art cache in the background so the whole game works offline.
-async function warmArt() {
-  const art = await caches.open(ART_CACHE);
-  for (const path of Object.keys(ART)) {
-    const key = artKey(path);
-    if (await art.match(key)) continue;
-    try { const r = await fetch(path, { cache: 'reload' }); if (r.ok) await art.put(key, r); } catch { return; }
-  }
+// A few downloads at a time. A picture that fails is skipped; after a few
+// network errors in a row the device is probably offline, so it stops and
+// tries again later (the page asks again on the next visit or when back online).
+let warming = null;
+function warmArt() {
+  if (warming) return warming;
+  warming = (async () => {
+    const art = await caches.open(ART_CACHE);
+    const { total, missing, have } = await artCount();
+    let done = total - missing.length, skipped = 0, netErrors = 0, last = 0, i = 0;
+    const report = (state) => tell({ type: 'art', state, done, total, skipped });
+    await report(missing.length ? 'running' : 'done');
+    const worker = async () => {
+      while (i < missing.length && netErrors < 3) {
+        const path = missing[i++];
+        try {
+          const r = await fetch(path, { cache: 'reload' });
+          netErrors = 0;
+          if (r.ok) {
+            await art.put(artKey(path), r); done++;
+            // An older copy kept for offline play can go now.
+            if (have.has(path)) for (const v of have.get(path)) art.delete(new URL(path + '?v=' + v, self.registration.scope).href);
+          } else skipped++;
+        } catch { netErrors++; skipped++; }
+        if (Date.now() - last > 300) { last = Date.now(); report('running'); }
+      }
+    };
+    await Promise.all([worker(), worker(), worker(), worker()]);
+    await report(done >= total ? 'done' : 'paused');
+  })().finally(() => { warming = null; });
+  return warming;
 }
 
 self.addEventListener('message', (e) => {
   if (e.data === 'skipWaiting') self.skipWaiting();
   if (e.data === 'warmArt') e.waitUntil(warmArt());
+  if (e.data === 'artStatus') e.waitUntil(artCount().then(({ done, total }) => e.source?.postMessage({ type: 'art', state: warming ? 'running' : done >= total ? 'done' : 'idle', done, total, skipped: 0 })));
 });
 
 async function artResponse(path, request) {
   const art = await caches.open(ART_CACHE);
-  const key = artKey(path);
-  const hit = await art.match(key);
+  const hit = await art.match(artKey(path));
   if (hit) return hit;
-  const r = await fetch(request);
-  if (r.ok) art.put(key, r.clone());
-  return r;
+  try {
+    const r = await fetch(request);
+    if (r.ok) art.put(artKey(path), r.clone());
+    return r;
+  } catch (err) {
+    // Offline and not saved yet: an older copy of the same picture, else a blank.
+    return (await art.match(request, { ignoreSearch: true })) || new Response(BLANK, { headers: { 'Content-Type': 'image/svg+xml', 'Cache-Control': 'no-store' } });
+  }
+}
+
+async function appResponse(request) {
+  const c = await caches.open(CACHE);
+  const hit = (await c.match(request, { ignoreSearch: true })) || (await caches.match(request, { ignoreSearch: true }));
+  if (hit) return hit;
+  try {
+    return await fetch(request);
+  } catch (err) {
+    // Offline: any page in the app opens the game itself.
+    if (request.mode === 'navigate') return (await c.match('./')) || (await c.match('index.html')) || Response.error();
+    return Response.error();
+  }
 }
 
 self.addEventListener('fetch', (e) => {
   const url = new URL(e.request.url);
   if (e.request.method !== 'GET' || url.origin !== location.origin) return;
-  const scope = new URL(self.registration.scope).pathname;
-  const path = url.pathname.startsWith(scope) ? decodeURIComponent(url.pathname.slice(scope.length)) : '';
+  const path = pathOf(e.request.url);
+  // version.json always asks the server, so the app can tell when an update is out.
+  if (path === 'version.json') return;
   if (ART[path]) { e.respondWith(artResponse(path, e.request)); return; }
-  e.respondWith(
-    caches.match(e.request, { ignoreSearch: true }).then((hit) => hit || fetch(e.request).catch(() => {
-      if (e.request.mode === 'navigate') return caches.match('./');
-    }))
-  );
+  e.respondWith(appResponse(e.request));
 });
 `;
 writeFileSync(join(root, 'sw.js'), sw);
