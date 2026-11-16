@@ -2,6 +2,15 @@
 
 All notable changes. Versioning: `0.MINOR.0` marks a roadmap phase, `0.x.PATCH` is any shipped change a player or parent can notice, and `1.0.0` is the public launch. See "Versioning" in CLAUDE.md. The in-app version history (Grown-ups > What's new) reads from `js/data/changelog.js`; keep both in sync. Each release is tagged in git as `vX.Y.Z`.
 
+## v1.0.0 (2026-11-16) Kaimon Multiply 1.0
+
+- Kaimon Multiply 1.0 is here! Times tables practice where every right answer catches, levels up and battles.
+- Everything from the weekend in one place: a guided first game with Teacher K, Kaimon levels and Buddy, gyms and Boss Papa, the Hundred Tower and Megas, the Lightning Round, items and quests, the Wardrobe, offline play, family sync and Grown-ups insights.
+- How to play: the arrows fit on phones, and tapping a dot opens the right card.
+- How to play fits on landscape iPads and Chromebooks without scrolling.
+- Battles: tapping the Power Snack after a miss no longer hides the Type it lesson.
+- Thank you for playing. Send feedback from the Menu any time. Critical feedback helps most.
+
 ## v0.6.14 (2026-11-16) Polish and accessibility
 
 - Every screen got a design polish: matching titles on every window, roomier buttons, a clear blue outline for keyboard players, and smoother presses.

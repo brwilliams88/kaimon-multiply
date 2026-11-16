@@ -1,7 +1,20 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.6.14';
+export const VERSION = '1.0.0';
 
 export const CHANGELOG = [
+  {
+    version: '1.0.0',
+    date: '2026-11-16',
+    title: "Kaimon Multiply 1.0",
+    items: [
+      "Kaimon Multiply 1.0 is here! Times tables practice where every right answer catches, levels up and battles.",
+      "Everything from the weekend in one place: a guided first game with Teacher K, Kaimon levels and Buddy, gyms and Boss Papa, the Hundred Tower and Megas, the Lightning Round, items and quests, the Wardrobe, offline play, family sync and Grown-ups insights.",
+      "How to play: the arrows fit on phones, and tapping a dot opens the right card.",
+      "How to play fits on landscape iPads and Chromebooks without scrolling.",
+      "Battles: tapping the Power Snack after a miss no longer hides the Type it lesson.",
+      "Thank you for playing. Send feedback from the Menu any time. Critical feedback helps most.",
+    ],
+  },
   {
     version: '0.6.14',
     date: '2026-11-16',
