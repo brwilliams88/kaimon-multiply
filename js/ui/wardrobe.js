@@ -9,7 +9,10 @@ import { trainerImg, trainerLook, charLook, JACKETS } from './avatars.js';
 import { licenseBg } from './licenseArt.js';
 import { esc, sheet, toast } from './dom.js';
 import { sfx } from '../core/sound.js';
-import { trainerTitle, trainerSince } from '../core/game.js';
+import { trainerTitle, trainerSince, dexCounts } from '../core/game.js';
+import { licenseExtras } from '../core/extras.js';
+import { uiImg, itemImg } from '../core/assets.js';
+import { patchSVG } from './patchArt.js';
 
 export const LOCK = '<svg class="wd-lock" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="2.6" fill="currentColor"/><path d="M8.2 10.5 V8 a3.8 3.8 0 0 1 7.6 0 V10.5" fill="none" stroke="currentColor" stroke-width="2.6"/><circle cx="12" cy="15.2" r="1.7" fill="#fff"/></svg>';
 const CHECK = '<svg class="wd-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M5.5 12.5 L10 17 L18.5 7.5" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
@@ -39,11 +42,16 @@ export const colorOwned = (p) => (c) => owns(p, c);
 export const WD_NEW = (p) => 'kaimon.wdNew.' + p.id;
 export const clearWardrobeNews = (p) => { try { localStorage.removeItem(WD_NEW(p)); } catch {} };
 
-// A small Trainer License: the card in its color, with the trainer's photo and name.
+// A small Trainer License: the card in its color, with the trainer's photo, name and
+// the same numbers and patches as the real one on the trainer page.
 export function miniLicense(p, look, cls = '') {
   const since = new Date(trainerSince(p)).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+  const dex = dexCounts(p), x = licenseExtras(p);
   const bar = (n, k, v) => `<span class="ml-bar b${n}"><span class="ml-k">${k}</span><span class="ml-v">${v}</span></span>`;
-  return `<span class="mini-lic ${cls}" aria-hidden="true">${licenseBg(look.card, 'ml-bg')}<span class="ml-photo">${trainerImg(look, 'face')}</span>${bar(1, 'Name', `<b>${esc(p.name)}</b>`)}${bar(2, 'Rank', esc(trainerTitle(p)))}${bar(3, 'Since', since)}</span>`;
+  const stars = p.stats.stars ? `<span class="ml-stars">★${p.stats.stars}</span>` : '';
+  const nums = `<span class="ml-bar b4 ml-nums"><span>${uiImg('kaidex-a', 'ml-ic')}<b>${dex.caught}</b><small>/${dex.total}</small></span><span>${itemImg('streak-flame', 'ml-ic')}<b>${p.stats.bestStreak || 0}</b></span><span>${itemImg('medal-gold', 'ml-ic')}<b>${x.medals}</b></span></span>`;
+  const patches = `<span class="ml-patches">${x.patches.map((b) => b.won ? `<span class="ml-patch">${patchSVG(b.type)}</span>` : '<span class="ml-patch empty"></span>').join('')}</span>`;
+  return `<span class="mini-lic ${cls}" aria-hidden="true">${licenseBg(look.card, 'ml-bg')}<span class="ml-photo">${trainerImg(look, 'face')}</span>${bar(1, 'Name', `<b>${esc(p.name)}</b>`)}${bar(2, 'Rank', esc(trainerTitle(p)) + stars)}${bar(3, 'Since', since)}${nums}${patches}</span>`;
 }
 
 // ---- Trainer page card: your colors at a glance, the next one to earn, and a button.
