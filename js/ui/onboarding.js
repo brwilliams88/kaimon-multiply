@@ -38,8 +38,8 @@ export function renderWelcome(root, go) {
       ${profiles.length ? `
         <h2 class="welcome-q" id="who-q">Who's playing?</h2>
         <div class="who-car">
-          <div class="who-list" role="radiogroup" aria-labelledby="who-q" tabindex="0">
-            ${profiles.map((p, i) => `<div class="who-card${i === start ? ' sel' : ''}" data-id="${p.id}" data-i="${i}" style="--i:${i}" role="radio" aria-label="${esc(p.name)}. ${dexCounts(p).caught} Kaimon caught.${p.family ? ' Family trainer.' : ''}" aria-checked="${i === start}">
+          <div class="who-list" role="radiogroup" aria-labelledby="who-q">
+            ${profiles.map((p, i) => `<div class="who-card${i === start ? ' sel' : ''}" data-id="${p.id}" data-i="${i}" style="--i:${i}" role="radio" tabindex="${i === start ? 0 : -1}" aria-label="${esc(p.name)}. ${dexCounts(p).caught} Kaimon caught.${p.family ? ' Family trainer.' : ''}${p.id === lastId && profiles.length > 1 ? ' Last played.' : ''}" aria-checked="${i === start}">
               ${p.id === lastId && profiles.length > 1 ? '<span class="who-last" aria-hidden="true">Last played</span>' : ''}
               <span class="who-av">${avatarSVG(trainerLook(p))}</span>
               <span class="who-text"><span class="who-name">${esc(p.name)}</span><span class="who-meta">${p.family ? `<span class="who-fam" title="Family sync">${cloudIcon()}</span>` : ''}${dexCounts(p).caught} caught</span></span>
@@ -82,9 +82,10 @@ export function renderWelcome(root, go) {
 // sits in the middle and its neighbors peek in from the sides. When every card fits,
 // they simply sit in a centered row. Landscape: a list down the left panel.
 // Pick first, then play: tapping or swiping to a card selects it, and the big Play
-// button under the cards starts the game for that trainer. Arrow keys, the arrow
-// buttons and the dots move the selection; Enter or Space presses Play. The New
-// trainer card opens the trainer creator right away.
+// button under the cards starts the game for that trainer. The cards are a radio group
+// (one tab stop, arrow keys move the pick); Enter or Space presses Play anywhere on the
+// screen, so Play is the default action. The New trainer card is a real button that
+// opens the trainer creator right away.
 function whoCarousel(root, start, profiles) {
   const car = $('.who-car', root);
   const list = $('.who-list', car);
@@ -99,7 +100,13 @@ function whoCarousel(root, start, profiles) {
   const vertical = () => getComputedStyle(list).flexDirection === 'column';
   const setSel = (i) => {
     sel = Math.max(0, Math.min(cards.length - 1, i));
-    cards.forEach((c, k) => { c.classList.toggle('sel', k === sel); if (c.dataset.id) c.setAttribute('aria-checked', k === sel); });
+    // Roving tab stop: the picked trainer is the one Tab lands on (the first one while
+    // New trainer is picked), so Tab goes trainer, New trainer, Play.
+    const stop = cards[sel].dataset.id ? sel : 0;
+    cards.forEach((c, k) => {
+      c.classList.toggle('sel', k === sel);
+      if (c.dataset.id) { c.setAttribute('aria-checked', k === sel); c.tabIndex = k === stop ? 0 : -1; }
+    });
     dots.forEach((d, k) => d.classList.toggle('on', k === sel));
     nav.querySelector('[data-step="-1"]').disabled = sel === 0;
     nav.querySelector('[data-step="1"]').disabled = sel === cards.length - 1;
@@ -215,9 +222,13 @@ function whoCarousel(root, start, profiles) {
     if (b) step(+b.dataset.step);
     else if (d) { setSel(+d.dataset.dot); scrollToCard(sel); }
   });
-  // Tabbing onto a card selects it and brings it to the middle (not on a tap: the card must stay put under the finger).
-  list.addEventListener('focusin', (e) => { const c = e.target.closest('[data-i]'); if (c && +c.dataset.i !== sel && c.matches(':focus-visible')) { setSel(+c.dataset.i); scrollToCard(sel); } });
-  // Arrow keys move between trainers; Enter or Space presses Play.
+  // Keyboard or screen reader focus on a trainer picks it and brings it to the middle (not
+  // on a tap: the card must stay put under the finger). Tabbing on to New trainer does
+  // not pick it, so Tab from a trainer to Play never changes who plays.
+  list.addEventListener('focusin', (e) => { const c = e.target.closest('[data-id]'); if (c && +c.dataset.i !== sel && c.matches(':focus-visible')) { setSel(+c.dataset.i); scrollToCard(sel); } });
+  // A mouse click picks a card without moving focus (focus would jump the strip).
+  list.addEventListener('mousedown', (e) => { if (e.target.closest('[data-id]')) e.preventDefault(); });
+  // Arrow keys move the pick (focus follows it when it is on a card).
   const onKey = (e) => {
     if (!car.isConnected) { removeEventListener('keydown', onKey); return; }
     if (document.querySelector('.sheet-wrap') || e.target.closest?.('input, textarea, select')) return;
@@ -227,7 +238,13 @@ function whoCarousel(root, start, profiles) {
       setSel(e.key === 'Home' ? 0 : e.key === 'End' ? cards.length - 1 : sel + (fwd ? 1 : -1));
       scrollToCard(sel);
       if (list.contains(document.activeElement)) cards[sel].focus({ preventScroll: true });
-    } else if ((e.key === 'Enter' || e.key === ' ') && (!e.target.closest?.('button, a') || e.target.closest('[data-id]'))) { e.preventDefault(); playBtn.click(); }
+    } else if ((e.key === 'Enter' || e.key === ' ') && (!e.target.closest?.('button, a') || e.target.closest('[data-id]'))) {
+      // Enter or Space on a trainer picks it; on the picked trainer (or anywhere else on
+      // the screen) it presses Play.
+      e.preventDefault();
+      const c = e.target.closest?.('[data-id]');
+      if (c && +c.dataset.i !== sel) { setSel(+c.dataset.i); scrollToCard(sel); sfx.tap(); } else playBtn.click();
+    }
   };
   addEventListener('keydown', onKey);
 
