@@ -17,6 +17,7 @@ import { avatarSVG, trainerLook } from './avatars.js';
 import { esc, on, $, sheet, soundIcon, toast } from './dom.js';
 import { sfx, unlock } from '../core/sound.js';
 import { shareGame, shareIcon } from './share.js';
+import { trainerChipSheet } from './onboarding.js';
 
 export const medal = (tier) => tier
   ? `<span class="medal medal-${tier}" title="${LEVEL_LABEL[tier]} medal">${itemImg('medal-' + tier)}</span>`
@@ -164,7 +165,7 @@ export function renderHome(root, go, params = {}) {
   if (p.battles.boss > 0 && !p.dex[MYTHIC_ID]?.caught) setTimeout(() => kairoWaiting(p, go), 600);
   on(root, 'click', '[data-dex]', () => { sfx.tap(); go('kaidex'); });
   on(root, 'click', '[data-quiz]', () => { unlock(); sfx.tap(); if (timesUp()) return; keepPlace(); go('battle', { kind: 'quiz' }); });
-  on(root, 'click', '[data-trainer]', () => { sfx.tap(); go('trainer'); });
+  on(root, 'click', '[data-trainer]', () => { sfx.tap(); trainerChipSheet(go); }); // trainer page or Switch trainer
 
   try {
     const place = JSON.parse(sessionStorage.getItem('kaimon.homePlace') || 'null');
