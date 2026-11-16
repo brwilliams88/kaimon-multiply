@@ -127,6 +127,11 @@ create table if not exists public.feedback (
   version text check (version is null or version ~ '^[0-9.]{1,12}$'),
   device text not null check (device ~ '^[A-Za-z0-9_-]{4,40}$'),
   place text check (place is null or place ~ '^[a-z0-9_-]{1,20}$'),
+  os text check (os is null or os in ('iphone', 'ipad', 'android', 'chromebook', 'mac', 'windows', 'linux', 'computer')),
+  browser text check (browser is null or browser in ('safari', 'chrome', 'edge', 'firefox', 'samsung', 'other')),
+  city text check (city is null or char_length(city) between 1 and 60),
+  region text check (region is null or char_length(region) between 1 and 60),
+  country text check (country is null or country ~ '^[A-Z]{2}$'),
   created_at timestamptz not null default now(),
   constraint feedback_rating_has_stars check (kind <> 'rating' or stars is not null),
   constraint feedback_note_has_text check (kind = 'rating' or char_length(btrim(coalesce(text, ''))) > 0)
@@ -196,6 +201,23 @@ returns jsonb language sql stable security definer set search_path = '' as $$
     left join w on w.day = g::date
     group by g order by g
   ),
+  -- Daily, weekly and monthly active players for each day (rolling 1, 7 and 30 days).
+  ev as (select e.device, (e.t at time zone 'America/Los_Angeles')::date as day from public.usage_events e, bounds b
+         where e.t >= ((b.today - (b.n + 29)) at time zone 'America/Los_Angeles')),
+  active as (
+    select g::date as day,
+      (select count(distinct ev.device) from ev where ev.day = g::date) as dau,
+      (select count(distinct ev.device) from ev where ev.day between g::date - 6 and g::date) as wau,
+      (select count(distinct ev.device) from ev where ev.day between g::date - 29 and g::date) as mau
+    from bounds b cross join generate_series(b.today - (b.n - 1), b.today, interval '1 day') g
+  ),
+  -- Answers per times table, from the rounds (d.t = { "7": 12, ... }).
+  tbl as (
+    select kv.key::int as tb, sum(public.jnum_(jsonb_build_object('v', kv.value), 'v')) as answers
+    from w, jsonb_each(case when jsonb_typeof(w.d -> 't') = 'object' then w.d -> 't' else '{}'::jsonb end) kv
+    where w.k = 'round' and kv.key ~ '^([1-9]|10)$'
+    group by kv.key
+  ),
   top as (
     select 'refs' as what, x.ref as name, count(distinct x.device) as devices from w x where x.ref is not null group by x.ref
     union all select 'os', coalesce(x.os, 'unknown'), count(distinct x.device) from w x group by 1, 2
@@ -239,6 +261,10 @@ returns jsonb language sql stable security definer set search_path = '' as $$
     'countries', (select coalesce(jsonb_agg(jsonb_build_object('name', t.name, 'devices', t.devices) order by t.devices desc, t.name), '[]'::jsonb) from (select * from top where what = 'countries' order by devices desc, name limit 12) t),
     'places', (select coalesce(jsonb_agg(jsonb_build_object('city', pl.city, 'region', pl.region, 'country', pl.country, 'devices', pl.devices) order by pl.devices desc, pl.country, pl.region, pl.city), '[]'::jsonb)
       from (select * from places order by devices desc, country, region nulls last, city nulls last limit 15) pl),
+    'active', (select coalesce(jsonb_agg(jsonb_build_object('day', a.day, 'dau', a.dau, 'wau', a.wau, 'mau', a.mau) order by a.day), '[]'::jsonb) from active a),
+    'tables', (select coalesce(jsonb_agg(jsonb_build_object('table', t.tb, 'answers', t.answers) order by t.answers desc, t.tb), '[]'::jsonb) from tbl t),
+    'comments', (select coalesce(jsonb_agg(jsonb_build_object('kind', c.kind, 'stars', c.stars, 'text', left(c.text, 300), 'name', c.name, 'created_at', c.created_at, 'country', c.country, 'city', c.city) order by c.created_at desc), '[]'::jsonb)
+      from (select * from public.feedback f where f.text is not null order by f.created_at desc limit 5) c),
     'news', jsonb_build_object('list', (select count(*) from public.updates_list)),
     'ratings', (
       with r as (select f.stars, f.created_at from public.feedback f where f.kind = 'rating' and f.stars is not null)
@@ -297,11 +323,11 @@ grant execute on function public.usage_summary_key(text, integer) to anon;
 
 -- For admin.html: ratings and notes, newest first. kind: null for all.
 create or replace function public.feedback_list(kind_filter text default null, max_rows integer default 200)
-returns table (id bigint, kind text, stars smallint, text text, name text, reply_email text, version text, place text, created_at timestamptz)
+returns table (id bigint, kind text, stars smallint, text text, name text, reply_email text, version text, place text, os text, browser text, city text, region text, country text, created_at timestamptz)
 language plpgsql stable security definer set search_path = '' as $$
 begin
   if not public.is_admin() then raise exception 'not-admin' using errcode = '42501'; end if;
-  return query select f.id, f.kind, f.stars, f.text, f.name, f.reply_email, f.version, f.place, f.created_at
+  return query select f.id, f.kind, f.stars, f.text, f.name, f.reply_email, f.version, f.place, f.os, f.browser, f.city, f.region, f.country, f.created_at
     from public.feedback f
     where kind_filter is null or f.kind = kind_filter
     order by f.created_at desc, f.id desc

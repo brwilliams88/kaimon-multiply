@@ -17,6 +17,7 @@ import { sfx } from '../core/sound.js';
 import { active, deviceId } from '../core/store.js';
 import { REPORT_ENDPOINT, cleanEmail, validEmail } from '../core/mailer.js';
 import { VERSION } from '../data/changelog.js';
+import { deviceKind, browserKind, currentPlace } from '../core/analytics.js';
 
 const SB_URL = 'https://qabevoqmalqjvesqzuse.supabase.co';
 const SB_KEY = 'sb_publishable_6VwJkmR4SMSCs7WXQKjbnA_R0hK8OUW';
@@ -32,7 +33,7 @@ export const STAR_LABELS = ['Not for me', 'It’s OK', 'Good', 'Really good', 'I
 export const KINDS = [
   { id: 'love', label: 'Something I love', ph: 'What do you love? A Kaimon, a battle, a sound...' },
   { id: 'idea', label: 'An idea', ph: 'What would make the game better?' },
-  { id: 'bug', label: 'A bug', ph: 'What happened? What were you doing just before?' },
+  { id: 'bug', label: 'A bug', ph: 'What went wrong, or what bugs you? What were you doing just before?' },
 ];
 
 const STAR = '<svg viewBox="0 0 48 48" aria-hidden="true"><path class="fb-star-body" d="M24 4.5 L29.6 16.6 L42.8 18.1 L33 27.2 L35.7 40.3 L24 33.7 L12.3 40.3 L15 27.2 L5.2 18.1 L18.4 16.6 Z"/><path class="fb-star-shine" d="M17.5 20.5 Q19 18.6 21.6 18.2"/></svg>';
@@ -55,9 +56,10 @@ export function buildNote({ kind, stars = 0, text = '', name = '', email = '', p
   const where = String(place || '').toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 20);
   const dev = deviceId();
   const v = /^[0-9.]{1,12}$/.test(VERSION) ? VERSION : null;
-  const row = { kind, stars: s || null, text: t || null, name: n || null, reply_email: e && validEmail(e) ? e : null, version: v, device: dev, place: where || null };
+  const os = deviceKind(), browser = browserKind(), pl = currentPlace();
+  const row = { kind, stars: s || null, text: t || null, name: n || null, reply_email: e && validEmail(e) ? e : null, version: v, device: dev, place: where || null, os, browser, city: pl.city, region: pl.region, country: pl.country };
   // The mailer knows love, idea, bug and review (a rating goes as a review).
-  const mail = { type: 'feedback', kind: kind === 'rating' ? 'review' : kind, stars: s, text: t, name: n, from: row.reply_email || '', version: VERSION, where, device: dev, v: 1 };
+  const mail = { type: 'feedback', kind: kind === 'rating' ? 'review' : kind, stars: s, text: t, name: n, from: row.reply_email || '', version: VERSION, where, os, browser, place: pl, device: dev, v: 1 };
   return { id: dev + '-' + Date.now().toString(36), t: Date.now(), row, mail, db: false, mailed: false };
 }
 
@@ -148,11 +150,12 @@ function formHTML(mode, prompt) {
   return `<form class="fb" novalidate>
     <div class="fb-head">${uiImg('kaizo-feedback', 'fb-kaizo')}<div>
       <h2>${rate ? 'Rate Kaimon Multiply' : 'Send feedback'}</h2>
-      <p class="fb-sub">${rate ? (prompt ? 'Having fun? Tell us how you like it.' : 'How do you like the game?') : 'Kaizo will take your note straight to the maker.'}</p>
+      <p class="fb-sub">${rate ? (prompt ? 'Having fun? Tell us what you think.' : 'How do you like the game?') : 'Kaizo will take your note straight to the maker.'}</p>
     </div></div>
+    <p class="fb-honest">All feedback is good feedback: what works and what doesn\u2019t. Telling us what doesn\u2019t work helps the most.</p>
     ${rate ? starsHTML() : kindsHTML()}
     <label class="fb-field"><span>${rate ? 'Tell us more <em>(optional)</em>' : 'Your note'}</span>
-      <textarea class="fb-text" data-text rows="4" maxlength="${TEXT_MAX}" placeholder="${rate ? 'What do you like? What could be better?' : 'Pick a kind above, then write here.'}"></textarea></label>
+      <textarea class="fb-text" data-text rows="4" maxlength="${TEXT_MAX}" placeholder="${rate ? 'What works? What doesn\u2019t? Both help.' : 'Pick a kind above, then write here.'}"></textarea></label>
     <label class="fb-field"><span>Your name <em>(if you want us to know)</em></span>
       <input class="fb-input" data-name type="text" maxlength="${NAME_MAX}" autocomplete="off" autocapitalize="words" spellcheck="false"></label>
     ${rate ? '' : `<label class="fb-field"><span>Grown-ups: your email <em>(if you want a reply)</em></span>
@@ -171,8 +174,8 @@ function thanksHTML(rate, queued, stars) {
   const body = queued
     ? 'Saved on this device. It will send by itself when you are back online.'
     : rate
-      ? (stars >= 4 ? 'Kaizo is doing a happy dance. Your stars help other families find the game.' : 'Kaizo took your note to the maker. We will keep making the game better.')
-      : 'Kaizo took your note to the maker. Every note gets read.';
+      ? (stars >= 4 ? 'Kaizo is doing a happy dance. Your stars help other families find the game.' : 'Thanks for being honest. Hearing what doesn\u2019t work helps the most. Kaizo took it to the maker.')
+      : 'Kaizo took your note to the maker. Every note gets read, and the ones about what doesn\u2019t work help the most.';
   return `<div class="fb-thanks" role="status">
     ${uiImg('kaizo-feedback', 'fb-thanks-kaizo')}
     <h2>${head}</h2>

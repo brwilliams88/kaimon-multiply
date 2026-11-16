@@ -108,6 +108,8 @@ export function cleanPlace(j) {
   const place = { city: cleanPart(j.city), region: cleanPart(j.region), country: /^[A-Z]{2}$/.test(cc) ? cc : null };
   return place.city || place.region || place.country ? place : null;
 }
+// The rough place this device last looked up (only while usage counts are on).
+export const currentPlace = () => (isOn() ? placeFields() : { city: null, region: null, country: null });
 const placeFields = () => {
   const p = ls.json(PLACE_KEY, null);
   return { city: p?.city || null, region: p?.region || null, country: p?.country || null };
@@ -192,9 +194,15 @@ export function flush({ keepalive = false } = {}) {
 // Rounds, battles and catches come from each trainer's own counters, so no
 // screen needs a hook. Counters that change during family sync come from other
 // devices, so a sync only moves the baseline (see watchSync).
+// t: answers per times table, from the daily tallies (see apply in actions.js).
+function tableTotals(p) {
+  const t = {};
+  for (const r of Object.values(p.play || {})) for (const [tb, x] of Object.entries(r.t || {})) t[tb] = (t[tb] || 0) + ((x && x[0]) || 0);
+  return t;
+}
 const counters = (p) => ({
   r: p.stats?.sessions || 0, a: p.stats?.answers || 0, c: p.stats?.correct || 0,
-  b: p.battles?.played || 0, w: p.battles?.wins || 0, k: p.stats?.catches || 0,
+  b: p.battles?.played || 0, w: p.battles?.wins || 0, k: p.stats?.catches || 0, t: tableTotals(p),
 });
 export function baseline() {
   const base = {};
@@ -213,7 +221,11 @@ export function collect() {
     if (!was) continue; // a new trainer, or one that just arrived by sync
     const dr = now.r - was.r, da = now.a - was.a, dc = now.c - was.c, db = now.b - was.b, dw = now.w - was.w, dk = now.k - was.k;
     const who = { trainer: p.name };
-    if (dr > 0) { track('round', dr, { cards: Math.max(0, da), right: Math.max(0, dc) }, who); rows++; }
+    if (dr > 0) {
+      const t = {};
+      for (const [tb, n] of Object.entries(now.t || {})) { const d = n - ((was.t || {})[tb] || 0); if (d > 0 && /^([1-9]|10)$/.test(tb)) t[tb] = Math.min(d, 10000); }
+      track('round', dr, { cards: Math.max(0, da), right: Math.max(0, dc), ...(Object.keys(t).length ? { t } : {}) }, who); rows++;
+    }
     if (db > 0) { track('battle', db, { wins: Math.max(0, dw) }, who); rows++; }
     if (dk > 0) { track('catch', dk, {}, who); rows++; }
   }

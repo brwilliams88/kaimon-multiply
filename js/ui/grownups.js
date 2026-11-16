@@ -7,6 +7,7 @@ import { showIconNotice } from './iconNotice.js';
 import { sfx, soundOn, soundStatus } from '../core/sound.js';
 import { itemImg } from '../core/assets.js';
 import { installHelpHTML, canPromptInstall, promptInstall, isInstalled } from './install.js';
+import { openPlayElsewhere } from './playElsewhere.js';
 import { lastDays, partsOfDay, usedToday } from '../core/playtime.js';
 import { bonusTime } from '../core/actions.js';
 import { active, save, exportBackup, importBackup, deleteProfile, allProfiles, hasPin, setPin, checkPin, clearPin } from '../core/store.js';
@@ -261,7 +262,7 @@ function renderMain(root, go) {
           <h2>Install on this device</h2>
           ${canPromptInstall() && !isInstalled() ? '<button class="btn-chunky btn-primary" data-install>Install Kaimon</button>' : ''}
           ${installHelpHTML()}
-          <p class="note">For another device, open <strong>brwilliams88.github.io/kaimon-multiply</strong> there.</p>
+          <div class="row"><span class="note">For another device, open <strong>brwilliams88.github.io/kaimon-multiply</strong> there, or scan a code.</span><button class="btn-chunky btn-sm" data-elsewhere>Play on another device</button></div>
           ${isInstalled() ? '<div class="row"><span class="note">Kaimon got a new app icon in v0.5.0.</span><button class="btn-chunky btn-sm" data-newicon>New icon help</button></div>' : ''}
         </div>
 
@@ -282,6 +283,7 @@ function renderMain(root, go) {
     setTimeout(() => { const st = soundStatus(); msg.textContent = st.lastErr ? `The phone blocked the sound (${st.lastErr}). Tap Test sound again.` : 'You should have heard a little tune. If not, check the volume buttons and that the phone is not on Do Not Disturb with media muted.'; }, 500);
   });
   on(root, 'click', '[data-install]', async () => { if (await promptInstall()) renderMain(root, go); });
+  on(root, 'click', '[data-elsewhere]', () => openPlayElsewhere());
   on(root, 'click', '[data-update]', async (e, btn) => {
     const msg = root.querySelector('[data-upd-msg]');
     btn.disabled = true; msg.textContent = 'Checking...';

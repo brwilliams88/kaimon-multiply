@@ -9,15 +9,16 @@
  *   sendNews()           send now, if there are new versions since the last news email.
  *                        Past the daily cap it stops and goes on the next day by itself.
  *   scheduleNews()       once: a daily check (newsDaily) and the weekly usage summary.
- *   sendUsageSummary()   the usage email to FEEDBACK_TO (or USAGE_TO).
+ *   sendUsageSummary()   the weekly digest to USAGE_TO (or FEEDBACK_TO), with charts.
+ *   signinTemplate()     logs the sign-in code email to paste into Supabase.
  *   newsStatus()         logs where things stand.
  *   newsReset()          forgets the last send (the next one covers recent versions again).
  *
  * Script Properties to set (Project Settings > Script Properties):
  *   NEWS_KEY     the key from running  select public.rotate_secret('news');  in Supabase
- *   FEEDBACK_TO  where tests and the usage summary go (already used by Code.gs)
+ *   USAGE_TO     where the weekly digest goes (your own email)
+ *   FEEDBACK_TO  where tests and feedback go (already used by Code.gs); the digest falls back to it
  *   NEWS_LAUNCH  optional, YYYY-MM-DD. Defaults to the date of version 1.0.0 in the changelog.
- *   USAGE_TO     optional, a different address for the usage summary.
  * Kept here by the script: NEWS_LAST (last version sent to everyone), NEWS_LAST_AT,
  * NEWS_RUN (a send in progress), NEWS_DAY (emails sent today).
  *
@@ -451,88 +452,303 @@ function newsShell_(title, preheader, rows) {
     + '</td></tr></table></body></html>';
 }
 
-// ---------------------------------------------------------------- weekly usage summary
+// ---------------------------------------------------------------- weekly stats digest
 
-function sendUsageSummary() {
+// The weekly digest for the maker: active players, new devices, places, share
+// links, ratings, comments and top tables. Charts are drawn at send time with
+// Apps Script's Charts service and attached as inline PNG pictures.
+// opt: { to, test, data } (data is for tests and samples).
+function sendUsageSummary(opt) {
+  opt = opt && typeof opt === 'object' && !opt.triggerUid ? opt : {}; // a trigger passes an event object
   var P = newsProps_();
-  var to = newsEmail_(P.getProperty('USAGE_TO') || P.getProperty('FEEDBACK_TO') || '');
-  if (!to) throw new Error('Add Script Property FEEDBACK_TO (or USAGE_TO) first.');
-  var key = P.getProperty('NEWS_KEY');
-  if (!key) throw new Error('Add Script Property NEWS_KEY first (see the top of News.gs).');
-  var s = newsRpc_('usage_summary_key', { key: key, days: 7 });
-  if (!s) throw new Error('The usage summary was refused. Check NEWS_KEY.');
-  var html = renderUsageEmail_(s);
-  var t = s.totals || {};
-  MailApp.sendEmail({ to: to, subject: 'Kaimon this week: ' + (t.devices || 0) + ' players, ' + (t.minutes || 0) + ' minutes', htmlBody: html, body: usageText_(s), name: 'Kaimon Multiply' });
-  Logger.log('Sent the usage summary to ' + to);
-  return s;
+  var to = newsEmail_(opt.to || P.getProperty('USAGE_TO') || P.getProperty('FEEDBACK_TO') || '');
+  if (!to) throw new Error('Add Script Property USAGE_TO (or FEEDBACK_TO) first.');
+  var d = opt.data || usageData_();
+  var charts = usageCharts_(d);
+  var t = (d.week && d.week.totals) || {};
+  MailApp.sendEmail({ to: to, name: 'Kaimon Multiply',
+    subject: (opt.test ? '[Test] ' : '') + 'Kaimon this week: ' + (t.devices || 0) + ' players, ' + (t.minutes || 0) + ' minutes' + (opt.stamp || ''),
+    htmlBody: renderUsageEmail_(d, { cids: charts.cids, test: opt.test }), body: usageText_(d), inlineImages: charts.inline });
+  Logger.log('Sent the weekly digest to ' + to);
+  return d;
 }
 
-function usageTile_(big, label) {
-  return '<td class="nstat" width="25%" valign="top" style="padding:0 4px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate;background:#FFFFFF;border:2px solid ' + N_INK + ';border-radius:16px;"><tr><td style="padding:12px 10px 12px 12px;font-family:' + N_FONT + ';color:' + N_INK + ';">'
-    + '<div style="font-size:30px;font-weight:700;line-height:34px;">' + big + '</div><div style="font-size:14px;line-height:18px;color:' + N_INK2 + ';">' + label + '</div></td></tr></table></td>';
+// This week (7 days) for the numbers, and 8 weeks for the trends.
+function usageData_() {
+  var key = newsProps_().getProperty('NEWS_KEY');
+  if (!key) throw new Error('Add Script Property NEWS_KEY first (see the top of News.gs).');
+  var week = newsRpc_('usage_summary_key', { key: key, days: 7 });
+  if (!week) throw new Error('The usage summary was refused. Check NEWS_KEY.');
+  var trend = newsRpc_('usage_summary_key', { key: key, days: 56 }) || week;
+  return { week: week, trend: trend };
 }
+
 var USAGE_NAMES = { iphone: 'iPhone', ipad: 'iPad', android: 'Android', chromebook: 'Chromebook', mac: 'Mac', windows: 'Windows', linux: 'Linux', computer: 'Computer',
   safari: 'Safari', chrome: 'Chrome', edge: 'Edge', firefox: 'Firefox', samsung: 'Samsung', other: 'Other', unknown: 'Unknown',
-  share: 'Share menu', link: 'Copied link', email: 'Email', text: 'Text', whatsapp: 'WhatsApp', news: 'News email', facebook: 'Facebook', linkedin: 'LinkedIn' };
-function usageBars_(list, nameWidth) {
-  if (!list || !list.length) return '<div style="font-size:15px;color:' + N_INK2 + ';">None yet.</div>';
+  share: 'Share menu', link: 'Copied link', email: 'Email', text: 'Text', whatsapp: 'WhatsApp', news: 'News email', device: 'Another device (QR)', facebook: 'Facebook', linkedin: 'LinkedIn' };
+var N_GRASS = '#3FA34D', N_PINK = '#E5487A';
+var N_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+function usageDay_(iso) { var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso || '')); return m ? N_MONTHS[+m[2] - 1] + ' ' + (+m[3]) : ''; }
+function usageFmt_(n) { n = Math.round(+n || 0); return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+function usagePct_(a, b) { return b ? Math.round((100 * a) / b) + '%' : '0%'; }
+
+// Weeks (Monday start) from a daily list: [{ week, n }].
+function usageWeeks_(daily, key) {
+  var out = [], byWeek = {};
+  (daily || []).forEach(function (x) {
+    var dt = new Date(String(x.day).slice(0, 10) + 'T12:00:00Z');
+    var back = (dt.getUTCDay() + 6) % 7;
+    var wk = new Date(dt.getTime() - back * 86400000).toISOString().slice(0, 10);
+    if (!(wk in byWeek)) { byWeek[wk] = out.length; out.push({ week: wk, n: 0 }); }
+    out[byWeek[wk]].n += +x[key] || 0;
+  });
+  return out;
+}
+
+function usageChartStyle_(b, opt) {
+  opt = opt || {};
+  return b.setDimensions(1104, opt.h || 460)
+    .setOption('backgroundColor', { fill: '#FFFFFF' })
+    .setOption('fontName', 'Arial')
+    .setOption('chartArea', { left: 70, top: 24, width: '88%', height: opt.legend ? '66%' : '76%' })
+    .setOption('legend', opt.legend ? { position: 'bottom', textStyle: { color: '#4A5675', fontSize: 22 } } : { position: 'none' })
+    .setOption('hAxis', { textStyle: { color: '#8A94AA', fontSize: 20 }, showTextEvery: opt.every || 1, slantedText: false })
+    .setOption('vAxis', { minValue: 0, viewWindow: opt.window || { min: 0 }, format: '0', gridlines: { color: '#E3EAF4', count: 4 }, baselineColor: N_INK, textStyle: { color: '#8A94AA', fontSize: 20 } })
+    .setOption('lineWidth', 5).setOption('pointSize', opt.points || 0).setOption('bar', { groupWidth: '62%' });
+}
+
+// Returns { inline: { cid: blob }, cids: { name: 'cid:name' } }. Charts that fail are left out
+// (the email then shows simple bars instead).
+function usageCharts_(d) {
+  var out = { inline: {}, cids: {} };
+  if (typeof Charts === 'undefined') return out;
+  var add = function (name, build) {
+    try { out.inline[name] = build().getAs('image/png').setName(name + '.png'); out.cids[name] = 'cid:' + name; }
+    catch (e) { console.error('chart ' + name + ': ' + (e && e.message)); }
+  };
+  var tr = d.trend || d.week || {};
+  var active = tr.active || [];
+  if (active.length) add('active', function () {
+    var dt = Charts.newDataTable().addColumn(Charts.ColumnType.STRING, 'Day')
+      .addColumn(Charts.ColumnType.NUMBER, 'Daily').addColumn(Charts.ColumnType.NUMBER, 'Weekly').addColumn(Charts.ColumnType.NUMBER, 'Monthly');
+    active.forEach(function (a) { dt.addRow([usageDay_(a.day), +a.dau || 0, +a.wau || 0, +a.mau || 0]); });
+    return usageChartStyle_(Charts.newLineChart().setDataTable(dt.build()).setColors([N_BLUE, N_GRASS, N_CORAL]), { legend: true, every: 14 }).build();
+  });
+  var weeks = usageWeeks_(tr.daily, 'new_devices');
+  if (weeks.length) add('newdev', function () {
+    var dt = Charts.newDataTable().addColumn(Charts.ColumnType.STRING, 'Week').addColumn(Charts.ColumnType.NUMBER, 'New devices');
+    weeks.forEach(function (w) { dt.addRow([usageDay_(w.week), w.n]); });
+    return usageChartStyle_(Charts.newColumnChart().setDataTable(dt.build()).setColors([N_BLUE]), { h: 380 }).build();
+  });
+  var rw = ((tr.ratings || {}).weekly) || [];
+  if (rw.length) add('rating', function () {
+    var dt = Charts.newDataTable().addColumn(Charts.ColumnType.STRING, 'Week').addColumn(Charts.ColumnType.NUMBER, 'Average stars');
+    rw.forEach(function (w) { dt.addRow([usageDay_(w.week), +w.avg || 0]); });
+    return usageChartStyle_(Charts.newLineChart().setDataTable(dt.build()).setColors(['#E0A800']), { h: 340, points: 14, window: { min: 1, max: 5 } }).build();
+  });
+  return out;
+}
+
+function usageTile_(big, label, sub, color) {
+  return '<td class="nstat" width="33%" valign="top" style="padding:0 4px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate;background:#FFFFFF;border:2px solid ' + N_INK + ';border-radius:16px;"><tr><td style="padding:12px 12px 12px 14px;font-family:' + N_FONT + ';color:' + N_INK + ';' + (color ? 'border-top:6px solid ' + color + ';border-radius:14px 14px 0 0;' : '') + '">'
+    + '<div style="font-size:30px;font-weight:700;line-height:34px;">' + big + '</div><div style="font-size:14px;line-height:18px;color:' + N_INK2 + ';font-weight:600;">' + label + '</div>'
+    + (sub ? '<div style="font-size:12px;line-height:16px;color:#8A94AA;padding-top:2px;">' + sub + '</div>' : '') + '</td></tr></table></td>';
+}
+function usageTiles_(tiles) { return '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 -4px;"><tr>' + tiles.join('') + '</tr></table>'; }
+function usageChange_(now, before) {
+  if (!before && !now) return '';
+  var d = now - before;
+  if (!d) return 'same as last week';
+  return (d > 0 ? '&#9650; ' : '&#9660; ') + Math.abs(d) + ' vs last week';
+}
+function usageBars_(list, nameWidth, color) {
+  if (!list || !list.length) return '<div style="font-family:' + N_FONT + ';font-size:15px;color:' + N_INK2 + ';">None yet.</div>';
   var max = Math.max.apply(null, list.map(function (x) { return x.devices || 0; })) || 1;
   return '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">' + list.slice(0, 6).map(function (x) {
     var w = Math.max(3, Math.round((x.devices / max) * 100));
-    return '<tr><td width="' + (nameWidth || 96) + '" style="padding:4px 8px 4px 0;font-family:' + N_FONT + ';font-size:15px;color:' + N_INK + ';white-space:nowrap;">' + newsEsc_(USAGE_NAMES[x.name] || x.name) + '</td>'
-      + '<td style="padding:4px 0;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td width="' + w + '%" style="background:' + N_BLUE + ';height:12px;line-height:12px;font-size:0;border-radius:4px;">&nbsp;</td>' + (w < 100 ? '<td style="font-size:0;">&nbsp;</td>' : '') + '</tr></table></td>'
-      + '<td width="44" align="right" style="padding:4px 0 4px 8px;font-family:' + N_FONT + ';font-size:15px;font-weight:700;color:' + N_INK + ';">' + (x.devices || 0) + '</td></tr>';
+    return '<tr><td width="' + (nameWidth || 110) + '" style="padding:4px 8px 4px 0;font-family:' + N_FONT + ';font-size:15px;color:' + N_INK + ';">' + newsEsc_(USAGE_NAMES[x.name] || x.name) + '</td>'
+      + '<td style="padding:4px 0;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td width="' + w + '%" style="background:' + (color || N_BLUE) + ';height:12px;line-height:12px;font-size:0;border-radius:4px;">&nbsp;</td>' + (w < 100 ? '<td style="font-size:0;">&nbsp;</td>' : '') + '</tr></table></td>'
+      + '<td width="44" align="right" style="padding:4px 0 4px 8px;font-family:' + N_FONT + ';font-size:15px;font-weight:700;color:' + N_INK + ';">' + usageFmt_(x.devices) + '</td></tr>';
   }).join('') + '</table>';
 }
+function usageH2_(text, mon) {
+  return '<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:10px;"><tr>'
+    + (mon ? '<td width="44" valign="middle" style="padding-right:8px;"><img src="' + NEWS_IMG + 'kaimon/' + mon + '.png" width="40" height="40" alt="" style="display:block;border:0;"></td>' : '')
+    + '<td valign="middle" style="font-family:' + N_FONT + ';font-size:20px;font-weight:700;color:' + N_INK + ';">' + text + '</td></tr></table>';
+}
+function usageImg_(cid, alt) { return '<img src="' + cid + '" width="552" alt="' + newsEsc_(alt) + '" style="display:block;width:100%;max-width:552px;height:auto;border:0;margin-top:12px;">'; }
+// Simple bars when a chart picture can't be made.
+function usageMiniBars_(list, key, color) {
+  if (!list || !list.length) return '';
+  var max = Math.max.apply(null, list.map(function (x) { return +x[key] || 0; }).concat([1]));
+  return '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:12px;"><tr>' + list.map(function (x) {
+    var h = Math.max(3, Math.round(((+x[key] || 0) / max) * 70));
+    return '<td valign="bottom" style="padding:0 1px;"><div style="height:' + h + 'px;line-height:' + h + 'px;font-size:0;background:' + (color || N_BLUE) + ';border-radius:3px 3px 0 0;">&nbsp;</div></td>';
+  }).join('') + '</tr></table>';
+}
 
-function renderUsageEmail_(s, opt) {
+function renderUsageEmail_(d, opt) {
   opt = opt || {};
-  var img = opt.base || NEWS_IMG;
-  var t = s.totals || {}, r = s.ratings || {}, f = s.feedback || {};
+  if (d && d.totals) d = { week: d, trend: d }; // one summary for both
+  var img = opt.base || NEWS_IMG, cids = opt.cids || {};
+  var s = d.week || {}, tr = d.trend || s;
+  var t = s.totals || {}, r = tr.ratings || s.ratings || {}, rw = s.ratings || {}, f = s.feedback || {};
+  var act = tr.active || [], last = act[act.length - 1] || {}, prev = act[act.length - 8] || {};
+  var wk = (s.active || []).slice(-7);
+  var dauAvg = wk.length ? Math.round(wk.reduce(function (a, x) { return a + (+x.dau || 0); }, 0) / wk.length * 10) / 10 : 0;
+  var span = (s.daily || []).length ? usageDay_(s.daily[0].day) + ' to ' + usageDay_(s.daily[s.daily.length - 1].day) : 'This week';
   var rows = [];
+  var mons = ['001', '004', '007'].map(function (n) { return '<img src="' + img + 'kaimon/' + n + '.png" width="52" height="52" alt="" style="display:inline-block;border:0;margin-right:2px;">'; }).join('');
+
   rows.push('<tr><td style="padding:0;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate;background:#FFFFFF;border:3px solid ' + N_INK + ';border-radius:24px;">'
     + '<tr><td style="padding:0;line-height:0;font-size:0;"><img src="' + img + 'header-stats.jpg" width="594" alt="" style="display:block;width:100%;max-width:594px;height:auto;border:0;border-radius:21px 21px 0 0;"></td></tr>'
     + '<tr><td class="np" style="padding:18px 24px 20px 24px;border-top:3px solid ' + N_INK + ';font-family:' + N_FONT + ';color:' + N_INK + ';">'
-    + '<div style="font-size:13px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:' + N_BLUE + ';">Usage summary &middot; last ' + (s.days || 7) + ' days</div>'
-    + '<div style="font-size:28px;font-weight:700;line-height:34px;margin-top:4px;">How Kaimon did this week</div></td></tr></table></td></tr>');
-  rows.push('<tr><td style="padding:16px 0 0 0;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>'
-    + usageTile_(t.devices || 0, 'players (devices)') + usageTile_(t.new_devices || 0, 'new devices') + usageTile_(t.minutes || 0, 'minutes played') + usageTile_(t.rounds || 0, 'rounds')
-    + '</tr></table></td></tr>');
-  rows.push('<tr><td style="padding:8px 0 0 0;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>'
-    + usageTile_(t.cards || 0, 'cards answered') + usageTile_(t.returning || 0, 'came back 2+ days') + usageTile_(r.avg === null || r.avg === undefined ? '&ndash;' : Number(r.avg).toFixed(1) + '&#9733;', 'average rating (' + (r.count || 0) + ')') + usageTile_(f.new_comments || 0, 'new comments')
-    + '</tr></table></td></tr>');
-  var days = (s.daily || []).slice(-7);
-  var maxP = Math.max.apply(null, days.map(function (d) { return d.players || 0; }).concat([1]));
-  var bars = days.map(function (d) {
-    var h = Math.max(4, Math.round(((d.players || 0) / maxP) * 80));
-    var wd = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][new Date(d.day + 'T12:00:00Z').getUTCDay()];
-    return '<td align="center" valign="bottom" width="14%" style="font-family:' + N_FONT + ';padding:0 3px;">'
-      + '<div style="font-size:13px;font-weight:700;color:' + N_INK + ';padding-bottom:3px;">' + (d.players || 0) + '</div>'
-      + '<div style="height:' + h + 'px;line-height:' + h + 'px;font-size:0;background:' + N_BLUE + ';border-radius:4px 4px 0 0;">&nbsp;</div>'
-      + '<div style="font-size:12px;color:' + N_INK2 + ';padding-top:4px;border-top:2px solid ' + N_INK + ';">' + wd + '</div></td>';
+    + '<div style="font-size:13px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:' + N_BLUE + ';">' + (opt.test ? 'Test &middot; ' : '') + 'Weekly digest &middot; ' + newsEsc_(span) + '</div>'
+    + '<div style="font-size:30px;font-weight:700;line-height:36px;margin:4px 0 8px 0;">How Kaimon did this week</div>'
+    + '<table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td valign="middle" style="padding-right:10px;line-height:0;">' + mons + '</td>'
+    + '<td valign="middle" style="font-family:' + N_FONT + ';font-size:16px;line-height:22px;color:' + N_INK2 + ';"><b style="color:' + N_INK + ';">' + usageFmt_(t.devices) + '</b> players, <b style="color:' + N_INK + ';">' + usageFmt_(t.minutes) + '</b> minutes and <b style="color:' + N_INK + ';">' + usageFmt_(t.cards) + '</b> cards answered.</td></tr></table>'
+    + '</td></tr></table></td></tr>');
+
+  // Active players
+  rows.push(newsCard_(usageH2_('Active players', '001')
+    + usageTiles_([usageTile_(usageFmt_(dauAvg), 'daily (average)', '', N_BLUE), usageTile_(usageFmt_(last.wau), 'weekly', usageChange_(+last.wau || 0, +prev.wau || 0), N_GRASS), usageTile_(usageFmt_(last.mau), 'monthly', 'last 30 days', N_CORAL)])
+    + (cids.active ? usageImg_(cids.active, 'Daily, weekly and monthly active players, last 8 weeks') : usageMiniBars_(act, 'dau'))
+    + '<div style="font-family:' + N_FONT + ';font-size:13px;color:#8A94AA;padding-top:6px;">Last 8 weeks. Weekly and monthly count each device once over the past 7 and 30 days.</div>'));
+
+  // New devices
+  rows.push(newsCard_(usageH2_('New devices', '004')
+    + usageTiles_([usageTile_(usageFmt_(t.new_devices), 'new this week', ''), usageTile_(usagePct_(t.came_back, t.new_devices), 'came back another day', usageFmt_(t.came_back) + ' of ' + usageFmt_(t.new_devices)), usageTile_(usageFmt_(t.installed_all), 'installed', usageFmt_(t.devices_all) + ' devices all time')])
+    + (cids.newdev ? usageImg_(cids.newdev, 'New devices each week') : '')));
+
+  // Play
+  rows.push(newsCard_(usageH2_('Play', '007')
+    + usageTiles_([usageTile_(usageFmt_(t.minutes), 'minutes', t.devices ? Math.round(t.minutes / t.devices) + ' per player' : ''), usageTile_(usageFmt_(t.rounds), 'rounds', usageFmt_(t.cards) + ' cards'), usageTile_(usagePct_(t.right, t.cards), 'right answers', '')])
+    + '<div style="height:8px;line-height:8px;font-size:0;">&nbsp;</div>'
+    + usageTiles_([usageTile_(usageFmt_(t.battles), 'battles', usageFmt_(t.wins) + ' won'), usageTile_(usageFmt_(t.catches), 'Kaimon caught', ''), usageTile_(usageFmt_(t.opens), 'app opens', '')])
+    + ((s.tables || []).length ? '<div style="font-family:' + N_FONT + ';font-size:16px;font-weight:700;padding:16px 0 6px 0;">Top times tables</div>'
+      + usageBars_((s.tables || []).slice(0, 6).map(function (x) { return { name: x.table + 's', devices: x.answers }; }), 60, N_GRASS) : '')));
+
+  // Where players are and how they found the game
+  rows.push(newsCard_(usageH2_('Places')
+    + usageBars_((s.places || []).map(function (p) { return { name: [p.city, p.region].filter(function (x) { return x; }).join(', ') || p.country, devices: p.devices }; }), 190)
+    + '<div style="font-family:' + N_FONT + ';font-size:16px;font-weight:700;padding:16px 0 6px 0;">Install source (shared links)</div>' + usageBars_(s.refs, 190, N_PINK)
+    + '<div style="font-family:' + N_FONT + ';font-size:16px;font-weight:700;padding:16px 0 6px 0;">Devices</div>' + usageBars_(s.os, 190)));
+
+  // Ratings
+  var dist = r.dist || [0, 0, 0, 0, 0], dmax = Math.max.apply(null, dist.concat([1]));
+  var stars = '';
+  for (var i = 1; i <= 5; i++) stars += '<span style="color:' + (i <= Math.round(+r.avg || 0) ? '#FFC93C' : '#D5DCE8') + ';">&#9733;</span>';
+  var distRows = [5, 4, 3, 2, 1].map(function (k) {
+    var w = Math.max(dist[k - 1] ? 3 : 0, Math.round((dist[k - 1] / dmax) * 100));
+    return '<tr><td width="28" style="font-family:' + N_FONT + ';font-size:14px;font-weight:700;color:' + N_INK + ';padding:2px 6px 2px 0;">' + k + '&#9733;</td><td style="padding:2px 0;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#F4F8FD;border-radius:4px;"><tr>'
+      + (w ? '<td width="' + w + '%" style="background:#FFC93C;height:12px;line-height:12px;font-size:0;border-radius:4px;">&nbsp;</td>' : '') + '<td style="height:12px;font-size:0;">&nbsp;</td></tr></table></td><td width="34" align="right" style="font-family:' + N_FONT + ';font-size:14px;color:' + N_INK2 + ';padding-left:6px;">' + (dist[k - 1] || 0) + '</td></tr>';
   }).join('');
-  rows.push(newsCard_('<div style="font-size:19px;font-weight:700;padding-bottom:12px;">Players each day</div><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>' + bars + '</tr></table>'));
-  rows.push(newsCard_('<div style="font-size:19px;font-weight:700;padding-bottom:8px;">Where new players came from</div>' + usageBars_(s.refs)
-    + '<div style="font-size:19px;font-weight:700;padding:16px 0 8px 0;">Devices</div>' + usageBars_(s.os)
-    + '<div style="font-size:19px;font-weight:700;padding:16px 0 8px 0;">Browsers</div>' + usageBars_(s.browsers)
-    + '<div style="font-size:19px;font-weight:700;padding:16px 0 8px 0;">Places</div>' + usageBars_((s.places || []).map(function (p) {
-      return { name: [p.city, p.region].filter(function (x) { return x; }).join(', ') || p.country, devices: p.devices };
-    }), 150)));
-  rows.push(newsCard_('<div style="font-size:16px;line-height:24px;">'
-    + 'All time: <b>' + (t.devices_all || 0) + '</b> devices, <b>' + (t.installed_all || 0) + '</b> installed. '
-    + 'News list: <b>' + ((s.news || {}).list || 0) + '</b>. Battles: <b>' + (t.battles || 0) + '</b>, catches: <b>' + (t.catches || 0) + '</b>.</div>', { bg: '#F4FAFF' }));
-  rows.push('<tr><td align="center" style="padding:22px 0 6px 0;">' + newsBtn_(NEWS_APP + 'admin.html', 'Open the dashboard', N_CORAL, '#FFFFFF') + '</td></tr>');
-  return newsShell_('Kaimon usage summary', (t.devices || 0) + ' players and ' + (t.minutes || 0) + ' minutes this week.', rows.join(''));
+  rows.push(newsCard_(usageH2_('Ratings')
+    + (r.count ? '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>'
+      + '<td class="kcol" width="150" valign="top" align="center" style="font-family:' + N_FONT + ';padding-right:14px;"><div style="font-size:52px;font-weight:700;line-height:56px;color:' + N_INK + ';">' + (+r.avg).toFixed(1) + '</div><div style="font-size:24px;letter-spacing:2px;">' + stars + '</div>'
+      + '<div style="font-size:13px;color:' + N_INK2 + ';">' + usageFmt_(r.count) + ' ratings</div>'
+      + '<div style="display:inline-block;margin-top:8px;padding:3px 10px;border:2px solid ' + N_INK + ';border-radius:99px;background:#DDF3E0;color:#1E5E28;font-size:14px;font-weight:700;">' + (r.csat || 0) + '% 4 or 5 stars</div></td>'
+      + '<td valign="top"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">' + distRows + '</table>'
+      + '<div style="font-family:' + N_FONT + ';font-size:13px;color:' + N_INK2 + ';padding-top:8px;">' + usageFmt_(rw.new) + ' new this week' + (rw.new_avg ? ', averaging ' + (+rw.new_avg).toFixed(1) : '') + '.</div></td></tr></table>'
+      + (cids.rating ? usageImg_(cids.rating, 'Average rating by week') : '')
+      : '<div style="font-family:' + N_FONT + ';font-size:15px;color:' + N_INK2 + ';">No ratings yet.</div>')));
+
+  // Latest comments
+  var comments = (s.comments || []).slice(0, 5);
+  var kindChip = { rating: ['Rating', '#C98A00'], love: ['Love', N_PINK], idea: ['Idea', N_BLUE], bug: ['Bug', N_GRASS] };
+  rows.push(newsCard_(usageH2_('Latest comments (' + usageFmt_(f.new_comments) + ' new)')
+    + (comments.length ? comments.map(function (c) {
+      var k = kindChip[c.kind] || ['Note', N_INK2];
+      var st = c.stars ? ' <span style="color:#FFC93C;font-size:15px;">' + new Array(c.stars + 1).join('&#9733;') + '</span>' : '';
+      return '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate;margin-bottom:8px;background:#FBFDFF;border:2px solid #E3EAF4;border-radius:14px;"><tr><td style="padding:10px 12px;font-family:' + N_FONT + ';color:' + N_INK + ';">'
+        + '<span style="display:inline-block;padding:0 8px;border-radius:99px;background:' + k[1] + ';color:#FFFFFF;font-size:12px;font-weight:700;line-height:18px;">' + k[0] + '</span>' + st
+        + ' <span style="font-size:13px;color:' + N_INK2 + ';">' + (c.name ? newsEsc_(c.name) + ' &middot; ' : '') + usageDay_(c.created_at) + (c.city ? ' &middot; ' + newsEsc_(c.city) : '') + '</span>'
+        + '<div style="font-size:15px;line-height:22px;padding-top:4px;">' + newsEsc_(c.text || '') + '</div></td></tr></table>';
+    }).join('') : '<div style="font-family:' + N_FONT + ';font-size:15px;color:' + N_INK2 + ';">No comments yet.</div>')));
+
+  rows.push('<tr><td align="center" style="padding:24px 0 6px 0;">' + newsBtn_(NEWS_APP + 'admin.html', 'Open the dashboard', N_CORAL, '#FFFFFF') + '</td></tr>');
+  rows.push('<tr><td align="center" style="padding:14px 16px 8px 16px;font-family:' + N_FONT + ';font-size:13px;line-height:19px;color:' + N_INK2 + ';">Kaizo crunched these numbers for you. Usage counts hold no emails, real names or exact locations.</td></tr>');
+  return newsShell_('Kaimon weekly digest', usageFmt_(t.devices) + ' players and ' + usageFmt_(t.minutes) + ' minutes this week.', rows.join(''));
 }
 
-function usageText_(s) {
-  var t = s.totals || {}, r = s.ratings || {}, f = s.feedback || {};
-  return ['Kaimon usage, last ' + (s.days || 7) + ' days', '',
-    'Players (devices): ' + (t.devices || 0), 'New devices: ' + (t.new_devices || 0), 'Minutes played: ' + (t.minutes || 0),
+function usageText_(d) {
+  if (d && d.totals) d = { week: d, trend: d };
+  var s = d.week || {}, t = s.totals || {}, r = (d.trend || s).ratings || s.ratings || {}, f = s.feedback || {};
+  var act = (d.trend || s).active || [], last = act[act.length - 1] || {};
+  return ['Kaimon weekly digest', '',
+    'Players (devices): ' + (t.devices || 0), 'Weekly active: ' + (last.wau || 0), 'Monthly active: ' + (last.mau || 0),
+    'New devices: ' + (t.new_devices || 0), 'Minutes played: ' + (t.minutes || 0),
     'Rounds: ' + (t.rounds || 0), 'Cards: ' + (t.cards || 0), 'Came back 2+ days: ' + (t.returning || 0),
     'Average rating: ' + (r.avg === null || r.avg === undefined ? 'none yet' : r.avg + ' (' + (r.count || 0) + ' ratings)'), 'New comments: ' + (f.new_comments || 0),
     '', 'Dashboard: ' + NEWS_APP + 'admin.html'].join('\n');
+}
+
+// ---------------------------------------------------------------- sign-in code email
+
+// The sign-in code email. Supabase sends the real one: paste the output of
+// signinTemplate() (or supabase/templates/sign-in.html) into Supabase >
+// Authentication > Email Templates, for both "Magic Link" and "Confirm signup".
+function renderSigninEmail_(code, opt) {
+  opt = opt || {};
+  var img = opt.base || NEWS_IMG;
+  var rows = '<tr><td style="padding:0;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate;background:#FFFFFF;border:3px solid ' + N_INK + ';border-radius:24px;">'
+    + '<tr><td style="padding:0;line-height:0;font-size:0;"><img src="' + img + 'header-signin.jpg" width="594" alt="Kaimon Multiply" style="display:block;width:100%;max-width:594px;height:auto;border:0;border-radius:21px 21px 0 0;"></td></tr>'
+    + '<tr><td class="np" align="center" style="padding:22px 24px 26px 24px;border-top:3px solid ' + N_INK + ';font-family:' + N_FONT + ';color:' + N_INK + ';">'
+    + '<div style="font-size:13px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:' + N_BLUE + ';">' + (opt.test ? 'Test &middot; ' : '') + 'Family sync</div>'
+    + '<div style="font-size:28px;font-weight:700;line-height:34px;padding:4px 0 10px 0;">Your sign-in code</div>'
+    + '<div style="font-size:17px;line-height:25px;color:' + N_INK2 + ';">Type this code in Kaimon Multiply to sign in on this device.</div>'
+    + '<table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="border-collapse:separate;margin:18px auto 6px auto;"><tr><td align="center" style="background:#FFF8DC;border:3px solid ' + N_INK + ';border-radius:18px;box-shadow:0 4px 0 ' + N_INK + ';padding:12px 26px;font-family:' + N_FONT + ';font-size:40px;font-weight:700;letter-spacing:10px;color:' + N_INK + ';">' + code + '</td></tr></table>'
+    + '<div style="font-size:14px;line-height:21px;color:' + N_INK2 + ';padding-top:14px;">The code works for a short time. Didn’t ask for it? You can ignore this email.</div>'
+    + '</td></tr></table></td></tr>'
+    + '<tr><td align="center" style="padding:18px 16px 8px 16px;font-family:' + N_FONT + ';font-size:13px;line-height:19px;color:' + N_INK2 + ';"><a href="' + NEWS_APP + '" style="color:' + N_INK2 + ';">Kaimon Multiply</a> &middot; times tables practice for kids &middot; <a href="' + NEWS_APP + 'privacy.html" style="color:' + N_INK2 + ';">Privacy</a></td></tr>';
+  return newsShell_('Your Kaimon sign-in code', 'Your sign-in code for Kaimon Multiply.', rows);
+}
+function signinTemplate() { var h = renderSigninEmail_('{{ .Token }}'); Logger.log(h); return h; }
+
+// ---------------------------------------------------------------- [Test] copies
+
+// Used by sendTestEmails() in Code.gs: a [Test] copy of the news email, the
+// weekly digest and the sign-in code email. Real numbers when NEWS_KEY works,
+// sample numbers otherwise.
+function newsTestEmails_(to, stamp) {
+  stamp = stamp || '';
+  var n = 0;
+  try { var plan = newsPlan_({ cadence: false, test: true });
+    MailApp.sendEmail({ to: to, subject: '[Test] ' + plan.subject + stamp, name: 'Kaimon Multiply',
+      htmlBody: renderNewsEmail_(plan.entries, { token: '00000000-0000-0000-0000-000000000000', more: plan.more, first: plan.first, test: true }), body: newsText_(plan.entries, '00000000-0000-0000-0000-000000000000', plan.first) });
+    n++;
+  } catch (e) { console.error('news test: ' + e.message); }
+  var data = null;
+  try { data = usageData_(); } catch (e) { data = usageSample_(); }
+  sendUsageSummary({ to: to, test: true, data: data, stamp: stamp }); n++;
+  MailApp.sendEmail({ to: to, subject: '[Test] Your Kaimon sign-in code' + stamp, name: 'Kaimon Multiply', htmlBody: renderSigninEmail_('123456', { test: true }), body: 'Your Kaimon Multiply sign-in code: 123456' });
+  n++;
+  return n;
+}
+
+// Sample numbers for the digest when there is no data yet.
+function usageSample_() {
+  var days = [], active = [], now = Date.now();
+  for (var i = 55; i >= 0; i--) {
+    var day = Utilities.formatDate(new Date(now - i * 86400000), 'America/Los_Angeles', 'yyyy-MM-dd'), k = 55 - i;
+    var dau = 2 + Math.round(k / 8) + [0, 1, 1, 2, 3, 1, 0][k % 7];
+    days.push({ day: day, players: dau, minutes: dau * 12, new_devices: k % 4 === 0 ? 2 : k % 3 === 0 ? 1 : 0 });
+    active.push({ day: day, dau: dau, wau: dau + 4 + Math.round(k / 6), mau: dau + 9 + Math.round(k / 3) });
+  }
+  var week = { days: 7, totals: { devices: 14, new_devices: 6, came_back: 4, returning: 9, minutes: 520, rounds: 96, cards: 1450, right: 1320, opens: 61, battles: 22, wins: 17, catches: 74, installed_all: 8, devices_all: 31 },
+    daily: days.slice(-7), active: active.slice(-7),
+    refs: [{ name: 'whatsapp', devices: 4 }, { name: 'link', devices: 3 }, { name: 'device', devices: 2 }, { name: 'news', devices: 1 }],
+    os: [{ name: 'ipad', devices: 7 }, { name: 'iphone', devices: 4 }, { name: 'chromebook', devices: 3 }],
+    places: [{ city: 'Mountain View', region: 'California', country: 'US', devices: 6 }, { city: 'Brooklyn', region: 'New York', country: 'US', devices: 3 }, { city: 'Toronto', region: 'Ontario', country: 'CA', devices: 2 }],
+    tables: [{ table: 7, answers: 320 }, { table: 8, answers: 260 }, { table: 6, answers: 210 }, { table: 9, answers: 150 }],
+    feedback: { new_comments: 3 },
+    comments: [{ kind: 'idea', text: 'Can the Kaidex show where each Kaimon lives?', name: 'Mia', created_at: days[55].day, city: 'Brooklyn' },
+      { kind: 'bug', text: 'The music kept playing after I closed the game.', created_at: days[54].day, city: 'Mountain View' },
+      { kind: 'rating', stars: 5, text: 'Kai plays every morning before school!', created_at: days[53].day }],
+    ratings: { count: 12, avg: 4.58, csat: 92, dist: [0, 0, 1, 3, 8], new: 4, new_avg: 4.75 } };
+  var trend = { daily: days, active: active, ratings: { count: 12, avg: 4.58, csat: 92, dist: [0, 0, 1, 3, 8],
+    weekly: [{ week: days[13].day, avg: 4.2, count: 2 }, { week: days[27].day, avg: 4.5, count: 3 }, { week: days[41].day, avg: 4.4, count: 3 }, { week: days[55].day, avg: 4.75, count: 4 }] } };
+  return { week: week, trend: trend };
 }
 
 // ---------------------------------------------------------------- small helpers

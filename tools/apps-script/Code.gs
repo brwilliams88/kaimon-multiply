@@ -10,7 +10,7 @@
  *   { type: 'invite', to, trainer, pid, device }   one "say yes" email
  *   { type: 'status', to: [..], pid, device }       who said yes
  *   { type: 'report', to: [..], trainer, pid, device, week, test, report, image }
- *   { type: 'feedback', kind, text, stars, name, from, version, device }  to the maker
+ *   { type: 'feedback', kind, text, stars, name, from, version, where, os, browser, place, device }  to the maker
  * Replies are JSON: { ok: true, ... } or { ok: false, error }.
  *
  * Saved in Script Properties (no progress is ever saved):
@@ -125,22 +125,37 @@ function setup() {
 
 // ---------------------------------------------------------------- requests
 
-// Feedback, ideas, bug reports and reviews from the game, sent as plain text to the maker.
+// Feedback, ideas, bug reports and ratings from the game, sent to the maker as a
+// small branded email (with a plain text copy). Every value is checked here.
+var FEEDBACK_OS = { iphone: 'iPhone', ipad: 'iPad', android: 'Android', chromebook: 'Chromebook', mac: 'Mac', windows: 'Windows', linux: 'Linux', computer: 'Computer' };
+var FEEDBACK_BROWSERS = { safari: 'Safari', chrome: 'Chrome', edge: 'Edge', firefox: 'Firefox', samsung: 'Samsung Internet', other: 'another browser' };
+var FEEDBACK_KINDS = { love: 'Something they love', idea: 'An idea', bug: 'A bug', review: 'A rating', other: 'Feedback' };
+
+function cleanFeedback_(b) {
+  var kind = FEEDBACK_KINDS.hasOwnProperty(b.kind) ? b.kind : 'other';
+  var part = function (x, n) { return String(x || '').replace(/[\u0000-\u001f\u007f<>]/g, '').replace(/\s+/g, ' ').trim().slice(0, n); };
+  var pl = b.place && typeof b.place === 'object' ? b.place : {};
+  var cc = String(pl.country || '').toUpperCase();
+  return {
+    kind: kind,
+    text: String(b.text || '').replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, '').trim().slice(0, FEEDBACK_MAX),
+    stars: int_(b.stars, 5, 0),
+    from: cleanEmail_(b.from || ''),
+    who: part(b.name, 40), // a name they chose to give (optional)
+    version: /^[0-9.]{1,12}$/.test(String(b.version || '')) ? String(b.version) : '?',
+    where: String(b.where || '').replace(/[^A-Za-z0-9 _-]/g, '').slice(0, 30),
+    os: FEEDBACK_OS[b.os] || '', browser: FEEDBACK_BROWSERS[b.browser] || '',
+    place: [part(pl.city, 60), part(pl.region, 60), /^[A-Z]{2}$/.test(cc) ? cc : ''].filter(function (x) { return x; }).join(', '),
+  };
+}
+
 function feedback_(b) {
   var to = cleanEmail_(props_().getProperty('FEEDBACK_TO') || '');
   if (!to) return { ok: false, error: 'not-set-up' };
   var device = b.device;
   if (!validDevice_(device)) return { ok: false, error: 'bad-request' };
-  var kinds = { love: 'Something they love', idea: 'An idea', bug: 'A bug', review: 'A review', other: 'Feedback' };
-  var kind = kinds.hasOwnProperty(b.kind) ? b.kind : 'other';
-  var text = String(b.text || '').replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, '').trim().slice(0, FEEDBACK_MAX);
-  var stars = int_(b.stars, 5, 0);
-  if (!text && !stars) return { ok: false, error: 'empty' };
-  var from = cleanEmail_(b.from || '');
-  // A name they chose to give (optional). Plain text only.
-  var who = String(b.name || '').replace(/[\u0000-\u001f\u007f<>]/g, '').replace(/\s+/g, ' ').trim().slice(0, 40);
-  var version = /^[0-9.]{1,12}$/.test(String(b.version || '')) ? String(b.version) : '?';
-  var place = String(b.where || '').replace(/[^A-Za-z0-9 _-]/g, '').slice(0, 30);
+  var f = cleanFeedback_(b);
+  if (!f.text && !f.stars) return { ok: false, error: 'empty' };
   var ok = locked_(function (P) {
     var k = 'f:' + day_() + ':' + device, n = +P.getProperty(k) || 0;
     tidy_(P);
@@ -149,12 +164,53 @@ function feedback_(b) {
     return true;
   });
   if (!ok) return { ok: false, error: 'daily-limit' };
-  var lines = [kinds[kind] + (stars ? ' (' + stars + ' of 5 stars)' : '') + (who ? ' from ' + who : ''), '', text || '(no words, just stars)', '',
-    '---', 'Version ' + version + (place ? ', from ' + place : ''), from ? 'They\u2019d like a reply: ' + from : 'No reply address given.'];
-  var msg = { to: to, name: 'Kaimon Multiply feedback', subject: 'Kaimon Multiply: ' + kinds[kind] + (stars ? ' ' + new Array(stars + 1).join('\u2605') : '') + (who ? ' from ' + who : ''), body: lines.join('\n') };
-  if (from) msg.replyTo = from;
-  MailApp.sendEmail(msg);
+  MailApp.sendEmail(feedbackMail_(f, to));
   return { ok: true };
+}
+
+function feedbackMail_(f, to, opt) {
+  var lines = [FEEDBACK_KINDS[f.kind] + (f.stars ? ' (' + f.stars + ' of 5 stars)' : '') + (f.who ? ' from ' + f.who : ''), '', f.text || '(no words, just stars)', '',
+    '---', 'Version ' + f.version + (f.where ? ', from ' + f.where : ''),
+    'Device: ' + ([f.os, f.browser].filter(function (x) { return x; }).join(', ') || 'not known'), 'Place: ' + (f.place || 'not known'),
+    f.from ? 'They’d like a reply: ' + f.from : 'No reply address given.'];
+  var msg = { to: to, name: 'Kaimon Multiply feedback', subject: ((opt && opt.test) ? '[Test] ' : '') + 'Kaimon Multiply: ' + FEEDBACK_KINDS[f.kind] + (f.stars ? ' ' + new Array(f.stars + 1).join('★') : '') + (f.who ? ' from ' + f.who : ''),
+    body: lines.join('\n'), htmlBody: renderFeedbackEmail_(f, opt) };
+  if (f.from) msg.replyTo = f.from;
+  return msg;
+}
+
+function renderFeedbackEmail_(f, opt) {
+  opt = opt || {};
+  var base = opt.base || ASSET_BASE, app = opt.appUrl || APP_URL;
+  var chip = { love: ['Love', '#E5487A'], idea: ['Idea', '#2D7FF9'], bug: ['Bug', GRASS], review: ['Rating', '#C98A00'], other: ['Feedback', INK2] }[f.kind];
+  var stars = '';
+  if (f.stars) {
+    for (var i = 1; i <= 5; i++) stars += '<span style="font-size:34px;line-height:38px;color:' + (i <= f.stars ? '#FFC93C' : '#D5DCE8') + ';text-shadow:0 2px 0 ' + (i <= f.stars ? '#B8860B' : '#B8C2D3') + ';">&#9733;</span>';
+    stars = '<div style="padding:6px 0 2px 0;letter-spacing:2px;">' + stars + ' <span style="font-family:' + FONT + ';font-size:16px;font-weight:700;color:' + INK2 + ';vertical-align:6px;">' + f.stars + ' of 5</span></div>';
+  }
+  var row = function (k, v) { return '<tr><td width="96" valign="top" style="padding:5px 10px 5px 0;font-family:' + FONT + ';font-size:14px;color:' + INK2 + ';">' + k + '</td><td valign="top" style="padding:5px 0;font-family:' + FONT + ';font-size:15px;color:' + INK + ';">' + v + '</td></tr>'; };
+  var rows = [];
+  rows.push('<tr><td style="padding:0;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate;background:#FFFFFF;border:3px solid ' + INK + ';border-radius:24px;">'
+    + '<tr><td style="padding:0;line-height:0;font-size:0;"><img src="' + base + 'header-invite.jpg" width="594" alt="" style="display:block;width:100%;max-width:594px;height:auto;border:0;border-radius:21px 21px 0 0;"></td></tr>'
+    + '<tr><td class="kp" style="padding:18px 24px 20px 24px;border-top:3px solid ' + INK + ';font-family:' + FONT + ';color:' + INK + ';">'
+    + '<div><span style="display:inline-block;padding:2px 12px;border-radius:99px;border:2px solid ' + INK + ';background:' + chip[1] + ';color:#FFFFFF;font-size:13px;font-weight:700;letter-spacing:.5px;">' + chip[0] + '</span>'
+    + (opt.test ? ' <span style="font-size:13px;font-weight:700;color:' + INK2 + ';">TEST</span>' : '') + '</div>'
+    + '<div style="font-size:26px;font-weight:700;line-height:32px;padding-top:8px;">' + esc_(FEEDBACK_KINDS[f.kind]) + (f.who ? ' from ' + esc_(f.who) : '') + '</div>'
+    + stars + '</td></tr></table></td></tr>');
+  rows.push(card_(f.text
+    ? '<div style="font-size:13px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:#2D7FF9;padding-bottom:6px;">What they said</div><div style="font-size:18px;line-height:27px;">' + esc_(f.text).replace(/\n/g, '<br>') + '</div>'
+    : '<div style="font-size:16px;color:' + INK2 + ';">No words, just stars.</div>', { bg: '#FFFDF4' }));
+  rows.push(card_('<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">'
+    + row('Name', f.who ? esc_(f.who) : '<span style="color:' + INK2 + ';">Not given</span>')
+    + row('Device', esc_([f.os, f.browser].filter(function (x) { return x; }).join(', ') || 'Not known'))
+    + row('Version', 'v' + esc_(f.version) + (f.where ? ' &middot; from ' + esc_(f.where) : ''))
+    + row('Place', esc_(f.place || 'Not known'))
+    + row('Reply', f.from ? '<a href="mailto:' + esc_(f.from) + '?subject=' + encodeURIComponent('Re: your Kaimon Multiply note') + '" style="color:#1E6FD9;font-weight:700;">' + esc_(f.from) + '</a>' : '<span style="color:' + INK2 + ';">No reply email given</span>')
+    + '</table>'));
+  if (f.from) rows.push('<tr><td align="center" style="padding:20px 0 4px 0;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate;"><tr><td align="center" style="background:' + CORAL + ';border:3px solid ' + INK + ';border-radius:18px;box-shadow:0 4px 0 ' + INK + ';">'
+    + '<a href="mailto:' + esc_(f.from) + '?subject=' + encodeURIComponent('Re: your Kaimon Multiply note') + '" style="display:inline-block;padding:12px 26px;font-family:' + FONT + ';font-size:18px;font-weight:700;color:#FFFFFF;text-decoration:none;">Reply</a></td></tr></table></td></tr>');
+  rows.push('<tr><td align="center" style="padding:16px 16px 8px 16px;font-family:' + FONT + ';font-size:13px;line-height:19px;color:' + INK2 + ';">Every note is also saved in the <a href="' + app + 'admin.html" style="color:' + INK2 + ';">dashboard</a>.</td></tr>');
+  return shell_('Kaimon Multiply feedback', (f.stars ? f.stars + ' stars. ' : '') + (f.text || '').slice(0, 90), rows.join(''));
 }
 
 function invite_(b) {
@@ -681,7 +737,9 @@ function page_(o) {
 // ---------------------------------------------------------------- samples
 
 // Run from the editor (pick sendTestEmails, then Run) to get one of every email
-// this script sends, with [Test] in the subject, at the FEEDBACK_TO address.
+// with [Test] in the subject, at the FEEDBACK_TO address: invite, weekly report,
+// quiet week, two feedback notices, and (from News.gs) news, the weekly digest
+// and the sign-in code email.
 function sendTestEmails() {
   var to = cleanEmail_(props_().getProperty('FEEDBACK_TO') || '');
   if (!to) throw new Error('Add Script Property FEEDBACK_TO first.');
@@ -705,7 +763,14 @@ function sendTestEmails() {
   });
   var stamp = ' (' + sentStamp_() + ')';
   mails.forEach(function (m) { MailApp.sendEmail({ to: to, subject: m.subject + stamp, htmlBody: m.htmlBody, body: 'Sample email from Kaimon Multiply.', name: 'Kaimon Multiply' }); });
-  // The feedback relay, as it arrives from the game.
-  MailApp.sendEmail({ to: to, name: 'Kaimon Multiply feedback', subject: '[Test] Kaimon Multiply: An idea ★★★★★ from Mia', body: 'An idea (5 of 5 stars) from Mia\n\nCan the Kaidex show which region each Kaimon lives in?\n\n---\nVersion 0.5.31, from menu\nNo reply address given.' });
-  Logger.log('Sent ' + (mails.length + 1) + ' sample emails to ' + to);
+  // Feedback notices, as they arrive from the game: a note with a name and reply email, and a rating.
+  [{ kind: 'idea', text: 'Can the Kaidex show which region each Kaimon lives in?\nAnd maybe a map sticker for each one.', stars: 0, name: 'Mia', from: to, version: '0.5.38', where: 'menu', os: 'ipad', browser: 'safari', place: { city: 'Mountain View', region: 'California', country: 'US' } },
+   { kind: 'review', text: 'Kai loves the battles. The music is a bit loud.', stars: 4, version: '0.5.38', where: 'prompt', os: 'iphone', browser: 'safari' }].forEach(function (b) {
+    var m = feedbackMail_(cleanFeedback_(b), to, { test: true });
+    m.subject += stamp;
+    MailApp.sendEmail(m);
+  });
+  // News, the weekly digest and the sign-in code email live in News.gs.
+  var more = typeof newsTestEmails_ === 'function' ? newsTestEmails_(to, stamp) : 0;
+  Logger.log('Sent ' + (mails.length + 2 + more) + ' sample emails to ' + to);
 }

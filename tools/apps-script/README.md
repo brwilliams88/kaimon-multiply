@@ -81,20 +81,35 @@ pictures in `assets/email/` load.
 - Gmail's daily limit for a regular account is 100 recipients. If a send hits the
   limit, the game tries again a few hours later.
 
-## News emails and the usage summary (News.gs)
+## News emails, the weekly digest and test emails (News.gs)
 
 `News.gs` sits in the same Apps Script project (click **+ > Script**, name it `News`,
-paste in `tools/apps-script/News.gs`). It sends "What's new" emails to the news list
-and a weekly usage summary to you. Setup:
+paste in `tools/apps-script/News.gs`). It sends "What's new" emails to the news list,
+the weekly stats digest to you, and holds the sign-in code email. Setup:
 
 1. Apply `supabase/migrations/20261116120000_growth_usage_and_news.sql`, then in the
    Supabase SQL editor run `select public.rotate_secret('news');` and copy the result.
-2. In **Project Settings > Script Properties**, add `NEWS_KEY` (that result). `FEEDBACK_TO`
-   is used for test copies and the usage summary (or set `USAGE_TO`). Optional:
-   `NEWS_LAUNCH` (YYYY-MM-DD), otherwise the date of version 1.0.0 in the changelog.
-3. Run `previewNews` (sends nothing), then `sendNewsTest`, then `scheduleNews` once.
+2. In **Project Settings > Script Properties** add `NEWS_KEY` (that result) and
+   `USAGE_TO` (where the weekly digest goes). `FEEDBACK_TO` gets feedback notices and
+   all test emails. Optional: `NEWS_LAUNCH` (YYYY-MM-DD), otherwise the date of
+   version 1.0.0 in the changelog.
+3. Run `sendTestEmails` (in Code.gs): one [Test] copy of every email goes to
+   `FEEDBACK_TO`: invite, weekly report, quiet week, two feedback notices, news,
+   the weekly digest and the sign-in code. The first run asks for permission to
+   fetch URLs (for the changelog and Supabase).
+4. Run `previewNews` (sends nothing), then `scheduleNews` once. That adds `newsDaily`
+   (every day at 10 am) and `sendUsageSummary` (Mondays at 7 am), California time.
 
-`newsDaily` (daily, 10 am) sends only when there are new versions: weekly for the
-first 3 weeks after launch, then monthly. It sends at most 80 a day and always leaves
-20 of Gmail's quota for reports and invites, then carries on the next day.
-`sendNews` sends right away. Every news email has its own Unsubscribe button.
+`newsDaily` sends only when there are new versions: weekly for the first 3 weeks
+after launch, then monthly. It sends at most 80 a day and always leaves 20 of Gmail's
+quota for reports and invites, then carries on the next day. The very first news
+email shows the top 4 updates and "lots more". `sendNews` sends right away. Every
+news email has its own Unsubscribe button.
+
+The digest's charts are drawn when it is sent, with Apps Script's built-in Charts
+service, and attached as pictures (no outside services).
+
+The sign-in code email is sent by Supabase. Paste `supabase/templates/sign-in.html`
+(made by `node tools/apps-script/signin-template.mjs`) into Supabase >
+Authentication > Email Templates, for both **Magic Link** and **Confirm signup**,
+with the subject `Your Kaimon sign-in code`.

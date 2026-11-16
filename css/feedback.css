@@ -6,6 +6,7 @@
 @keyframes fb-bob { 0%, 100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-3px) rotate(-2deg); } }
 .sheet .fb-head h2 { margin: 0; font-size: 28px; line-height: 1.1; color: #fff; -webkit-text-stroke: 5px var(--ink); paint-order: stroke fill; text-shadow: 0 3px 0 var(--ink); letter-spacing: .01em; }
 .sheet .fb-sub { margin: 6px 0 0; font-size: 16px; color: var(--ink-2); }
+.sheet .fb-honest { margin: -2px 0 0; padding: 10px 14px; background: #FFF8DC; border: 2px solid #F2D27A; border-radius: 14px; font-size: 15px; line-height: 1.4; color: var(--ink); }
 
 /* Stars: big, chunky and easy for small fingers. */
 .fb-stars { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin: 2px 0 0; }
