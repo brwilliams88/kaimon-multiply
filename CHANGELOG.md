@@ -2,6 +2,15 @@
 
 All notable changes. Versioning: `0.MINOR.0` marks a roadmap phase, `0.x.PATCH` is any shipped change a player or parent can notice, and `1.0.0` is the public launch. See "Versioning" in CLAUDE.md. The in-app version history (Grown-ups > What's new) reads from `js/data/changelog.js`; keep both in sync. Each release is tagged in git as `vX.Y.Z`.
 
+## v1.0.1 (2026-11-16) Wild battles
+
+- Wild Kaimon now show their level. Catch one and it joins your team at that level.
+- Strong wild Kaimon want a battle first! Every right answer knocks their HP down, then you throw a ball. The lower their HP, the easier the catch.
+- Pick your ball for the big throw: your free streak ball, or a Super, Mega or Legend Ball.
+- If a wild battle goes badly, the Kaimon just runs off. Every answer still counts as practice.
+- Wild battles give your Buddy bonus XP, and your team gets half.
+- How to play has a new card about wild battles.
+
 ## v1.0.0 (2026-11-16) Kaimon Multiply 1.0
 
 - Kaimon Multiply 1.0 is here! Times tables practice where every right answer catches, levels up and battles.

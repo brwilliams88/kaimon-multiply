@@ -1,7 +1,20 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '1.0.0';
+export const VERSION = '1.0.1';
 
 export const CHANGELOG = [
+  {
+    version: '1.0.1',
+    date: '2026-11-16',
+    title: "Wild battles",
+    items: [
+      "Wild Kaimon now show their level. Catch one and it joins your team at that level.",
+      "Strong wild Kaimon want a battle first! Every right answer knocks their HP down, then you throw a ball. The lower their HP, the easier the catch.",
+      "Pick your ball for the big throw: your free streak ball, or a Super, Mega or Legend Ball.",
+      "If a wild battle goes badly, the Kaimon just runs off. Every answer still counts as practice.",
+      "Wild battles give your Buddy bonus XP, and your team gets half.",
+      "How to play has a new card about wild battles.",
+    ],
+  },
   {
     version: '1.0.0',
     date: '2026-11-16',
