@@ -5,7 +5,9 @@ import { save, deviceId } from './store.js';
 import { applyAnswer, levelOf, levelRank, parseFact } from './facts.js';
 import { dayRec } from './playtime.js';
 import { answerXP, XP } from './xp.js';
+import { byId as SPECIES_BY } from '../data/creatures.js';
 import { today } from './store.js';
+import { giveXP, applyCatch, applyEvo, applyBud, roster, buddyOf, nextGen, arrivalLevel, readyToEvolve, BOOST } from './levels.js';
 
 let counter = 0;
 const newId = () => deviceId() + '-' + Date.now().toString(36) + '-' + (counter++).toString(36) + Math.random().toString(36).slice(2, 5);
@@ -19,7 +21,11 @@ export function apply(p, ev) {
   switch (ev.k) {
     case 'a': {
       const before = levelOf(p.facts[d.f]);
-      p.xp = (p.xp || 0) + answerXP(before, !!d.ok, d.ms || 0, p.settings.fastMs || 5000);
+      // d.x: the XP this answer gave, worked out on the device that answered (older
+      // events don't have it). d.b and d.s: who gets it (see levels.js).
+      const x = d.x != null ? d.x : answerXP(before, !!d.ok, d.ms || 0, p.settings.fastMs || 5000);
+      p.xp = (p.xp || 0) + x;
+      giveXP(p, d, x);
       applyAnswer(p, d.f, !!d.ok, d.ms || 0, ev.t);
       p.stats.answers++;
       if (d.ok) p.stats.correct++;
@@ -50,6 +56,7 @@ export function apply(p, ev) {
       e.last = ev.t;
       if (d.s) e.shiny++;
       p.stats.catches++;
+      applyCatch(p, d);
       { const r = dayRec(p, today(ev.t)); r.k = (r.k || 0) + 1; r.kn = r.kn || {}; r.kn[d.n] = (r.kn[d.n] || 0) + 1; }
       break;
     }
@@ -77,6 +84,8 @@ export function apply(p, ev) {
     case 'bonus':
       dayRec(p, today(ev.t)).bonus += d.m || 0;
       break;
+    case 'evo': applyEvo(p, d, ev); break;  // a Kaimon evolved (levels.js)
+    case 'bud': applyBud(p, d, ev); break;  // a new Buddy (levels.js)
     case 'stamp':
       p.stats.stars = (p.stats.stars || 0) + 1;
       break;
@@ -86,7 +95,9 @@ export function apply(p, ev) {
       { const r = dayRec(p, today(ev.t)); r.b = (r.b || 0) + 1; if (d.w) r.w = (r.w || 0) + 1; }
       if (d.w) {
         b.wins++;
-        p.xp = (p.xp || 0) + (XP[d.o] || 0);
+        const x = d.x != null ? d.x : (XP[d.o] || 0);
+        p.xp = (p.xp || 0) + x;
+        giveXP(p, d, x);
         if (d.o === 'champ') b.champs[d.tb] = (b.champs[d.tb] || 0) + 1;
         if (d.o === 'boss') b.boss++;
         if (d.o === 'grunt') b.grunts++;
@@ -105,32 +116,65 @@ export function emit(p, k, d) {
   return ev;
 }
 
+// Record every Kaimon that is ready to evolve. Returns [{ from, to, merge }] (keys).
+export function evolveReady(p) {
+  const done = [];
+  for (let n = 0; n < 8; n++) {
+    const next = readyToEvolve(p)[0];
+    if (!next) break;
+    emit(p, 'evo', { n: next.from, to: next.to });
+    done.push(next);
+  }
+  return done;
+}
+
 // Convenience actions used by the screens.
-export function answer(p, factId, ok, ms, via) {
+// team: in battles, the keys of the other two team Kaimon (they get half the XP).
+export function answer(p, factId, ok, ms, via, team) {
   const before = levelOf(p.facts[factId]);
-  emit(p, 'a', { f: factId, ok: ok ? 1 : 0, ms: Math.round(ms), via });
-  return { before, after: levelOf(p.facts[factId]) };
+  let x = answerXP(before, ok, ms, p.settings.fastMs || 5000);
+  // Daily boost: the first right answers each day give more XP.
+  if (x && (dayRec(p, today()).c || 0) < BOOST.n) x *= BOOST.x;
+  const b = buddyOf(p).key;
+  const d = { f: factId, ok: ok ? 1 : 0, ms: Math.round(ms), via, x, b };
+  if (team?.length) d.s = team.filter((k) => k && k !== b);
+  emit(p, 'a', d);
+  return { before, after: levelOf(p.facts[factId]), xp: x, evolved: evolveReady(p) };
 }
 
 export const seen = (p, speciesId) => emit(p, 'seen', { n: speciesId });
 
-export function caught(p, speciesId) {
+// A catch. A species you already own gets +50 XP; a new one arrives at its own level.
+export function caught(p, speciesId, sp = null) {
   const isNew = !(p.dex[speciesId] && p.dex[speciesId].caught);
   const shiny = Math.random() < 1 / 32;
-  emit(p, 'catch', { n: speciesId, s: shiny ? 1 : 0 });
-  return { isNew, shiny };
+  const R = roster(p);
+  const have = R.byId[speciesId];
+  const d = { n: speciesId, s: shiny ? 1 : 0 };
+  if (have) Object.assign(d, { g: have.g, lv: have.level, dup: 1 });
+  else Object.assign(d, { g: nextGen(R, speciesId), lv: arrivalLevel(p, sp || SPECIES_BY(speciesId)) });
+  emit(p, 'catch', d);
+  return { isNew, shiny, dup: !!have, lv: d.lv, evolved: evolveReady(p) };
 }
 
 export const escaped = (p, speciesId) => emit(p, 'esc', { n: speciesId });
 export const ball = (p, kind, n) => emit(p, 'ball', { b: kind, n });
 export const item = (p, kind, n) => emit(p, 'item', { i: kind, n });
 export const sighting = (p, future = false) => emit(p, 'sight', future ? { f: 1 } : {});
-// Kairo evolving into Kairos counts as catching it (never shiny).
-export const evolveKairo = (p) => emit(p, 'catch', { n: 'kairos', s: 0 });
+// Make a Kaimon you own your Buddy (key from levels.js).
+export const makeBuddy = (p, key) => emit(p, 'bud', { k: key });
 export const session = (p, ms, best, cont = false) => emit(p, 'sess', cont ? { ms: Math.round(ms), best, c: 1 } : { ms: Math.round(ms), best });
 export const openTime = (p, ms) => emit(p, 'open', { ms: Math.round(ms) });
 export const bonusTime = (p, m) => emit(p, 'bonus', { m });
-export const battle = (p, kind, table, won) => emit(p, 'battle', { o: kind, tb: table, w: won ? 1 : 0 });
+// A battle. The win bonus goes to the Buddy (b), and half of it to the team (s).
+export function battle(p, kind, table, won, team) {
+  const b = buddyOf(p).key;
+  const d = { o: kind, tb: table, w: won ? 1 : 0, b, x: won ? XP[kind] || 0 : 0 };
+  if (team?.length) d.s = team.filter((k) => k && k !== b);
+  const ev = emit(p, 'battle', d);
+  ev.evolved = evolveReady(p);
+  return ev;
+}
 
 export function goodWorkStamp(p) {
   emit(p, 'stamp', {});

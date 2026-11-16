@@ -2972,3 +2972,35 @@ button.tp-slot:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--in
 .hp-bot { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-top: 3px; min-height: 14px; }
 .hp-bot .hp-num { margin-top: 0; }
 .battle .hp-bot .hp-dots i { width: 14px; height: 14px; }
+
+/* Kaimon levels (v0.7): every Kaimon you own has a level. */
+.sl-lv { position: absolute; left: 5cqw; bottom: 21cqw; z-index: 2; height: 14cqw; min-width: 24cqw; padding: 0 3cqw; border-radius: 99px; background: var(--ink); color: #fff; font-size: max(8.5px, 9cqw); font-weight: 700; line-height: 1; display: grid; place-items: center; white-space: nowrap; }
+.sl-lv.buddy { background: var(--coral); box-shadow: 0 0 0 1.5px var(--ink); }
+.entry-lv { width: min(100%, 360px); display: flex; flex-direction: column; align-items: center; gap: 6px; margin: 2px 0 4px; padding: 10px 14px 12px; border: 2.5px solid var(--ink); border-radius: 18px; background: var(--rl, #fff); }
+.entry-lv .elv-top { width: 100%; display: flex; align-items: center; gap: 10px; }
+.entry-lv .lv-tag { margin: 0; font-size: 16px; padding: 3px 11px; flex-shrink: 0; }
+.entry-lv .xp-bar { flex: 1; height: 12px; }
+.elv-note { font-size: 14px; color: var(--ink-2); font-weight: 600; }
+.elv-make { min-height: 46px; padding: 6px 22px; font-size: 17px; }
+.elv-buddy { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 4px 14px; border-radius: 99px; background: #FFF3C4; border: 2.5px solid var(--ink); font-weight: 700; font-size: 15px; }
+.elv-buddy::before { content: ''; width: 10px; height: 10px; border-radius: 50%; background: var(--coral); border: 2px solid var(--ink); }
+.elv-buddy.pop { animation: tpPop .4s cubic-bezier(.3, 1.6, .5, 1); }
+.entry-lv.grew { background: #F4F7FB; }
+.entry-lv.grew p { margin: 0; font-size: 15px; }
+.line-arrow { display: inline-flex; flex-direction: column; align-items: center; line-height: 1; }
+.line-arrow small { font-size: 11.5px; font-weight: 700; color: var(--ink); background: #fff; border: 1.5px solid var(--ink-2); border-radius: 99px; padding: 1px 6px; margin-top: 2px; white-space: nowrap; }
+.to-lv { display: inline-block; font-size: 12.5px; font-weight: 700; color: #fff; background: var(--ink); border-radius: 99px; padding: 1px 8px; line-height: 1.3; white-space: nowrap; }
+.tp-slot .to-lv { margin-top: 1px; }
+.tp-switch { margin-top: 4px; min-height: 34px; padding: 3px 14px; border: 2.5px solid var(--ink); border-radius: 99px; background: #fff; font: inherit; font-weight: 700; font-size: 14px; color: var(--ink); box-shadow: 0 3px 0 var(--ink); cursor: pointer; }
+.tp-switch:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--ink); }
+.tp-switch.on { background: var(--ink); color: #fff; }
+.tp2 .tp-help.buddy { color: #B4412A; }
+.tp2 .pick-buddy .team-opt { box-shadow: 0 0 0 3px var(--coral), 0 3px 0 3px var(--ink); }
+.hp-lv { flex: none; font-size: clamp(11px, 3.2cqw, 14px); font-weight: 700; color: #fff; background: var(--ink); border-radius: 99px; padding: 1px 7px; line-height: 1.35; white-space: nowrap; }
+.buddy .buddy-art { cursor: pointer; font: inherit; color: inherit; }
+button.buddy-art:active { transform: translateY(2px); }
+.buddy-switch { margin-left: auto; min-height: 32px; padding: 2px 12px; border: 2.5px solid var(--ink); border-radius: 99px; background: #fff; font: inherit; font-size: 13px; font-weight: 700; color: var(--ink); box-shadow: 0 2px 0 var(--ink); cursor: pointer; flex: none; }
+.buddy-switch:active { transform: translateY(2px); box-shadow: none; }
+.catch-xp { display: inline-block; margin-left: 6px; font-size: .85em; font-weight: 700; color: #8A6400; background: #FFF3C4; border: 2px solid var(--ink); border-radius: 99px; padding: 0 8px; }
+.res-team { margin: 4px 0 0; font-size: 13.5px; color: var(--ink-2); font-weight: 600; }
+@media (prefers-reduced-motion: reduce) { .elv-buddy.pop { animation: none; } }

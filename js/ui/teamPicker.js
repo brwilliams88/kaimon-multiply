@@ -1,66 +1,85 @@
-// Pick your battle team: your Buddy leads, and you choose two more Kaimon you've caught.
-import { SPECIES, TYPES } from '../data/creatures.js';
+// Pick your battle team: your Buddy leads, and you choose two more Kaimon you own.
+// Switch makes another Kaimon your Buddy (it then leads every battle and gets the most XP).
+import { TYPES } from '../data/creatures.js';
 import { creatureArt } from '../core/art.js';
-import { partnerOf } from '../core/game.js';
-import { myTeam, teamPicks } from '../core/battle.js';
+import { roster, buddyOf, ownedList, current } from '../core/levels.js';
+import { teamMons, teamPicks } from '../core/battle.js';
+import { makeBuddy } from '../core/actions.js';
 import { touch, save } from '../core/store.js';
 import { syncNow } from '../core/sync.js';
 import { esc, sheet, toast } from './dom.js';
 import { sfx } from '../core/sound.js';
 
-// Strength is the evolution stage: evolved Kaimon hit harder.
-const stars = (s) => `<span class="to-stars" aria-label="Strength ${s.stage} of 3">${'★'.repeat(s.stage)}<i>${'★'.repeat(3 - s.stage)}</i></span>`;
+const lvTag = (m) => `<span class="to-lv">Lv ${m.level}</span>`;
 
 // The three team slots as a row, for the trainer page.
 export function teamRowHTML(p) {
-  const team = myTeam(p);
-  const lv = partnerOf(p).level;
+  const team = teamMons(p);
   return `<div class="team-slots">${[0, 1, 2].map((i) => {
     const m = team[i];
     return m
-      ? `<div class="team-slot${i === 0 ? ' lead' : ''}"><div class="ts-art">${creatureArt(m.species)}</div><span>${esc(m.species.name)}</span>${i === 0 ? `<small>Buddy · Lv ${lv}</small>` : `<small>${stars(m.species)}</small>`}</div>`
+      ? `<div class="team-slot${i === 0 ? ' lead' : ''}"><div class="ts-art">${creatureArt(m.species)}</div><span>${esc(m.species.name)}</span><small>${i === 0 ? 'Buddy · ' : ''}Lv ${m.level}</small></div>`
       : `<div class="team-slot empty"><div class="ts-art"></div><span>Catch more!</span></div>`;
   }).join('')}</div>`;
 }
 
+// Make a Kaimon the Buddy. If it was on the team, the old Buddy takes its spot.
+export function setBuddy(p, m) {
+  const R = roster(p);
+  const old = buddyOf(p, R);
+  if (old.key === m.key) return false;
+  const picks = teamPicks(p, R).map((x) => x.id);
+  const i = picks.indexOf(m.id);
+  if (i >= 0) { picks[i] = old.id; p.team = picks; p.teamAt = Date.now(); }
+  makeBuddy(p, m.key);
+  touch(p); save();
+  return true;
+}
+
 export function teamSheet(p, onSave, opts = {}) {
-  const partner = partnerOf(p);
-  const buddy = partner.species;
-  const caught = SPECIES.filter((s) => s.id !== buddy.id && p.dex[s.id]?.caught)
-    .sort((a, b) => b.stage - a.stage || a.num - b.num); // strongest first
-  let picks = teamPicks(p).map((s) => s.id);
+  let R = roster(p);
+  let buddy = buddyOf(p, R);
+  let picks = teamPicks(p, R).map((m) => m.id);
   // Start from the team you'd battle with now, so nothing changes until you tap.
-  if (!picks.length) picks = myTeam(p).slice(1).map((m) => m.species.id);
+  if (!picks.length) picks = teamMons(p, R).slice(1).map((m) => m.id);
+  let mode = opts.mode === 'buddy' ? 'buddy' : 'team';
   let just = null; // the slot that just changed, for a little pop
-  const help = () => !caught.length ? `${buddy.name} is ready to battle!`
-    : picks.length >= 2 || picks.length >= caught.length ? 'Your team is ready! Tap Done.'
+  const others = () => ownedList(p, R).filter((m) => m.key !== buddy.key);
+  const help = () => mode === 'buddy' ? 'Tap your new Buddy.'
+    : !others().length ? `${buddy.species.name} is ready to battle!`
+    : picks.length >= 2 || picks.length >= others().length ? 'Your team is ready! Tap Done.'
     : picks.length === 1 ? 'Pick 1 more.' : 'Pick 2 more.';
   const slot = (i) => {
-    const s = SPECIES.find((x) => x.id === picks[i]);
+    const m = picks[i] && current(R, picks[i]);
     const pop = just === i ? ' pop' : '';
-    return s
-      ? `<button class="tp-slot${pop}" data-unpick="${s.id}" style="--rl:${TYPES[s.type].light}" aria-label="Take ${esc(s.name)} off the team"><span class="tp-num">${i + 2}</span><span class="tp-art">${creatureArt(s)}</span><span class="tp-name${s.name.length > 11 ? ' long' : ''}">${esc(s.name)}</span>${stars(s)}<span class="tp-x" aria-hidden="true">×</span></button>`
+    return m
+      ? `<button class="tp-slot${pop}" data-unpick="${m.id}" style="--rl:${TYPES[m.species.type].light}" aria-label="Take ${esc(m.species.name)} off the team"><span class="tp-num">${i + 2}</span><span class="tp-art">${creatureArt(m.species)}</span><span class="tp-name${m.species.name.length > 11 ? ' long' : ''}">${esc(m.species.name)}</span>${lvTag(m)}<span class="tp-x" aria-hidden="true">×</span></button>`
       : `<div class="tp-slot empty"><span class="tp-num">${i + 2}</span><span class="tp-art"></span><span class="tp-name">Pick one</span></div>`;
   };
-  const draw = () => `
-    <h2>Battle team</h2>
+  const draw = () => {
+    const list = others();
+    return `
+    <h2>${mode === 'buddy' ? 'Pick a Buddy' : 'Battle team'}</h2>
     <div class="tp-team">
-      <div class="tp-slot lead" style="--rl:${TYPES[buddy.type].light}"><span class="tp-num">1</span><span class="tp-art">${creatureArt(buddy)}</span><span class="tp-name">${esc(buddy.name)}</span><span class="tp-lv">Buddy · Lv ${partner.level}</span></div>
+      <div class="tp-slot lead${just === 'b' ? ' pop' : ''}" style="--rl:${TYPES[buddy.species.type].light}"><span class="tp-num">1</span><span class="tp-art">${creatureArt(buddy.species)}</span><span class="tp-name${buddy.species.name.length > 11 ? ' long' : ''}">${esc(buddy.species.name)}</span><span class="tp-lv">Buddy · Lv ${buddy.level}</span>
+        ${list.length ? `<button class="tp-switch${mode === 'buddy' ? ' on' : ''}" data-switch aria-pressed="${mode === 'buddy'}">${mode === 'buddy' ? 'Cancel' : 'Switch'}</button>` : ''}</div>
       ${slot(0)}${slot(1)}
     </div>
-    <p class="tp-help${picks.length >= 2 ? ' ready' : ''}" aria-live="polite">${esc(help())}</p>
-    ${caught.length ? `<div class="team-grid tp-grid">${caught.map((s) => {
-      const k = picks.indexOf(s.id);
-      const t = TYPES[s.type];
-      return `<button class="team-opt${k >= 0 ? ' on' : ''}" data-pick="${s.id}" aria-pressed="${k >= 0}" style="--rl:${t.light};--rc:${t.color}">
-        <span class="to-art">${creatureArt(s)}</span><span class="to-name${s.name.length > 11 ? ' long' : ''}">${esc(s.name)}</span>${stars(s)}
-        ${k >= 0 ? `<span class="to-check" aria-hidden="true">${k + 2}</span>` : ''}</button>`;
+    <p class="tp-help${mode === 'team' && picks.length >= 2 ? ' ready' : ''}${mode === 'buddy' ? ' buddy' : ''}" aria-live="polite">${esc(help())}</p>
+    ${list.length ? `<div class="team-grid tp-grid${mode === 'buddy' ? ' pick-buddy' : ''}">${list.map((m) => {
+      const k = picks.indexOf(m.id);
+      const t = TYPES[m.species.type];
+      const on = mode === 'team' && k >= 0;
+      return `<button class="team-opt${on ? ' on' : ''}" ${mode === 'buddy' ? `data-buddy="${m.key}"` : `data-pick="${m.id}" aria-pressed="${on}"`} style="--rl:${t.light};--rc:${t.color}">
+        <span class="to-art">${creatureArt(m.species)}</span><span class="to-name${m.species.name.length > 11 ? ' long' : ''}">${esc(m.species.name)}</span>${lvTag(m)}
+        ${on ? `<span class="to-check" aria-hidden="true">${k + 2}</span>` : ''}</button>`;
     }).join('')}</div>
-    <p class="team-note">${esc(buddy.name)} always leads. <span class="to-stars">★</span> Strength: evolved Kaimon hit harder.</p>`
+    <p class="team-note">Your Buddy gets XP from every right answer and always battles first. In battles, your team gets XP too.</p>`
     : `<div class="tp-empty"><p>Catch some Kaimon in Practice or Regions, then pick your team here.</p></div>`}
     <div class="sheet-actions tp-done"><button class="btn-chunky btn-primary" data-close>Done</button></div>`;
+  };
   // Every pick saves right away, so closing the sheet any way keeps the team.
-  let changed = false;
+  let changed = false, newBuddy = null;
   const commit = () => {
     p.team = picks.slice(0, 2);
     p.teamAt = Date.now();
@@ -68,9 +87,25 @@ export function teamSheet(p, onSave, opts = {}) {
     changed = true;
   };
   const sh = sheet(`<div class="team-sheet tp2">${draw()}</div>`, { cls: 'team-sheet-wrap', x: true, ...opts,
-    onClose: () => { if (changed) { syncNow(); onSave?.(); toast('Team saved!', 1400); } opts.onClose?.(); } });
+    onClose: () => {
+      if (changed) { syncNow(); onSave?.(); toast(newBuddy ? `${newBuddy} is your Buddy!` : 'Team saved!', 1600); }
+      opts.onClose?.();
+    } });
   const box = sh.el.querySelector('.team-sheet');
+  const redraw = () => { const scroll = sh.el.scrollTop; box.innerHTML = draw(); sh.el.scrollTop = scroll; };
   box.addEventListener('click', (e) => {
+    if (e.target.closest('[data-switch]')) { sfx.tap(); mode = mode === 'buddy' ? 'team' : 'buddy'; just = null; return redraw(); }
+    const bk = e.target.closest('[data-buddy]')?.dataset.buddy;
+    if (bk) {
+      const m = R.all.get(bk);
+      if (!m) return;
+      sfx.levelUp();
+      setBuddy(p, m);
+      R = roster(p); buddy = buddyOf(p, R);
+      picks = teamPicks(p, R).map((x) => x.id);
+      mode = 'team'; just = 'b'; changed = true; newBuddy = buddy.species.name;
+      return redraw();
+    }
     const pick = e.target.closest('[data-pick]')?.dataset.pick;
     const un = e.target.closest('[data-unpick]')?.dataset.unpick;
     if (pick) {
@@ -81,9 +116,7 @@ export function teamSheet(p, onSave, opts = {}) {
     } else if (un) { sfx.tap(); just = null; picks = picks.filter((x) => x !== un); }
     else return;
     commit();
-    const scroll = sh.el.scrollTop;
-    box.innerHTML = draw();
-    sh.el.scrollTop = scroll;
+    redraw();
   });
   return sh;
 }

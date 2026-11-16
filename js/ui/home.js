@@ -2,15 +2,16 @@ import { active } from '../core/store.js';
 import { SPECIES, REGIONS, TYPES } from '../data/creatures.js';
 import { creatureArt } from '../core/art.js';
 import { tableTier, tableProgress, LEVEL_LABEL, parseFact } from '../core/facts.js';
-import { partnerOf, dexCounts, trainerTitle } from '../core/game.js';
+import { dexCounts, trainerTitle } from '../core/game.js';
+import { roster, buddyOf, parseKey } from '../core/levels.js';
+import { teamSheet } from './teamPicker.js';
 import { bossUnlocked, quizReady, quizNextIn, champReady, gymOpen } from '../core/battle.js';
 import { limitReached, cardsToday, roundSize, roundsToday, GOAL_ROUNDS } from '../core/playtime.js';
 import { nextUp, quizUseful } from '../core/nextup.js';
 import { VERSION } from '../data/changelog.js';
 import { trainerArt } from './trainerArt.js';
 import { ballImg, itemImg, sceneSrc, gymSrc, gymImg, badgeImg, cssUrl, uiImg, trainerFace, trainerBody, trainerKey, CARD_BACK, LOGO } from '../core/assets.js';
-import { kairoEvolves } from '../core/game.js';
-import { evolveKairo, ball as giveBall, caught as catchIt } from '../core/actions.js';
+import { evolveReady, ball as giveBall, caught as catchIt } from '../core/actions.js';
 import { save, touch, setSetting } from '../core/store.js';
 import { syncNow } from '../core/sync.js';
 import { byId, MYTHIC_ID, FUTURE_ID } from '../data/creatures.js';
@@ -137,7 +138,9 @@ function regionRow(p, r, nu) {
 
 export function renderHome(root, go, params = {}) {
   const p = active();
-  const partner = partnerOf(p);
+  // Record any Kaimon that is ready to evolve (an old save's starter, Kairo after a year).
+  if (evolveReady(p).length) { save(); syncNow(); }
+  const partner = buddyOf(p);
   const dex = dexCounts(p);
   const nu = nextUp(p);
   const total = p.settings.tables.length || 10;
@@ -172,11 +175,11 @@ export function renderHome(root, go, params = {}) {
 
         <div class="home-regions">
           <div class="buddy">
-            <span class="buddy-art">${creatureArt(partner.species)}</span>
+            <button class="buddy-art" data-buddyteam aria-label="Your Buddy, ${esc(partner.species.name)}, level ${partner.level}. Tap to switch.">${creatureArt(partner.species)}</button>
             <span class="buddy-info">
-              <span class="buddy-name">${partner.species.name}<span class="lv-tag">Lv ${partner.level}</span></span>
-              <span class="bar xp-bar" role="progressbar" aria-label="XP to the next level" aria-valuemin="0" aria-valuemax="${partner.need}" aria-valuenow="${partner.into}"><span style="width:${Math.round((partner.into / partner.need) * 100)}%"></span></span>
-              <small class="buddy-note">${partner.need - partner.into} XP to Lv ${partner.level + 1}${partner.evolveAt ? `. Evolves at Lv ${partner.evolveAt}` : ''}</small>
+              <span class="buddy-name">${partner.species.name}<span class="lv-tag">Lv ${partner.level}</span><button class="buddy-switch" data-buddyteam aria-label="Switch your Buddy">Switch</button></span>
+              <span class="bar xp-bar" role="progressbar" aria-label="XP to the next level" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round((partner.into / partner.need) * 100)}"><span style="width:${Math.round((partner.into / partner.need) * 100)}%"></span></span>
+              <small class="buddy-note">${partner.max ? 'Top level!' : `${Math.ceil(partner.need - partner.into)} XP to Lv ${partner.level + 1}`}${partner.evolveAt && !partner.max ? `. Evolves at Lv ${partner.evolveAt}` : ''}</small>
             </span>
             ${todayRing(p)}
             <button class="balls-row" data-balls aria-label="Your balls. Tap to learn how to use them.">
@@ -255,20 +258,9 @@ export function renderHome(root, go, params = {}) {
   });
   on(root, 'click', '[data-menu]', () => { unlock(); sfx.tap(); homeMenu(p, go); });
   on(root, 'click', '[data-balls]', () => { unlock(); sfx.tap(); ballsHelp(p); });
-  // Evolution moment: shown once on this device when the partner reaches a new stage.
-  try {
-    const key = 'kaimon.stage.' + p.id;
-    const seen = +localStorage.getItem(key) || 0;
-    if (seen && partner.stage > seen) {
-      const from = SPECIES.find((s) => s.line === partner.species.line && s.stage === seen);
-      setTimeout(() => { sfx.evolve(); sheet(`<div class="celebrate evolve"><p class="evo-kicker">What? ${esc(from.name)} is evolving!</p><div class="evo-row"><div class="partner-art">${creatureArt(from)}</div><span class="evo-arrow">›</span><div class="partner-art evo-new">${creatureArt(partner.species)}</div></div><h2>${esc(from.name)} evolved into ${esc(partner.species.name)}!</h2><p>All those right answers paid off. Lv ${partner.level}!</p><button class="btn-chunky btn-primary" data-close>Awesome!</button></div>`); }, 400);
-    }
-    localStorage.setItem(key, partner.stage);
-  } catch {}
-  if (kairoEvolves(p)) {
-    evolveKairo(p); save(); syncNow();
-    setTimeout(() => { sfx.evolve(); sheet(`<div class="celebrate evolve"><p class="evo-kicker">A whole year with Kairo... and it's glowing!</p><div class="evo-row"><div class="partner-art">${creatureArt(byId(MYTHIC_ID))}</div><span class="evo-arrow">›</span><div class="partner-art">${creatureArt(byId(FUTURE_ID))}</div></div><h2>Kairo evolved into Kairos!</h2><p>Kaidex #060, the very last page. Kairo grew up right alongside you.</p><button class="btn-chunky btn-primary" data-close>Amazing!</button></div>`); }, 500);
-  }
+  // Evolution moments: each evolution is shown once on this device, for any Kaimon.
+  evolutionMoments(p);
+  on(root, 'click', '[data-buddyteam]', () => { unlock(); sfx.tap(); teamSheet(p, () => { keepPlace(); go('home'); }, { mode: 'buddy' }); });
   // Beat Boss Papa but never caught Kairo (the app closed, or the result was skipped):
   // Kairo waits on the home screen until it's caught. It can never be missed.
   if (p.battles.boss > 0 && !p.dex[MYTHIC_ID]?.caught) setTimeout(() => kairoWaiting(p, go), 600);
@@ -382,9 +374,37 @@ function homeMenu(p, go) {
   });
 }
 
+// Every evolution not yet shown on this device, one after another. The first time
+// this runs on a device (or after an update from before levels), the ones that already
+// happened are just marked as seen: the old screen showed them.
+function evolutionMoments(p) {
+  const key = 'kaimon.evos.' + p.id;
+  let seen;
+  try { seen = JSON.parse(localStorage.getItem(key) || 'null'); } catch { seen = null; }
+  const all = Object.keys(p.evos || {});
+  const fresh = seen ? all.filter((k) => !seen.includes(k)) : [];
+  try { localStorage.setItem(key, JSON.stringify(all)); } catch {}
+  if (!fresh.length) return;
+  const R = roster(p);
+  const shows = fresh.map((k) => ({ from: byId(parseKey(k).id), to: R.all.get(p.evos[k].to) })).filter((x) => x.from && x.to).slice(0, 3);
+  const show = (i) => {
+    const x = shows[i];
+    if (!x) return;
+    const kairo = x.from.id === MYTHIC_ID;
+    sfx.evolve();
+    sheet(`<div class="celebrate evolve">
+      <p class="evo-kicker">${kairo ? 'A whole year with Kairo... and it&#8217;s glowing!' : `What? ${esc(x.from.name)} is evolving!`}</p>
+      <div class="evo-row"><div class="partner-art">${creatureArt(x.from)}</div><span class="evo-arrow">›</span><div class="partner-art evo-new">${creatureArt(x.to.species)}</div></div>
+      <h2>${esc(x.from.name)} evolved into ${esc(x.to.species.name)}!</h2>
+      <p>${kairo ? `Kaidex #060, the very last page. Kairo grew up right alongside you. Lv ${x.to.level}!` : `All those right answers paid off. Lv ${x.to.level}!`}</p>
+      <button class="btn-chunky btn-primary" data-close>${kairo ? 'Amazing!' : 'Awesome!'}</button></div>`, { onClose: () => setTimeout(() => show(i + 1), 250) });
+  };
+  setTimeout(() => show(0), 400);
+}
+
 // How to play: the adventure first, then each part of the game with a picture.
 function howItWorks(p, opts = {}) {
-  const buddy = partnerOf(p).species;
+  const buddy = buddyOf(p).species;
   const sec = (pic, title, text) => `<section class="how-sec"><div class="how-pic" aria-hidden="true">${pic}</div><div><h3>${title}</h3><p>${text}</p></div></section>`;
   const card = `<span class="how-card how-scene" style="--scene:${esc(cssUrl(sceneSrc('2', true)))}"><b>7</b><i>×</i><b>8</b></span>`;
   const region = `<span class="how-region how-scene" style="--scene:${esc(cssUrl(sceneSrc('4', true)))}"><b>4</b><small>s</small></span>`;
@@ -396,11 +416,11 @@ function howItWorks(p, opts = {}) {
       <p>Wild Kaimon are hiding all over the world, and the only way to catch them is with <strong>multiplication</strong>. Every right answer throws a ball. The faster and smarter you get, the more you catch.</p>
       <p class="how-goal">Can you become a times table master and fill your whole Kaidex?</p>
     </div>
-    ${sec(creatureArt(buddy), 'Your Buddy', `${esc(buddy.name)} goes everywhere with you. Every right answer gives it XP. Level up and it evolves at Lv 10 and Lv 20!`)}
+    ${sec(creatureArt(buddy), 'Your Buddy', `${esc(buddy.name)} goes everywhere with you. Every right answer gives your Buddy XP. Every Kaimon has a level, and each kind evolves at its own level. Tap a Kaimon and pick Make Buddy to switch.`)}
     ${sec(card, 'Practice', 'All your times tables, mixed together. A wild Kaimon jumps onto each card. Answer right to throw a ball at it.')}
     ${sec(`${ballIcon('capture')}${ballIcon('super')}`, 'Balls', 'Fast answers throw harder. Super, Mega and Legend Balls catch rare Kaimon more easily. Win them with streaks and medals.')}
     ${sec(region, 'Regions', 'Each region is a times table with its own Kaimon. Get its facts right and fast on different days to earn its medal: Bronze, Silver, Gold, then Star.')}
-    ${sec(trainerArt({ kind: 'champ', table: 2 }), 'Gym battles', 'Your Buddy and your two strongest Kaimon battle a Gym Leader. Every right answer is an attack! The little balls by each name show how many Kaimon each side has left. Win all the badges to face Boss Papa at Papa’s Gym.')}
+    ${sec(trainerArt({ kind: 'champ', table: 2 }), 'Gym battles', 'Your Buddy goes first, with two more Kaimon. Every right answer is an attack, and your whole team gets XP! The little balls by each name show how many Kaimon each side has left. Win all the badges to face Boss Papa at Papa’s Gym.')}
     ${sec(kaidexIcon(), 'Kaidex', `Every Kaimon you catch goes in your Kaidex. There are ${dexCounts(p).total} to find, and some are very rare.`)}
     <button class="btn-chunky btn-primary btn-xl how-go" data-close>Let's go!</button>
   </div>`, { ...opts, cls: 'how-sheet', x: true });

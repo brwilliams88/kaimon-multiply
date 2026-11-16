@@ -130,6 +130,18 @@ for (const s of SPECIES) {
   else s.rarity = ['common', 'uncommon', 'rare'][s.stage - 1];
 }
 
+// Evolve levels per family line: [stage 1 to 2, stage 2 to 3]. Every Kaimon has
+// its own level (js/core/levels.js) and evolves when it reaches its line's level.
+// Starters keep Lv 10 and Lv 20. Regions get a little later as the tables get harder.
+// Kairo becomes Kairos by time, not by level (a year after it is caught).
+export const EVOLVE = {
+  kaimo: [10, 20], kaiko: [10, 20], kipbun: [10, 20],
+  mossfawn: [10, 22], puddlepup: [10, 23], twinfin: [12], kindlekid: [11, 24], coalbit: [13],
+  zippit: [11, 25], voltfoal: [12, 25], fivolt: [14], gemmo: [12, 26], flurrypup: [13, 26], snoozle: [15],
+  bolty: [13, 27], kittnyx: [14, 28], lumoth: [16], twinklesaur: [14, 28],
+};
+for (const s of SPECIES) s.evolveAt = s.stage < s.stages ? EVOLVE[s.line]?.[s.stage - 1] ?? null : null;
+
 export const byNum = (n) => SPECIES.find((s) => s.num === n);
 export const byId = (id) => SPECIES.find((s) => s.id === id);
 export const regionOf = (table) => REGIONS.find((r) => r.table === table);

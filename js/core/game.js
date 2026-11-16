@@ -1,4 +1,4 @@
-import { partnerLevel, EVOLVE_AT } from './xp.js';
+import { buddyOf, roster, everOwned } from './levels.js';
 // Kaimon core rules: encounters, Capture Balls, catching, partner evolution, mythic cameos.
 import { SPECIES, MYTHIC_ID, FUTURE_ID } from '../data/creatures.js';
 import { tableTier, levelRank, countAtLeast } from './facts.js';
@@ -53,9 +53,10 @@ export function rollCatch(species, ball, power) {
   return { caught: false, shakes: miss < 0.35 ? 2 : miss < 0.7 ? 1 : 0 };
 }
 
-export const dexState = (profile, id) => {
+// Caught: caught at least once, or owned by evolving into it (or as the starter).
+export const dexState = (profile, id, R) => {
   const e = profile.dex[id];
-  if (e?.caught) return 'caught';
+  if (e?.caught || everOwned(profile, id, R)) return 'caught';
   if (e?.seen) return 'seen';
   if (id === MYTHIC_ID && profile.mythic.sightings > 0) return 'seen';
   return 'unknown';
@@ -66,29 +67,21 @@ export const dexVisible = () => true; // all 60 show; Kairos stays a faint silho
 
 export function dexCounts(profile) {
   let seen = 0, caught = 0, total = 0;
+  const R = roster(profile);
   for (const s of SPECIES) {
     if (!dexVisible(profile, s)) continue;
     total++;
-    const st = dexState(profile, s.id);
+    const st = dexState(profile, s.id, R);
     if (st !== 'unknown') seen++;
     if (st === 'caught') caught++;
   }
   return { seen, caught, total };
 }
 
-// The partner (chosen starter) evolves with total mastery (facts at Silver or higher).
-// Partner evolves by level (XP from right answers). Never goes backwards for
-// trainers who evolved under the old Silver-facts rule.
+// The Buddy: any Kaimon you own, the starter until you pick another (levels.js).
+// partnerOf stays as its old name so older modules keep working.
 export function partnerOf(profile) {
-  const pl = partnerLevel(profile);
-  const silver = countAtLeast(profile, 'silver');
-  const old = silver >= 100 ? 3 : silver >= 30 ? 2 : 1;
-  const byLevel = pl.level >= EVOLVE_AT[3] ? 3 : pl.level >= EVOLVE_AT[2] ? 2 : 1;
-  const stage = Math.max(old, byLevel);
-  const line = profile.starter || 'kaimo';
-  const species = SPECIES.find((s) => s.line === line && s.stage === stage);
-  const evolveAt = stage === 1 ? EVOLVE_AT[2] : stage === 2 ? EVOLVE_AT[3] : null;
-  return { species, stage, ...pl, evolveAt };
+  return buddyOf(profile);
 }
 
 // Mythic cameo chance per card. Rare at first, more often with table medals.
@@ -108,14 +101,15 @@ export function mythicCameo(profile) {
   if (sinceLast < 10 * 60 * 1000) return false; // at most once per 10 minutes
   const chance = profile.mythic.sightings === 0 ? 1 / 25 : 1 / (60 - medals * 3);
   if (Math.random() >= chance) return false;
-  const future = Date.now() - trainerSince(profile) >= 182 * DAY && !profile.dex[FUTURE_ID]?.caught;
+  const future = Date.now() - trainerSince(profile) >= 182 * DAY && !everOwned(profile, FUTURE_ID);
   return future && profile.mythic.sightings > 0 && Math.random() < 0.3 ? 'kairos' : 'kairo';
 }
 
-// A year after Kairo is caught, it evolves into Kairos on its own.
+// A year after Kairo is caught, it evolves into Kairos on its own (see readyToEvolve
+// in levels.js, which records it like any other evolution).
 export function kairoEvolves(profile) {
   const k = profile.dex[MYTHIC_ID];
-  return !!(k?.caught && !profile.dex[FUTURE_ID]?.caught && Date.now() - (k.first || Date.now()) >= 365 * DAY);
+  return !!(k?.caught && !everOwned(profile, FUTURE_ID) && Date.now() - (k.first || Date.now()) >= 365 * DAY);
 }
 
 // Rank on the License and Home. Badges are Gym Leader wins; medals are table levels.

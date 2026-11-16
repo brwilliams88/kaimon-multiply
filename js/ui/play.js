@@ -11,6 +11,7 @@ import { trainerArt } from './trainerArt.js';
 import { trickHTML } from './trickArt.js';
 import { limitReached, roundsToday, GOAL_ROUNDS } from '../core/playtime.js';
 import { partnerOf } from '../core/game.js';
+import { DUP_XP } from '../core/levels.js';
 import { voiceSupported, stop as stopVoice } from '../core/voice.js';
 import { micMode, micButton } from './micMode.js';
 import { sfx, setSound } from '../core/sound.js';
@@ -365,11 +366,13 @@ export function renderPlay(root, go, { table, focus } = {}) {
         sfx.newCatch();
         const hard = s.rarity === 'rare' || s.rarity === 'legendary';
         zone.insertAdjacentHTML('beforeend', `<div class="new-banner" aria-hidden="true"><span class="nb-rays"></span><strong>New Kaimon!</strong><small>${hard ? 'A rare find! ' : ''}#${String(s.num).padStart(3, '0')} added to your Kaidex</small></div>`);
-        msg.innerHTML = `You caught ${esc(s.name)}!${shinyTag}`;
+        msg.innerHTML = `You caught ${esc(s.name)}! <span class="catch-xp">Lv ${result.lv}</span>${shinyTag}`;
       } else {
         sfx.caught();
-        msg.innerHTML = `Caught ${esc(s.name)}!${shinyTag}`;
+        // Already have one: yours gets stronger. Otherwise a new one joins at its own level.
+        msg.innerHTML = result.dup ? `Caught ${esc(s.name)}! <span class="catch-xp">+${DUP_XP} XP</span>${shinyTag}` : `Caught ${esc(s.name)}! <span class="catch-xp">Lv ${result.lv}</span>${shinyTag}`;
       }
+      if (result.evolved?.length) setTimeout(() => toast(`${byId(result.evolved[0].from.split('.')[0]).name} is evolving! Check the home screen.`, 2600), 900);
     } else {
       if (ballEl) ballEl.src = ballSrc(ball, true);
       zone.classList.add('escaped');
@@ -463,7 +466,7 @@ export function renderPlay(root, go, { table, focus } = {}) {
               <span class="res-buddy-text">
                 <strong>${evolved ? `${esc(buddyBefore.species.name)} is evolving!` : leveled ? `${esc(buddy.species.name)} reached Lv ${buddy.level}!` : `${esc(buddy.species.name)} got stronger`}</strong>
                 <span class="bar xp-bar"><span style="width:${Math.round((buddy.into / buddy.need) * 100)}%"></span></span>
-                <small><span class="res-xp">${itemImg('xp-star', 'res-ic')}+${S.xp || 0} XP</span>${evolved ? ' Go Home to see it.' : ` ${buddy.need - buddy.into} XP to Lv ${buddy.level + 1}`}</small>
+                <small><span class="res-xp">${itemImg('xp-star', 'res-ic')}+${S.xp || 0} XP</span>${evolved ? ' Go Home to see it.' : buddy.max ? ' Top level!' : ` ${Math.ceil(buddy.need - buddy.into)} XP to Lv ${buddy.level + 1}`}</small>
               </span>
             </div>
           </div>
