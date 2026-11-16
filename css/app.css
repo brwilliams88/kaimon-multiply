@@ -2555,7 +2555,9 @@ html.sheet-open { overflow: hidden; overscroll-behavior: none; }
   .title-panel .who-card .who-meta { font-size: 12.5px; }
   .title-panel .who-nav { margin-top: -6px; }
   .title-panel .who-play { min-height: 52px; font-size: 21px; }
-  .title-panel .fam-signin { padding: 0 8px; font-size: 14px; }
+  /* The sign-in link's tap area fills the gap above it and the panel padding below it,
+     so it is 44px tall without touching Play. */
+  .title-panel .fam-signin { padding: 13px 8px; margin: -8px 0 -10px; font-size: 14px; }
   .title-copy { margin: 5px 0 calc(5px + var(--safe-b)); font-size: 11px; }
   .title-panel .who-new .who-name { font-size: 16px; }
 }
@@ -2566,7 +2568,7 @@ html.sheet-open { overflow: hidden; overscroll-behavior: none; }
   .title-panel .who-card .who-name { font-size: 19px; }
   .title-panel .who-card .who-meta { font-size: 13.5px; }
   .title-panel .who-play { min-height: 58px; font-size: 23px; }
-  .title-panel .fam-signin { font-size: 15px; }
+  .title-panel .fam-signin { padding: 12px 8px; margin: -10px 0 -12px; font-size: 15px; }
   .fam-status { font-size: 15px; }
   .fam-help { font-size: 14px; max-width: 52ch; }
   .title-copy { font-size: 12px; }

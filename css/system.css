@@ -84,7 +84,13 @@ a:focus-visible, .link-btn:focus-visible { border-radius: 6px; }
 :is(.snack-btn, .chips > button.chip, .tc-tab, .dc-shiny, .wn-x, .buddy-switch, .tp-switch, .tg-view, .sheet-back, .link-btn, .tc-random, .btn-sm, .hd-dot, .hd-arrow-btn, .lic-bar, .vsi-later)::before {
   content: ''; position: absolute; left: 50%; top: 50%; width: max(100%, var(--tap)); height: max(100%, var(--tap)); transform: translate(-50%, -50%);
 }
-.bn-dot::after { inset: -16px -4px; }
+.bn-dot::after { inset: -18px -5px; } /* 44px tall (the 2px border counts); 3px into the 7px gap each side, so it never reaches its neighbor */
+/* Grown-ups times table grid: each fact's cell owns its whole slot, gaps included, so a
+   tap anywhere goes to the nearest fact and never to a neighbor. The gaps belong to the
+   cell (td::before, half the 3px spacing each side); the button sits on top of it. */
+.tg-grid td { position: relative; }
+.tg-grid td::before { content: ''; position: absolute; inset: -1.5px; }
+.tg-grid .tg-cell { position: relative; }
 .hd-arrow-btn::before { z-index: 1; }
 /* Scrolling rows clip what sticks out, so give the bigger tap areas room inside. */
 .chips { padding-top: 10px; margin-top: -8px; padding-bottom: 10px; margin-bottom: -2px; }
@@ -104,6 +110,7 @@ a:focus-visible, .link-btn:focus-visible { border-radius: 6px; }
 .hd-kicker { color: var(--grass-ink) !important; }
 .tp2 .tp-help.ready { color: var(--grass-ink); }
 .tt.on { font-size: 19px; }
+.sl-mega { color: var(--ink); } /* navy M on the Mega gradient (5.5:1) */
 .rg-ready, .tp-slot.lead .tp-num, .sl-lv.sl-bud, .qx-go { background: var(--coral-deep); }
 /* White words on a type color get a navy outline, like the game titles, so they read on light colors too. */
 .type-tag, .chips > .chip.on:not([data-f="all"]):not([data-f="special"]) { -webkit-text-stroke: 3px var(--ink); paint-order: stroke fill; font-weight: 700; }
