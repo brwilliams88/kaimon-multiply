@@ -1,7 +1,20 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.6.13';
+export const VERSION = '0.6.14';
 
 export const CHANGELOG = [
+  {
+    version: '0.6.14',
+    date: '2026-11-16',
+    title: "Polish and accessibility",
+    items: [
+      "Every screen got a design polish: matching titles on every window, roomier buttons, a clear blue outline for keyboard players, and smoother presses.",
+      "Easier to read: stronger colors on buttons, stars and small labels.",
+      "Screen readers now hear each question and whether the answer was right, and every window says its name.",
+      "Small buttons are easier to tap, and you can pinch to zoom.",
+      "Long Buddy names now fit on the Home screen.",
+      "The privacy page now explains Mic mode: it only listens when you tap the mic, and never records or stores audio.",
+    ],
+  },
   {
     version: '0.6.13',
     date: '2026-11-16',
