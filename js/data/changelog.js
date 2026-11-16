@@ -1,7 +1,19 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.5.11';
+export const VERSION = '0.5.12';
 
 export const CHANGELOG = [
+  {
+    version: '0.5.12',
+    date: '2026-11-15',
+    title: "Clearer cards and streaks",
+    items: [
+      "Practice cards: the Kaimon now sits fully below the question and is never covered by it, on phones, iPads and computers. On most phones it's bigger too.",
+      "The \"Wild Kaimon\" name moved up into the top row of the card, so the Kaimon gets more room.",
+      "The streak counter in the top corner is now a flame with the number of right answers in a row. When a streak earns a free Super or Mega throw, that ball shows next to the flame.",
+      "Kaidex entries have a close X that stays in the top corner while you scroll.",
+      "Kairo (#059) looks like every other Kaidex tile now, following the same seen and caught rules.",
+    ],
+  },
   {
     version: '0.5.11',
     date: '2026-11-15',

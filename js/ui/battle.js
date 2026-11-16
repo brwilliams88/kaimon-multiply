@@ -62,7 +62,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt } = {}
         <button class="icon-btn" data-exit aria-label="Leave battle"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6 L18 18 M18 6 L6 18" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg></button>
         <div class="vs-chip"><span class="vs-av">${trainerArt(opp)}</span><span><strong>${esc(opp.name)}</strong><small>${esc(opp.kind === 'champ' ? `${opp.table}s Gym Leader` : opp.kind === 'boss' ? 'The final gym' : opp.kind === 'quiz' ? 'Pop Quiz' : 'Team Papa')}</small></span></div>
         ${soundButton(p.settings.sound)}
-        <div class="streak" aria-live="polite"><span class="streak-ball">${ballIcon('capture')}</span><span class="streak-num">0</span></div>
+        <div class="streak" aria-live="polite" title="Streak: right answers in a row" aria-label="Streak"><span class="streak-flame" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 2.5c.6 3-1.4 4.6-2.8 6.4C7.8 10.6 7 12.2 7 14a5 5 0 0 0 10 0c0-2.6-1.4-4.3-2.4-5.6-.3 1.4-1 2.2-1.9 2.6.4-2.8-.2-5.9-.7-8.5z" fill="currentColor" stroke="#14213D" stroke-width="1.6" stroke-linejoin="round"/></svg></span><span class="streak-num">0</span><span class="streak-ball" hidden></span></div>
       </header>
       <div class="play-body">
         <div class="arena">
@@ -146,7 +146,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt } = {}
   }
   function updateStreak() {
     el.streak.textContent = S.streak;
-    el.streakBall.innerHTML = ballIcon(S.streak >= 10 ? 'mega' : S.streak >= 5 ? 'super' : 'capture');
+    el.streak.closest('.streak').classList.toggle('hot', S.streak >= 3);
   }
   function popNumber(target, text, cls = '') {
     const r = target.getBoundingClientRect(), a = el.arena.getBoundingClientRect();

@@ -22,11 +22,13 @@ export function toast(msg, ms = 2600) {
 // Bottom sheet / dialog. Returns a close function.
 // back: a sheet opened from another sheet (like the Menu). Its own buttons and
 // Escape return to the parent; tapping outside closes everything.
-export function sheet(html, { onClose, cls = '', back = null, backLabel = 'Menu' } = {}) {
+export function sheet(html, { onClose, cls = '', back = null, backLabel = 'Menu', x = false } = {}) {
   const wrap = document.createElement('div');
   wrap.className = 'sheet-wrap';
   const top = back ? `<button class="sheet-back" data-sheetback aria-label="Back to ${backLabel}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 L8 12 L15 19" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>${backLabel}</button>` : '';
-  wrap.innerHTML = `<div class="sheet ${cls}" role="dialog" aria-modal="true">${top}${html}</div>`;
+  // x: a close button that stays in the top corner while the sheet scrolls.
+  const xbar = x ? `<div class="sheet-xbar"><button class="sheet-x" data-close aria-label="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6 L18 18 M18 6 L6 18" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg></button></div>` : '';
+  wrap.innerHTML = `<div class="sheet ${cls}" role="dialog" aria-modal="true">${xbar}${top}${html}</div>`;
   document.body.appendChild(wrap);
   requestAnimationFrame(() => wrap.classList.add('open'));
   let done = false;

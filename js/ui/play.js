@@ -38,7 +38,7 @@ export function renderPlay(root, go, { table }) {
         <button class="icon-btn" data-exit aria-label="Stop practicing"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6 L18 18 M18 6 L6 18" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg></button>
         <div class="pips" aria-hidden="true">${Array.from({ length: S.length }, () => '<span></span>').join('')}</div>
         ${soundButton(p.settings.sound)}
-        <div class="streak" aria-live="polite"><span class="streak-ball"></span><span class="streak-num">0</span></div>
+        <div class="streak" aria-live="polite" title="Streak: right answers in a row"><span class="streak-flame" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 2.5c.6 3-1.4 4.6-2.8 6.4C7.8 10.6 7 12.2 7 14a5 5 0 0 0 10 0c0-2.6-1.4-4.3-2.4-5.6-.3 1.4-1 2.2-1.9 2.6.4-2.8-.2-5.9-.7-8.5z" fill="currentColor" stroke="#14213D" stroke-width="1.6" stroke-linejoin="round"/></svg></span><span class="streak-num">0</span><span class="streak-ball" hidden></span><span class="sr-only streak-sr"></span></div>
       </header>
       <div class="play-body">
         <div class="stage">
@@ -90,9 +90,16 @@ export function renderPlay(root, go, { table }) {
     root.querySelectorAll('.answer-val').forEach((x) => { x.textContent = v || ''; x.classList.toggle('empty', !v); });
   }
 
+  // Streak: a flame and the number of right answers in a row. A long streak makes
+  // the free throw a better ball, shown beside the flame.
   function updateStreak() {
     el.streak.textContent = S.streak;
-    el.streakBall.innerHTML = ballIcon(ballForStreak(p, S.streak));
+    const box = el.streak.closest('.streak');
+    const nextBall = ballForStreak(p, S.streak + 1);
+    box.classList.toggle('hot', S.streak >= 3);
+    el.streakBall.hidden = nextBall === 'capture';
+    el.streakBall.innerHTML = nextBall === 'capture' ? '' : `${ballIcon(nextBall)}<small>free</small>`;
+    box.querySelector('.streak-sr').textContent = `${S.streak} right in a row${nextBall === 'capture' ? '' : `. Next throw: free ${BALLS[nextBall].name}`}`;
   }
 
   // Ball belt: the free ball (better on a streak) plus any special balls you own.
@@ -130,9 +137,9 @@ export function renderPlay(root, go, { table }) {
     root.style.setProperty('--ri', t.ink);
     root.style.setProperty('--scene', cssUrl(sceneSrc(sceneKey({ table: a }))));
     el.front.innerHTML = `
-      <div class="card-head"><span class="chip">${region.name}</span><span class="chip card-type">${typeIcon(region.type)}${t.name}</span></div>
+      <div class="card-head"><span class="chip wild-chip" aria-live="polite">${lingering ? `<strong>${esc(species.name)}</strong> is still here!` : `Wild <strong>${esc(species.name)}</strong>${known ? '' : ' <span class="wild-new">New!</span>'}`}</span><span class="chip card-type" title="${esc(region.name)}">${typeIcon(region.type)}${t.name}</span></div>
       <div class="qplate"><span>${a}</span><span class="times">×</span><span>${b}</span><span class="eq">=</span><span class="answer-val empty" data-ph="?"></span><span class="power-strip" aria-hidden="true"><span class="power-fill"></span></span></div>
-      <div class="card-wild${lingering ? ' stay' : ''}"><div class="wild-art">${creatureArt(species)}</div><p>${lingering ? `<strong>${esc(species.name)}</strong> is still here!` : `A wild <strong>${esc(species.name)}</strong> appeared!${known ? '' : ' <span class="wild-new">New!</span>'}`}</p></div>
+      <div class="card-wild${lingering ? ' stay' : ''}"><div class="wild-art">${creatureArt(species)}</div></div>
       ${beltHTML(species)}`;
     el.front.classList.toggle('has-belt', !!el.front.querySelector('.belt'));
     el.stage.dataset.left = Math.max(0, Math.min(2, S.length - S.n - 1));
@@ -281,7 +288,7 @@ export function renderPlay(root, go, { table }) {
       if (wild) {
         wild.classList.add('flee');
         wild.querySelector('.wild-art')?.insertAdjacentHTML('beforeend', '<span class="flee-bang" aria-hidden="true">!</span><span class="flee-dust" aria-hidden="true"><i></i><i></i><i></i></span>');
-        const line = wild.querySelector('p');
+        const line = el.front.querySelector('.wild-chip');
         if (line) line.innerHTML = `Oh no! <strong>${esc(S.species.name)}</strong> ran away!`;
         setTimeout(() => sfx.escape(), 380);
         await wait(1150);

@@ -74,9 +74,8 @@ export function renderKaidex(root, go) {
           ${list.map((s) => {
             const st = dexState(p, s.id);
             const e = p.dex[s.id];
-            const mythic = s.id === MYTHIC_ID;
             const name = shownName(s, st);
-            return `<button class="dex-tile dex-${st}${mythic ? ' dex-mythic' : ''}${e?.shiny ? ' dex-has-shiny' : ''}" data-n="${s.id}" style="--rc:${TYPES[s.type].color};--rl:${TYPES[s.type].light}" aria-label="${num3(s.num)} ${esc(name)}">
+            return `<button class="dex-tile dex-${st}${e?.shiny ? ' dex-has-shiny' : ''}" data-n="${s.id}" style="--rc:${TYPES[s.type].color};--rl:${TYPES[s.type].light}" aria-label="${num3(s.num)} ${esc(name)}">
               <span class="dex-num">${num3(s.num)}</span>
               ${creatureArt(s, { mode: st === 'caught' ? 'full' : st, shiny: false })}
               <span class="dex-name">${esc(name)}</span>
@@ -140,8 +139,7 @@ function showEntry(p, s) {
       <p class="entry-num">${num3(s.num)}</p>
       <h2 class="entry-name">${esc(shownName(s, st))}</h2>
       ${body}
-      <button class="btn-chunky" data-close>Close</button>
-    </div>`, { cls: 'entry-sheet' });
+    </div>`, { cls: 'entry-sheet', x: true });
   const setLook = (shiny) => {
     setShiny(sh.el.querySelector('.entry-art .kart'), shiny);
     sh.el.querySelectorAll('[data-look]').forEach((b) => { const on = (b.dataset.look === 'shiny') === shiny; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); });
