@@ -1,7 +1,15 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.5.21';
+export const VERSION = '0.5.22';
 
 export const CHANGELOG = [
+  {
+    version: '0.5.22',
+    date: '2026-11-15',
+    title: "Sharper browser tab icon",
+    items: [
+      "New tab icon: a bold Capture Ball drawn to stay clear and easy to spot even at the tiny size of a browser tab.",
+    ],
+  },
   {
     version: '0.5.21',
     date: '2026-11-15',

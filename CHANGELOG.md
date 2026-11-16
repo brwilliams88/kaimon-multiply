@@ -2,6 +2,10 @@
 
 All notable changes. Versioning: `0.MINOR.0` marks a roadmap phase, `0.x.PATCH` is any shipped change a player or parent can notice, and `1.0.0` is the public launch. See "Versioning" in CLAUDE.md. The in-app version history (Grown-ups > What's new) reads from `js/data/changelog.js`; keep both in sync. Each release is tagged in git as `vX.Y.Z`.
 
+## v0.5.22 (2026-11-15) Sharper browser tab icon
+
+- New tab icon: a bold Capture Ball drawn to stay clear and easy to spot even at the tiny size of a browser tab.
+
 ## v0.5.21 (2026-11-15) Kairo and Kairos power up
 
 - Kairo and Kairos are now by far the strongest Kaimon. Kairo has 160 HP and Kairos 240 (most Kaimon have 40).
