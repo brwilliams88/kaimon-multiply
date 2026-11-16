@@ -1,7 +1,23 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.5.27';
+export const VERSION = '0.5.29';
 
 export const CHANGELOG = [
+  {
+    version: '0.5.29',
+    date: '2026-11-15',
+    title: "No more peeking messages",
+    items: [
+      "Fixed: an old message could peek out half hidden at the bottom of the screen (like \"Looking good!\" on the trainer page) or as a cut-off oval above the prize at the start of a battle. Messages now fully disappear when they are done.",
+    ],
+  },
+  {
+    version: '0.5.28',
+    date: '2026-11-15',
+    title: "A real streak flame",
+    items: [
+      "The streak flame in practice and battles is now real fire: orange with a yellow middle. It grows and gets hotter as your streak climbs (3, 5 and 10 in a row), the number glows to match, and at 10 in a row it burns blue.",
+    ],
+  },
   {
     version: '0.5.27',
     date: '2026-11-15',

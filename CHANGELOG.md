@@ -2,6 +2,14 @@
 
 All notable changes. Versioning: `0.MINOR.0` marks a roadmap phase, `0.x.PATCH` is any shipped change a player or parent can notice, and `1.0.0` is the public launch. See "Versioning" in CLAUDE.md. The in-app version history (Grown-ups > What's new) reads from `js/data/changelog.js`; keep both in sync. Each release is tagged in git as `vX.Y.Z`.
 
+## v0.5.29 (2026-11-15) No more peeking messages
+
+- Fixed: an old message could peek out half hidden at the bottom of the screen (like "Looking good!" on the trainer page) or as a cut-off oval above the prize at the start of a battle. Messages now fully disappear when they are done.
+
+## v0.5.28 (2026-11-15) A real streak flame
+
+- The streak flame in practice and battles is now real fire: orange with a yellow middle. It grows and gets hotter as your streak climbs (3, 5 and 10 in a row), the number glows to match, and at 10 in a row it burns blue.
+
 ## v0.5.27 (2026-11-15) The Menu stays put
 
 - Fixed: scrolling while the Menu or another sheet was open could move the screen behind it. Now only the sheet scrolls.

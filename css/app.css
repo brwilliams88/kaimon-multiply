@@ -2300,3 +2300,32 @@ body:has(.res) #toast:not(.show) { visibility: hidden; }
 /* v0.5.27 The screen behind an open sheet stays still */
 html.sheet-open, html.sheet-open body { overflow: hidden; overscroll-behavior: none; }
 .sheet { overscroll-behavior: contain; }
+/* v0.5.28 Streak flame: real fire colors that grow and heat up with the streak */
+.streak-flame { width: 28px; height: 28px; color: inherit; transform-origin: 50% 85%; }
+.streak-flame .fl-out { fill: #FFB24A; transition: fill .25s; }
+.streak-flame .fl-in { fill: #FFE36B; transition: fill .25s, opacity .25s; }
+.streak[data-tier="0"] .streak-flame { opacity: .55; transform: scale(.9); }
+.streak[data-tier="0"] .fl-out { fill: #F2B27A; }
+.streak[data-tier="0"] .fl-in { opacity: 0; }
+.streak[data-tier="1"] .streak-flame { transform: scale(1); }
+.streak[data-tier="1"] .fl-out { fill: #FF9A3C; }
+.streak[data-tier="2"] .streak-flame, .streak.hot .streak-flame { transform: scale(1.14); }
+.streak[data-tier="2"] .fl-out { fill: #FF7A1F; }
+.streak[data-tier="2"] .fl-in { fill: #FFD84A; }
+.streak[data-tier="3"] .streak-flame { transform: scale(1.28); filter: drop-shadow(0 0 4px rgba(255, 120, 30, .55)); }
+.streak[data-tier="3"] .fl-out { fill: #FF5A1F; }
+.streak[data-tier="3"] .fl-in { fill: #FFF06A; }
+.streak[data-tier="4"] .streak-flame { transform: scale(1.4); filter: drop-shadow(0 0 6px rgba(60, 150, 255, .7)); }
+.streak[data-tier="4"] .fl-out { fill: #3D8BFF; }
+.streak[data-tier="4"] .fl-in { fill: #E9F6FF; }
+.streak[data-tier="2"] .streak-num { color: #E0601A; }
+.streak[data-tier="3"] .streak-num { color: #D9480F; }
+.streak[data-tier="4"] .streak-num { color: #1E63D6; }
+.streak .streak-num { transition: color .25s; }
+@media (prefers-reduced-motion: no-preference) {
+  .streak[data-tier="3"] .streak-flame svg, .streak[data-tier="4"] .streak-flame svg { animation: fl-flicker .9s ease-in-out infinite alternate; transform-origin: 50% 90%; }
+  @keyframes fl-flicker { 0% { transform: scale(1, 1) rotate(-2deg); } 50% { transform: scale(1.03, .96) rotate(1deg); } 100% { transform: scale(.98, 1.05) rotate(2deg); } }
+}
+/* v0.5.28 A hidden message never peeks out at the bottom of the screen */
+#toast { opacity: 0; visibility: hidden; transition: transform .25s cubic-bezier(.3, 1.4, .5, 1), opacity .2s, visibility 0s .25s; }
+#toast.show { opacity: 1; visibility: visible; transition: transform .25s cubic-bezier(.3, 1.4, .5, 1), opacity .15s, visibility 0s; }
