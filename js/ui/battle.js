@@ -21,7 +21,7 @@ import { sceneSrc, cssUrl, sceneKey, fxSrc, typeIcon, badgeImg, ballSrc } from '
 import { quick } from '../core/prefs.js';
 import { limitReached } from '../core/playtime.js';
 import { startMusic, stopMusic, setPinch } from '../core/music.js';
-import { $, on, esc, sheet, reducedMotion, soundButton, setFlame, fitText } from './dom.js';
+import { $, on, esc, sheet, reducedMotion, soundButton, setFlame, fitText, say } from './dom.js';
 import { canSnack, useSnack, itemCount } from '../core/items.js'; import { towerCrystal } from '../core/tower.js'; import { itemIcon } from './items.js'; // [systems] Power Snack
 
 // Special hit-back moves for the big opponents. Papazilla lifts.
@@ -89,7 +89,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt } = {}
   // The arena is the place itself: the Gym Leader's region, or Papa's Gym for Team Papa.
   root.style.setProperty('--scene', cssUrl(sceneSrc(sceneKey({ kind, table: opp.table }))));
 
-  const introLine = opp.ui?.intro || (kind === 'champ' ? CHAMP_LINES[opp.table] : kind === 'quiz' ? 'Pop quiz! These are the facts that keep getting away from you. Let\u2019s catch them today!' : kind === 'boss' ? bossHello() : dadJoke('appear')); // Hundred Tower hook: opp.ui.intro
+  const introLine = opp.ui?.intro || (kind === 'champ' ? CHAMP_LINES[opp.table] : kind === 'quiz' ? 'Pop Quiz! These are the facts that keep getting away from you. Let\u2019s catch them today!' : kind === 'boss' ? bossHello() : dadJoke('appear')); // Hundred Tower hook: opp.ui.intro
 
   // What this battle is for, shown at the top of the intro.
   function stakeHTML() {
@@ -396,6 +396,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt } = {}
     S.fact = id;
     const [a, b] = parseFact(id);
     el.q.innerHTML = `<span>${a}</span><span class="times">×</span><span>${b}</span><span class="eq">=</span><span class="answer-val empty" data-ph="?"></span>`;
+    say(`What is ${a} times ${b}?`);
     el.qcard.className = 'q-card';
     el.msg.textContent = S.n === 0 ? 'Answer to attack!' : '';
     setInput('');
@@ -501,6 +502,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt } = {}
       sfx.wrong();
       const foe = opp.team[S.foe], me = mine[S.me];
       el.qcard.classList.add('wrong');
+      say(`Not quite. ${a} times ${b} is ${ans}.`);
       el.q.innerHTML = `<span>${a}</span><span class="times">×</span><span>${b}</span><span class="eq">=</span><span class="ans">${ans}</span>`;
       const fm = FOE_MOVES[foe.species.type];
       el.msg.textContent = fm ? `${foe.species.name} used ${fm}!` : `${foe.species.name} hits back!`;

@@ -110,7 +110,7 @@ function unlocksHTML(x) {
   const nextPatch = x.patches.find((b) => !b.won);
   const patchRow = `<div class="ul-row${nextPatch ? '' : ' done'}"><span class="ul-ic${x.badges ? '' : ' locked'}">${patchSVG((x.patches.filter((b) => b.won).pop() || x.patches[0]).type)}</span><div class="ul-txt"><strong>${x.badges} patch${x.badges === 1 ? '' : 'es'}</strong><p>${nextPatch ? `Beat ${esc(nextPatch.leader)} for the ${esc(patchName(nextPatch))}.` : 'Every Gym patch is on your License!'}</p></div><span class="ul-n${nextPatch ? '' : ' ok'}">${nextPatch ? `${x.badges}<small>/10</small>` : '✓'}</span></div>`;
   const trimRow = `<div class="ul-row${x.trim ? ' done' : ''}"><span class="ul-swatch sw-trim" aria-hidden="true"></span><div class="ul-txt"><strong>Gold trim</strong><p>${x.trim ? 'You won all 10 Gym badges!' : 'Win all 10 Gym badges to edge your License in gold.'}</p>${x.trim ? '' : bar(x.badges, 10)}</div><span class="ul-n${x.trim ? ' ok' : ''}">${x.trim ? '✓' : `${x.badges}<small>/10</small>`}</span></div>`;
-  return `<div class="tr-unlocks"><h3 class="ul-title">License extras</h3>${frameRow}${patchRow}${trimRow}</div>`;
+  return `<div class="tr-unlocks"><h2 class="ul-title">License extras</h2>${frameRow}${patchRow}${trimRow}</div>`;
 }
 
 // ---- Badge case

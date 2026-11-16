@@ -58,7 +58,7 @@ export function wardrobeCardHTML(p) {
   }).join('');
   const g = next && progress(p, next);
   return `<div class="tr-wardrobe">
-    <div class="wdc-head"><h3 class="ul-title">Wardrobe</h3><span class="wdc-count">${have} of ${COLOR_ORDER.length} colors</span></div>
+    <div class="wdc-head"><h2 class="ul-title">Wardrobe</h2><span class="wdc-count">${have} of ${COLOR_ORDER.length} colors</span></div>
     <div class="wdc-dots" role="img" aria-label="${have} of ${COLOR_ORDER.length} colors unlocked">${dots}</div>
     ${next ? `<div class="wdc-next"><span class="wd-dot locked big" style="--c:${JACKETS[next.id]}" aria-hidden="true">${LOCK}</span><div class="ul-txt"><strong>${esc(moreText(p, next))} to unlock ${esc(next.name)}</strong><span class="ul-bar" aria-hidden="true"><i style="width:${pct(g)}%"></i></span></div><span class="ul-n">${g.have.toLocaleString()}<small>/${g.need.toLocaleString()}</small></span></div>`
       : `<p class="wdc-all">Every color is yours. Hats are coming soon!</p>`}

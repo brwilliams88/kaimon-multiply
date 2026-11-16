@@ -1,0 +1,122 @@
+/* Kaimon design system (v1.0 pass). Loaded after app.css so shared pieces look
+   and move the same everywhere: tokens, headings, buttons, sheets, toasts, focus,
+   tap targets and readable colors. Prefer these tokens in new CSS. */
+:root {
+  /* Palette. Coral is a touch deeper than before so white labels on buttons read
+     clearly (WCAG AA large text). The *-ink colors are for small text. */
+  --coral: #EE5530;
+  --coral-deep: #C4421F;   /* small white-text chips (4.5:1) */
+  --grass-ink: #287D35;    /* green text on white */
+  --star-ink: #765600;     /* star and gold text on white or sky */
+  --muted: #646F8B;        /* quiet text that still reads (4.5:1 on white) */
+  --link: #1A62C4;
+  --focus: #1E6FD9;
+  /* Spacing scale */
+  --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 20px; --sp-6: 24px; --sp-7: 32px;
+  /* Type scale */
+  --fs-display: 30px; --fs-title: 28px; --fs-h3: 21px; --fs-body: 18px; --fs-small: 15px;
+  /* Sizes */
+  --tap: 44px; --btn-h: 52px; --btn-h-sm: 44px;
+  --sheet-pad: clamp(18px, 5vw, 24px);
+  /* Motion */
+  --ease-out: cubic-bezier(.2, .9, .3, 1);
+  --ease-spring: cubic-bezier(.3, 1.4, .5, 1);
+  --t-press: .08s; --t-fast: .15s; --t-med: .22s; --t-slow: .32s;
+}
+
+/* ---------- Focus: one clear ring for keyboard players (never on taps) ---------- */
+:focus-visible { outline: 4px solid var(--focus); outline-offset: 3px; }
+a:focus-visible, .link-btn:focus-visible { border-radius: 6px; }
+:focus:not(:focus-visible) { outline: none; }
+.sheet:focus, [data-autofocus]:focus, h1[tabindex="-1"]:focus, h2[tabindex="-1"]:focus { outline: none; }
+
+/* ---------- Headings ---------- */
+/* Every sheet's title (marked by sheet() in dom.js) uses the game-title style. */
+.sheet .sheet-title {
+  margin: 0 0 var(--sp-2); font-size: var(--fs-title); font-weight: 700; line-height: 1.12;
+  color: #FFFFFF; -webkit-text-stroke: 5px var(--ink); paint-order: stroke fill; letter-spacing: .01em;
+  text-shadow: 0 3px 0 var(--ink);
+}
+.sheet .sheet-title > svg, .sheet .sheet-title > img { -webkit-text-stroke: 0; }
+.sheet .sheet-title * { -webkit-text-stroke-width: inherit; }
+.sheet > .sheet-xbar ~ .sheet-title, .sheet > .sheet-xbar ~ * .sheet-title { padding-right: 46px; }
+.sheet .sheet-title.entry-name { padding-right: 0; }
+.screen-title { font-size: var(--fs-display); line-height: 1.1; }
+
+/* ---------- Buttons ---------- */
+.btn-chunky { font-weight: 700; transition: transform var(--t-press) ease-out, box-shadow var(--t-press) ease-out, background-color var(--t-fast), filter var(--t-fast); }
+.btn-primary { background: var(--coral); }
+/* Small coral buttons grow to 19px bold so their white labels count as large text. */
+.wn-btn.btn-primary, .entry-lv .btn-primary, .pe-btn.btn-primary { font-size: 19px; }
+.btn-sm { min-height: var(--btn-h-sm); }
+.icon-btn, .pill, .sheet-x, .wn-x, .hd-arrow-btn, .bn-arrow, .who-arrow { transition: transform var(--t-press) ease-out, box-shadow var(--t-press) ease-out, opacity var(--t-fast); }
+.btn-chunky[disabled], .btn-chunky[aria-disabled="true"] { opacity: .5; cursor: default; }
+.btn-chunky[disabled]:active { transform: none; box-shadow: var(--press); }
+/* A light lift on hover for mouse and trackpad players (Chromebook, computers). */
+@media (hover: hover) and (pointer: fine) {
+  .btn-chunky:not([disabled]):hover, .icon-btn:hover, .pill:hover, .sheet-x:hover, .menu-row:hover, .chip:hover, .tp-switch:hover, .buddy-switch:hover { filter: brightness(1.04); }
+  .btn-chunky:not([disabled]):not(:active):hover { transform: translateY(-1px); }
+}
+.link-btn { text-underline-offset: 3px; }
+
+/* Sheet buttons: a lone button spans the sheet; pairs share the row. */
+.sheet .sheet-actions:not(.icon-notice .sheet-actions) > .btn-chunky { flex: 1 1 auto; }
+.sheet .balls-help > .btn-chunky:last-child, .sheet .badge-detail > .btn-chunky:last-child { width: 100%; }
+
+/* ---------- Sheets ---------- */
+.sheet, .sheet.hd-sheet, .sheet.wd-sheet { padding: var(--sheet-pad); }
+.sheet.fs-sheet { padding: 0 !important; }
+.sheet { transition: transform var(--t-med) var(--ease-spring); }
+.sheet-wrap { transition: opacity var(--t-fast) ease-out; }
+.sheet-x { width: var(--tap); height: var(--tap); }
+.sheet-back { min-height: var(--tap); color: var(--link); }
+
+/* ---------- Toast ---------- */
+#toast { font-weight: 700; max-width: min(440px, calc(100% - 32px)); line-height: 1.3; }
+
+/* ---------- Screen transitions ---------- */
+@media (prefers-reduced-motion: no-preference) {
+  .screen-in { animation: screen-in var(--t-med) var(--ease-out) both; }
+}
+
+/* ---------- Tap targets: at least 44px, without changing how things look ---------- */
+:where(.snack-btn, .chips > button.chip, .tc-tab, .dc-shiny, .wn-x, .buddy-switch, .tp-switch, .tg-view, .sheet-back, .link-btn, .tc-random, .btn-sm, .hd-dot, .hd-arrow-btn, .lic-bar, .bn-dot, .vsi-later) { position: relative; }
+:is(.snack-btn, .chips > button.chip, .tc-tab, .dc-shiny, .wn-x, .buddy-switch, .tp-switch, .tg-view, .sheet-back, .link-btn, .tc-random, .btn-sm, .hd-dot, .hd-arrow-btn, .lic-bar, .vsi-later)::before {
+  content: ''; position: absolute; left: 50%; top: 50%; width: max(100%, var(--tap)); height: max(100%, var(--tap)); transform: translate(-50%, -50%);
+}
+.bn-dot::after { inset: -16px -4px; }
+.hd-arrow-btn::before { z-index: 1; }
+/* Scrolling rows clip what sticks out, so give the bigger tap areas room inside. */
+.chips { padding-top: 10px; margin-top: -8px; padding-bottom: 10px; margin-bottom: -2px; }
+.binder-screen .chips { padding-bottom: 10px; margin-bottom: -4px; }
+.tc-tab { padding-top: 9px; padding-bottom: 9px; }
+
+/* ---------- Readable colors (WCAG AA) ---------- */
+.stars { color: var(--star-ink); }
+.lic-stars { color: #6E5000; }
+.lic-k { color: var(--ink-2); }
+.bc-slot:not(.won) .bc-name { color: rgba(255, 255, 255, .78); }
+.lv-new { color: var(--muted); }
+.wr-day b { color: var(--ink-2); }
+.wr-day.later b { opacity: 1; color: var(--muted); }
+.wr-kicker { color: var(--link); }
+.ver-foot { opacity: 1; color: var(--ink-2); }
+.hd-kicker { color: var(--grass-ink) !important; }
+.tp2 .tp-help.ready { color: var(--grass-ink); }
+.tt.on { font-size: 19px; }
+.rg-ready, .tp-slot.lead .tp-num, .sl-lv.sl-bud, .qx-go { background: var(--coral-deep); }
+/* White words on a type color get a navy outline, like the game titles, so they read on light colors too. */
+.type-tag, .chips > .chip.on:not([data-f="all"]):not([data-f="special"]) { -webkit-text-stroke: 3px var(--ink); paint-order: stroke fill; font-weight: 700; }
+.title-copy { text-shadow: 0 1px 3px rgba(20, 33, 61, .9), 0 0 2px rgba(20, 33, 61, .9); }
+
+/* Tower and Lightning Round (systems and tower branches) */
+.tf-locked .tw-fname, .mt-unknown .mt-name, .mt-unknown .mt-tag { color: var(--muted); }
+.tw-floor .btn-primary, .bolt-panel .btn-primary { font-size: max(19px, 1em); }
+.bolt-panel > h2 { color: #FFFFFF; -webkit-text-stroke: 5px var(--ink); paint-order: stroke fill; text-shadow: 0 3px 0 var(--ink); letter-spacing: .01em; }
+
+/* Home Buddy card: name, level and Switch wrap onto a second line when the row is
+   short, and a single very long name shrinks (fitText in home.js), so Switch never
+   covers the Today ring. */
+.buddy-name { flex-wrap: wrap; row-gap: 4px; min-width: 0; }
+.buddy-nm { flex: 0 1 auto; min-width: 0; max-width: 100%; overflow: hidden; white-space: nowrap; }
+.buddy-name .buddy-switch { flex: none; margin-left: auto; }

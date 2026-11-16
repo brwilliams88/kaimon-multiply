@@ -79,11 +79,22 @@ export function sheet(html, { onClose, cls = '', back = null, backLabel = 'Menu'
   const top = back ? `<button class="sheet-back" data-sheetback aria-label="Back to ${backLabel}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 L8 12 L15 19" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>${backLabel}</button>` : '';
   // x: a close button that stays in the top corner while the sheet scrolls.
   const xbar = x ? `<div class="sheet-xbar"><button class="sheet-x" data-close aria-label="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6 L18 18 M18 6 L6 18" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg></button></div>` : '';
-  wrap.innerHTML = `<div class="sheet ${cls}" role="dialog" aria-modal="true">${xbar}${top}${html}</div>`;
+  wrap.innerHTML = `<div class="sheet ${cls}" role="dialog" aria-modal="true" tabindex="-1">${xbar}${top}${html}</div>`;
+  // The sheet's first heading is its title: one look everywhere, and screen readers say it.
+  const sh = wrap.firstElementChild;
+  const head = sh.querySelector('h1, h2, h3');
+  if (head) {
+    head.classList.add('sheet-title');
+    if (!head.id) head.id = 'sheet-t' + (++sheetIds);
+    sh.setAttribute('aria-labelledby', head.id);
+  }
   // While a sheet is open the screen behind it stays still (see the touch guard in app.js).
   if (openSheets++ === 0) holdPage();
   document.body.appendChild(wrap);
   requestAnimationFrame(() => wrap.classList.add('open'));
+  // Focus moves into the sheet (unless the sheet already focused a field), so
+  // keyboard and screen reader players start inside it.
+  requestAnimationFrame(() => { if (!wrap.contains(document.activeElement) && wrap.isConnected) sh.focus({ preventScroll: true }); });
   sfx.open();
   let done = false;
   const close = (toParent = false) => {
@@ -101,13 +112,39 @@ export function sheet(html, { onClose, cls = '', back = null, backLabel = 'Menu'
     onClose?.();
     if (toParent && back) back();
   };
-  const onKey = (e) => { if (e.key === 'Escape') close(true); };
+  const onKey = (e) => {
+    // Only the top sheet listens.
+    const wraps = document.querySelectorAll('.sheet-wrap:not(.closing)');
+    if (wraps[wraps.length - 1] !== wrap) return;
+    if (e.key === 'Escape') close(true);
+    else if (e.key === 'Tab') trapTab(e, sh);
+  };
   document.addEventListener('keydown', onKey);
   wrap.addEventListener('click', (e) => {
     if (e.target === wrap) close(false);
     else if (e.target.closest('[data-close], [data-sheetback]')) close(true);
   });
   return { el: wrap.firstElementChild, close: () => close(false) };
+}
+
+let sheetIds = 0;
+// Tab stays inside an open sheet (it is a modal dialog).
+const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+function trapTab(e, box) {
+  const els = [...box.querySelectorAll(FOCUSABLE)].filter((el) => el.getClientRects().length && !el.closest('[hidden], [inert]'));
+  if (!els.length) { e.preventDefault(); return; }
+  const first = els[0], last = els[els.length - 1], a = document.activeElement;
+  if (e.shiftKey && (a === first || a === box || !box.contains(a))) { e.preventDefault(); last.focus(); }
+  else if (!e.shiftKey && (a === last || !box.contains(a))) { e.preventDefault(); first.focus(); }
+}
+
+// Screen reader announcements (a question, right or wrong) in one live region
+// that stays on the page, so every change is read out.
+export function say(text) {
+  let el = document.getElementById('sr-say');
+  if (!el) { el = document.createElement('div'); el.id = 'sr-say'; el.className = 'sr'; el.setAttribute('aria-live', 'polite'); el.setAttribute('aria-atomic', 'true'); document.body.appendChild(el); }
+  el.textContent = '';
+  setTimeout(() => { el.textContent = text; }, 60);
 }
 
 // Hold-to-open for the grown-ups area, so kids don't wander in by accident.

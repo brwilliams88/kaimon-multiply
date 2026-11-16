@@ -19,7 +19,7 @@ import { save, touch, setSetting } from '../core/store.js';
 import { syncNow } from '../core/sync.js';
 import { byId, MYTHIC_ID, FUTURE_ID } from '../data/creatures.js';
 import { avatarSVG, trainerLook } from './avatars.js';
-import { esc, on, $, sheet, soundIcon, toast } from './dom.js';
+import { esc, on, $, sheet, soundIcon, toast, fitText } from './dom.js';
 import { sfx, unlock } from '../core/sound.js';
 import { shareGame, shareIcon } from './share.js';
 import { openPlayElsewhere, deviceIcon } from './playElsewhere.js';
@@ -200,7 +200,7 @@ export function renderHome(root, go, params = {}) {
           <div class="buddy">
             <button class="buddy-art" data-buddyteam aria-label="Your Buddy, ${esc(partner.species.name)}, level ${partner.level}. Tap to switch.">${creatureArt(partner.species)}</button>
             <span class="buddy-info">
-              <span class="buddy-name">${partner.species.name}<span class="lv-tag">Lv ${partner.level}</span><button class="buddy-switch" data-buddyteam aria-label="Switch your Buddy">Switch</button></span>
+              <span class="buddy-name"><span class="buddy-nm">${esc(partner.species.name)}</span><span class="lv-tag">Lv ${partner.level}</span><button class="buddy-switch" data-buddyteam aria-label="Switch your Buddy">Switch</button></span>
               <span class="bar xp-bar" role="progressbar" aria-label="XP to the next level" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round((partner.into / partner.need) * 100)}"><span style="width:${Math.round((partner.into / partner.need) * 100)}%"></span></span>
               <small class="buddy-note">${partner.max ? 'Top level!' : `${Math.ceil(partner.need - partner.into)} XP to Lv ${partner.level + 1}`}${partner.evolveAt && !partner.max ? `. Evolves at Lv ${partner.evolveAt}` : ''}</small>
               ${boostChip(p)}
@@ -234,6 +234,21 @@ export function renderHome(root, go, params = {}) {
         <p class="ver-foot">© 2026 Kaimon Games · Kaimon Multiply v${VERSION}</p>
       </div>
     </section>`;
+  // A long Buddy name shrinks to fit its row, so the Switch button never covers the Today ring.
+  const fitBuddy = () => fitText(root.querySelector('.buddy-nm'), 12);
+  fitBuddy();
+  document.fonts?.ready.then(fitBuddy);
+  // Pictures arriving or a turn of the iPad can change the column: fit again when it does.
+  const bInfo = root.querySelector('.buddy-info');
+  if (bInfo && window.ResizeObserver) {
+    let lastW = 0;
+    const ro = new ResizeObserver(([e]) => {
+      if (!root.isConnected || !bInfo.isConnected) { ro.disconnect(); return; }
+      const w = Math.round(e.contentRect.width);
+      if (w !== lastW) { lastW = w; fitBuddy(); }
+    });
+    ro.observe(bInfo);
+  }
 
   const timesUp = () => {
     if (!limitReached(p)) return false;
