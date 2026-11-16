@@ -20,7 +20,7 @@ import { shareGame, shareIcon } from './share.js';
 import { openPlayElsewhere, deviceIcon } from './playElsewhere.js';
 import { openFeedback } from './feedback.js';
 import { trainerChipSheet } from './onboarding.js';
-import { nextUpPointer } from './firstGame.js';
+import { homeTour } from './firstGame.js';
 import { howToPlay } from './howToPlay.js';
 
 export const medal = (tier) => tier
@@ -287,8 +287,8 @@ export function renderHome(root, go, params = {}) {
     }
   } catch {}
 
-  // Right after the guided first game: Teacher K points at Next up.
-  if (params.guide === 'next') nextUpPointer();
+  // Right after the guided first game: Teacher K shows where things are.
+  if (params.guide === 'next') homeTour();
 
   if (params.celebrate === 'stamp') {
     sfx.levelUp();

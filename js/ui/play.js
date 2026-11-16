@@ -20,10 +20,13 @@ import { ballSrc, sceneSrc, cssUrl, sceneKey, uiImg, itemImg, fxSrc, typeIcon, t
 import { trickyPool, markTrickyDone } from '../core/nextup.js';
 import { quick } from '../core/prefs.js';
 import { $, on, esc, sheet, wait, toast, soundButton, reducedMotion, setFlame } from './dom.js';
-import { firstGameGuide, finishFirstGame, GUIDE_FACTS } from './firstGame.js';
+import { firstGameGuide, finishFirstGame, wantsFirstGame, GUIDE_FACTS } from './firstGame.js';
 
 export function renderPlay(root, go, { table, focus, guide } = {}) {
   const p = active();
+  // A trainer who has never answered a card (say the app closed during Teacher K's
+  // hello) gets the guided first game from any Play button, once.
+  if (!guide && !focus && wantsFirstGame(p)) guide = true;
   setSound(p.settings.sound);
   const tables = table ? [table] : p.settings.tables;
   // focus 'tricky': a round of the facts that got away lately (from Home's Next up).

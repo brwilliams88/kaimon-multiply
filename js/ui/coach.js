@@ -34,6 +34,7 @@ function layer() {
 //   target: a selector or element to spotlight (optional)
 //   text:   one short sentence
 //   button: label for a button that calls onNext (optional)
+//   alt:    label for a quiet second button that calls onAlt (optional, like Skip)
 //   pose:   'intro' shows Teacher K big, in the middle (the hello step)
 export function coach(step) {
   const el = layer();
@@ -43,11 +44,13 @@ export function coach(step) {
   el.classList.toggle('no-dim', !!step.noDim);
   el.querySelector('.coach-text').innerHTML = step.text;
   const btns = el.querySelector('.coach-btns');
-  btns.innerHTML = step.button ? `<button class="btn-chunky btn-primary coach-next" data-coach-next>${esc(step.button)}</button>` : '';
-  btns.hidden = !step.button;
+  btns.innerHTML = (step.alt ? `<button class="coach-alt" data-coach-alt>${esc(step.alt)}</button>` : '')
+    + (step.button ? `<button class="btn-chunky btn-primary coach-next" data-coach-next>${esc(step.button)}</button>` : '');
+  btns.hidden = !step.button && !step.alt;
   const face = el.querySelector('.coach-face');
   face.innerHTML = step.pose === 'intro' ? trainerBody('teacher-k', 'talking') : trainerFace('teacher-k');
   btns.querySelector('[data-coach-next]')?.addEventListener('click', (e) => { e.stopPropagation(); sfx.tap(); step.onNext?.(); });
+  btns.querySelector('[data-coach-alt]')?.addEventListener('click', (e) => { e.stopPropagation(); sfx.tap(); step.onAlt?.(); });
   el.hidden = false;
   el.dataset.step = step.id || '';
   // A little pop each time Teacher K says something new (none with Reduce Motion).
@@ -58,7 +61,7 @@ export function coach(step) {
     el.classList.remove('placing');
     if (!reducedMotion()) { void bubble.offsetWidth; bubble.classList.add('pop'); }
   });
-  if (step.button && step.focus !== false) setTimeout(() => btns.querySelector('button')?.focus({ preventScroll: true }), 60);
+  if (step.button && step.focus !== false) setTimeout(() => btns.querySelector('[data-coach-next]')?.focus({ preventScroll: true }), 60);
 }
 
 // Hide the bubble and spotlight, but keep the guide going.

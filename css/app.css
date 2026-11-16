@@ -3202,6 +3202,10 @@ button.tp-slot:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--in
 .coach-text { margin: 2px 0 0; font-size: 19px; font-weight: 600; line-height: 1.28; color: var(--ink); text-wrap: pretty; }
 .coach-btns { display: flex; justify-content: flex-end; margin-top: 10px; }
 .coach-btns[hidden] { display: none; }
+.coach-btns { align-items: center; gap: 6px; }
+.coach-alt { min-height: 46px; padding: 8px 14px; border: 0; background: none; font: inherit; font-size: 17px; font-weight: 600; color: var(--ink-2); border-radius: 14px; }
+.coach-alt:active { background: rgba(20, 33, 61, .08); }
+@media (hover: hover) { .coach-alt:hover { color: var(--ink); text-decoration: underline; } }
 .coach-next { min-height: 46px; padding: 8px 22px; font-size: 18px; border-radius: 16px; box-shadow: 0 4px 0 var(--ink); }
 .coach-tail { position: absolute; width: 20px; height: 20px; background: var(--paper); border: 3px solid var(--ink); border-radius: 4px; pointer-events: none; }
 .coach-tail[hidden] { display: none; }
@@ -3331,7 +3335,7 @@ button.tp-slot:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--in
 .gu-howto .h-ic .ui-img { width: 40px; height: 40px; }
 /* Results after the guided first game: Go Home is the big button. */
 .res-actions.guided { grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr); }
-.res-actions.guided .res-again-sm { font-size: 20px !important; animation: none; }
+.res-actions.guided .res-again-sm { font-size: 19px !important; animation: none; white-space: nowrap; padding-left: 10px; padding-right: 10px; }
 .res-go-home { display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 24px !important; }
 .res-go-home svg { width: 26px; height: 26px; }
 @media (min-width: 700px) { .coach.intro .coach-bubble { width: 420px; } .coach.intro .coach-text { font-size: 25px; } .coach.intro .coach-face { width: 230px; height: 230px; margin-top: -210px; } }

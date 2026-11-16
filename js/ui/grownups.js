@@ -435,8 +435,8 @@ function renderMain(root, go) {
       <div class="gu-pane gu-grid gu-pane-help" role="tabpanel" id="gu-pane-help" aria-labelledby="gu-tab-help" data-gu-pane="help"${guTab === 'help' ? '' : ' hidden'}>
         <div class="panel gu-howto">
           <h2 class="h-ic">${uiImg('icon-howto')}How to play</h2>
-          <p class="note">Kids answer times table cards to catch Kaimon, earn badges from each Gym Leader and battle with answers. Teacher K explains it all in a few quick cards, also under <b>Menu, How to play</b> on the Home screen. Great to look at together.</p>
-          <div class="row"><span class="note">Catching, streaks, balls, gyms, battles and the Kaidex.</span><button class="btn-chunky btn-sm" data-howto>Show How to play</button></div>
+          <p class="note">Kids answer times table cards to catch Kaimon, earn badges from each Gym Leader and battle with answers. Teacher K explains it all in a few quick cards, also under <b>Menu, How to play</b> on Home.</p>
+          <div class="row"><span class="note">Catching, streaks, balls, gyms, battles and the Kaidex. Great to look at together.</span><button class="btn-chunky btn-sm" data-howto>Show cards</button></div>
         </div>
 
         <div class="panel">

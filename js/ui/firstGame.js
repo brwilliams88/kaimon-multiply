@@ -1,8 +1,10 @@
 // The guided first game: Teacher K walks a brand-new trainer through one short
 // round of very easy cards (1s, 2s and 10s). She points out the card, the number
 // pad, the streak flame and the first catch (always a catch), then ends on Home
-// with a pointer to Next up. About a minute. Skip is always there. Done or
-// skipped, it never comes back for that trainer (a synced 'tip' event).
+// with a short tour (Next up, the Kaidex, the gyms and the Menu). About a minute.
+// Skip is always there. Done or skipped, it never comes back for that trainer
+// (a synced 'tip' event), and a trainer who has already answered cards (a
+// returning player, or a guest from before the guide) never sees it at all.
 import { tipDone, tipSeen } from '../core/actions.js';
 import { syncNow } from '../core/sync.js';
 import { coach, coachHide, coachEnd, coachStep } from './coach.js';
@@ -11,7 +13,7 @@ import { esc, reducedMotion } from './dom.js';
 export const FIRST = 'first';
 export const GUIDE_FACTS = ['1x4', '2x3', '10x2', '2x5'];
 
-export const wantsFirstGame = (p) => !tipSeen(p, FIRST);
+export const wantsFirstGame = (p) => !!p && !tipSeen(p, FIRST) && !((p.stats?.answers || 0) > 0 || (p.stats?.sessions || 0) > 0);
 
 // Mark the guide done (or skipped) for this trainer, everywhere.
 export function finishFirstGame(p) {
@@ -27,7 +29,7 @@ export function firstGameGuide(p, { onReady }) {
     start() {
       coach({
         id: 'hello', pose: 'intro',
-        text: `Hi ${esc(p.name)}! I'm Teacher K, and we'll play your first game together.`,
+        text: `Hi ${esc(p.name)}! Let's play your first game together. Just four easy cards!`,
         button: "Let's go!",
         onNext: () => { g.card(); onReady?.(); },
       });
@@ -83,14 +85,28 @@ export function firstGameGuide(p, { onReady }) {
   return g;
 }
 
-// Home, right after the first game: a gentle pointer to the Next up card.
-export function nextUpPointer() {
-  setTimeout(() => {
-    if (!document.querySelector('.nu')) return;
-    coach({
-      id: 'next', target: '.nu', radius: 30, prefer: ['below', 'right', 'above'],
-      text: "This card always shows what to play next, so tap it when you're ready!",
-      button: 'Got it', onNext: () => coachEnd(),
-    });
-  }, 450);
+// Home, right after the first game: a quick tour of where things are.
+// Every step has Next (and Skip), and a tap on anything else just goes there.
+export function homeTour() {
+  const steps = [
+    { id: 'next', target: '.nu', radius: 30, prefer: ['below', 'right', 'above'],
+      text: 'This card always shows what to play next. Tap it when you are ready!' },
+    { id: 'dex', target: '.tile-dex', radius: 22, prefer: ['below', 'right', 'above', 'left'],
+      text: 'Your Kaidex keeps every Kaimon you catch. Can you find them all?' },
+    { id: 'gyms', target: '.home-regions .rg-gym', radius: 20, pad: 6, prefer: ['below', 'above', 'left', 'right'],
+      text: 'Each times table has a gym. Get a Bronze medal to battle its Gym Leader!' },
+    { id: 'menu', target: '[data-menu]', radius: 99, pad: 6, prefer: ['below', 'left'],
+      text: 'Forgot something? How to play is in the Menu.' },
+  ].filter((s) => document.querySelector(s.target));
+  const show = (i) => {
+    const s = steps[i];
+    if (!s) return coachEnd();
+    const el = document.querySelector(s.target);
+    // Bring it into view first (the gyms can be below the fold on a phone).
+    const r = el.getBoundingClientRect();
+    if (r.top < 70 || r.bottom > innerHeight - 20) el.scrollIntoView({ block: 'center', behavior: reducedMotion() ? 'auto' : 'smooth' });
+    const last = i === steps.length - 1;
+    coach({ ...s, button: last ? 'Got it' : 'Next', alt: last ? null : 'Skip', onAlt: () => coachEnd(), onNext: () => show(i + 1) });
+  };
+  setTimeout(() => { if (document.querySelector('.home')) show(0); }, 450);
 }
