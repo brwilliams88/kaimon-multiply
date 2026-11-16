@@ -10,7 +10,8 @@
 --
 -- Privacy (see CLAUDE.md): usage rows hold a random device id made only for
 -- analytics (not the sync device id), trainer names, device and browser type,
--- the app version, a share-link tag or the referring site's host, play counts and a rough place (city,
+-- the app version, a share-link tag or the referring site's host, the landing
+-- page path, time zone and local day/hour, play counts and a rough place (city,
 -- region, country) that the device looks up once a day. No emails, real names,
 -- photos or IP addresses are stored.
 
@@ -75,6 +76,8 @@ create table if not exists public.usage_events (
   ref text check (ref is null or ref ~ '^[a-z0-9_-]{1,24}$'),
   -- The referring site's host (never a full address), when the source came from document.referrer.
   ref_host text check (ref_host is null or ref_host ~ '^[a-z0-9.-]{1,80}$'),
+  -- The page path a new device first landed on (path only, no query or hash).
+  land text check (land is null or land ~ '^/[A-Za-z0-9._~/-]{0,79}$'),
   v text check (v is null or v ~ '^[0-9.]{1,12}$'),
   os text check (os is null or os in ('iphone', 'ipad', 'android', 'chromebook', 'mac', 'windows', 'linux', 'computer')),
   browser text check (browser is null or browser in ('safari', 'chrome', 'edge', 'firefox', 'samsung', 'other')),
@@ -239,6 +242,7 @@ returns jsonb language sql stable security definer set search_path = '' as $$
     union all select 'versions', coalesce(x.v, 'unknown'), count(distinct x.device) from w x group by 1, 2
     union all select 'countries', x.country, count(distinct x.device) from w x where x.country is not null group by 1, 2
     union all select 'timezones', x.tz, count(distinct x.device) from w x where x.tz is not null group by 1, 2
+    union all select 'lands', x.land, count(distinct x.device) from w x where x.land is not null group by 1, 2
   ),
   -- Devices seen in each place (a device that travels counts in each place).
   places as (
@@ -282,6 +286,7 @@ returns jsonb language sql stable security definer set search_path = '' as $$
       select w.lhour, coalesce(sum(w.n) filter (where w.k = 'minutes'), 0) as minutes, count(*) filter (where w.k = 'open') as opens, count(distinct w.device) as devices
       from w where w.lhour is not null group by w.lhour) h),
     'timezones', (select coalesce(jsonb_agg(jsonb_build_object('name', t.name, 'devices', t.devices) order by t.devices desc, t.name), '[]'::jsonb) from (select * from top where what = 'timezones' order by devices desc, name limit 10) t),
+    'lands', (select coalesce(jsonb_agg(jsonb_build_object('name', t.name, 'devices', t.devices) order by t.devices desc, t.name), '[]'::jsonb) from (select * from top where what = 'lands' order by devices desc, name limit 8) t),
     'tables', (select coalesce(jsonb_agg(jsonb_build_object('table', t.tb, 'answers', t.answers) order by t.answers desc, t.tb), '[]'::jsonb) from tbl t),
     'comments', (select coalesce(jsonb_agg(jsonb_build_object('kind', c.kind, 'stars', c.stars, 'text', left(c.text, 300), 'name', c.name, 'created_at', c.created_at, 'country', c.country, 'city', c.city) order by c.created_at desc), '[]'::jsonb)
       from (select * from public.feedback f where f.text is not null order by f.created_at desc limit 5) c),

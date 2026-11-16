@@ -2,7 +2,8 @@
 //
 // What goes out: a random id made only for this (not the family sync id), the
 // trainer's name, the kind of device and browser, whether the app is installed,
-// the app version, the share-link tag the game was first opened from, and play
+// the app version, the share-link tag or referring site (host only) and the
+// page path the game was first opened from, time zone and local day/hour, and play
 // counts (app opens, rounds, battles, catches, minutes), and a rough place
 // (city, region, country) looked up from the internet address once a day. The
 // address itself is never kept or sent to us. Never emails, real names or
@@ -52,7 +53,7 @@ export const COLLECTED = [
   'Rough place: city, region and country (looked up once a day; the internet address is never kept)',
   'Time zone, and the local day and hour of play',
   'App opens, rounds, battles, catches and minutes played',
-  'Where the game was first opened from: a shared link tag, or the site name only (like linkedin.com)',
+  'Where the game was first opened from: a shared link tag, or the site name only (like linkedin.com), and the page it opened on',
 ];
 
 export function analyticsId() {
@@ -161,12 +162,17 @@ export function track(k, n = 1, d = {}, extra = {}) {
     device: analyticsId(), k, t: new Date().toISOString(),
     trainer: cleanTrainer(extra.trainer ?? p?.name), n: Math.max(0, Math.min(10000, Math.round(n) || 0)), d,
     ...localTime(),
-    ref: extra.ref || null, ref_host: extra.refHost || null, v: ver, os: deviceKind(), browser: browserKind(), installed: installed(),
+    ref: extra.ref || null, ref_host: extra.refHost || null, land: extra.land || null, v: ver, os: deviceKind(), browser: browserKind(), installed: installed(),
     ...placeFields(),
   };
   const q = queued(); q.push(row); writeQueue(q);
   return row;
 }
+
+// Every row goes out with exactly these keys (PostgREST refuses a batch whose
+// rows have different keys, and this drops anything the table doesn't know).
+export const COLS = ['device', 'k', 't', 'trainer', 'n', 'd', 'tz', 'lday', 'lhour', 'ref', 'ref_host', 'land', 'v', 'os', 'browser', 'installed', 'city', 'region', 'country'];
+const shape = (r) => { const o = {}; for (const c of COLS) o[c] = r?.[c] ?? (c === 'installed' ? false : c === 'd' ? {} : c === 'n' ? 1 : null); return o; };
 
 let sending = null;
 // Send waiting rows, up to BATCH at a time. Quiet on failure: they wait for next time.
@@ -177,7 +183,7 @@ export function flush({ keepalive = false } = {}) {
     let sent = 0;
     for (let i = 0; i < 5; i++) {
       const place = placeFields();
-      const batch = queued().slice(0, BATCH).map((r) => (r.country || r.city || !place.country ? r : { ...r, ...place }));
+      const batch = queued().slice(0, BATCH).map((r) => shape(r.country || r.city || !place.country ? r : { ...r, ...place }));
       if (!batch.length) break;
       let res;
       try {
@@ -285,6 +291,12 @@ export function sourceOf(referrer, ownHost = (typeof location !== 'undefined' ? 
   return { ref: 'other', host };
 }
 
+// The page a new device first landed on: the path only, never the ?query or #hash.
+export function cleanPath(s) {
+  const p = String(s || '').split(/[?#]/)[0].slice(0, 80);
+  return /^\/[A-Za-z0-9._~\/-]{0,79}$/.test(p) ? p : null;
+}
+
 export function readRef(loc = location, referrer = (typeof document !== 'undefined' ? document.referrer : '')) {
   let ref = null;
   try {
@@ -298,7 +310,7 @@ export function readRef(loc = location, referrer = (typeof document !== 'undefin
   // First visit only: a device that already has an id was counted before.
   if (!isOn() || ls.get(REF_KEY) || ls.get(ID_KEY)) return ref;
   const src = ref ? { ref, host: null } : sourceOf(referrer, loc.host);
-  ls.set(REF_KEY, JSON.stringify({ ref: src.ref, host: src.host, sent: 0 }));
+  ls.set(REF_KEY, JSON.stringify({ ref: src.ref, host: src.host, land: cleanPath(loc.pathname), sent: 0 }));
   return src.ref;
 }
 
@@ -306,15 +318,20 @@ function trackOpen() {
   const r = ls.json(REF_KEY, null);
   const ref = r && !r.sent ? cleanRef(r.ref) : null;
   const host = ref && /^[a-z0-9.-]{1,80}$/.test(r.host || '') ? r.host : null;
-  track('open', 1, {}, ref ? { ref, refHost: host } : {});
+  track('open', 1, {}, ref ? { ref, refHost: host, land: cleanPath(r.land) } : {});
   if (ref) ls.set(REF_KEY, JSON.stringify({ ...r, sent: 1 }));
 }
 
 // ------------------------------------------------------------------ start
 
 let started = false;
+// Usage counts must never get in the way of play: any slip here is swallowed.
+const safe = (fn) => (...a) => { try { const r = fn(...a); return r && typeof r.catch === 'function' ? r.catch(() => 0) : r; } catch { return 0; } };
 const syncing = () => { try { return syncStatus().busy; } catch { return false; } };
 export function startAnalytics() {
+  try { begin(); } catch { /* never block the game */ }
+}
+function begin() {
   readRef(); // always strip the tag, even when analytics is off
   if (started) return;
   started = true;
@@ -324,25 +341,26 @@ export function startAnalytics() {
   since = document.visibilityState === 'visible' ? Date.now() : 0;
   let hiddenAt = document.visibilityState === 'visible' ? 0 : Date.now();
   // While family sync is pulling other devices' play, counters are left alone.
-  const tick = () => { if (!isOn()) return; if (!syncing()) collect(); tickTime(); };
-  setTimeout(() => lookupPlace().catch(() => {}), 2500);
-  setTimeout(() => flush(), 8000);
-  setInterval(() => { tick(); flush(); }, SEND_EVERY);
-  document.addEventListener('visibilitychange', () => {
+  const tick = safe(() => { if (!isOn()) return; if (!syncing()) collect(); tickTime(); });
+  const send = safe(flush);
+  setTimeout(safe(lookupPlace), 2500);
+  setTimeout(send, 8000);
+  setInterval(() => { tick(); send(); }, SEND_EVERY);
+  document.addEventListener('visibilitychange', safe(() => {
     if (!isOn()) return;
-    if (document.visibilityState === 'hidden') { tick(); hiddenAt = Date.now(); flush({ keepalive: true }); }
-    else { if (hiddenAt && Date.now() - hiddenAt > REOPEN_GAP) trackOpen(); hiddenAt = 0; since = Date.now(); lookupPlace().catch(() => {}); setTimeout(() => flush(), 4000); }
-  });
-  window.addEventListener('pagehide', () => { if (isOn()) { tick(); flush({ keepalive: true }); } });
-  window.addEventListener('online', () => setTimeout(() => flush(), 5000));
+    if (document.visibilityState === 'hidden') { tick(); hiddenAt = Date.now(); send({ keepalive: true }); }
+    else { if (hiddenAt && Date.now() - hiddenAt > REOPEN_GAP) trackOpen(); hiddenAt = 0; since = Date.now(); lookupPlace().catch(() => {}); setTimeout(send, 4000); }
+  }));
+  window.addEventListener('pagehide', safe(() => { if (isOn()) { tick(); send({ keepalive: true }); } }));
+  window.addEventListener('online', () => setTimeout(send, 5000));
   // Family sync tells us when it starts and ends. At the start, count this
   // device's own play; at the end (new sync time or error), the other devices'
   // play only moves the baseline.
   let last = syncStatus();
-  onSyncChange((s) => {
+  onSyncChange(safe((s) => {
     if (!isOn()) return;
     const ended = s.lastSync !== last.lastSync || s.error !== last.error;
     last = s;
     if (ended) baseline(); else collect();
-  });
+  }));
 }

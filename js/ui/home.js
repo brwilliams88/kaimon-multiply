@@ -19,6 +19,7 @@ import { esc, on, $, sheet, soundIcon, toast } from './dom.js';
 import { sfx, unlock } from '../core/sound.js';
 import { shareGame, shareIcon } from './share.js';
 import { openPlayElsewhere, deviceIcon } from './playElsewhere.js';
+import { openFeedback } from './feedback.js';
 import { trainerChipSheet } from './onboarding.js';
 
 export const medal = (tier) => tier
@@ -356,6 +357,7 @@ function homeMenu(p, go) {
     ${row('data-m="balls"', ballIcon('capture'), 'Ball guide', 'Which ball to throw, and how to earn more')}
     ${row('data-m="switch"', uiImg('icon-trainers'), 'Title screen', 'Switch trainer or add a new one')}
     ${row('data-m="device"', deviceIcon(), 'Play on another device', 'A QR code for an iPad or phone')}
+    ${row('data-m="feedback"', uiImg('kaizo-feedback'), 'Send feedback', 'Tell the maker what you love, or what bugs you')}
     <button class="menu-row menu-share" data-share><span class="menu-ic" aria-hidden="true">${shareIcon()}</span><span class="menu-txt"><strong>Share the game</strong><small>Send a friend the link</small></span></button>
     <button class="menu-row menu-grown" data-grownups><span class="menu-ic" aria-hidden="true">${uiImg('icon-grownups')}</span><span class="menu-txt"><strong>Grown-ups</strong><small>Settings and progress. Needs the grown-up PIN.</small></span></button>
     <p class="menu-ver">Kaimon Multiply v${VERSION}</p>
@@ -374,6 +376,7 @@ function homeMenu(p, go) {
     if (m === 'how') setTimeout(() => howItWorks(p, { back }), 200);
     if (m === 'balls') setTimeout(() => ballsHelp(p, { back }), 200);
     if (m === 'device') setTimeout(() => openPlayElsewhere({ back }), 200);
+    if (m === 'feedback') setTimeout(() => openFeedback({ place: 'menu', back }), 200);
     if (m === 'switch') go('welcome');
   });
   // Grown-ups is behind the PIN, so a plain tap is enough.

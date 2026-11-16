@@ -83,7 +83,7 @@ document.addEventListener('touchmove', (e) => {
   e.preventDefault();
 }, { passive: false });
 
-startAnalytics(); // also takes ?ref= off the address bar
+try { startAnalytics(); } catch { /* usage counts never block the game */ } // also takes ?ref= off the address bar
 
 // Offline play: online/offline state, saving pictures for offline, the offline chip.
 startOffline();

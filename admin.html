@@ -360,6 +360,7 @@ function render(s, fb) {
 
   <section class="lists">
     <div class="card panel" id="sources"><h2>Sources</h2><p class="sub">Where new players came from: a shared link, or the site that sent them</p>${ranked(s.refs, 'No new players yet.')}</div>
+    <div class="card panel"><h2>Landing pages</h2><p class="sub">The page new players first opened</p>${ranked(s.lands, 'No new players yet.')}</div>
     <div class="card panel"><h2>Devices</h2><p class="sub">Players by device</p>${ranked(s.os)}</div>
     <div class="card panel"><h2>Browsers</h2><p class="sub">Players by browser</p>${ranked(s.browsers)}</div>
     <div class="card panel"><h2>Versions</h2><p class="sub">Players by app version</p>${ranked(s.versions)}</div>
