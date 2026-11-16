@@ -46,6 +46,14 @@ export function sceneKey({ table, kind } = {}) {
   return 'training';
 }
 export const sceneSrc = (key, thumb = false) => `assets/scenes/${thumb ? 'thumb/' : ''}${key}.webp`;
+// Where a Kaimon lives, for its Kaidex page (thumb size): its region, the training field
+// for starters, Papa's Gym for Papazilla, the Hundred Tower for legendaries. The mythic
+// line lives nowhere anyone knows, so it gets no scene.
+export function habitatSrc(region) {
+  if (region === 0) return sceneSrc('training', true);
+  if (region === 'papa' || region === 'legend') return sceneSrc(region === 'papa' ? 'papa' : 'tower', true);
+  return REGIONS.some((r) => r.table === region) ? sceneSrc(String(region), true) : null;
+}
 // Gym buildings: one per table, plus 'papa' (Papa's Gym). Same sizes as scenes.
 export const gymSrc = (key, thumb = false) => `assets/scenes/gyms/${thumb ? 'thumb/' : ''}${key}.webp`;
 export const gymImg = (key, cls = '') => img(gymSrc(key, true), `gym-img ${cls}`);
