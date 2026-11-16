@@ -2,6 +2,14 @@
 
 All notable changes. Versioning: `0.MINOR.0` marks a roadmap phase, `0.x.PATCH` is any shipped change a player or parent can notice, and `1.0.0` is the public launch. See "Versioning" in CLAUDE.md. The in-app version history (Grown-ups > What's new) reads from `js/data/changelog.js`; keep both in sync. Each release is tagged in git as `vX.Y.Z`.
 
+## v0.6.11 (2026-11-16) Stay where you were
+
+- Closing a window no longer jumps you back to the top of Home. You stay right where you were.
+- Back from the Kaidex, your trainer page, Grown-ups or practice takes you to the same spot on Home.
+- Taps right after closing a window, or while a message is showing, now work the first time.
+- Grown-ups keeps your place and anything you typed when the page updates.
+- A feedback note you started is still there if you close the window by mistake.
+
 ## v0.6.10 (2026-11-16) The Wardrobe
 
 - New: the Wardrobe! Earn new jacket colors by answering: Teal, Orange, Sky, Purple, Pink and Gold.
