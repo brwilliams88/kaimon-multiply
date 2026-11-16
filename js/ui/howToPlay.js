@@ -98,7 +98,7 @@ function cards(p) {
     },
     ...(calmMode(p) ? [] : [{ // [systems]
       key: 'bolt', title: 'The Lightning Round',
-      text: 'Warm up with one practice round, then try 60 seconds with facts you know. Beat your best for a prize. Grown-ups can play too!',
+      text: 'Warm up with one practice round, then try 60 seconds with facts you know. Get 5 in a row for a combo bonus, and beat your best for a prize. Grown-ups can play too!',
       art: `<div class="hd-art hd-warm">
         <span class="hd-row"><span class="hd-it hd-big">${itemImg('time-freeze')}</span><span class="hd-bolt-n"><b>60</b><small>seconds</small></span></span>
       </div>`,

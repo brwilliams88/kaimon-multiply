@@ -486,3 +486,50 @@ test('finishBolt saves the score and rewards a new best once', () => {
   assert.ok(!b.isBest); assert.deepEqual(b.gives, []); assert.equal(b.best, 11);
   assert.equal(p.bolt.runs, 2);
 });
+
+test('your best runs: top 5 with score, answered, streak and day, best first', () => {
+  const p = fresh();
+  [[7, 9, 4, 100], [12, 14, 8, 200], [3, 6, 2, 300], [12, 13, 6, 400], [9, 10, 5, 500], [10, 12, 7, 600]].forEach(([sc, n, st, t]) => apply(p, ev('bolt', { sc, n, st }, t)));
+  assert.equal(p.bolt.top.length, bolt.BOLT_TOP);
+  assert.deepEqual(p.bolt.top.map((r) => r.s), [12, 12, 10, 9, 7]); // 3 dropped; the earlier 12 first
+  assert.deepEqual(p.bolt.top[0], { s: 12, n: 14, st: 8, t: 200 });
+  apply(p, ev('bolt', { sc: 0, n: 4 }, 700)); // a zero never makes the list
+  assert.equal(p.bolt.top.length, 5); assert.equal(p.bolt.runs, 7);
+  assert.deepEqual(bolt.boltRuns(p).map((r) => r.s), [12, 12, 10, 9, 7]);
+});
+
+test('boltRuns shows a best from an old save (no list yet) on its own', () => {
+  const p = fresh(); p.bolt = { best: 15, runs: 4, last: 50 };
+  assert.deepEqual(bolt.boltRuns(p), [{ s: 15, t: 50 }]);
+  apply(p, ev('bolt', { sc: 8, n: 9, st: 5 }, 60));
+  assert.deepEqual(bolt.boltRuns(p), [{ s: 15, t: 50 }, { s: 8, n: 9, st: 5, t: 60 }]); // the old best keeps its day
+  assert.deepEqual(bolt.boltRuns(fresh()), []);
+});
+
+test('best runs merge through family sync without doubles', () => {
+  const a = fresh('pA'); a.bolt = { best: 14, runs: 2, last: 9, top: [{ s: 14, n: 15, st: 9, t: 9 }, { s: 6, n: 8, st: 3, t: 4 }] };
+  const snap = { facts: {}, dex: {}, balls: {}, items: {}, stats: {}, mythic: {}, battles: null, play: {}, xp: 0, ...items.systemsSnap(a) };
+  const b = fresh('pA'); b.bolt = { best: 11, runs: 1, last: 7, top: [{ s: 11, n: 11, st: 11, t: 7 }, { s: 6, n: 8, st: 3, t: 4 }] };
+  applySnapshot(b, snap);
+  assert.deepEqual(b.bolt.top.map((r) => r.s), [14, 11, 6]);
+  assert.equal(b.bolt.best, 14);
+});
+
+test('combos: every 5 in a row gives the Buddy bonus XP, once per run', () => {
+  assert.ok(bolt.isCombo(5) && bolt.isCombo(10) && !bolt.isCombo(4) && !bolt.isCombo(0));
+  const p = fresh();
+  const before = partnerOf(p).xp;
+  const r = bolt.finishBolt(p, 12, 13, { streak: 11, combos: 2 });
+  assert.equal(r.comboXP, 2 * bolt.COMBO_XP); assert.equal(r.rank, 1);
+  assert.equal(partnerOf(p).xp, before + 2 * bolt.COMBO_XP);
+  assert.deepEqual(p.bolt.top[0].st, 11);
+  const r2 = bolt.finishBolt(p, 4, 6, { streak: 4, combos: 0 });
+  assert.equal(r2.comboXP, 0); assert.equal(r2.rank, 2);
+});
+
+test('boltNext names the next score prize, then none', () => {
+  assert.deepEqual(bolt.boltNext(0), { n: 10, give: ['i', 'lantern', 1] });
+  assert.deepEqual(bolt.boltNext(10), { n: 20, give: ['i', 'charm', 1] });
+  assert.deepEqual(bolt.boltNext(39), { n: 40, give: ['b', 'mega', 1] });
+  assert.equal(bolt.boltNext(50), null);
+});

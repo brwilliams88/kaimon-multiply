@@ -171,23 +171,24 @@ function simulate(kid, s) {
   const lightning = () => {
     const pool = L.boltPool(p);
     const recent = [];
-    let left = L.BOLT_MS, score = 0, n = 0;
+    let left = L.BOLT_MS, score = 0, n = 0, streak = 0, best = 0, combos = 0;
     while (left > 0) {
       const f = F.pickNext(p, pool, recent, [], n++);
       recent.push(f); if (recent.length > 3) recent.shift();
       const r = answerOnce(f, 'bolt'); boltCards++;
       left -= r.ms + (r.ok ? 250 : 900);
-      if (left >= 0 && r.ok) score++;
+      if (left >= 0 && r.ok) { score++; streak++; best = Math.max(best, streak); if (L.isCombo(streak)) combos++; } else streak = 0;
     }
-    const res = L.finishBolt(p, score, n);
+    const res = L.finishBolt(p, score, n, { streak: best, combos });
     tally(res.gives);
+    if (res.comboXP) tally([['x', 'xp', res.comboXP]]);
     claim();
     return score;
   };
 
   for (let d = 0; d < DAYS; d++) {
     NOW = start + d * DAY + Math.floor(rand() * 3 * 3600000);
-    if (G.kairoEvolves(p)) { A.evolveKairo(p); mark('Kairos (Kairo evolves)'); }
+    if (G.kairoEvolves(p)) { A.evolveReady(p); mark('Kairos (Kairo evolves)'); }
     if (rand() > kid.playChance) { for (const m of [7, 30, 91, 182]) if (d === m - 1) snaps[m] = snap(); continue; }
     playDays++;
     // Kids use items when they have them.
