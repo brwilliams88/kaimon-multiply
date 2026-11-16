@@ -29,7 +29,7 @@ export function levelOf(rec) {
 
 export const levelRank = (lvl) => LEVELS.indexOf(lvl);
 
-// A region's badge tier is the lowest level among its 10 facts.
+// A region's medal tier is the lowest level among its 10 facts.
 export function tableTier(profile, table) {
   let min = 5;
   for (const id of factsForTables([table])) min = Math.min(min, levelRank(levelOf(profile.facts[id])));
@@ -271,6 +271,20 @@ export function onAnswer(S, id = S.fact, correct) {
   } else if (served?.step === 1) requeue.push({ id, at: S.n + REQUEUE_GAPS[1], step: 2 });
 }
 export const requeueMiss = (S) => onAnswer(S, S.fact, false);
+
+// Tricky facts: missed in the last week and not answered right on a later day
+// since. Getting one right on another day fixes it. Newest misses first.
+export function trickyFacts(profile, tables, now = Date.now()) {
+  const out = [];
+  for (const id of factsForTables(tables)) {
+    const r = profile.facts[id];
+    if (!r?.lastMiss || now - r.lastMiss > 7 * 86400000) continue;
+    const missDay = today(r.lastMiss);
+    if ((r.days || []).some((d) => d > missDay)) continue;
+    out.push([id, r.lastMiss]);
+  }
+  return out.sort((a, b) => b[1] - a[1]).map(([id]) => id);
+}
 
 // Skip-count ladder used by the Hint Scroll.
 export function hintLadder(id) {

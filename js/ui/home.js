@@ -1,13 +1,14 @@
 import { active } from '../core/store.js';
 import { SPECIES, REGIONS, TYPES } from '../data/creatures.js';
 import { creatureArt } from '../core/art.js';
-import { tableTier, tableProgress, LEVEL_LABEL } from '../core/facts.js';
+import { tableTier, tableProgress, LEVEL_LABEL, parseFact } from '../core/facts.js';
 import { partnerOf, dexCounts, trainerTitle } from '../core/game.js';
-import { bossUnlocked, quizReady, quizNextIn } from '../core/battle.js';
-import { limitReached } from '../core/playtime.js';
+import { bossUnlocked, quizReady, quizNextIn, champReady, gymOpen } from '../core/battle.js';
+import { limitReached, cardsToday, roundSize, roundsToday, GOAL_ROUNDS } from '../core/playtime.js';
+import { nextUp, quizUseful } from '../core/nextup.js';
 import { VERSION } from '../data/changelog.js';
 import { trainerArt } from './trainerArt.js';
-import { ballImg, itemImg, sceneSrc, cssUrl, uiImg, trainerFace, trainerBody, LOGO } from '../core/assets.js';
+import { ballImg, itemImg, sceneSrc, gymSrc, gymImg, badgeImg, cssUrl, uiImg, trainerFace, trainerBody, trainerKey, CARD_BACK, LOGO } from '../core/assets.js';
 import { kairoEvolves } from '../core/game.js';
 import { evolveKairo, ball as giveBall, caught as catchIt } from '../core/actions.js';
 import { save, touch, setSetting } from '../core/store.js';
@@ -22,12 +23,128 @@ export const medal = (tier) => tier
   ? `<span class="medal medal-${tier}" title="${LEVEL_LABEL[tier]} medal">${itemImg('medal-' + tier)}</span>`
   : '';
 
+const LOCK = '<span class="rg-lock" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2.6" fill="currentColor"/><path d="M8.2 10.5 V8 a3.8 3.8 0 0 1 7.6 0 V10.5" fill="none" stroke="currentColor" stroke-width="2.6"/><circle cx="12" cy="15.2" r="1.7" fill="#fff"/></svg></span>';
+const ARROW = '<svg class="nu-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12 H18 M13 6.5 L18.5 12 L13 17.5" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+// A region's star Kaimon for the Next up card: the most evolved one this trainer
+// has caught there. None caught yet: Teacher K points the way.
+function regionStar(p, table) {
+  const caught = SPECIES.filter((s) => s.region === table && p.dex[s.id]?.caught).sort((a, b) => b.stage - a.stage);
+  return caught.length ? `<span class="nu-mon">${creatureArt(caught[0])}</span>` : trainerBody('teacher-k', 'point', 'nu-trainer');
+}
+
+// Up to four facts as little chips, then "+3" for the rest.
+function factChips(facts) {
+  const show = facts.slice(0, 4);
+  return `<span class="nu-facts">${show.map((id) => { const [a, b] = parseFact(id); return `<span>${a} × ${b}</span>`; }).join('')}${facts.length > show.length ? `<span class="more">+${facts.length - show.length}</span>` : ''}</span>`;
+}
+
+// Next up: one big card that says exactly what to do now. One tap starts it.
+function nextCard(p, nu) {
+  const R = nu.table ? REGIONS.find((r) => r.table === nu.table) : null;
+  const T = R ? TYPES[R.type] : null;
+  const prog = (n, lvl, frac) => `<span class="nu-prog"><span class="nu-prog-top">${medal(lvl)}<span><b>${n} of 10</b> facts at ${LEVEL_LABEL[lvl]}</span></span><span class="bar"><span style="width:${Math.round(frac * 100)}%"></span></span></span>`;
+  let c;
+  switch (nu.kind) {
+    case 'rest':
+      c = { kicker: 'All done today', title: 'Kaimon nap time', sub: 'Your Kaimon are napping so they get stronger. Come back tomorrow!', cta: 'See you tomorrow', bg: sceneSrc('training'), who: uiImg('kaizo-sleep', 'nu-kaizo') };
+      break;
+    case 'gym':
+      c = { kicker: 'Gym ready!', title: `Battle ${esc(R.champion)}`, sub: `Your ${R.table}s have a medal. Win the ${esc(R.badge)}!`, cta: 'Battle!', bg: gymSrc(R.table), who: trainerBody(trainerKey({ kind: 'champ', table: R.table }), 'talking', 'nu-trainer'),
+        extra: `<span class="nu-prize">${badgeImg(R.table)}<span>${esc(R.badge)}</span></span>` };
+      break;
+    case 'boss':
+      c = { kicker: 'The final gym', title: 'Battle Boss Papa', sub: "You won every badge. Papa's Gym is open!", cta: 'Battle!', bg: gymSrc('papa'), who: trainerBody('boss-papa', 'talking', 'nu-trainer') };
+      break;
+    case 'quiz':
+      c = { kicker: 'Pop Quiz', title: "Teacher K's Pop Quiz", sub: 'A quick battle with the facts that keep getting away. Win a Mega Ball!', cta: 'Start the quiz', bg: sceneSrc('training'), who: trainerBody('teacher-k', 'quiz', 'nu-trainer') };
+      break;
+    case 'tricky': {
+      c = { kicker: 'Fix it', title: 'Catch your tricky facts', sub: 'These got away this week. One round to catch them!', cta: 'Practice tricky facts', bg: sceneSrc('training'), who: uiImg('kaizo-search', 'nu-kaizo'),
+        extra: factChips(nu.facts) };
+      break;
+    }
+    case 'region':
+      c = nu.first || nu.fresh
+        ? { kicker: nu.first ? 'Start here' : 'New region', title: `Explore ${esc(R.name)}`,
+          sub: nu.first ? `Your first region is the ${R.table}s. Answer cards to catch the Kaimon that live here.` : `A new region! Answer ${R.table}s cards to meet the Kaimon that live here.`,
+          cta: `Play the ${R.table}s`, bg: sceneSrc(String(R.table)), who: trainerBody('teacher-k', 'point', 'nu-trainer') }
+        : { kicker: 'Keep exploring', title: `Explore ${esc(R.name)}`, sub: `Practice the ${R.table}s. Get every fact to Bronze to open the gym.`,
+          cta: `Play the ${R.table}s`, bg: sceneSrc(String(R.table)), who: regionStar(p, R.table), extra: prog(nu.count, nu.next, nu.frac) };
+      break;
+    case 'weak':
+      c = { kicker: 'Power up', title: `Power up the ${R.table}s`,
+        sub: nu.why === 'slow' ? `You know the ${R.table}s. Now make them fast!` : `Some ${R.table}s keep getting away. One round makes them stronger.`,
+        cta: `Play the ${R.table}s`, bg: sceneSrc(String(R.table)), who: regionStar(p, R.table),
+        extra: nu.facts.length ? factChips(nu.facts) : prog(nu.count, nu.next, nu.frac) };
+      break;
+    case 'shine':
+      c = { kicker: `Next medal: ${LEVEL_LABEL[nu.next]}`, title: `Make the ${R.table}s shine`, sub: `Fast right answers on different days earn ${LEVEL_LABEL[nu.next]}.`,
+        cta: `Play the ${R.table}s`, bg: sceneSrc(String(R.table)), who: regionStar(p, R.table), extra: prog(nu.count, nu.next, nu.frac) };
+      break;
+    default:
+      c = { kicker: 'Hundred Hero', title: 'Every fact is a Star!', sub: 'Keep them shining with a mixed round.', cta: 'Mixed practice', bg: sceneSrc('tower'), who: uiImg('kaizo-badge', 'nu-kaizo') };
+  }
+  const style = T ? `--rc:${T.color};--rl:${T.light};--ri:${T.ink}` : '';
+  return `<button class="nu nu-${nu.kind}" data-next="${nu.kind}"${nu.table ? ` data-table="${nu.table}"` : ''} style="${style}" aria-label="Next up: ${c.title.replace(/"/g, '&quot;')}. ${esc(c.cta)}">
+    <span class="nu-art" aria-hidden="true">
+      <img class="nu-bg" src="${c.bg}" alt="" draggable="false" decoding="async">
+      <span class="nu-who">${c.who}</span>
+      <span class="nu-kicker">${esc(c.kicker)}</span>
+    </span>
+    <span class="nu-body">
+      <span class="nu-title">${c.title}</span>
+      <span class="nu-sub">${c.sub}</span>
+      ${c.extra || ''}
+      <span class="nu-go">${esc(c.cta)}${ARROW}</span>
+    </span>
+  </button>`;
+}
+
+// Today ring: a calm ring in three parts, one per round, that fills as cards are
+// answered. No streak, no countdown, nothing lost on a day off. Just "Goal done!".
+function todayRing(p) {
+  const n = cardsToday(p), size = roundSize(p), rounds = roundsToday(p), done = rounds >= GOAL_ROUNDS;
+  const C = 2 * Math.PI * 24, GAP = 14, seg = C / GOAL_ROUNDS - GAP;
+  const arc = (i, f, cls) => f > 0 ? `<circle class="${cls}" cx="32" cy="32" r="24" stroke-dasharray="${(seg * f).toFixed(1)} ${C.toFixed(1)}" transform="rotate(${(-90 + i * 360 / GOAL_ROUNDS + (GAP / C) * 180).toFixed(1)} 32 32)" style="--i:${i};--len:${(seg * f).toFixed(1)}"/>` : '';
+  const parts = Array.from({ length: GOAL_ROUNDS }, (_, i) => arc(i, 1, 'today-track') + arc(i, Math.max(0, Math.min(1, (n - i * size) / size)), 'today-fill')).join('');
+  return `<div class="today${done ? ' done' : ''}" role="img" aria-label="Today: ${rounds} of ${GOAL_ROUNDS} rounds${done ? '. Goal done!' : ''}">
+    <span class="today-ring"><svg viewBox="0 0 64 64" aria-hidden="true"><circle class="today-out" cx="32" cy="32" r="30"/>${parts}</svg>
+    <span class="today-num" aria-hidden="true">${done ? '<svg viewBox="0 0 24 24"><path d="M5 12.5 L10 17.5 L19 7" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/></svg>' : `${rounds}<small>of ${GOAL_ROUNDS}</small>`}</span></span>
+    <span class="today-label" aria-hidden="true">${done ? 'Goal done!' : 'Today'}</span>
+  </div>`;
+}
+
+function regionRow(p, r, nu) {
+  const t = TYPES[r.type];
+  const tier = tableTier(p, r.table);
+  const prog = tableProgress(p, r.table);
+  const enabled = p.settings.tables.includes(r.table);
+  const won = p.battles.champs[r.table];
+  const ready = !won && champReady(p, r.table);
+  const now = nu.table === r.table && ['region', 'shine', 'gym', 'weak'].includes(nu.kind);
+  const gymState = won ? 'won' : ready ? 'ready' : 'locked';
+  const gymLabel = gymState === 'locked' ? `${r.champion}'s gym is locked. Get a Bronze medal on the ${r.table}s to open it.` : `Battle ${r.champion} at the ${r.table}s gym${won ? '. Badge earned' : '. Ready!'}`;
+  return `<div class="rg-row${enabled ? '' : ' off'}${now ? ' now' : ''}" style="--rc:${t.color};--rl:${t.light};--ri:${t.ink}">
+    <button class="rg" data-play="${r.table}" ${enabled ? '' : 'aria-disabled="true"'} aria-label="${esc(r.name)}, the ${r.table}s${tier ? `, ${LEVEL_LABEL[tier]} medal` : ''}">
+      <span class="rg-thumb" style="--scene:${esc(cssUrl(sceneSrc(String(r.table), true)))}" aria-hidden="true"><b>${r.table}<small>s</small></b></span>
+      <span class="rg-text"><strong>${esc(r.name)}</strong><span class="rg-prog"><span class="bar mini"><span style="width:${Math.round(prog * 100)}%"></span></span>${medal(tier)}</span></span>
+    </button>
+    ${enabled ? `<button class="rg-gym ${gymState}" data-champ="${r.table}" aria-label="${esc(gymLabel)}">${gymImg(r.table)}${won ? badgeImg(r.table, 'rg-badge') : ready ? '<span class="rg-ready">Battle!</span>' : `${LOCK}<span class="rg-gym-tag">Get Bronze</span>`}</button>` : ''}
+  </div>`;
+}
+
 export function renderHome(root, go, params = {}) {
   const p = active();
   const partner = partnerOf(p);
   const dex = dexCounts(p);
+  const nu = nextUp(p);
+  const total = p.settings.tables.length || 10;
+  const beaten = p.settings.tables.filter((t) => p.battles.champs[t]).length;
+  const open = bossUnlocked(p);
+  const qReady = quizReady(p) && quizUseful(p), qNext = quizNextIn(p);
   root.innerHTML = `
-    <section class="screen home">
+    <section class="screen home home2">
       <header class="topbar">
         <button class="trainer-chip" data-trainer aria-label="Your trainer page">
           <span class="trainer-av">${avatarSVG(trainerLook(p))}</span>
@@ -37,82 +154,53 @@ export function renderHome(root, go, params = {}) {
       </header>
 
       <div class="home-main">
-        <div class="partner">
-          <div class="partner-art">${creatureArt(partner.species)}</div>
-          <div class="partner-info">
-            <p class="partner-name">${partner.species.name}<span class="partner-tag">Buddy</span><span class="lv-tag">Lv ${partner.level}</span></p>
-            <div class="bar xp-bar" role="progressbar" aria-label="XP to the next level" aria-valuemin="0" aria-valuemax="${partner.need}" aria-valuenow="${partner.into}"><span style="width:${Math.round((partner.into / partner.need) * 100)}%"></span></div>
-            <p class="partner-note">${partner.need - partner.into} XP to Lv ${partner.level + 1}. ${partner.evolveAt ? `Evolves at Lv ${partner.evolveAt}!` : 'Fully evolved!'}</p>
+        <div class="home-side">
+          ${nextCard(p, nu)}
+
+          <div class="actions">
+          <button class="quick" data-play="mix" aria-label="Quick practice. Mixed times tables.">
+            <span class="quick-cards" aria-hidden="true"><img src="${CARD_BACK}" alt="" draggable="false"><img src="${CARD_BACK}" alt="" draggable="false"><img src="${CARD_BACK}" alt="" draggable="false"></span>
+            <span class="quick-text"><strong>Quick practice</strong><small>Mixed times tables</small></span>
+            <span class="quick-go" aria-hidden="true">${ARROW}</span>
+          </button>
+
+            <button class="tile tile-dex" data-dex aria-label="Kaidex. ${dex.caught} of ${dex.total} caught."><span class="tile-ic" aria-hidden="true">${kaidexIcon()}</span><span class="tile-text"><strong>Kaidex</strong><small>${dex.caught} of ${dex.total}</small></span></button>
+            <button class="tile tile-quiz${qReady ? ' ready' : ''}" data-quiz><span class="tile-ic tile-face" aria-hidden="true">${trainerFace('teacher-k')}</span><span class="tile-text"><strong>Pop Quiz</strong><small>${qReady ? 'Ready!' : !quizUseful(p) ? 'Opens soon' : `In ${qNext} day${qNext === 1 ? '' : 's'}`}</small></span></button>
           </div>
-          <button class="balls-row" data-balls aria-label="Your balls. Tap to learn how to use them.">
+        </div>
+
+        <div class="home-regions">
+          <div class="buddy">
+            <span class="buddy-art">${creatureArt(partner.species)}</span>
+            <span class="buddy-info">
+              <span class="buddy-name">${partner.species.name}<span class="lv-tag">Lv ${partner.level}</span></span>
+              <span class="bar xp-bar" role="progressbar" aria-label="XP to the next level" aria-valuemin="0" aria-valuemax="${partner.need}" aria-valuenow="${partner.into}"><span style="width:${Math.round((partner.into / partner.need) * 100)}%"></span></span>
+              <small class="buddy-note">${partner.need - partner.into} XP to Lv ${partner.level + 1}${partner.evolveAt ? `. Evolves at Lv ${partner.evolveAt}` : ''}</small>
+            </span>
+            ${todayRing(p)}
+            <button class="balls-row" data-balls aria-label="Your balls. Tap to learn how to use them.">
               <span class="ball-count" title="Capture Balls">${ballIcon('capture')}∞</span>
               <span class="ball-count" title="Super Balls">${ballIcon('super')}${p.balls.super}</span>
               <span class="ball-count" title="Mega Balls">${ballIcon('mega')}${p.balls.mega}</span>
               <span class="ball-count" title="Legend Balls">${ballIcon('legend')}${p.balls.legend}</span>
               ${p.items.snack ? `<span class="ball-count" title="Power Snacks">${snackIcon()}${p.items.snack}</span>` : ''}
             </button>
-          <button class="btn-chunky btn-primary btn-xl play-btn" data-play="mix"><span>Practice</span><small>All your times tables, mixed</small></button>
-        </div>
-
-        <button class="kdx-tile" data-dex>
-          <span class="kdx-art">${kaidexIcon()}</span>
-          <span class="kdx-text"><strong>Kaidex</strong><small>Your Kaimon collection. ${dex.caught} of ${dex.total} caught${dex.seen > dex.caught ? `, ${dex.seen - dex.caught} more spotted` : ''}.</small></span>
-          <span class="kdx-go" aria-hidden="true">›</span>
-        </button>
-
-        <h2 class="section-title">Regions</h2>
-        <p class="section-sub">Each region is a times table. Pick a region, catch the Kaimon that live there, and earn its medal: Bronze, Silver, Gold, then Star.</p>
-        <div class="regions">
-          ${REGIONS.map((r) => {
-            const t = TYPES[r.type];
-            const tier = tableTier(p, r.table);
-            const prog = tableProgress(p, r.table);
-            const enabled = p.settings.tables.includes(r.table);
-            return `<button class="region${enabled ? '' : ' off'}" data-play="${r.table}" style="--rc:${t.color};--rl:${t.light};--ri:${t.ink};--scene:${esc(cssUrl(sceneSrc(String(r.table), true)))}" ${enabled ? '' : 'aria-disabled="true"'}>
-              <span class="region-num">${r.table}<small>s</small></span>
-              <span class="region-name">${r.name}</span>
-              <span class="region-foot"><span class="bar mini"><span style="width:${Math.round(prog * 100)}%"></span></span>${medal(tier)}</span>
-            </button>`;
-          }).join('')}
-        </div>
-
-        <h2 class="section-title">Gym battles</h2>
-        <p class="section-sub">Every right answer is an attack. Beat a Gym Leader to win their badge and bonus XP. Win every badge to face Boss Papa.</p>
-        <div class="battles">
-          <div class="champs">
-            ${REGIONS.filter((r) => p.settings.tables.includes(r.table)).map((r) => {
-              const t = TYPES[r.type];
-              const won = p.battles.champs[r.table];
-              return `<button class="champ${won ? ' won' : ''}" data-champ="${r.table}" style="--rc:${t.color};--rl:${t.light}" aria-label="Battle ${esc(r.champion)}, ${r.table}s Gym Leader${won ? ', badge earned' : ''}">
-                <span class="champ-av">${trainerArt({ kind: 'champ', table: r.table })}</span>
-                <span class="champ-name">${esc(r.champion.replace('Little Leader ', '').replace('Professor ', 'Prof. ').replace('Commander ', 'Cmdr. '))}</span>
-                <span class="champ-tag">${r.table}s${won ? ' ' + ribbon() : ''}</span>
-              </button>`;
-            }).join('')}
           </div>
-          ${(() => {
-            const total = p.settings.tables.length || 10;
-            const beaten = p.settings.tables.filter((t) => p.battles.champs[t]).length;
-            const open = bossUnlocked(p);
-            return `<button class="tower${open ? ' open' : ''}" data-boss ${open ? '' : 'aria-disabled="true"'} style="--scene:${esc(cssUrl(sceneSrc('papa', true)))}">
-              <span class="tower-av">${trainerArt({ kind: 'boss' })}</span>
-              <span class="tower-text"><strong>Papa's Gym</strong>
-                <small>${open ? (p.battles.boss ? 'Boss Papa wants a rematch.' : 'The final gym. Boss Papa is waiting.') : `The final gym. Earn every Gym Leader badge to get in. ${beaten} of ${total} badges.`}</small>
+
+          <div class="rg-head"><h2 class="section-title">Pick a region</h2><span class="rg-count">${ribbon()}${beaten} of ${total} badges</span></div>
+          <p class="section-sub">Tap a region to practice its times table. Tap a gym to battle.</p>
+          <div class="rg-list">
+            ${REGIONS.map((r) => regionRow(p, r, nu)).join('')}
+            <button class="rg-boss${open ? ' open' : ''}" data-boss ${open ? '' : 'aria-disabled="true"'}>
+              <span class="rg-thumb rg-thumb-gym" aria-hidden="true">${gymImg('papa')}</span>
+              <span class="rg-text"><strong>Papa's Gym</strong>
+                <small>${open ? (p.battles.boss ? 'Boss Papa wants a rematch.' : 'Boss Papa is waiting!') : `The final gym. Win all ${total} badges to get in.`}</small>
                 ${open ? '' : `<span class="bar mini"><span style="width:${Math.round((beaten / total) * 100)}%"></span></span>`}
               </span>
-            </button>`;
-          })()}
+              <span class="rg-boss-face" aria-hidden="true">${trainerFace('boss-papa')}</span>
+            </button>
+          </div>
         </div>
-        <h2 class="section-title">Teacher K's Pop Quiz</h2>
-        ${(() => {
-          const ready = quizReady(p), next = quizNextIn(p);
-          return `<button class="quiz-card${ready ? ' ready' : ''}" data-quiz>
-            <span class="quiz-av">${trainerFace('teacher-k')}</span>
-            <span class="quiz-text"><strong>${ready ? 'A new Pop Quiz is ready!' : 'Quiz done this week'}</strong>
-              <small>${ready ? 'Teacher K battles you with the facts that keep getting away. Win a Mega Ball.' : `Great work! The next quiz is in ${next} day${next === 1 ? '' : 's'}. You can still take this one again for practice.`}</small></span>
-            <span class="kdx-go" aria-hidden="true">›</span>
-          </button>`;
-        })()}
         <p class="ver-foot">© 2026 Kaimon Games · Kaimon Multiply v${VERSION}</p>
       </div>
     </section>`;
@@ -135,8 +223,29 @@ export function renderHome(root, go, params = {}) {
   });
   // Remember where the player was, so coming back from a battle (or backing out of
   // a Gym Leader's intro) lands in the same spot instead of the top of the page.
-  const keepPlace = () => { try { sessionStorage.setItem('kaimon.homePlace', JSON.stringify({ y: (document.scrollingElement || document.documentElement).scrollTop, x: root.querySelector('.champs')?.scrollLeft || 0, at: Date.now() })); } catch {} };
-  on(root, 'click', '[data-champ]', (e, el) => { unlock(); sfx.tap(); if (timesUp()) return; keepPlace(); go('battle', { kind: 'champ', table: +el.dataset.champ }); });
+  const keepPlace = () => { try { sessionStorage.setItem('kaimon.homePlace', JSON.stringify({ y: (document.scrollingElement || document.documentElement).scrollTop, at: Date.now() })); } catch {} };
+  // Next up: one tap starts it.
+  on(root, 'click', '[data-next]', (e, el) => {
+    unlock(); sfx.tap();
+    if (timesUp()) return;
+    const t = +el.dataset.table || null;
+    switch (el.dataset.next) {
+      case 'gym': keepPlace(); return go('battle', { kind: 'champ', table: t });
+      case 'boss': keepPlace(); return go('battle', { kind: 'boss' });
+      case 'quiz': keepPlace(); return go('battle', { kind: 'quiz' });
+      case 'tricky': return go('play', { table: null, focus: 'tricky' });
+      case 'weak': return go('play', { table: t });
+      case 'master': return go('play', { table: null });
+      default: return go('play', { table: t });
+    }
+  });
+  on(root, 'click', '[data-champ]', (e, el) => {
+    unlock(); sfx.tap();
+    const t = +el.dataset.champ;
+    if (!gymOpen(p, t)) return gymLocked(p, t, go, timesUp);
+    if (timesUp()) return;
+    keepPlace(); go('battle', { kind: 'champ', table: t });
+  });
   on(root, 'click', '[data-boss]', () => {
     unlock(); sfx.tap();
     if (timesUp()) return;
@@ -170,9 +279,7 @@ export function renderHome(root, go, params = {}) {
     const place = JSON.parse(sessionStorage.getItem('kaimon.homePlace') || 'null');
     sessionStorage.removeItem('kaimon.homePlace');
     if (place && Date.now() - place.at < 30 * 60000) {
-      const champs = root.querySelector('.champs');
-      if (champs) champs.scrollLeft = place.x;
-      requestAnimationFrame(() => { (document.scrollingElement || document.documentElement).scrollTop = place.y; if (champs) champs.scrollLeft = place.x; });
+      requestAnimationFrame(() => { (document.scrollingElement || document.documentElement).scrollTop = place.y; });
     }
   } catch {}
 
@@ -185,6 +292,23 @@ export function renderHome(root, go, params = {}) {
       <div class="celebrate-row"><span>${ballIcon('mega')} Mega Ball</span><span>${snackIcon()} 3 Power Snacks</span><span class="stars">★ Gold star</span></div>
       <button class="btn-chunky btn-primary" data-close>Awesome!</button></div>`);
   }
+}
+
+// A locked gym: say how to open it, with one tap to practice that table.
+function gymLocked(p, table, go, timesUp) {
+  const R = REGIONS.find((r) => r.table === table), T = TYPES[R.type];
+  const sh = sheet(`<div class="gym-locked" style="--rc:${T.color};--rl:${T.light};--ri:${T.ink}">
+    <div class="gym-locked-art" aria-hidden="true">${gymImg(table)}${LOCK}</div>
+    <h2>${esc(R.champion)}'s gym is locked</h2>
+    <p>Get a Bronze medal on the ${table}s to open this gym.</p>
+    <p class="note">${medal('bronze')}Bronze: every ${table}s fact right on 2 different days.</p>
+    <div class="sheet-actions"><button class="btn-chunky" data-close>Okay</button><button class="btn-chunky btn-primary" data-practice>Practice the ${table}s</button></div>
+  </div>`);
+  sh.el.querySelector('[data-practice]').addEventListener('click', () => {
+    sfx.tap(); sh.close();
+    if (timesUp()) return;
+    go('play', { table });
+  });
 }
 
 function kairoWaiting(p, go) {

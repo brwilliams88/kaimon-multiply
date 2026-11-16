@@ -5,7 +5,7 @@ import { regionOf, TYPES, byId, MYTHIC_ID } from '../data/creatures.js';
 import { creatureArt } from '../core/art.js';
 import { factsForTables, pickNext, onAnswer, answerOf, parseFact, hintLadder } from '../core/facts.js';
 import { answer, ball as giveBall, battle as recordBattle, session, caught as catchIt } from '../core/actions.js';
-import { myTeam, opponent, attack, powerFor, powerLabel, moveName, HIT_BACK, rewardFor } from '../core/battle.js';
+import { myTeam, opponent, attack, powerFor, powerLabel, moveName, HIT_BACK, rewardFor, gymOpen } from '../core/battle.js';
 import { BALLS } from '../core/game.js';
 import { syncNow } from '../core/sync.js';
 import { dadJoke } from '../data/dadjokes.js';
@@ -28,6 +28,8 @@ const hpBar = (who) => `<div class="hp hp-${who}"><div class="hp-top"><span clas
 
 export function renderBattle(root, go, { kind = 'champ', table = 1, grunt } = {}) {
   const p = active();
+  // A locked gym never starts a battle, whatever the way in. Back to Home.
+  if (kind === 'champ' && !gymOpen(p, table)) { queueMicrotask(() => go('home')); return; }
   setSound(p.settings.sound);
   unlock();
   const opp = opponent(p, kind, table, grunt);
