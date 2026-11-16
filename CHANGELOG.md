@@ -2,6 +2,39 @@
 
 All notable changes. Versioning: `0.MINOR.0` marks a roadmap phase, `0.x.PATCH` is any shipped change a player or parent can notice, and `1.0.0` is the public launch. See "Versioning" in CLAUDE.md. The in-app version history (Grown-ups > What's new) reads from `js/data/changelog.js`; keep both in sync. Each release is tagged in git as `vX.Y.Z`.
 
+## v0.5.37 (2026-11-15) Pick a trainer, then Play
+
+- Who's playing is easier: swipe or tap to pick a trainer, then press the big Play button under the cards.
+- The last trainer who played is picked and centered when the game opens, marked "Last played".
+- The cards no longer get cut off on phones, and the New trainer "+" sits right in the middle of its circle.
+- Tap your trainer at the top of Home to open your trainer page or switch trainers.
+
+## v0.5.36 (2026-11-15) Battle polish
+
+- Battles start with a real send-out: your trainer throws a ball, it pops open, and your Kaimon bursts out. Gym Leaders throw Super Balls and Boss Papa throws a Mega Ball.
+- Big callouts: "Critical!" for a perfect answer, and the move name with its type for special moves. Every hit gets a flash in the attacker's type color.
+- Winning a Gym badge for the first time now has its own moment: the badge flies into your badge case, and the Gym Leader says something kind.
+- Papa's Gym feels like a gym: a chalkboard workout sign, dad jokes mid-battle, and a big entrance for Papazilla.
+- New win and lose screens. Losing says "Good battle!" and reminds you every answer still counts as practice.
+- Tap anywhere during an attack to skip ahead. With reduced motion on, battles fade instead of flying.
+
+## v0.5.35 (2026-11-15) New sounds and music
+
+- All new sounds: every number key plays its own note, and correct answers, catches, level ups, evolving, badges and battles have new friendly sounds that go together. A wrong answer is a soft "uh-oh".
+- The streak flame makes a sound as it grows, with brighter chimes at 5, 10, 15 and 25 in a row.
+- New music: a cheerful theme on Home and the Kaidex, a longer battle theme, and a stompy march for Papa's Gym. Practice cards stay quiet.
+- With Mic mode on, battle music stays soft the whole battle so the mic can hear you.
+- Grown-ups: the Music switch now covers Home and battle music. Sound effects stay on unless you turn Sound off.
+
+## v0.5.34 (2026-11-15) A smarter Home
+
+- New Home: Next up now suggests what to play based on how you are doing. Tables that keep getting away get a Power up card, ready gyms come before Pop Quiz, and suggestions take turns so Home stays fresh.
+- Quick practice (mixed times tables) is one tap from Home, with the Kaidex and Pop Quiz right under it.
+- A gentle daily goal of 3 rounds, shown as a ring that fills in three parts. No pressure: playing more or less is fine.
+- Gyms open once their table has a Bronze medal. Tap a locked gym to see how to open it, or practice that table right away.
+- Pick a region is easier: every region and gym is listed with clear Battle labels.
+- Long Kaimon names now fit on the results screen.
+
 ## v0.5.33 (2026-11-15) Kaidex binder and Trainer License
 
 - The Kaidex is now a binder you can page through: swipe or tap the arrows. Caught Kaimon sit in card sleeves, ones you have seen show as shadows, and empty sleeves show their number.
