@@ -12,6 +12,8 @@ import { lookPickerHTML, wireLookPicker } from './lookPicker.js';
 import { esc, on, $, sheet } from './dom.js';
 import { sfx, unlock } from '../core/sound.js';
 import { wantsFirstGame } from './firstGame.js';
+import { openFeedback } from './feedback.js';
+import { betaNoteDue, betaNoteShown } from '../core/classBeta.js';
 
 export function renderWelcome(root, go) {
   const profiles = allProfiles();
@@ -26,6 +28,9 @@ export function renderWelcome(root, go) {
   // The last trainer used on this device starts selected (and centered), so one tap on Play goes in.
   const lastId = active()?.id;
   const start = Math.max(0, profiles.findIndex((p) => p.id === lastId));
+  // Came from a class link on a brand-new device: one gentle Beta line, shown once.
+  const beta = !profiles.length && betaNoteDue();
+  if (beta) betaNoteShown();
   root.innerHTML = `
     <section class="screen welcome title-screen">
       <div class="title-hero">
@@ -57,6 +62,7 @@ export function renderWelcome(root, go) {
           <button class="who-arrow" data-step="1" aria-label="Next trainer" tabindex="-1">${chevron(1)}</button>
         </div>
         <button class="btn-chunky btn-primary btn-xl who-play" data-play><span class="who-play-label"></span>${playIcon()}</button>` : `
+        ${beta ? `<div class="beta-note" role="note"><span class="beta-tag">Beta</span><p>You're one of the first to try Kaimon Multiply. Tell a <span style="white-space:nowrap">grown-up</span> what you think!</p><button class="beta-fb" data-betafb>Send feedback</button></div>` : ''}
         <p class="welcome-line">Answer times tables. Catch Kaimon. Fill your Kaidex.</p>
         <button class="btn-chunky btn-primary btn-xl" data-new>Start</button>`}
       ${famFoot}
@@ -75,6 +81,7 @@ export function renderWelcome(root, go) {
   // middle). The big Play button is the only way in.
   on(root, 'click', '[data-id]', (e, el) => { if (car?.dragged() || +el.dataset.i === car.sel()) return; sfx.tap(); car.pick(+el.dataset.i); });
   on(root, 'click', '[data-play]', () => { const p = profiles[car.sel()]; if (p) enter(p.id); else { unlock(); sfx.tap(); go('newTrainer'); } });
+  on(root, 'click', '[data-betafb]', () => { unlock(); sfx.tap(); openFeedback({ place: 'class' }); });
   on(root, 'click', '[data-famsignin]', () => { unlock(); sfx.tap(); familySignInSheet(() => go('welcome')); });
   on(root, 'click', '[data-new]', () => { if (car?.dragged()) return; unlock(); sfx.tap(); go('newTrainer'); });
 }
