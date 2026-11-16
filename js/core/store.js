@@ -35,6 +35,7 @@ export function newProfile(name, avatar, id) {
     play: {},
     xp: 0,
     trophies: [],
+    tips: {},
     outbox: [],
   };
 }
@@ -68,6 +69,7 @@ function migrate(p) {
   p.play = p.play || {};
   if (p.xp == null) p.xp = (p.stats?.correct || 0) * 12; // estimate for saves from before XP
   p.trophies = p.trophies || [];
+  p.tips = p.tips || {};
   p.outbox = p.outbox || [];
   p.updatedAt = p.updatedAt || p.createdAt || Date.now();
   if (p.family === undefined) p.family = false;

@@ -79,6 +79,11 @@ export function apply(p, ev) {
     case 'bonus':
       dayRec(p, today(ev.t)).bonus += d.m || 0;
       break;
+    case 'tip':
+      // d.n: a one-time guide this trainer finished or skipped (like 'first', the guided first game).
+      p.tips = p.tips || {};
+      if (!p.tips[d.n] || ev.t < p.tips[d.n]) p.tips[d.n] = ev.t;
+      break;
     case 'stamp':
       p.stats.stars = (p.stats.stars || 0) + 1;
       break;
@@ -134,6 +139,14 @@ export const session = (p, ms, best, cont = false) => emit(p, 'sess', cont ? { m
 export const openTime = (p, ms) => emit(p, 'open', { ms: Math.round(ms) });
 export const bonusTime = (p, m) => emit(p, 'bonus', { m });
 export const battle = (p, kind, table, won) => emit(p, 'battle', { o: kind, tb: table, w: won ? 1 : 0 });
+
+// One-time guides (the guided first game): done or skipped once, never shown again.
+export const tipSeen = (p, name) => !!p.tips?.[name];
+export function tipDone(p, name) {
+  if (tipSeen(p, name)) return;
+  emit(p, 'tip', { n: name });
+  save();
+}
 
 export function goodWorkStamp(p) {
   emit(p, 'stamp', {});
