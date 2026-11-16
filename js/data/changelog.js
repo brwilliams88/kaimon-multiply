@@ -1,7 +1,18 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.6.9';
+export const VERSION = '0.6.10';
 
 export const CHANGELOG = [
+  {
+    version: '0.6.10',
+    date: '2026-11-16',
+    title: "The Wardrobe",
+    items: [
+      "New: the Wardrobe! Earn new jacket colors by answering: Teal, Orange, Sky, Purple, Pink and Gold.",
+      "Your Trainer License can wear your colors too. Kai keeps his red jacket, so his colors go on his License.",
+      "Already playing? Your past right answers count, and you keep the color you wear now.",
+      "Hats are coming soon, and every right answer you give now counts toward them.",
+    ],
+  },
   {
     version: '0.6.9',
     date: '2026-11-16',

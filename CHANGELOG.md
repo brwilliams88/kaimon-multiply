@@ -2,6 +2,13 @@
 
 All notable changes. Versioning: `0.MINOR.0` marks a roadmap phase, `0.x.PATCH` is any shipped change a player or parent can notice, and `1.0.0` is the public launch. See "Versioning" in CLAUDE.md. The in-app version history (Grown-ups > What's new) reads from `js/data/changelog.js`; keep both in sync. Each release is tagged in git as `vX.Y.Z`.
 
+## v0.6.10 (2026-11-16) The Wardrobe
+
+- New: the Wardrobe! Earn new jacket colors by answering: Teal, Orange, Sky, Purple, Pink and Gold.
+- Your Trainer License can wear your colors too. Kai keeps his red jacket, so his colors go on his License.
+- Already playing? Your past right answers count, and you keep the color you wear now.
+- Hats are coming soon, and every right answer you give now counts toward them.
+
 ## v0.6.9 (2026-11-16) Share with a class
 
 - New: Share with a class. A page for teachers and families with a QR code, privacy in plain words and a one-page letter to print. Find it in Grown-ups, on the Help tab.

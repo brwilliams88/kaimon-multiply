@@ -6,6 +6,9 @@ import { dexCounts, trainerTitle, trainerSince } from '../core/game.js';
 import { licenseExtras, gymBadges, papaWon, patchName, bagRows, bagEmpty } from '../core/extras.js';
 import { syncNow } from '../core/sync.js';
 import { avatarSVG, trainerLook } from './avatars.js';
+import { licenseBg } from './licenseArt.js';
+import { wardrobeCardHTML, openWardrobe, wardrobeCheck, colorOwned, lookOf } from './wardrobe.js';
+import { byId as wearItem, moreText } from '../core/wardrobe.js';
 import { lookPickerHTML, wireLookPicker } from './lookPicker.js';
 import { medal } from './home.js';
 import { badgeImg, ballImg, itemImg, uiImg, ITEMS } from '../core/assets.js';
@@ -79,7 +82,7 @@ function licenseHTML(p, x) {
   const ic = (name) => itemImg(name, 'lic-ic');
   return `<div class="lic${x.frame ? ' lic-f-' + x.frame : ''}${x.trim ? ' lic-trim' : ''}" role="group" aria-label="Trainer License for ${esc(p.name)}">
     <div class="lic-card">
-      ${uiImg('trainer-license', 'lic-bg')}
+      ${licenseBg(lookOf(p).card)}
       <div class="lic-photo tr-av">${avatarSVG(trainerLook(p))}</div>
       <button class="lic-bar b1 lic-namebtn" data-rename aria-label="Name: ${esc(p.name)}. Tap to change your name."><span class="lic-k">Name</span><strong class="lic-name">${esc(p.name)}</strong><span class="lic-pen" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4.5 19.5 L5.4 15.4 L15.6 5.2 a2.1 2.1 0 0 1 3 0 l0.2 0.2 a2.1 2.1 0 0 1 0 3 L8.6 18.6 Z" fill="#FFD23F" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M13.6 7.2 L16.8 10.4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span></button>
       <div class="lic-bar b2"><span class="lic-k">Rank</span><span class="lic-v">${esc(trainerTitle(p))}${stars}</span></div>
@@ -172,7 +175,7 @@ function bagHTML(p) {
   </div>`;
 }
 
-export function renderTrainer(root, go) {
+export function renderTrainer(root, go, params = {}) {
   const p = active();
   const draw = () => {
     const dex = dexCounts(p);
@@ -194,6 +197,7 @@ export function renderTrainer(root, go) {
               <div class="tr-btns"><button class="btn-chunky tr-look" data-look>Change look</button><button class="btn-chunky tr-look" data-switch>Switch trainer</button></div>
             </div>
             ${unlocksHTML(x)}
+            ${wardrobeCardHTML(p)}
           </div>
           <h2 class="section-title">Battle team</h2>
           <div class="tr-team">${teamRowHTML(p)}<button class="btn-chunky" data-team>Change team</button></div>
@@ -231,11 +235,15 @@ export function renderTrainer(root, go) {
   on(root, 'click', '[data-bag]', (e, el) => { if (openItem(p, el.dataset.bag, { go, onUse: draw })) sfx.tap(); }); // [systems] Item Bag: what it does, and Use
   // Tap your name on the License to change it (the same sheet as Grown-ups > Trainers).
   on(root, 'click', '[data-rename]', () => { sfx.tap(); renameSheet(p, { title: 'Change your name', onDone: () => draw() }); });
+  on(root, 'click', '[data-wardrobe]', () => { sfx.tap(); openWardrobe(p, { onChange: draw }); });
+  if (params.wardrobe) setTimeout(() => openWardrobe(p, { onChange: draw }), 250);
   on(root, 'click', '[data-look]', () => {
     sfx.tap();
     // Every change saves right away, so closing the sheet any way keeps the new look.
     let changed = false;
-    const sh = sheet(`<h2>Change look</h2><div class="tr-lp">${lookPickerHTML(trainerLook(p))}</div>
+    wardrobeCheck(p);
+    const owned = colorOwned(p);
+    const sh = sheet(`<h2>Change look</h2><div class="tr-lp">${lookPickerHTML(trainerLook(p), 'trainer', owned)}</div>
       <div class="sheet-actions"><button class="btn-chunky btn-primary" data-close>Done</button></div>`, { x: true,
       onClose: () => { if (changed) { syncNow(); draw(); toast('Looking good!', 1400); } },
     });
@@ -244,7 +252,7 @@ export function renderTrainer(root, go) {
       p.lookAt = Date.now();
       touch(p); save();
       changed = true;
-    });
+    }, { owned, why: (c) => `${moreText(p, wearItem(c))} to unlock ${wearItem(c).name}!` });
   });
 }
 
