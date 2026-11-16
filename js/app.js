@@ -22,6 +22,8 @@ import { save, touch, setSetting } from './core/store.js';
 import { startUpdates, justUpdated } from './core/update.js';
 import './ui/install.js'; // listens for Chrome's install prompt from the start
 import { maybeIconNotice } from './ui/iconNotice.js'; // must load before justUpdated() runs
+import { startAnalytics } from './core/analytics.js'; // anonymous usage counts (off switch in Grown-ups)
+import { flushFeedback, maybeAskRating } from './ui/feedback.js';
 
 const SCREENS = {
   welcome: renderWelcome,
@@ -56,6 +58,7 @@ function go(name, params = {}) {
   root.firstElementChild?.classList.add('screen-in');
   window.scrollTo(0, 0);
   if (name === 'welcome' || name === 'home') maybeIconNotice();
+  if (name === 'home') maybeAskRating(); // gentle one-time Rate the game, after a happy moment
   afterScreen(name, root); // offline chip, storage protection, a waiting "Back online" note
   // The title screen is one fixed screen: no rubber-band scrolling on iPhone.
   document.documentElement.classList.toggle('lock-screen', name === 'welcome');
@@ -81,6 +84,8 @@ document.addEventListener('touchmove', (e) => {
   }
   e.preventDefault();
 }, { passive: false });
+
+try { startAnalytics(); } catch { /* usage counts never block the game */ } // also takes ?ref= off the address bar
 
 // Offline play: online/offline state, saving pictures for offline, the offline chip.
 startOffline();
@@ -109,6 +114,7 @@ setInterval(() => { if (document.visibilityState === 'visible') sendWeeklyReport
 const sendWaitingMail = () => { flushMailOutbox().catch(() => {}); sendWeeklyReports(); };
 window.addEventListener('online', () => setTimeout(sendWaitingMail, 3000));
 setTimeout(() => flushMailOutbox().catch(() => {}), 6000);
+setTimeout(() => flushFeedback().catch(() => {}), 7000); // ratings and notes that waited for the internet
 
 // Sound button in the top bars (home, practice, battles).
 document.addEventListener('click', (e) => {

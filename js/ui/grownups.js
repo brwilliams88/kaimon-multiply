@@ -7,12 +7,17 @@ import { showIconNotice } from './iconNotice.js';
 import { sfx, soundOn, soundStatus } from '../core/sound.js';
 import { itemImg } from '../core/assets.js';
 import { installHelpHTML, canPromptInstall, promptInstall, isInstalled } from './install.js';
+import { openPlayElsewhere } from './playElsewhere.js';
+import { openFeedback, openRate, queuedFeedback } from './feedback.js';
+import { COLLECTED, isOn as analyticsOn, setOn as setAnalytics, startAnalytics } from '../core/analytics.js';
 import { lastDays, partsOfDay, usedToday } from '../core/playtime.js';
 import { bonusTime } from '../core/actions.js';
 import { active, save, exportBackup, importBackup, deleteProfile, allProfiles, hasPin, setPin, checkPin, clearPin } from '../core/store.js';
 import { status as syncStatus, requestCode, verifyCode, signOut, syncNow, joinFamily, leaveFamily, onSyncChange, ensureUpdates, setUpdates } from '../core/sync.js';
 import { goodWorkStamp } from '../core/actions.js';
-import { levelOf, factId, LEVEL_LABEL, RULES, countAtLeast } from '../core/facts.js';
+import { factId, LEVEL_LABEL, trickFor } from '../core/facts.js';
+import { insights, tipText, headLine, heartText, factInfo, isCheer, talkText, TALK_TIP, FLUENCY_LABEL } from '../core/insights.js';
+import { REGIONS, TYPES } from '../data/creatures.js';
 import { voiceSupported } from '../core/voice.js';
 import { CHANGELOG, VERSION } from '../data/changelog.js';
 import { esc, on, sheet, toast, $, busy, cleanCode, codeOk } from './dom.js';
@@ -21,7 +26,6 @@ import { offlineChipHTML, offlinePanelHTML, bindOfflinePanel, pendingNote } from
 import { isOnline, onOfflineChange } from '../core/offline.js';
 import { calmModeRow } from './lightning.js'; // [systems] Calm mode
 
-const mins = (ms) => Math.round(ms / 60000);
 
 let unlockedUntil = 0;
 
@@ -55,20 +59,22 @@ function runPinPad(root, go, title, sub, onDone, extra) {
   });
 }
 
-export function renderGrownups(root, go) {
+export function renderGrownups(root, go, params = {}) {
+  // Opening Grown-ups starts on Progress (or the tab asked for).
+  guTab = GU_TABS.some(([id]) => id === params.tab) ? params.tab : 'progress';
   if (!hasPin()) {
     let first = null;
     const ask = (sub) => runPinPad(root, go, 'Set a parent PIN', sub, async (v) => {
       if (!first) { first = v; ask('Type the same 4 digits again.'); return; }
       if (v !== first) { first = null; toast('Those didn\u2019t match. Try again.'); ask('Choose 4 digits only grown-ups know.'); return; }
-      await setPin(v); unlockedUntil = Date.now() + 10 * 60 * 1000; toast('Parent PIN set'); renderGrownups(root, go);
+      await setPin(v); unlockedUntil = Date.now() + 10 * 60 * 1000; toast('Parent PIN set'); renderGrownups(root, go, { tab: guTab });
     });
     ask('Choose 4 digits only grown-ups know. It guards settings and the Good Work Stamp.');
     return;
   }
   if (Date.now() > unlockedUntil) {
     runPinPad(root, go, 'Grown-ups only', 'Enter the parent PIN.', async (v) => {
-      if (await checkPin(v)) { unlockedUntil = Date.now() + 10 * 60 * 1000; renderGrownups(root, go); }
+      if (await checkPin(v)) { unlockedUntil = Date.now() + 10 * 60 * 1000; renderGrownups(root, go, { tab: guTab }); }
       else { toast('That PIN isn\u2019t right.'); }
     }, '<button class="link-btn" data-forgot>Forgot the PIN?</button>');
     on(root, 'click', '[data-forgot]', () => forgotPin(root, go));
@@ -92,7 +98,7 @@ function forgotPin(root, go) {
   sh.el.querySelector('[data-verify]').addEventListener('click', (e) => busy(e.currentTarget, 'Checking...', async () => {
     const code = cleanCode(sh.el.querySelector('[data-code]').value);
     if (!codeOk(code)) return toast('Type the code from the email.');
-    try { await verifyCode(email(), code, { existingOnly: true }); clearPin(); sh.close(); toast('PIN cleared. Choose a new one.'); renderGrownups(root, go); }
+    try { await verifyCode(email(), code, { existingOnly: true }); clearPin(); sh.close(); toast('PIN cleared. Choose a new one.'); renderGrownups(root, go, { tab: guTab }); }
     catch (err) { toast(err.message); }
   }));
 }
@@ -117,6 +123,193 @@ function resizePhoto(file) {
   });
 }
 
+// ---------------------------------------------------------------- progress
+// The trainer's progress panel, kept to a quick read: one headline, at most
+// two tips, the times table grid (Levels or By heart) and one talk question.
+
+const typeVars = (t) => { const ty = TYPES[REGIONS[t - 1]?.type] || TYPES.water; return `--tc:${ty.color};--tl:${ty.light};--ti:${ty.ink}`; };
+const CHEVRON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5 L16 12 L9 19" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+let gridView = 'level'; // remembered while the app is open
+
+function playLabel(tip) {
+  if (tip.k === 'comeback') return 'Play a round';
+  if (!tip.t || isCheer(tip) || tip.k === 'keep') return '';
+  return `Play the ${tip.t}s`;
+}
+
+function insightsHTML(p, ins) {
+  return `
+    <section class="nx" aria-labelledby="nx-h-${esc(p.id)}">
+      <p class="nx-kicker">${itemImg('hint-lamp')}<span>Last 7 days</span></p>
+      <h3 class="nx-line" id="nx-h-${esc(p.id)}">${esc(headLine(ins.head, ins.period))}</h3>
+      <ul class="nx-tips">
+        ${ins.tips.map((tip, i) => {
+          const w = tipText(tip, ins.period);
+          if (!w) return '';
+          const good = isCheer(tip), label = playLabel(tip);
+          const badge = tip.t
+            ? `<span class="nx-badge" style="${typeVars(tip.t)}">${tip.t}s</span>`
+            : `<span class="nx-badge ${good ? 'cheer' : 'plain'}">${itemImg(good ? 'xp-star' : 'streak-flame')}</span>`;
+          return `<li class="nx-tip ${good ? 'good' : 'focus'}" style="--i:${i}"${tip.f ? ` data-nx-fact="${esc(tip.f)}"` : ''}>
+            ${badge}
+            <div class="nx-body">
+              <p class="nx-title">${esc(w.title)}</p>
+              <p class="nx-why">${esc(w.why)} <span class="nx-act">${esc(w.act)}</span></p>
+              ${label ? `<button class="btn-chunky btn-sm nx-go" data-nx-play="${tip.t || ''}">${label}${CHEVRON}</button>` : ''}
+            </div>
+          </li>`;
+        }).join('')}
+      </ul>
+    </section>`;
+}
+
+function talkHTML(p, ins) {
+  const t = talkText(ins.talk, p.name);
+  if (!t) return '';
+  return `
+    <section class="nx-talk" aria-label="Talk about it">
+      <span class="nx-talk-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v8a2.5 2.5 0 0 1-2.5 2.5H11l-4.2 3.6c-.5.4-1.3.1-1.3-.6V16A2.5 2.5 0 0 1 4 13.5z" fill="currentColor" stroke="#14213D" stroke-width="1.8" stroke-linejoin="round"/><circle cx="8.6" cy="9.6" r="1.2" fill="#14213D"/><circle cx="12" cy="9.6" r="1.2" fill="#14213D"/><circle cx="15.4" cy="9.6" r="1.2" fill="#14213D"/></svg></span>
+      <div class="nx-talk-body">
+        <p class="nx-talk-h">Talk about it <span>About 2 minutes</span></p>
+        <p class="nx-talk-q">${esc(t.q)}</p>
+        <p class="nx-talk-a"><b>If they get stuck:</b> ${esc(t.a)}</p>
+        <p class="nx-talk-tip">${esc(TALK_TIP)}</p>
+      </div>
+    </section>`;
+}
+
+function gridHTML(p, now, ins) {
+  const rows = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+  const cell = (a, b) => {
+    const x = factInfo(p, factId(a, b), now);
+    const label = `${a} times ${b} is ${a * b}. ${LEVEL_LABEL[x.level]}. ${FLUENCY_LABEL[x.fluency]}.${x.missedLately ? ' Missed in the last 7 days.' : ''}`;
+    return `<td><button class="tg-cell lv-${x.level} fl-${x.level === 'new' ? 'new' : x.fluency}" data-fact="${a}x${b}" tabindex="${a === 1 && b === 1 ? 0 : -1}" aria-label="${label}" style="--d:${(a + b) * 14}ms">${a * b}</button></td>`;
+  };
+  const key = (cls, label) => `<li><i class="tg-sw ${cls}" aria-hidden="true"></i>${label}</li>`;
+  return `
+    <section class="tg" data-view="${gridView}" aria-labelledby="tg-h-${esc(p.id)}">
+      <div class="tg-top">
+        <h3 id="tg-h-${esc(p.id)}">Times table</h3>
+        <div class="tg-views" role="group" aria-label="Color the grid by">
+          <button class="tg-view" data-tg-view="level" aria-pressed="${gridView === 'level'}">Levels</button>
+          <button class="tg-view" data-tg-view="fluency" aria-pressed="${gridView === 'fluency'}">By heart</button>
+        </div>
+      </div>
+      <p class="tg-heart"><b>${esc(heartText(ins.heart, 'last7'))}</b></p>
+      <div class="tg-layout">
+        <div class="tg-main">
+          <table class="tg-grid">
+            <caption class="sr">All 100 facts. Rows are the times tables, columns are what they are multiplied by. Tap a fact for details.</caption>
+            <thead><tr><th class="tg-corner" scope="col"><span aria-hidden="true">×</span><span class="sr">Table</span></th>${rows.map((b) => `<th class="tg-ch" scope="col" data-col="${b}">${b}</th>`).join('')}</tr></thead>
+            <tbody>${rows.map((a) => `<tr data-row="${a}"><th class="tg-rh" scope="row" style="${typeVars(a)}"><span>${a}</span></th>${rows.map((b) => cell(a, b)).join('')}</tr>`).join('')}</tbody>
+          </table>
+          <ul class="tg-legend tg-only-level" aria-label="Levels">${key('lv-new', 'Not tried')}${key('lv-learning', 'Learning')}${key('lv-bronze', 'Bronze')}${key('lv-silver', 'Silver')}${key('lv-gold', 'Gold')}${key('lv-star', 'Star')}</ul>
+          <ul class="tg-legend tg-only-fl" aria-label="By heart">${key('fl-heart', 'By heart')}${key('fl-figuring', 'Figuring it out')}${key('fl-learning', 'Still learning')}</ul>
+        </div>
+        <div class="tg-side">
+          <div class="tg-detail" data-tg-detail aria-live="polite">${detailHTML(p, null, now)}</div>
+        </div>
+      </div>
+    </section>`;
+}
+
+function ago(days) {
+  if (days == null) return 'Never';
+  if (days <= 0) return 'Today';
+  if (days === 1) return 'Yesterday';
+  if (days < 14) return `${days} days ago`;
+  if (days < 60) return `${Math.floor(days / 7)} weeks ago`;
+  return 'Over a month ago';
+}
+
+function detailHTML(p, f, now) {
+  if (!f) return `<p class="fd-empty"><strong>Tap any fact</strong> to see its level, speed and last miss.</p>`;
+  const x = factInfo(p, f, now);
+  const sec = (ms) => (ms / 1000).toFixed(1);
+  const medal = ['bronze', 'silver', 'gold', 'star'].includes(x.level) ? itemImg('medal-' + x.level) : '';
+  const nx = x.next;
+  const left = nx ? nx.need - nx.have : 0, d = left === 1 ? 'day' : 'days';
+  const nextText = !nx ? 'Top level. Amazing!'
+    : nx.what === 'answer' ? 'Answer it once to start.'
+    : nx.what === 'days' ? `Right on ${left} more ${d} for ${LEVEL_LABEL[nx.lv]}.`
+    : nx.what === 'fast' ? `Fast on ${left} more ${d} for ${LEVEL_LABEL[nx.lv]}.`
+    : `${left} more ${d} with no misses for Star.`;
+  const pct = nx ? Math.round((Math.min(nx.have, nx.need) / nx.need) * 100) : 100;
+  const speedNote = x.avgMs == null ? '' : x.avgMs <= x.fastMs ? 'fast' : 'not fast yet';
+  return `
+    <div class="fd" data-f="${x.f}">
+      <div class="fd-top">
+        <p class="fd-eq"><span>${x.a} × ${x.b}</span> = <b>${x.answer}</b></p>
+        <span class="fd-tags"><span class="fd-lv lv-${x.level}">${medal}${LEVEL_LABEL[x.level]}</span>${x.level !== 'new' ? `<span class="fd-fl fl-${x.fluency}"><i aria-hidden="true"></i>${FLUENCY_LABEL[x.fluency]}</span>` : ''}${x.missedLately ? '<span class="fd-miss">Missed lately</span>' : ''}</span>
+      </div>
+      <div class="fd-next">
+        <span class="fd-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}" aria-label="Progress to the next level"><i style="width:${pct}%"></i></span>
+        <span>${nextText}</span>
+      </div>
+      <dl class="fd-stats">
+        <div><dt>Right</dt><dd>${x.tries ? `${x.right}<small> of ${x.tries}</small>` : '-'}</dd></div>
+        <div><dt>Speed</dt><dd>${x.avgMs == null ? '-' : `${sec(x.avgMs)}<small> s, ${speedNote}</small>`}</dd></div>
+        <div><dt>Days right</dt><dd>${x.days}<small>, fast on ${x.fast}</small></dd></div>
+        <div class="${x.missedLately ? 'miss' : ''}"><dt>Last miss</dt><dd>${ago(x.sinceMiss)}</dd></div>
+      </dl>
+      ${x.tries ? `<p class="fd-trick"><b>Teacher K's trick:</b> ${esc(trickFor(x.f))}</p>` : ''}
+    </div>`;
+}
+
+function progressHTML(p, now = Date.now()) {
+  const ins = insights(p, { now });
+  return `<h2 class="h-ic">${itemImg('medal-gold')}${esc(p.name)}'s progress</h2>
+    ${insightsHTML(p, ins)}
+    ${gridHTML(p, now, ins)}
+    ${talkHTML(p, ins)}`;
+}
+
+function bindProgress(panel, p, go) {
+  if (!panel) return;
+  const detail = panel.querySelector('[data-tg-detail]');
+  const grid = panel.querySelector('.tg-grid');
+  const cells = [...panel.querySelectorAll('.tg-grid [data-fact]')];
+  const select = (el, focus) => {
+    cells.forEach((c) => { const sel = c === el; c.classList.toggle('sel', sel); c.setAttribute('aria-pressed', sel); c.tabIndex = sel ? 0 : -1; });
+    const [a, b] = el.dataset.fact.split('x');
+    grid.querySelectorAll('.hl').forEach((h) => h.classList.remove('hl'));
+    grid.querySelector(`[data-col="${b}"]`)?.classList.add('hl');
+    grid.querySelector(`[data-row="${a}"] .tg-rh`)?.classList.add('hl');
+    detail.innerHTML = detailHTML(p, el.dataset.fact, Date.now());
+    if (focus) el.focus();
+  };
+  cells.forEach((c) => c.setAttribute('aria-pressed', 'false'));
+  on(panel, 'click', '.tg-grid [data-fact]', (e, el) => select(el));
+  on(panel, 'click', '[data-tg-view]', (e, el) => {
+    gridView = el.dataset.tgView;
+    panel.querySelector('.tg').dataset.view = gridView;
+    panel.querySelectorAll('[data-tg-view]').forEach((b) => b.setAttribute('aria-pressed', b === el));
+  });
+  // Start on the fact the practice tip is about, so the details are useful right away.
+  const first = panel.querySelector('[data-nx-fact]')?.dataset.nxFact;
+  const start = first && panel.querySelector(`.tg-grid [data-fact="${first}"]`);
+  if (start) select(start);
+  grid?.addEventListener('keydown', (e) => {
+    const el = e.target.closest('[data-fact]');
+    if (!el) return;
+    const [a, b] = el.dataset.fact.split('x').map(Number);
+    const mv = { ArrowLeft: [0, -1], ArrowRight: [0, 1], ArrowUp: [-1, 0], ArrowDown: [1, 0], Home: [0, -9], End: [0, 9] }[e.key];
+    if (!mv) return;
+    e.preventDefault();
+    const na = Math.min(10, Math.max(1, a + mv[0])), nb = Math.min(10, Math.max(1, b + mv[1]));
+    const next = grid.querySelector(`[data-fact="${na}x${nb}"]`);
+    if (next) { cells.forEach((c) => { c.tabIndex = c === next ? 0 : -1; }); next.focus(); }
+  });
+  on(panel, 'click', '[data-nx-play]', (e, el) => {
+    const t = +el.dataset.nxPlay;
+    go('play', { table: t >= 1 && t <= 10 ? t : null });
+  });
+}
+
+const clHTML = (c) => `<div class="cl"><p class="cl-head"><strong>v${c.version}</strong> ${esc(c.title)}<span>${c.date}</span></p><ul>${c.items.map((i) => `<li>${esc(i)}</li>`).join('')}</ul></div>`;
+const GU_TABS = [['progress', 'Progress'], ['settings', 'Settings'], ['family', 'Family'], ['help', 'Help']];
+let guTab = 'progress'; // the open tab, kept while the app is open
+
 function renderMain(root, go) {
   // Fresh element on every redraw so button handlers never stack up.
   const fresh = root.cloneNode(false);
@@ -124,13 +317,6 @@ function renderMain(root, go) {
   root = fresh;
   const p = active();
   const s = p.settings;
-  const acc = p.stats.answers ? Math.round((p.stats.correct / p.stats.answers) * 100) : 0;
-  const cell = (a, b) => {
-    const rec = p.facts[factId(a, b)];
-    const lvl = levelOf(rec);
-    const avg = rec && rec.c ? (rec.ms / rec.c / 1000).toFixed(1) + 's' : '';
-    return `<button class="hm-cell hm-${lvl}" data-fact="${a}x${b}" aria-label="${a} times ${b}: ${LEVEL_LABEL[lvl]}"><span>${a * b}</span></button>`;
-  };
   root.innerHTML = `
     <section class="screen grownups">
       <header class="topbar">
@@ -141,44 +327,36 @@ function renderMain(root, go) {
       </header>
       <div class="gu-offline">${offlineChipHTML(p)}</div>
 
-      <div class="gu-grid">
-        <div class="panel">
-          <h2>${esc(p.name)}'s facts</h2>
-          <div class="gu-stats">
-            <div><strong>${p.stats.answers}</strong><span>answers</span></div>
-            <div><strong>${acc}%</strong><span>right</span></div>
-            <div><strong>${mins(p.stats.msPlayed)}</strong><span>minutes</span></div>
-            <div><strong>${countAtLeast(p, 'silver')}</strong><span>at Silver+</span></div>
-          </div>
-          <div class="heatmap" role="grid" aria-label="All 100 facts by level">
-            <span class="hm-corner" aria-hidden="true">×</span>
-            ${Array.from({ length: 10 }, (_, i) => `<span class="hm-h">${i + 1}</span>`).join('')}
-            ${Array.from({ length: 10 }, (_, i) => `<span class="hm-h">${i + 1}</span>${Array.from({ length: 10 }, (_, j) => cell(i + 1, j + 1)).join('')}`).join('')}
-          </div>
-          <div class="hm-legend">${['new', 'learning', 'bronze', 'silver', 'gold', 'star'].map((l) => `<span><i class="hm-${l}"></i>${LEVEL_LABEL[l]}</span>`).join('')}</div>
-          <p class="note">Levels count separate days. Bronze: right on ${RULES.bronzeDays} days. Silver, Gold and Star: right within ${s.fastMs / 1000} seconds on ${RULES.silverDays}, ${RULES.goldDays} and ${RULES.starDays} days. Star also needs no misses in the last ${RULES.starCleanDays} days.</p>
-        </div>
-
-        <div class="panel">
-          <h2>Settings</h2>
-          <p class="field-label">Tables to practice</p>
-          <div class="table-toggles">${[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((t) => `<button class="tt${s.tables.includes(t) ? ' on' : ''}" data-t="${t}" aria-pressed="${s.tables.includes(t)}">${t}s</button>`).join('')}</div>
-          <label class="row"><span>Cards per session</span><select data-set="sessionLength">${[10, 15, 20, 30].map((n) => `<option ${s.sessionLength === n ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
-          <label class="row"><span>Counts as fast</span><select data-set="fastMs">${[3000, 4000, 5000, 6000, 8000].map((n) => `<option value="${n}" ${s.fastMs === n ? 'selected' : ''}>${n / 1000} seconds</option>`).join('')}</select></label>
-          <label class="row"><span>Sound<small class="row-note">Also in the kids' Menu and on the speaker button in the game. Plays even when the phone is on silent.</small></span><input type="checkbox" class="switch" data-set="sound" ${s.sound ? 'checked' : ''}></label>
-          <div class="row"><span class="note" data-soundmsg>No sound on an iPhone? Turn the volume up with the side buttons, then tap Test sound.</span><button class="btn-chunky btn-sm" data-soundtest>Test sound</button></div>
-          <label class="row"><span>Music<small class="row-note">Plays on Home and in battles, never during practice cards. Sound effects stay on. Turning Sound off silences both.</small></span><input type="checkbox" class="switch" data-set="music" ${s.music !== false ? 'checked' : ''}></label>
-          <label class="row"><span>Voice answers <span class="beta-tag">Beta</span><small class="row-note">Kids turn on Mic mode with the mic button and say the answer. The phone asks to use the microphone the first time each day. On iPhone, the mic has its own volume: if sounds seem quiet after using it, press volume up while a sound plays.</small></span><input type="checkbox" class="switch" data-set="voice" ${s.voice ? 'checked' : ''}></label>
-          ${calmModeRow(s) /* [systems] Calm mode: hides the Lightning Round timer */}
-          <p class="note">${voiceSupported() ? 'Voice works on this device. Kids tap the mic button to turn Mic mode on, then say each answer.' : 'Voice isn’t available here. On iPad and iPhone it may work in Safari but not from the home screen icon; the number pad always works.'}</p>
-          <p class="note"><b>Mic privacy.</b> Mic mode only listens while a card is waiting for an answer, and stops as soon as it hears a number. It turns off by itself after 2 minutes without a spoken answer, when the app is closed or hidden, and when your child leaves practice or a battle. Speech goes to the device's own speech service (Apple on iPhone and iPad, Google in Chrome) to turn it into a number. Kaimon never records or saves audio.</p>
-        </div>
+      <nav class="gu-tabs" role="tablist" aria-label="Grown-ups sections">
+        ${GU_TABS.map(([id, label]) => `<button class="gu-tab" role="tab" id="gu-tab-${id}" aria-controls="gu-pane-${id}" aria-selected="${guTab === id}" tabindex="${guTab === id ? 0 : -1}" data-gu-tab="${id}">${label}</button>`).join('')}
+      </nav>
+      <div class="gu-pane gu-grid gu-pane-progress" role="tabpanel" id="gu-pane-progress" aria-labelledby="gu-tab-progress" data-gu-pane="progress"${guTab === 'progress' ? '' : ' hidden'}>
+        <div class="panel gu-progress" data-progress>${progressHTML(p)}</div>
 
         <div class="panel">
           <h2 class="h-ic">${itemImg('good-work-stamp')}Good Work Stamp</h2>
           <p class="note">Did ${esc(p.name)} bring home a great math test or worksheet? Give a Good Work Stamp: a Mega Ball, 3 Power Snacks and a gold star.</p>
           <button class="btn-chunky btn-primary" data-stamp>Give ${esc(p.name)} a Good Work Stamp</button>
           ${p.trophies.length ? `<div class="trophies">${p.trophies.slice().reverse().map((t) => `<figure class="trophy">${t.img ? `<img src="${t.img}" alt="">` : '<span class="trophy-star">★</span>'}<figcaption>${esc(t.note || 'Good work')}<small>${new Date(t.t).toLocaleDateString()}</small></figcaption></figure>`).join('')}</div>` : ''}
+        </div>
+      </div>
+      <div class="gu-pane gu-grid gu-pane-settings" role="tabpanel" id="gu-pane-settings" aria-labelledby="gu-tab-settings" data-gu-pane="settings"${guTab === 'settings' ? '' : ' hidden'}>
+        <div class="panel">
+          <h2>Practice</h2>
+          <p class="field-label">Tables to practice</p>
+          <div class="table-toggles">${[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((t) => `<button class="tt${s.tables.includes(t) ? ' on' : ''}" data-t="${t}" aria-pressed="${s.tables.includes(t)}">${t}s</button>`).join('')}</div>
+          <label class="row"><span>Cards per session</span><select data-set="sessionLength">${[10, 15, 20, 30].map((n) => `<option ${s.sessionLength === n ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
+          <label class="row"><span>Counts as fast</span><select data-set="fastMs">${[3000, 4000, 5000, 6000, 8000].map((n) => `<option value="${n}" ${s.fastMs === n ? 'selected' : ''}>${n / 1000} seconds</option>`).join('')}</select></label>
+        </div>
+
+        <div class="panel">
+          <h2>Sound and voice</h2>
+          <label class="row"><span>Sound<small class="row-note">Also in the kids' Menu and on the speaker button in the game. Plays even when the phone is on silent.</small></span><input type="checkbox" class="switch" data-set="sound" ${s.sound ? 'checked' : ''}></label>
+          <div class="row"><span class="note" data-soundmsg>No sound on an iPhone? Turn the volume up with the side buttons, then tap Test sound.</span><button class="btn-chunky btn-sm" data-soundtest>Test sound</button></div>
+          <label class="row"><span>Music<small class="row-note">Plays on Home and in battles, never during practice cards. Sound effects stay on. Turning Sound off silences both.</small></span><input type="checkbox" class="switch" data-set="music" ${s.music !== false ? 'checked' : ''}></label>
+          <label class="row"><span>Voice answers <span class="beta-tag">Beta</span><small class="row-note">Kids turn on Mic mode with the mic button and say the answer. The phone asks to use the microphone the first time each day. On iPhone, the mic has its own volume: if sounds seem quiet after using it, press volume up while a sound plays.</small></span><input type="checkbox" class="switch" data-set="voice" ${s.voice ? 'checked' : ''}></label>
+          ${calmModeRow(s) /* [systems] Calm mode: hides the Lightning Round timer */}
+          <p class="note">${voiceSupported() ? 'Voice works on this device. Kids tap the mic button to turn Mic mode on, then say each answer.' : 'Voice isn’t available here. On iPad and iPhone it may work in Safari but not from the home screen icon; the number pad always works.'}</p>
         </div>
 
         <div class="panel playtime">
@@ -198,12 +376,7 @@ function renderMain(root, go) {
             const limY = lim ? H - (lim * 60000 / max) * (H - 4) : null;
             return `
             <h2>Play time</h2>
-            <div class="gu-stats">
-              <div><strong>${m(todayD.open)}</strong><span>min today</span></div>
-              <div><strong>${m(week.reduce((t, d) => t + d.open, 0))}</strong><span>min this week</span></div>
-              <div><strong>${avg}</strong><span>min a day when played</span></div>
-              <div><strong>${todayD.a}</strong><span>answers today</span></div>
-            </div>
+            <p class="pt-line"><b>${m(todayD.open)}</b> min today · <b>${m(week.reduce((t, d) => t + d.open, 0))}</b> min in the last 7 days · about <b>${avg}</b> min a day when played</p>
             <figure class="pt-chart">
               <svg viewBox="0 0 ${W} ${H + 34}" role="img" aria-label="Minutes played each day for the last 14 days">
                 ${days.map((d, i) => {
@@ -229,15 +402,12 @@ function renderMain(root, go) {
           })()}
         </div>
 
-        <div class="panel wr-panel" data-wrpanel>${reportPanelHTML(p)}</div>
-
-        <div class="panel" data-syncpanel></div>
-
         <div class="panel off-panel" data-offpanel>${offlinePanelHTML()}</div>
-
+      </div>
+      <div class="gu-pane gu-grid gu-pane-family" role="tabpanel" id="gu-pane-family" aria-labelledby="gu-tab-family" data-gu-pane="family"${guTab === 'family' ? '' : ' hidden'}>
         <div class="panel trainers-panel">
           <h2>Trainers on this device</h2>
-          <p class="note">Tap a trainer to see their progress here.</p>
+          <p class="note">Tap a trainer to see their progress.</p>
           <div class="tm-list">${allProfiles().map((x) => `
             <div class="tm${x.id === p.id ? ' on' : ''}">
               <button class="tm-main" data-tm-switch="${x.id}" aria-label="Show ${esc(x.name)}">
@@ -259,23 +429,69 @@ function renderMain(root, go) {
           </div>
         </div>
 
+        <div class="panel" data-syncpanel></div>
+
+        <div class="panel wr-panel" data-wrpanel>${reportPanelHTML(p)}</div>
+      </div>
+      <div class="gu-pane gu-grid gu-pane-help" role="tabpanel" id="gu-pane-help" aria-labelledby="gu-tab-help" data-gu-pane="help"${guTab === 'help' ? '' : ' hidden'}>
+        <div class="panel">
+          <h2 class="h-ic">${itemImg('hint-lamp')}How to play</h2>
+          <p class="note">Kids answer times table cards to catch Kaimon, earn badges from each Gym Leader and battle with answers. Teacher K explains it all under <b>Menu, How to play</b> on the Home screen.</p>
+          <!-- a "How to play" button can open the same sheet here once home.js exports it -->
+          <div class="gu-slot" data-slot="howto"></div>
+        </div>
+
         <div class="panel">
           <h2>Install on this device</h2>
           ${canPromptInstall() && !isInstalled() ? '<button class="btn-chunky btn-primary" data-install>Install Kaimon</button>' : ''}
           ${installHelpHTML()}
-          <p class="note">For another device, open <strong>brwilliams88.github.io/kaimon-multiply</strong> there.</p>
+          <div class="row"><span class="note">For another device, open <strong>brwilliams88.github.io/kaimon-multiply</strong> there, or scan a code.</span><button class="btn-chunky btn-sm" data-elsewhere>Play on another device</button></div>
           ${isInstalled() ? '<div class="row"><span class="note">Kaimon got a new app icon in v0.5.0.</span><button class="btn-chunky btn-sm" data-newicon>New icon help</button></div>' : ''}
+        </div>
+
+        <div class="panel gu-feedback">
+          <h2>Feedback</h2>
+          <p class="note">Notes and ratings go only to the maker of Kaimon Multiply. What doesn’t work helps the most.</p>
+          <div class="row"><span class="note">Something you love, an idea or a bug. Add your email if you want a reply.</span><button class="btn-chunky btn-sm" data-feedback>Send feedback</button></div>
+          <div class="row"><span class="note">1 to 5 stars, and a comment if you like.</span><button class="btn-chunky btn-sm" data-rate>Rate the game</button></div>
+          ${queuedFeedback().length ? `<p class="note" data-fb-wait>${queuedFeedback().length === 1 ? 'One note is' : queuedFeedback().length + ' notes are'} waiting for the internet. It sends by itself.</p>` : ''}
+        </div>
+
+        <div class="panel">
+          <h2>Privacy</h2>
+          <p class="step-title">Mic</p>
+          <p class="note">Mic mode only listens while a card is waiting for an answer, and stops as soon as it hears a number. It turns off by itself after 2 minutes without a spoken answer, when the app is closed or hidden, and when your child leaves practice or a battle. Speech goes to the device's own speech service (Apple on iPhone and iPad, Google in Chrome) to turn it into a number. Kaimon never records or saves audio.</p>
+          <p class="step-title">Progress</p>
+          <p class="note">Guest trainers stay on this device. Family trainers sync only within your family. Weekly reports are built on the device and the summary is not kept on a server.</p>
+          <label class="row"><span>Usage counts<small class="row-note">Helps the maker see how many kids play and what to fix. No emails, real names or photos. Off stops it on this device and forgets the random number.</small></span><input type="checkbox" class="switch" data-analytics ${analyticsOn() ? 'checked' : ''} aria-label="Usage counts"></label>
+          <details class="gu-collect"><summary>What we collect</summary><ul>${COLLECTED.map((c) => `<li>${esc(c)}</li>`).join('')}</ul><p class="note">Usage counts are totals, like rounds and minutes played. Fact levels, the Kaidex and backup codes are never sent this way. <a href="privacy.html" target="_blank" rel="noopener">Full privacy page</a></p></details>
         </div>
 
         <div class="panel whatsnew">
           <h2>What's new</h2>
           <div class="row"><span class="note" data-upd-msg>This device has v${VERSION}.</span><button class="btn-chunky btn-sm" data-update>Check for updates</button></div>
-          ${CHANGELOG.map((c) => `<div class="cl"><p class="cl-head"><strong>v${c.version}</strong> ${esc(c.title)}<span>${c.date}</span></p><ul>${c.items.map((i) => `<li>${esc(i)}</li>`).join('')}</ul></div>`).join('')}
+          ${CHANGELOG.slice(0, 3).map(clHTML).join('')}
+          ${CHANGELOG.length > 3 ? `<details class="cl-more"><summary>Older updates</summary>${CHANGELOG.slice(3).map(clHTML).join('')}</details>` : ''}
         </div>
       </div>
     </section>`;
 
   on(root, 'click', '[data-back]', () => go('home'));
+  const showTab = (id, focus) => {
+    guTab = id;
+    root.querySelectorAll('[data-gu-tab]').forEach((t) => { const sel = t.dataset.guTab === id; t.setAttribute('aria-selected', sel); t.tabIndex = sel ? 0 : -1; if (sel && focus) t.focus(); });
+    root.querySelectorAll('[data-gu-pane]').forEach((pane) => { pane.hidden = pane.dataset.guPane !== id; });
+    const bar = root.querySelector('.gu-tabs');
+    if (bar && bar.getBoundingClientRect().top < 0) window.scrollTo(0, window.scrollY + bar.getBoundingClientRect().top - 8);
+  };
+  on(root, 'click', '[data-gu-tab]', (e, el) => showTab(el.dataset.guTab));
+  root.querySelector('.gu-tabs')?.addEventListener('keydown', (e) => {
+    const i = GU_TABS.findIndex(([id]) => id === guTab);
+    const j = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: GU_TABS.length - 1 }[e.key];
+    if (j === undefined) return;
+    e.preventDefault();
+    showTab(GU_TABS[(j + GU_TABS.length) % GU_TABS.length][0], true);
+  });
   on(root, 'click', '[data-newicon]', () => showIconNotice());
   on(root, 'click', '[data-soundtest]', () => {
     const msg = root.querySelector('[data-soundmsg]');
@@ -284,6 +500,14 @@ function renderMain(root, go) {
     setTimeout(() => { const st = soundStatus(); msg.textContent = st.lastErr ? `The phone blocked the sound (${st.lastErr}). Tap Test sound again.` : 'You should have heard a little tune. If not, check the volume buttons and that the phone is not on Do Not Disturb with media muted.'; }, 500);
   });
   on(root, 'click', '[data-install]', async () => { if (await promptInstall()) renderMain(root, go); });
+  on(root, 'click', '[data-elsewhere]', () => openPlayElsewhere());
+  on(root, 'click', '[data-feedback]', () => openFeedback({ place: 'grownups' }));
+  on(root, 'click', '[data-rate]', () => openRate({ place: 'grownups' }));
+  root.querySelector('[data-analytics]')?.addEventListener('change', (e) => {
+    setAnalytics(e.target.checked);
+    if (e.target.checked) startAnalytics();
+    toast(e.target.checked ? 'Usage counts on. Thank you!' : 'Usage counts off on this device.');
+  });
   on(root, 'click', '[data-update]', async (e, btn) => {
     const msg = root.querySelector('[data-upd-msg]');
     btn.disabled = true; msg.textContent = 'Checking...';
@@ -308,7 +532,7 @@ function renderMain(root, go) {
         <p class="note">As <strong>${esc(st.email)}</strong>. ${st.busy ? 'Syncing now...' : st.lastSync ? 'Last synced ' + new Date(st.lastSync).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) + '.' : 'Not synced yet.'}${st.error && isOnline() ? ' Last problem: ' + esc(st.error) : ''}</p>
         ${pendingNote() ? `<p class="sync-wait" data-syncwait>${esc(pendingNote())}</p>` : ''}
         <div class="btn-row"><button class="btn-chunky btn-sm" data-syncnow ${isOnline() ? '' : 'disabled'}>Sync now</button><button class="btn-chunky btn-sm" data-signout>Sign out on this device</button></div>
-        <label class="trow news-row"><span class="sync-who"><span class="trow-name">News emails</span><small>A few times a year about Kaimon games. On unless you turn it off.</small></span><input type="checkbox" class="switch" data-newsrow ${newsOn ? 'checked' : ''} aria-label="News emails"></label>
+        <label class="trow news-row"><span class="sync-who"><span class="trow-name">News emails</span><small>News about Kaimon games: weekly for the first few weeks after launch, then about once a month. On unless you turn it off.</small></span><input type="checkbox" class="switch" data-newsrow ${newsOn ? 'checked' : ''} aria-label="News emails"></label>
       </div></div>`
     : pendingEmail ? `
       <div class="step">${check(false)}<div class="step-body">
@@ -322,7 +546,7 @@ function renderMain(root, go) {
         <p class="step-title">1. Sign in this device</p>
         <p class="note">Use a grown-up's email, and the same one on every device you want to sync: phones, tablets, Chromebooks. We'll email a code to type here. Your email is only used to sign in.</p>
         <input class="field" type="email" autocomplete="email" placeholder="Grown-up's email" data-email>
-        <label class="news-opt"><input type="checkbox" data-news checked> <span>Email me news about Kaimon games, a few times a year. Uncheck to skip. Every news email has an unsubscribe button.</span></label>
+        <label class="news-opt"><input type="checkbox" data-news checked> <span>Email me news about Kaimon games: weekly for the first few weeks after launch, then about once a month. Uncheck to skip. Every news email has an unsubscribe button.</span></label>
         <button class="btn-chunky btn-primary" data-send>Email me a code</button>
       </div></div>`;
     const people = allProfiles();
@@ -408,14 +632,7 @@ function renderMain(root, go) {
   }));
   on(root, 'change', '[data-limit]', (e, el) => { setSetting(p, 'dailyLimit', +el.value); syncNow(); toast(s.dailyLimit ? `Daily limit: ${s.dailyLimit} minutes` : 'Daily limit off'); renderMain(root, go); });
   on(root, 'click', '[data-bonus]', () => { bonusTime(p, 15); save(); toast('Added 15 minutes for today'); renderMain(root, go); });
-  on(root, 'click', '[data-fact]', (e, el) => {
-    const rec = p.facts[el.dataset.fact];
-    const [a, b] = el.dataset.fact.split('x');
-    const lvl = levelOf(rec);
-    sheet(`<h2>${a} × ${b} = ${a * b}</h2><p><strong>${LEVEL_LABEL[lvl]}</strong></p>
-      ${rec ? `<p>Answered ${rec.a} times, right ${rec.c}. Average ${rec.c ? (rec.ms / rec.c / 1000).toFixed(1) : '-'} seconds.</p><p>Right on ${rec.days.length} days, fast on ${rec.fastDays.length} days.</p>${rec.lastMiss ? `<p>Last missed ${new Date(rec.lastMiss).toLocaleDateString()}.</p>` : ''}` : '<p>Not tried yet.</p>'}
-      <div class="sheet-actions"><button class="btn-chunky" data-close>Close</button></div>`);
-  });
+  bindProgress(root.querySelector('[data-progress]'), p, go);
   on(root, 'click', '[data-backup]', async () => {
     const code = exportBackup();
     try { await navigator.clipboard.writeText(code); toast('Backup code copied. Paste it somewhere safe.'); }
@@ -429,7 +646,7 @@ function renderMain(root, go) {
     });
   });
   const after = () => (allProfiles().length ? renderMain(root, go) : go('welcome'));
-  on(root, 'click', '[data-tm-switch]', (e, el) => { switchProfile(el.dataset.tmSwitch); renderMain(root, go); window.scrollTo(0, 0); });
+  on(root, 'click', '[data-tm-switch]', (e, el) => { switchProfile(el.dataset.tmSwitch); guTab = 'progress'; renderMain(root, go); window.scrollTo(0, 0); });
   on(root, 'click', '[data-tm-rename]', (e, el) => {
     const x = allProfiles().find((y) => y.id === el.dataset.tmRename);
     const sh = sheet(`<h2>Rename ${esc(x.name)}</h2><input class="field" maxlength="16" value="${esc(x.name)}" data-newname><p class="note">${x.family ? 'The new name shows on every family device.' : 'Only on this device.'}</p><div class="sheet-actions"><button class="btn-chunky btn-primary" data-do>Save</button><button class="btn-chunky" data-close>Cancel</button></div>`);

@@ -5,7 +5,8 @@ import { sfx } from '../core/sound.js';
 
 // Always share the public address, even from a test copy or the installed app.
 const PUBLIC_URL = 'https://brwilliams88.github.io/kaimon-multiply/';
-export const shareUrl = () => document.querySelector('link[rel="canonical"]')?.href || PUBLIC_URL;
+// ref tags the link with where it was shared (share, link, email, text, whatsapp); see js/core/analytics.js.
+export const shareUrl = (ref) => { const u = document.querySelector('link[rel="canonical"]')?.href || PUBLIC_URL; return ref ? u + (u.includes('?') ? '&' : '?') + 'ref=' + encodeURIComponent(ref) : u; };
 
 export const SHARE_TITLE = 'Kaimon Multiply';
 export const SHARE_TEXT = 'Try Kaimon Multiply, a free times tables game.'; // kept for reference; shares send only the link
@@ -52,7 +53,7 @@ async function copyText(text) {
 // can add their own). On phones, tablets and most computers the tap opens the
 // device's own share menu straight away. Elsewhere a small sheet offers the same.
 export async function shareGame(opts = {}) {
-  const url = shareUrl();
+  const url = shareUrl('share');
   if (hasNativeShare()) {
     try { await navigator.share({ title: SHARE_TITLE, url }); toast('Thanks for sharing!'); return null; }
     catch (e) { if (e?.name === 'AbortError') return null; }
@@ -61,13 +62,13 @@ export async function shareGame(opts = {}) {
 }
 
 export function shareSheet(opts = {}) {
-  const url = shareUrl();
-  const host = url.replace(/^https?:\/\//, '').replace(/\/$/, '');
-  const mail = `mailto:?subject=${encodeURIComponent(MAIL_SUBJECT)}&body=${encodeURIComponent(url)}`;
+  const url = shareUrl('link');
+  const host = shareUrl().replace(/^https?:\/\//, '').replace(/\/$/, '');
+  const mail = `mailto:?subject=${encodeURIComponent(MAIL_SUBJECT)}&body=${encodeURIComponent(shareUrl('email'))}`;
   const quick = [
     `<a class="share-quick" href="${esc(mail)}" data-quick="email">${ICON.mail}<span>Email</span></a>`,
-    canText() ? `<a class="share-quick" href="sms:?&amp;body=${esc(encodeURIComponent(url))}" data-quick="text">${ICON.text}<span>Text</span></a>` : '',
-    `<a class="share-quick" href="https://wa.me/?text=${esc(encodeURIComponent(url))}" target="_blank" rel="noopener noreferrer" data-quick="whatsapp">${ICON.chat}<span>WhatsApp</span></a>`,
+    canText() ? `<a class="share-quick" href="sms:?&amp;body=${esc(encodeURIComponent(shareUrl('text')))}" data-quick="text">${ICON.text}<span>Text</span></a>` : '',
+    `<a class="share-quick" href="https://wa.me/?text=${esc(encodeURIComponent(shareUrl('whatsapp')))}" target="_blank" rel="noopener noreferrer" data-quick="whatsapp">${ICON.chat}<span>WhatsApp</span></a>`,
   ].join('');
   const sh = sheet(`<div class="share">
     <h2>Share the game</h2>
