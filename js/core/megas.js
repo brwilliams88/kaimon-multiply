@@ -14,7 +14,7 @@ import { SPECIES } from '../data/creatures.js';
 import { MEGA_ART } from './art.js';
 import { partnerOf } from './game.js';
 
-export const CRYSTAL = 'megacrystal'; // key in p.items, the same one items.js grantMegaCrystal() fills
+export const CRYSTAL = 'megaCrystal'; // key in p.items, the same one items.js grantMegaCrystal() fills
 export const MEGA_HP = 50;   // a normal Kaimon has 40
 export const MEGA_POWER = 4; // extra damage on every right answer
 

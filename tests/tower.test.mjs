@@ -207,8 +207,8 @@ test('tower snapshot merge adds wins and keeps the earliest first win', () => {
 // ---------- Megas ----------
 
 test('the crystal key is the one items.js grantMegaCrystal() fills', () => {
-  assert.equal(M.CRYSTAL, 'megacrystal');
-  assert.equal(M.crystals({ items: { megacrystal: 2 } }), 2);
+  assert.equal(M.CRYSTAL, 'megaCrystal');
+  assert.equal(M.crystals({ items: { megaCrystal: 2 } }), 2);
 });
 
 test('mega list: the 8 fully evolved Kaimon with Mega art', () => {
@@ -228,14 +228,14 @@ test('mega rules: needs the Kaimon and a crystal', () => {
   apply(p, catchEv('elderoak'));
   assert.equal(M.megaState(p, s), 'need');
   assert.equal(M.canMegaEvolve(p, s), false);
-  p.items.megacrystal = 1;
+  p.items.megaCrystal = 1;
   assert.equal(M.megaState(p, s), 'ready');
   assert.deepEqual(M.megaReady(p).map((x) => x.id), ['elderoak']);
 });
 
 test('mega rules: the Buddy counts as owned once fully evolved', () => {
   const p = fresh();
-  p.items.megacrystal = 1;
+  p.items.megaCrystal = 1;
   assert.equal(M.owns(p, byId('kaizenith')), false);
   p.xp = 1_000_000;
   assert.equal(M.owns(p, byId('kaizenith')), true);
@@ -245,7 +245,7 @@ test('mega rules: the Buddy counts as owned once fully evolved', () => {
 test('mega apply: unlock uses one crystal, switching is free, newest switch wins', () => {
   const p = fresh();
   apply(p, catchEv('triblaze'));
-  p.items.megacrystal = 2;
+  p.items.megaCrystal = 2;
   apply(p, ev('mega', { n: 'triblaze', u: 1 }, 100));
   assert.equal(M.crystals(p), 1);
   assert.equal(M.megaState(p, byId('triblaze')), 'on');
@@ -263,7 +263,7 @@ test('mega apply: unlock uses one crystal, switching is free, newest switch wins
   apply(p, ev('mega', { n: 'mythic', u: 1 }));
   assert.equal(p.megas.kaimo, undefined);
   assert.equal(p.megas.mythic, undefined);
-  p.items.megacrystal = 0;
+  p.items.megaCrystal = 0;
   apply(p, ev('mega', { n: 'octomech', u: 1 }, 500));
   assert.equal(M.crystals(p), 0, 'never below zero');
 });
@@ -271,7 +271,7 @@ test('mega apply: unlock uses one crystal, switching is free, newest switch wins
 test('mega merge: two devices unlocking the same Kaimon in either order agree', () => {
   const a = ev('mega', { n: 'octomech', u: 1 }, 10), b = ev('mega', { n: 'octomech', u: 1 }, 20);
   const p1 = fresh(), p2 = fresh();
-  for (const p of [p1, p2]) p.items.megacrystal = 2;
+  for (const p of [p1, p2]) p.items.megaCrystal = 2;
   apply(p1, a); apply(p1, b); apply(p2, b); apply(p2, a);
   assert.equal(M.crystals(p1), 1); assert.equal(M.crystals(p2), 1);
   assert.equal(p1.megas.octomech.at, 10); assert.equal(p2.megas.octomech.at, 10);
@@ -294,7 +294,7 @@ test('mega form: same id, Mega name, Mega art, more HP and power in battle', () 
   const s = byId('blizzardfang');
   assert.equal(M.megaForm(p, s), s);
   apply(p, catchEv('blizzardfang'));
-  p.items.megacrystal = 1;
+  p.items.megaCrystal = 1;
   apply(p, ev('mega', { n: 'blizzardfang', u: 1 }));
   const m = M.megaForm(p, s);
   assert.equal(m.id, s.id);
