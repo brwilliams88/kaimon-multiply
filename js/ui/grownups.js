@@ -488,7 +488,7 @@ function drawMain(root, go) {
         <div class="panel gu-feedback">
           <h2>Feedback</h2>
           <p class="note">Notes and ratings go only to the maker of Kaimon Multiply. What doesn’t work helps the most.</p>
-          <div class="row"><span class="note">Something you love, an idea or a bug. Add your email if you want a reply.</span><button class="btn-chunky btn-sm" data-feedback>Send feedback</button></div>
+          <div class="row"><span class="note">Something you love, something you don\u2019t, an idea or a bug. Add your email if you want a reply.</span><button class="btn-chunky btn-sm" data-feedback>Send feedback</button></div>
           <div class="row"><span class="note">1 to 5 stars, and a comment if you like.</span><button class="btn-chunky btn-sm" data-rate>Rate the game</button></div>
           ${queuedFeedback().length ? `<p class="note" data-fb-wait>${queuedFeedback().length === 1 ? 'One note is' : queuedFeedback().length + ' notes are'} waiting to send. ${queuedFeedback().length === 1 ? 'It goes by itself' : 'They go by themselves'} when the device is back online.</p>` : ''}
         </div>

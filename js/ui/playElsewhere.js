@@ -10,14 +10,32 @@ import { shareUrl } from './share.js';
 
 const SUBJECT = 'Kaimon Multiply';
 
-// Menu row icon: a phone and a tablet on a glossy blue orb, like the other menu icons.
+// Menu row icon: a tablet and a phone with arrows going between them, drawn in the
+// same glossy sticker style and size as the other menu icons.
 export const deviceIcon = () => `<svg class="dev-ic" viewBox="0 0 48 48" width="100%" height="100%" aria-hidden="true">
-  <defs><radialGradient id="dev-orb" cx=".38" cy=".3" r=".8"><stop offset="0" stop-color="#9CC8FF"/><stop offset=".6" stop-color="#2D7FF9"/><stop offset="1" stop-color="#1A5FC8"/></radialGradient></defs>
-  <circle cx="24" cy="24" r="20.5" fill="url(#dev-orb)" stroke="#14213D" stroke-width="2.6"/>
-  <path d="M10.5 15.5 A15 15 0 0 1 23 8.6" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" opacity=".7"/>
-  <rect x="11.5" y="14" width="17" height="21" rx="3" fill="#FFFFFF" stroke="#14213D" stroke-width="2.4"/>
-  <rect x="25.5" y="19" width="11" height="17" rx="2.6" fill="#FFD23F" stroke="#14213D" stroke-width="2.4"/>
-  <path d="M29.5 32.5 H32.5" stroke="#14213D" stroke-width="2.2" stroke-linecap="round"/>
+  <defs>
+    <linearGradient id="dvc-tab" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7CC0FF"/><stop offset=".55" stop-color="#3B86F0"/><stop offset="1" stop-color="#1C5CCB"/></linearGradient>
+    <linearGradient id="dvc-ph" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFE98A"/><stop offset=".6" stop-color="#FFC21A"/><stop offset="1" stop-color="#EE9C00"/></linearGradient>
+    <linearGradient id="dvc-scr" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#CBE4FF"/></linearGradient>
+    <linearGradient id="dvc-a1" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#FFD84A"/><stop offset="1" stop-color="#FFA41B"/></linearGradient>
+    <linearGradient id="dvc-a2" x1="1" y1="0" x2="0" y2="0"><stop offset="0" stop-color="#5BC0FF"/><stop offset="1" stop-color="#2479E8"/></linearGradient>
+  </defs>
+  <path d="M8.5 12.5 C12 5.2 24.5 2.4 32.6 7.6" fill="none" stroke="#14213D" stroke-width="7" stroke-linecap="round"/>
+  <path d="M8.5 12.5 C12 5.2 24.5 2.4 32.6 7.6" fill="none" stroke="url(#dvc-a1)" stroke-width="3.6" stroke-linecap="round"/>
+  <path d="M30.2 3.6 L39.2 11.4 L27.8 12.6 Z" fill="#FFA41B" stroke="#14213D" stroke-width="2.2" stroke-linejoin="round"/>
+  <path d="M12.6 8.6 Q17 5.4 22 5" fill="none" stroke="#FFFFFF" stroke-width="1.3" stroke-linecap="round" opacity=".85"/>
+  <rect x="2.6" y="14.4" width="28" height="20" rx="3.6" fill="url(#dvc-tab)" stroke="#14213D" stroke-width="2.3"/>
+  <rect x="5.8" y="17.6" width="21.6" height="13.6" rx="1.8" fill="url(#dvc-scr)" stroke="#14213D" stroke-width="1.7"/>
+  <path d="M8.4 21.4 L12.2 18.6 M8.4 25 L15.6 19.4" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round" opacity=".95"/>
+  <path d="M4.6 17.2 Q5.2 16.3 6.4 16.2" fill="none" stroke="#FFFFFF" stroke-width="1.4" stroke-linecap="round" opacity=".75"/>
+  <rect x="28.6" y="17.4" width="15.6" height="26" rx="3.4" fill="url(#dvc-ph)" stroke="#14213D" stroke-width="2.3"/>
+  <rect x="31.3" y="21" width="10.2" height="16.2" rx="1.5" fill="url(#dvc-scr)" stroke="#14213D" stroke-width="1.7"/>
+  <path d="M33.2 25.2 L36.4 22.8" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round" opacity=".95"/>
+  <path d="M34.6 40.3 H38.2" stroke="#14213D" stroke-width="1.9" stroke-linecap="round"/>
+  <path d="M30.4 19.8 Q30.8 19 31.8 18.9" fill="none" stroke="#FFFFFF" stroke-width="1.4" stroke-linecap="round" opacity=".8"/>
+  <path d="M25.5 43.6 C19 45.8 11.6 44.2 8.4 39.2" fill="none" stroke="#14213D" stroke-width="7" stroke-linecap="round"/>
+  <path d="M25.5 43.6 C19 45.8 11.6 44.2 8.4 39.2" fill="none" stroke="url(#dvc-a2)" stroke-width="3.6" stroke-linecap="round"/>
+  <path d="M3.4 41.6 L6.6 33.6 L13.4 39.6 Z" fill="#2479E8" stroke="#14213D" stroke-width="2.2" stroke-linejoin="round"/>
 </svg>`;
 
 const ICON = {
