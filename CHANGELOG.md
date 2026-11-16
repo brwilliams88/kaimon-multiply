@@ -2,6 +2,12 @@
 
 All notable changes. Versioning: `0.MINOR.0` marks a roadmap phase, `0.x.PATCH` is any shipped change a player or parent can notice, and `1.0.0` is the public launch. See "Versioning" in CLAUDE.md. The in-app version history (Grown-ups > What's new) reads from `js/data/changelog.js`; keep both in sync. Each release is tagged in git as `vX.Y.Z`.
 
+## v0.5.10 (2026-11-15) Cards deal from the deck
+
+- New card flow: a right answer catches the Kaimon right on the card, with no flip.
+- The card only flips over when you miss, to show the answer and Teacher K's trick.
+- Finished cards slide off into a done pile, and each new card is dealt from the deck, which gets smaller as you go.
+
 ## v0.5.9 (2026-11-15) Bug sweep fixes
 
 - Fixed: changing your trainer's look now saves even if you close the picker without tapping Save. It saves as you pick, with one Done button.

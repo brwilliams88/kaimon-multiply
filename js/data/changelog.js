@@ -1,7 +1,17 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.5.9';
+export const VERSION = '0.5.10';
 
 export const CHANGELOG = [
+  {
+    version: '0.5.10',
+    date: '2026-11-15',
+    title: "Cards deal from the deck",
+    items: [
+      "New card flow: a right answer catches the Kaimon right on the card, with no flip.",
+      "The card only flips over when you miss, to show the answer and Teacher K's trick.",
+      "Finished cards slide off into a done pile, and each new card is dealt from the deck, which gets smaller as you go.",
+    ],
+  },
   {
     version: '0.5.9',
     date: '2026-11-15',

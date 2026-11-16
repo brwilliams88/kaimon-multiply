@@ -1794,3 +1794,17 @@ html.lock-screen #app { height: 100%; }
 .kairo-wait [data-throw] { display: flex; align-items: center; justify-content: center; gap: 10px; }
 .kairo-wait [data-throw] .ball-svg { width: 34px; height: 34px; }
 .kairo-wait .mythic-arrive { width: min(60vw, 220px); margin: 0 auto; }
+/* v0.5.10 Card flow: catch in place, done cards slide off, next card dealt from the deck */
+.stage { position: relative; }
+.card3d { transition: transform .26s cubic-bezier(.5, 0, .9, .4), opacity .26s; }
+.card3d.card-out { transform: translate(-70%, 14%) rotate(-14deg) scale(.72); opacity: 0; }
+.card3d.card-in { animation: card-deal .34s cubic-bezier(.2, 1.1, .4, 1) both; }
+@keyframes card-deal { from { transform: translate(14px, 12px) rotate(2.4deg) scale(.96); } to { transform: none; } }
+.done-pile { position: absolute; z-index: 0; width: min(100%, 620px); height: calc(100% - 10px); max-height: 600px; pointer-events: none; }
+.done-pile i { position: absolute; inset: 0; border: 4px solid var(--ink); border-radius: var(--r-lg); background: var(--paper); box-shadow: 0 6px 0 var(--ink); opacity: 0; transition: opacity .3s; }
+.done-pile i:nth-child(1) { transform: translate(-9px, 10px) rotate(-1.8deg); }
+.done-pile i:nth-child(2) { transform: translate(-14px, 13px) rotate(-3deg); }
+.done-pile i:nth-child(3) { transform: translate(-18px, 16px) rotate(-4.2deg); }
+.done-pile[data-n="1"] i:nth-child(1), .done-pile[data-n="2"] i:nth-child(-n+2), .done-pile[data-n="3"] i { opacity: 1; }
+.face.front.catching .catch-zone { flex: 1; }
+@media (prefers-reduced-motion: reduce) { .card3d, .card3d.card-in { transition: none; animation: none; } }

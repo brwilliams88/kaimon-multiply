@@ -17,7 +17,7 @@ import { ballIcon, medal } from './home.js';
 import { avatarSVG, trainerLook } from './avatars.js';
 import { ballSrc, sceneSrc, cssUrl, sceneKey, uiImg, itemImg, fxSrc, typeIcon, trainerFace, CARD_BACK } from '../core/assets.js';
 import { quick } from '../core/prefs.js';
-import { $, on, esc, sheet, wait, toast, soundButton } from './dom.js';
+import { $, on, esc, sheet, wait, toast, soundButton, reducedMotion } from './dom.js';
 
 export function renderPlay(root, go, { table }) {
   const p = active();
@@ -44,6 +44,7 @@ export function renderPlay(root, go, { table }) {
         <div class="stage">
           <div class="mythic-fly" aria-hidden="true">${creatureArt(byId(MYTHIC_ID), { mode: 'seen' })}</div>
           <div class="deck" aria-hidden="true"><i></i><i></i></div>
+          <div class="done-pile" aria-hidden="true" data-n="0"><i></i><i></i><i></i></div>
           <div class="card3d"><div class="card-inner">
             <div class="face front"></div>
             <div class="face back"></div>
@@ -68,7 +69,7 @@ export function renderPlay(root, go, { table }) {
     inner: $('.card-inner', root), front: $('.front', root), back: $('.back', root),
     val: $('.answer-val', root), hint: $('.answer-hint', root), pips: [...root.querySelectorAll('.pips span')],
     streak: $('.streak-num', root), streakBall: $('.streak-ball', root), stage: $('.stage', root), mic: $('[data-mic]', root),
-    fly: $('.mythic-fly', root),
+    fly: $('.mythic-fly', root), donePile: $('.done-pile', root),
   };
 
   // Flip the card. The flip eases out fast and is edge-on after about 70 ms, so the
@@ -153,7 +154,8 @@ export function renderPlay(root, go, { table }) {
     } else {
       el.back.classList.remove('cover');
       el.back.innerHTML = '';
-      flip(false);
+      el.front.classList.remove('catching');
+      if (el.inner.classList.contains('flipped')) flip(false);
     }
     setInput('');
     el.hint.textContent = '';
@@ -238,7 +240,11 @@ export function renderPlay(root, go, { table }) {
       else { escaped(p, S.species.id); if (Math.random() < 0.5) S.linger = S.species; }
       save();
       updateStreak();
-      el.back.innerHTML = `
+      // Catch right on the card: the question shows its answer and the Kaimon spot
+      // becomes the catch. No flip; a flip now only means a miss.
+      el.front.classList.remove('has-belt');
+      el.front.classList.add('catching');
+      el.front.innerHTML = (`
         <div class="card-head"><span class="chip">${region.name}</span><span class="head-tags">${fast ? '<span class="chip card-type fast">Fast</span>' : ''}<span class="chip xp-chip">${itemImg('xp-star')}+${gained} XP</span></span></div>
         <div class="qplate done"><span>${a}</span><span class="times">×</span><span>${b}</span><span class="eq">=</span><span class="ans">${ans}</span></div>
         <div class="catch-zone">
@@ -248,8 +254,7 @@ export function renderPlay(root, go, { table }) {
           <img class="catch-fx burst" src="${fxSrc('capture-burst')}" alt="" aria-hidden="true">
           <div class="throw-ball"><img class="ball-svg ball-img" src="${ballSrc(ball)}" alt="" draggable="false"></div>
         </div>
-        <p class="catch-msg" aria-live="polite">${powerLabel(pw)} throw! ${BALLS[ball].name}!</p>`;
-      flip(true);
+        <p class="catch-msg" aria-live="polite">${powerLabel(pw)} throw! ${BALLS[ball].name}!</p>`);
       S.skip = false;
       await animateCatch(roll, result, pw, ball);
       if (S.levelUps.length && S.levelUps[S.levelUps.length - 1].id === S.fact) {
@@ -310,8 +315,8 @@ export function renderPlay(root, go, { table }) {
   });
   async function animateCatch(roll, result, pw = 0.5, ball = 'capture') {
     const caught = roll.caught;
-    const zone = $('.catch-zone', el.back);
-    const msg = $('.catch-msg', el.back);
+    const zone = $('.catch-zone', el.front);
+    const msg = $('.catch-msg', el.front);
     const ballEl = $('.throw-ball img', zone);
     const q = quick(p);
     const shakes = q ? Math.min(roll.shakes, 1) : roll.shakes;
@@ -352,10 +357,29 @@ export function renderPlay(root, go, { table }) {
     }
   }
 
-  function advance() {
+  // Done with a card: it slides off to the done pile, and the next one is dealt
+  // from the deck (which gets smaller as you go).
+  async function advance() {
     if (S.phase !== 'done') return;
     S.phase = 'moving';
+    const card = root.querySelector('.card3d');
+    const calm = reducedMotion();
+    if (card && !calm) {
+      card.classList.add('card-out');
+      await wait(quick(p) ? 180 : 260);
+    }
     S.n++;
+    if (S.n >= S.length) { card?.classList.remove('card-out'); return next(); }
+    if (card) {
+      // Reset the flip instantly while the card is off screen, then deal the next one in.
+      el.inner.classList.add('no-anim');
+      el.inner.classList.remove('flipped', 'wrong', 'back-up');
+      void el.inner.offsetWidth;
+      el.inner.classList.remove('no-anim');
+      card.classList.remove('card-out');
+      if (!calm) { card.classList.remove('card-in'); void card.offsetWidth; card.classList.add('card-in'); }
+    }
+    el.donePile && (el.donePile.dataset.n = Math.min(3, S.n));
     next();
   }
 
