@@ -1,7 +1,15 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.5.19';
+export const VERSION = '0.5.20';
 
 export const CHANGELOG = [
+  {
+    version: '0.5.20',
+    date: '2026-11-15',
+    title: "Music comes back after the mic",
+    items: [
+      "Fixed: after turning Mic mode off, the music could stay quiet. It now comes straight back to full volume when you tap the Mic button off or leave the round.",
+    ],
+  },
   {
     version: '0.5.19',
     date: '2026-11-15',

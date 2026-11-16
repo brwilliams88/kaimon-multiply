@@ -185,6 +185,11 @@ export function micStopped() {
   micOn = false;
   micOffAt = performance.now();
   resetAudio();
+  // Turned off by a tap (the Mic button, leaving the round): rebuild the engine now,
+  // while the tap still counts, so the music comes straight back to full volume.
+  // When listening ends on its own (a spoken answer, the idle timer) the rebuild
+  // waits for the next tap instead, so the "correct!" sound isn't cut off.
+  try { if (enabled && navigator.userActivation?.isActive) unlock(); } catch {}
   clearTimeout(heldTimer);
   heldTimer = setTimeout(flushHeld, SETTLE);
 }
