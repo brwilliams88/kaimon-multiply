@@ -17,6 +17,7 @@ import { avatarSVG, trainerLook } from './avatars.js';
 import { esc, on, $, sheet, soundIcon, toast } from './dom.js';
 import { sfx, unlock } from '../core/sound.js';
 import { shareGame, shareIcon } from './share.js';
+import { towerTile } from './tower.js'; // Hundred Tower hook
 
 export const medal = (tier) => tier
   ? `<span class="medal medal-${tier}" title="${LEVEL_LABEL[tier]} medal">${itemImg('medal-' + tier)}</span>`
@@ -102,6 +103,7 @@ export function renderHome(root, go, params = {}) {
               </span>
             </button>`;
           })()}
+          ${towerTile(p)}<!-- Hundred Tower hook -->
         </div>
         <h2 class="section-title">Teacher K's Pop Quiz</h2>
         ${(() => {
@@ -163,6 +165,7 @@ export function renderHome(root, go, params = {}) {
   // Kairo waits on the home screen until it's caught. It can never be missed.
   if (p.battles.boss > 0 && !p.dex[MYTHIC_ID]?.caught) setTimeout(() => kairoWaiting(p, go), 600);
   on(root, 'click', '[data-dex]', () => { sfx.tap(); go('kaidex'); });
+  on(root, 'click', '[data-tower]', () => { unlock(); sfx.tap(); keepPlace(); go('tower'); }); // Hundred Tower hook
   on(root, 'click', '[data-quiz]', () => { unlock(); sfx.tap(); if (timesUp()) return; keepPlace(); go('battle', { kind: 'quiz' }); });
   on(root, 'click', '[data-trainer]', () => { sfx.tap(); go('trainer'); });
 

@@ -8,6 +8,7 @@ import { renderKaidex } from './ui/kaidex.js';
 import { renderGrownups } from './ui/grownups.js';
 import { renderBattle } from './ui/battle.js';
 import { renderTrainer } from './ui/trainer.js';
+import { renderTower } from './ui/tower.js'; // Hundred Tower hook
 import { VERSION } from './data/changelog.js';
 import { startAutoSync, completeLinkSignIn, syncNow } from './core/sync.js';
 import { autoSendReports, flushMailOutbox } from './core/mailer.js';
@@ -32,6 +33,7 @@ const SCREENS = {
   grownups: renderGrownups,
   battle: renderBattle,
   trainer: renderTrainer,
+  tower: renderTower, // Hundred Tower hook
 };
 
 const NEEDS_PROFILE = new Set(['home', 'play', 'kaidex', 'grownups', 'meetPartner', 'battle', 'trainer']);

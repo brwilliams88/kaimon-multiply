@@ -5,6 +5,7 @@ import { typeIcon, uiImg } from '../core/assets.js';
 import { dexState, dexCounts, dexVisible } from '../core/game.js';
 import { esc, on, sheet } from './dom.js';
 import { sfx } from '../core/sound.js';
+import { megaEntryHTML, bindMegaEntry } from './mega.js'; // Mega hook
 
 const num3 = (n) => '#' + String(n).padStart(3, '0');
 // Mythic Kaimon keep their names secret until caught.
@@ -33,7 +34,7 @@ const RARITY = {
 function foundIn(s) {
   if (s.region === 0) return 'Your partner from the start';
   if (typeof s.region === 'number') return `Shows up while practicing the ${s.region}s`;
-  if (s.region === 'legend') return 'Appears for trainers who master many tables';
+  if (s.region === 'legend') return 'Guards a floor of the Hundred Tower';
   if (s.region === 'papa') return 'Boss Papa’s own Kaimon';
   if (s.id === FUTURE_ID) return 'Kairo grows into it, a year after it’s caught';
   if (s.id === MYTHIC_ID) return 'Lands for the trainer who beats Boss Papa';
@@ -130,7 +131,7 @@ function showEntry(p, s) {
         return `<dl class="entry-facts">${rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl><p class="entry-hint">${esc(r[1])}</p>`;
       })()}
       ${line.length > 1 ? `<div class="entry-line">${line.map((x) => { const xs = dexState(p, x.id); return `<div class="line-step${x.num === s.num ? ' cur' : ''}">${creatureArt(x, { mode: xs === 'caught' ? 'full' : xs })}<span>${esc(shownName(x, xs))}</span></div>`; }).join('<span class="line-arrow" aria-hidden="true">›</span>')}</div>` : ''}
-      ${s.mega && st === 'caught' ? `<div class="entry-mega"><span class="mega-peek">${creatureArt(s, { mode: 'seen', mega: true })}</span><p>Has a rare Mega form. You'll be able to unlock it later in the adventure.</p></div>` : ''}`;
+      ${megaEntryHTML(p, s, st)}`; // Mega hook
   }
   const sh = sheet(`
     <div class="entry" style="--rc:${t.color};--rl:${t.light}">
@@ -140,6 +141,7 @@ function showEntry(p, s) {
       <h2 class="entry-name">${esc(shownName(s, st))}</h2>
       ${body}
     </div>`, { cls: 'entry-sheet', x: true });
+  bindMegaEntry(sh, p, s, st); // Mega hook
   const setLook = (shiny) => {
     setShiny(sh.el.querySelector('.entry-art .kart'), shiny);
     sh.el.querySelectorAll('[data-look]').forEach((b) => { const on = (b.dataset.look === 'shiny') === shiny; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); });

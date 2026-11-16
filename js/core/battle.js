@@ -3,6 +3,8 @@
 import { SPECIES, byId, REGIONS } from '../data/creatures.js';
 import { tableTier, levelRank, levelOf, factsForTables } from './facts.js';
 import { partnerOf } from './game.js';
+import { towerOpponent, towerReward } from './tower.js'; // Hundred Tower hook
+import { megaForm, MEGA_HP, MEGA_POWER } from './megas.js'; // Mega hook
 
 export const MY_HP = 40;      // each of your Kaimon
 export const HIT_BACK = 12;   // damage you take on a wrong answer
@@ -14,7 +16,7 @@ export const HIT_BACK = 12;   // damage you take on a wrong answer
 const MYTHIC = { 1: { hp: 120, base: 4, perPower: 46 }, 2: { hp: 200, base: 4, perPower: 62 } };
 const COMBO_STEP = 0.12, COMBO_MAX = 0.6; // mythic bonus per right answer in a row
 const mythicStats = (sp) => sp.type === 'mythic' ? MYTHIC[sp.stage] || MYTHIC[1] : null;
-export const maxHpFor = (sp) => mythicStats(sp)?.hp || MY_HP;
+export const maxHpFor = (sp) => mythicStats(sp)?.hp || (sp.megaForm ? MEGA_HP : MY_HP); // Mega hook
 
 // Power meter: full for a quick answer, slowly drains, never runs out.
 // 1.0 at 1.5 seconds or faster, about 0.5 at 5 seconds, floor 0.15.
@@ -52,11 +54,12 @@ export function myTeam(profile) {
     lines.add(s.line);
     team.push(s);
   }
-  return team.map((s) => ({ species: s, hp: maxHpFor(s), max: maxHpFor(s) }));
+  return team.map((s) => megaForm(profile, s)).map((s) => ({ species: s, hp: maxHpFor(s), max: maxHpFor(s) })); // Mega hook: Mega forms battle
 }
 
 // Opponents. kind: 'champ' (one table), 'grunt' (Team Papa ambush), 'boss' (Boss Papa).
 export function opponent(profile, kind, table, grunt) {
+  if (kind === 'tower') return towerOpponent(profile, table); // Hundred Tower hook: table is the floor
   if (kind === 'champ') {
     const r = REGIONS.find((x) => x.table === table);
     const beaten = profile.battles.champs[table] || 0;
@@ -119,7 +122,7 @@ export function attack(mine, power, streak) {
   const crit = power >= 0.9;
   const special = streak > 0 && streak % 3 === 0;
   const my = mythicStats(mine.species);
-  let dmg = my ? (my.base + my.perPower * power) * (1 + Math.min(COMBO_MAX, COMBO_STEP * Math.max(0, streak - 1))) : 8 + 10 * power + 2 * (mine.species.stage - 1);
+  let dmg = my ? (my.base + my.perPower * power) * (1 + Math.min(COMBO_MAX, COMBO_STEP * Math.max(0, streak - 1))) : 8 + 10 * power + 2 * (mine.species.stage - 1) + (mine.species.megaForm ? MEGA_POWER : 0); // Mega hook
   if (crit) dmg *= 1.5;
   if (special) dmg *= 1.5;
   return { dmg: Math.round(dmg), crit, special };
@@ -160,6 +163,7 @@ export function champReady(profile, table) {
 
 // Rewards for a win, given before the win is recorded.
 export function rewardFor(profile, kind, table) {
+  if (kind === 'tower') return towerReward(profile, table); // Hundred Tower hook
   if (kind === 'boss') return profile.battles.boss ? { ball: 'mega', n: 1 } : { ball: 'legend', n: 1, mythic: true };
   if (kind === 'champ') return profile.battles.champs[table] ? { ball: 'super', n: 1 } : { ball: 'mega', n: 1 };
   if (kind === 'quiz') return { ball: 'mega', n: 1 };

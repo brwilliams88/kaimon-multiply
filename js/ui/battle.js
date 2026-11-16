@@ -31,6 +31,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt } = {}
   setSound(p.settings.sound);
   unlock();
   const opp = opponent(p, kind, table, grunt);
+  if (opp.ui?.go) go = opp.ui.go(go); // Hundred Tower hook: every way out goes back to the Tower
   let mine = myTeam(p);
   const pool = opp.facts || factsForTables(opp.tables);
   const useVoice = p.settings.voice && voiceSupported();
@@ -39,17 +40,18 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt } = {}
     fact: null, shownAt: 0, input: '', phase: 'intro', mustType: null, listening: false, startedAt: Date.now(), raf: 0,
   };
   const region = opp.table ? regionOf(opp.table) : null;
-  const t = region ? TYPES[region.type] : kind === 'quiz' ? TYPES.dragon : TYPES.papa;
+  const t = opp.ui?.type ? TYPES[opp.ui.type] : region ? TYPES[region.type] : kind === 'quiz' ? TYPES.dragon : TYPES.papa;
   root.style.setProperty('--rc', t.color);
   root.style.setProperty('--rl', t.light);
   root.style.setProperty('--ri', t.ink);
   // The arena is the place itself: the Gym Leader's region, or Papa's Gym for Team Papa.
   root.style.setProperty('--scene', cssUrl(sceneSrc(sceneKey({ kind, table: opp.table }))));
 
-  const introLine = kind === 'champ' ? CHAMP_LINES[opp.table] : kind === 'quiz' ? 'Pop quiz! These are the facts that keep getting away from you. Let\u2019s catch them today!' : kind === 'boss' ? dadJoke('boss') : dadJoke('appear');
+  const introLine = opp.ui?.intro || (kind === 'champ' ? CHAMP_LINES[opp.table] : kind === 'quiz' ? 'Pop quiz! These are the facts that keep getting away from you. Let\u2019s catch them today!' : kind === 'boss' ? dadJoke('boss') : dadJoke('appear'));
 
   // What this battle is for, shown at the top of the intro.
   function stakeHTML() {
+    if (opp.ui?.stake) return opp.ui.stake; // Hundred Tower hook
     if (kind === 'champ') return `${badgeImg(opp.table, 'vsi-badge')}<span><small>${opp.rematch ? 'Rematch' : 'Win the'}</small><strong>${esc(region.badge)}</strong></span>`;
     if (kind === 'boss') return `<span><small>The final gym</small><strong>Papa’s Gym</strong></span>`;
     if (kind === 'quiz') return `${ballIcon('mega')}<span><small>Win a Mega Ball</small><strong>Pop Quiz</strong></span>`;
@@ -60,7 +62,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt } = {}
     <section class="screen play battle v2 battle-${kind} intro-on">
       <header class="play-top">
         <button class="icon-btn" data-exit aria-label="Leave battle"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6 L18 18 M18 6 L6 18" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg></button>
-        <div class="vs-chip"><span class="vs-av">${trainerArt(opp)}</span><span><strong>${esc(opp.name)}</strong><small>${esc(opp.kind === 'champ' ? `${opp.table}s Gym Leader` : opp.kind === 'boss' ? 'The final gym' : opp.kind === 'quiz' ? 'Pop Quiz' : 'Team Papa')}</small></span></div>
+        <div class="vs-chip"><span class="vs-av">${trainerArt(opp)}</span><span><strong>${esc(opp.name)}</strong><small>${esc(opp.ui?.chip || (opp.kind === 'champ' ? `${opp.table}s Gym Leader` : opp.kind === 'boss' ? 'The final gym' : opp.kind === 'quiz' ? 'Pop Quiz' : 'Team Papa'))}</small></span></div>
         ${soundButton(p.settings.sound)}
         <div class="streak" data-tier="0" aria-live="polite" title="Streak: right answers in a row" aria-label="Streak"><span class="streak-flame" aria-hidden="true"><svg viewBox="0 0 24 24"><path class="fl-out" d="M12 1.8c.9 3.2-1.2 5-2.7 6.8C7.7 10.5 6.6 12.3 6.6 14.6a5.4 5.4 0 0 0 10.8 0c0-2.9-1.5-4.8-2.6-6.2-.3 1.6-1.1 2.5-2.1 3 .5-3.1-.1-6.5-.7-9.6z" stroke="#14213D" stroke-width="1.5" stroke-linejoin="round"/><path class="fl-in" d="M12.1 10.6c.4 1.7-.6 2.6-1.3 3.5-.5.6-.9 1.3-.9 2.1a2.2 2.2 0 0 0 4.4 0c0-1.3-.7-2.1-1.2-2.8-.2.7-.5 1-1 1.2.2-1.4 0-2.7 0-4z"/></svg></span><span class="streak-num">0</span><span class="streak-ball" hidden></span></div>
       </header>
@@ -329,7 +331,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt } = {}
     syncNow();
     won ? sfx.win() : sfx.lose();
 
-    const line = kind === 'champ'
+    const line = opp.ui ? (won ? opp.ui.win : opp.ui.lose) : kind === 'champ'
       ? (won ? (opp.rematch ? `You won the rematch! ${region.badge} polished.` : `You did it! You earned the ${region.badge}!`) : `Great battle! Practice your ${opp.table}s and come back.`)
       : kind === 'quiz' ? (won ? 'A+! Those tricky facts didn\u2019t stand a chance. See you at next week\u2019s quiz!' : 'Good try! Every miss is a fact you\u2019re about to learn. You can take the quiz again anytime this week.')
       : kind === 'boss' ? (won ? dadJoke('boss') : dadJoke('papaWins')) : dadJoke(won ? 'kidWins' : 'papaWins');
@@ -349,7 +351,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt } = {}
         ${reward ? `<p class="result-reward">${ballIcon(reward.ball)} You got a ${BALLS[reward.ball].name}!</p>` : ''}
         <div class="sheet-actions">
           ${won ? '' : '<button class="btn-chunky btn-primary" data-again>Try again</button>'}
-          <button class="btn-chunky ${won ? 'btn-primary' : ''}" data-home>${reward?.mythic ? 'Wait... what is that?' : 'Home'}</button>
+          <button class="btn-chunky ${won ? 'btn-primary' : ''}" data-home>${opp.ui?.homeLabel?.(won) || (reward?.mythic ? 'Wait... what is that?' : 'Home')}</button>
         </div>
       </div>`;
     el.arena.appendChild(ov);

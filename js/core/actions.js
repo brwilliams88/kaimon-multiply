@@ -6,6 +6,7 @@ import { applyAnswer, levelOf, levelRank, parseFact } from './facts.js';
 import { dayRec } from './playtime.js';
 import { answerXP, XP } from './xp.js';
 import { today } from './store.js';
+import { applyTowerBattle } from './tower.js'; import { applyMega } from './megas.js'; // Hundred Tower and Mega hooks
 
 let counter = 0;
 const newId = () => deviceId() + '-' + Date.now().toString(36) + '-' + (counter++).toString(36) + Math.random().toString(36).slice(2, 5);
@@ -77,6 +78,7 @@ export function apply(p, ev) {
     case 'bonus':
       dayRec(p, today(ev.t)).bonus += d.m || 0;
       break;
+    case 'mega': applyMega(p, d, ev.t); break; // Mega hook
     case 'stamp':
       p.stats.stars = (p.stats.stars || 0) + 1;
       break;
@@ -92,6 +94,7 @@ export function apply(p, ev) {
         if (d.o === 'grunt') b.grunts++;
         if (d.o === 'quiz') b.quiz = Math.max(b.quiz || 0, ev.t);
       }
+      if (d.o === 'tower') applyTowerBattle(p, d, ev.t); // Hundred Tower hook
       break;
     }
   }
@@ -131,6 +134,9 @@ export const session = (p, ms, best, cont = false) => emit(p, 'sess', cont ? { m
 export const openTime = (p, ms) => emit(p, 'open', { ms: Math.round(ms) });
 export const bonusTime = (p, m) => emit(p, 'bonus', { m });
 export const battle = (p, kind, table, won) => emit(p, 'battle', { o: kind, tb: table, w: won ? 1 : 0 });
+// Mega Evolution: use a Mega Crystal on a Kaimon (u), or switch its Mega form on or off.
+export const megaEvolve = (p, id) => emit(p, 'mega', { n: id, u: 1 });
+export const megaSwitch = (p, id, on) => emit(p, 'mega', { n: id, on: on ? 1 : 0 });
 
 export function goodWorkStamp(p) {
   emit(p, 'stamp', {});

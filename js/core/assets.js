@@ -40,7 +40,7 @@ export const trainerBody = (key, pose = 'base', cls = '') => img(trainerSrc(key,
 // Scenes. Regions use their table number. Opaque, about 1280 wide; thumbs are 480 wide.
 export function sceneKey({ table, kind } = {}) {
   if (kind === 'boss' || kind === 'grunt') return 'papa';
-  if (kind === 'legend') return 'tower';
+  if (kind === 'legend' || kind === 'tower') return 'tower'; // Hundred Tower hook
   if (kind === 'quiz') return 'training';
   if (table && REGIONS.some((r) => r.table === table)) return String(table);
   return 'training';
