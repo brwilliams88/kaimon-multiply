@@ -7,6 +7,9 @@ import { showIconNotice } from './iconNotice.js';
 import { sfx, soundOn, soundStatus } from '../core/sound.js';
 import { itemImg } from '../core/assets.js';
 import { installHelpHTML, canPromptInstall, promptInstall, isInstalled } from './install.js';
+import { openPlayElsewhere } from './playElsewhere.js';
+import { openFeedback, openRate, queuedFeedback } from './feedback.js';
+import { COLLECTED, isOn as analyticsOn, setOn as setAnalytics, startAnalytics } from '../core/analytics.js';
 import { lastDays, partsOfDay, usedToday } from '../core/playtime.js';
 import { bonusTime } from '../core/actions.js';
 import { active, save, exportBackup, importBackup, deleteProfile, allProfiles, hasPin, setPin, checkPin, clearPin } from '../core/store.js';
@@ -440,16 +443,16 @@ function renderMain(root, go) {
           <h2>Install on this device</h2>
           ${canPromptInstall() && !isInstalled() ? '<button class="btn-chunky btn-primary" data-install>Install Kaimon</button>' : ''}
           ${installHelpHTML()}
-          <p class="note">For another device, open <strong>brwilliams88.github.io/kaimon-multiply</strong> there.</p>
-          <!-- growth branch: the "Play on another device" row goes in this slot -->
-          <div class="gu-slot" data-slot="another-device"></div>
+          <div class="row"><span class="note">For another device, open <strong>brwilliams88.github.io/kaimon-multiply</strong> there, or scan a code.</span><button class="btn-chunky btn-sm" data-elsewhere>Play on another device</button></div>
           ${isInstalled() ? '<div class="row"><span class="note">Kaimon got a new app icon in v0.5.0.</span><button class="btn-chunky btn-sm" data-newicon>New icon help</button></div>' : ''}
         </div>
 
-        <div class="panel gu-slot-panel">
+        <div class="panel gu-feedback">
           <h2>Feedback</h2>
-          <!-- growth branch: the feedback and rating rows go in this slot -->
-          <div class="gu-slot" data-slot="feedback"></div>
+          <p class="note">Notes and ratings go only to the maker of Kaimon Multiply. What doesn’t work helps the most.</p>
+          <div class="row"><span class="note">Something you love, an idea or a bug. Add your email if you want a reply.</span><button class="btn-chunky btn-sm" data-feedback>Send feedback</button></div>
+          <div class="row"><span class="note">1 to 5 stars, and a comment if you like.</span><button class="btn-chunky btn-sm" data-rate>Rate the game</button></div>
+          ${queuedFeedback().length ? `<p class="note" data-fb-wait>${queuedFeedback().length === 1 ? 'One note is' : queuedFeedback().length + ' notes are'} waiting for the internet. It sends by itself.</p>` : ''}
         </div>
 
         <div class="panel">
@@ -458,8 +461,8 @@ function renderMain(root, go) {
           <p class="note">Mic mode only listens while a card is waiting for an answer, and stops as soon as it hears a number. It turns off by itself after 2 minutes without a spoken answer, when the app is closed or hidden, and when your child leaves practice or a battle. Speech goes to the device's own speech service (Apple on iPhone and iPad, Google in Chrome) to turn it into a number. Kaimon never records or saves audio.</p>
           <p class="step-title">Progress</p>
           <p class="note">Guest trainers stay on this device. Family trainers sync only within your family. Weekly reports are built on the device and the summary is not kept on a server.</p>
-          <!-- growth branch: the analytics off switch row goes in this slot -->
-          <div class="gu-slot" data-slot="analytics"></div>
+          <label class="row"><span>Usage counts<small class="row-note">Helps the maker see how many kids play and what to fix. No emails, real names or photos. Off stops it on this device and forgets the random number.</small></span><input type="checkbox" class="switch" data-analytics ${analyticsOn() ? 'checked' : ''} aria-label="Usage counts"></label>
+          <details class="gu-collect"><summary>What we collect</summary><ul>${COLLECTED.map((c) => `<li>${esc(c)}</li>`).join('')}</ul><p class="note">Usage counts are totals, like rounds and minutes played. Fact levels, the Kaidex and backup codes are never sent this way. <a href="privacy.html" target="_blank" rel="noopener">Full privacy page</a></p></details>
         </div>
 
         <div class="panel whatsnew">
@@ -467,6 +470,7 @@ function renderMain(root, go) {
           <div class="row"><span class="note" data-upd-msg>This device has v${VERSION}.</span><button class="btn-chunky btn-sm" data-update>Check for updates</button></div>
           ${CHANGELOG.slice(0, 3).map(clHTML).join('')}
           ${CHANGELOG.length > 3 ? `<details class="cl-more"><summary>Older updates</summary>${CHANGELOG.slice(3).map(clHTML).join('')}</details>` : ''}
+        </div>
       </div>
     </section>`;
 
@@ -494,6 +498,14 @@ function renderMain(root, go) {
     setTimeout(() => { const st = soundStatus(); msg.textContent = st.lastErr ? `The phone blocked the sound (${st.lastErr}). Tap Test sound again.` : 'You should have heard a little tune. If not, check the volume buttons and that the phone is not on Do Not Disturb with media muted.'; }, 500);
   });
   on(root, 'click', '[data-install]', async () => { if (await promptInstall()) renderMain(root, go); });
+  on(root, 'click', '[data-elsewhere]', () => openPlayElsewhere());
+  on(root, 'click', '[data-feedback]', () => openFeedback({ place: 'grownups' }));
+  on(root, 'click', '[data-rate]', () => openRate({ place: 'grownups' }));
+  root.querySelector('[data-analytics]')?.addEventListener('change', (e) => {
+    setAnalytics(e.target.checked);
+    if (e.target.checked) startAnalytics();
+    toast(e.target.checked ? 'Usage counts on. Thank you!' : 'Usage counts off on this device.');
+  });
   on(root, 'click', '[data-update]', async (e, btn) => {
     const msg = root.querySelector('[data-upd-msg]');
     btn.disabled = true; msg.textContent = 'Checking...';
@@ -518,7 +530,7 @@ function renderMain(root, go) {
         <p class="note">As <strong>${esc(st.email)}</strong>. ${st.busy ? 'Syncing now...' : st.lastSync ? 'Last synced ' + new Date(st.lastSync).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) + '.' : 'Not synced yet.'}${st.error && isOnline() ? ' Last problem: ' + esc(st.error) : ''}</p>
         ${pendingNote() ? `<p class="sync-wait" data-syncwait>${esc(pendingNote())}</p>` : ''}
         <div class="btn-row"><button class="btn-chunky btn-sm" data-syncnow ${isOnline() ? '' : 'disabled'}>Sync now</button><button class="btn-chunky btn-sm" data-signout>Sign out on this device</button></div>
-        <label class="trow news-row"><span class="sync-who"><span class="trow-name">News emails</span><small>A few times a year about Kaimon games. On unless you turn it off.</small></span><input type="checkbox" class="switch" data-newsrow ${newsOn ? 'checked' : ''} aria-label="News emails"></label>
+        <label class="trow news-row"><span class="sync-who"><span class="trow-name">News emails</span><small>News about Kaimon games: weekly for the first few weeks after launch, then about once a month. On unless you turn it off.</small></span><input type="checkbox" class="switch" data-newsrow ${newsOn ? 'checked' : ''} aria-label="News emails"></label>
       </div></div>`
     : pendingEmail ? `
       <div class="step">${check(false)}<div class="step-body">
@@ -532,7 +544,7 @@ function renderMain(root, go) {
         <p class="step-title">1. Sign in this device</p>
         <p class="note">Use a grown-up's email, and the same one on every device you want to sync: phones, tablets, Chromebooks. We'll email a code to type here. Your email is only used to sign in.</p>
         <input class="field" type="email" autocomplete="email" placeholder="Grown-up's email" data-email>
-        <label class="news-opt"><input type="checkbox" data-news checked> <span>Email me news about Kaimon games, a few times a year. Uncheck to skip. Every news email has an unsubscribe button.</span></label>
+        <label class="news-opt"><input type="checkbox" data-news checked> <span>Email me news about Kaimon games: weekly for the first few weeks after launch, then about once a month. Uncheck to skip. Every news email has an unsubscribe button.</span></label>
         <button class="btn-chunky btn-primary" data-send>Email me a code</button>
       </div></div>`;
     const people = allProfiles();
