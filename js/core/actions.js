@@ -118,6 +118,7 @@ export function apply(p, ev) {
         if (d.o === 'grunt') b.grunts++;
         if (d.o === 'quiz') b.quiz = Math.max(b.quiz || 0, ev.t);
       }
+      if (d.o === 'wild') { b.wild = (b.wild || 0) + 1; if (d.w) b.wildWins = (b.wildWins || 0) + 1; } // a wild battle (wild.js)
       if (d.o === 'tower') applyTowerBattle(p, d, ev.t); // Hundred Tower hook
       break;
     }
@@ -170,14 +171,17 @@ export function answer(p, factId, ok, ms, via, team) {
 export const seen = (p, speciesId) => emit(p, 'seen', { n: speciesId });
 
 // A catch. A species you already own gets +50 XP; a new one arrives at its own level.
-export function caught(p, speciesId, sp = null) {
+// opts.lv: the level it showed in the wild (so the card and the catch agree).
+// opts.o: 'wild' when it was caught after a wild battle.
+export function caught(p, speciesId, sp = null, opts = {}) {
   const isNew = !(p.dex[speciesId] && p.dex[speciesId].caught);
   const shiny = Math.random() < shinyChance(p); // [systems] 1 in 128, better with a Lucky Lantern
   const R = roster(p);
   const have = R.byId[speciesId];
   const d = { n: speciesId, s: shiny ? 1 : 0 };
   if (have) Object.assign(d, { g: have.g, lv: have.level, dup: 1 });
-  else Object.assign(d, { g: nextGen(R, speciesId), lv: arrivalLevel(p, sp || SPECIES_BY(speciesId)) });
+  else Object.assign(d, { g: nextGen(R, speciesId), lv: opts.lv > 0 ? opts.lv | 0 : arrivalLevel(p, sp || SPECIES_BY(speciesId)) });
+  if (opts.o) d.o = opts.o;
   emit(p, 'catch', d);
   return { isNew, shiny, dup: !!have, lv: d.lv, evolved: evolveReady(p) };
 }
@@ -192,10 +196,12 @@ export const session = (p, ms, best, cont = false) => emit(p, 'sess', cont ? { m
 export const openTime = (p, ms) => emit(p, 'open', { ms: Math.round(ms) });
 export const bonusTime = (p, m) => emit(p, 'bonus', { m });
 // A battle. The win bonus goes to the Buddy (b), and half of it to the team (s).
-export function battle(p, kind, table, won, team) {
+// extra: more about it, like a wild battle's Kaimon (n), its level (lv) and if it was caught (c).
+export function battle(p, kind, table, won, team, extra = null) {
   const b = buddyOf(p).key;
   const d = { o: kind, tb: table, w: won ? 1 : 0, b, x: won ? XP[kind] || 0 : 0 };
   if (team?.length) d.s = team.filter((k) => k && k !== b);
+  if (extra) Object.assign(d, extra);
   const ev = emit(p, 'battle', d);
   ev.evolved = evolveReady(p);
   return ev;

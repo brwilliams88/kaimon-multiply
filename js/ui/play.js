@@ -11,7 +11,9 @@ import { trainerArt } from './trainerArt.js';
 import { trickHTML } from './trickArt.js';
 import { limitReached, roundsToday, GOAL_ROUNDS } from '../core/playtime.js';
 import { partnerOf } from '../core/game.js';
-import { DUP_XP } from '../core/levels.js';
+import { DUP_XP, arrivalLevel } from '../core/levels.js';
+import { wantsBattle, WILD } from '../core/wild.js'; // [wild] wild levels and wild battles
+import { renderBattle } from './battle.js';
 import { voiceSupported, stop as stopVoice } from '../core/voice.js';
 import { micMode, micButton } from './micMode.js';
 import { sfx, setSound } from '../core/sound.js';
@@ -127,6 +129,7 @@ export function renderPlay(root, go, { table, focus, guide } = {}) {
   // The picked ball (gold ring, name at the left) is the one a right answer throws.
   function beltHTML(species) {
     S.pick = 'free';
+    if (S.wildBattle) return ''; // [wild] a battle comes first; you pick the ball at the throw
     const free = ballForStreak(p, S.streak + 1);
     const owned = ['super', 'mega', 'legend'].filter((k) => (p.balls[k] || 0) > 0);
     if (!owned.length && free === 'capture') return '';
@@ -147,7 +150,16 @@ export function renderPlay(root, go, { table, focus, guide } = {}) {
     const [a, b] = parseFact(id);
     const lingering = S.linger;
     S.linger = null;
-    const species = lingering || pickEncounter(p, a);
+    let species = lingering || pickEncounter(p, a);
+    // [wild] Every wild Kaimon shows its level. Rare and legendary ones (and any far
+    // above your Buddy) battle first; at most WILD.perRound of those in one round.
+    const buddyLv = partnerOf(p).level;
+    let lvl = lingering ? S.lingerLv : arrivalLevel(p, species);
+    if (!lingering && !guide && S.wildCount >= WILD.perRound) {
+      for (let i = 0; i < 8 && wantsBattle(species, lvl, buddyLv); i++) { species = pickEncounter(p, a); lvl = arrivalLevel(p, species); }
+    }
+    S.wildLv = lvl;
+    S.wildBattle = !guide && !lingering && wantsBattle(species, lvl, buddyLv);
     S.species = species;
     const known = dexState(p, species.id) === 'caught';
     if (!lingering) seen(p, species.id);
@@ -160,7 +172,7 @@ export function renderPlay(root, go, { table, focus, guide } = {}) {
     el.front.innerHTML = `
       <div class="card-head"><span class="chip wild-chip" aria-live="polite">${lingering ? `<strong>${esc(species.name)}</strong> is still here!` : `Wild <strong>${esc(species.name)}</strong>${known ? '' : ' <span class="wild-new">New!</span>'}`}</span><span class="chip card-type" title="${esc(region.name)}">${typeIcon(region.type)}${t.name}</span></div>
       <div class="qplate"><span>${a}</span><span class="times">×</span><span>${b}</span><span class="eq">=</span><span class="answer-val empty" data-ph="?"></span><span class="power-strip" aria-hidden="true"><span class="power-fill"></span></span></div>
-      <div class="card-wild${lingering ? ' stay' : ''}"><div class="wild-art">${creatureArt(species)}</div>${scrollButton(p) /* [systems] Hint Scroll */}</div>
+      <div class="card-wild${lingering ? ' stay' : ''}${S.wildBattle ? ' strong' : ''}"><div class="wild-art">${creatureArt(species)}<span class="wild-lv" aria-label="Level ${S.wildLv}">Lv ${S.wildLv}</span></div>${S.wildBattle ? '<span class="wild-strong"><span>Strong one!</span> <span>Battle it first</span></span>' : ''}${scrollButton(p) /* [systems] Hint Scroll */}</div>
       ${beltHTML(species)}`;
     el.front.classList.toggle('has-belt', !!el.front.querySelector('.belt'));
     say(`${lingering ? `${species.name} is still here.` : `Wild ${species.name}.`} What is ${a} times ${b}?`);
@@ -264,6 +276,7 @@ export function renderPlay(root, go, { table, focus, guide } = {}) {
       S.best = Math.max(S.best, S.streak);
       sfx.correct();
       say(`Right! ${a} times ${b} is ${ans}.`);
+      if (S.wildBattle) return wildBattle(a, b, ans, region, gained, lv, ms <= p.settings.fastMs); // [wild]
       // The ball the player picked on the belt, or the free one (streaks upgrade it).
       let ball = ballForStreak(p, S.streak);
       if (S.pick !== 'free' && (p.balls[S.pick] || 0) > 0) { ball = S.pick; giveBall(p, S.pick, -1); }
@@ -277,10 +290,10 @@ export function renderPlay(root, go, { table, focus, guide } = {}) {
       let result = null;
       // The trainer's very first wild catch (only their starter so far) gets its own banner.
       const firstEver = caught && !Object.entries(p.dex).some(([id, e]) => e?.caught && byId(id)?.region !== 0);
-      if (caught) result = catchIt(p, S.species.id);
+      if (caught) result = catchIt(p, S.species.id, S.species, { lv: S.wildLv });
       if (result) result.firstEver = firstEver;
       if (caught) S.catches.push({ id: S.species.id, isNew: result.isNew, shiny: result.shiny });
-      else { escaped(p, S.species.id); if (Math.random() < 0.5) S.linger = S.species; }
+      else { escaped(p, S.species.id); if (Math.random() < 0.5) { S.linger = S.species; S.lingerLv = S.wildLv; } }
       save();
       updateStreak();
       // Catch right on the card: the question shows its answer and the Kaimon spot
@@ -346,6 +359,58 @@ export function renderPlay(root, go, { table, focus, guide } = {}) {
       setInput('');
       S.mic?.ready();
     }
+  }
+
+  // [wild] A strong wild Kaimon: the right answer starts a short wild battle (battle.js,
+  // every move an answer). It opens on top of practice, and practice picks up after.
+  async function wildBattle(a, b, ans, region, gained, lv, fast) {
+    S.phase = 'wild';
+    S.wildCount = (S.wildCount || 0) + 1;
+    S.linger = null;
+    cancelAnimationFrame(S.raf);
+    updateStreak();
+    save();
+    const sp = S.species, wildLv = S.wildLv;
+    el.front.classList.remove('has-belt');
+    el.front.classList.add('catching');
+    el.front.innerHTML = `
+      <div class="card-head"><span class="chip">${region.name}</span><span class="head-tags">${fast ? '<span class="chip card-type fast">Fast</span>' : ''}<span class="chip xp-chip">${itemImg('xp-star')}+${gained} XP${lv.boosted ? '<span class="x3" aria-hidden="true">×3</span><span class="sr-only">, triple XP</span>' : ''}</span></span></div>
+      <div class="qplate done"><span>${a}</span><span class="times">×</span><span>${b}</span><span class="eq">=</span><span class="ans">${ans}</span></div>
+      <div class="catch-zone wild-call"><div class="catch-art">${creatureArt(sp)}<span class="wild-lv">Lv ${wildLv}</span></div></div>
+      <p class="catch-msg" aria-live="polite"><strong>${esc(sp.name)}</strong> wants to battle!</p>`;
+    sfx.special();
+    await wait(quick(p) ? 650 : 1100);
+    S.mic?.pause();
+    stopVoice();
+    const xp0 = p.xp || 0;
+    const host = document.createElement('div');
+    host.className = 'wild-host';
+    document.body.appendChild(host);
+    document.documentElement.classList.add('wild-open');
+    const out = await new Promise((resolve) => {
+      renderBattle(host, (name, params) => resolve(params || {}), { kind: 'wild', wild: { species: sp, lv: wildLv, table: a, pool, streak: S.streak } });
+      host.firstElementChild?.classList.add('screen-in');
+    });
+    S.xp = (S.xp || 0) + ((p.xp || 0) - xp0);
+    const closing = host;
+    closing.classList.add('out');
+    document.documentElement.classList.remove('wild-open');
+    setTimeout(() => closing.remove(), reducedMotion() ? 0 : 220);
+    const r = out.res;
+    const zone = $('.catch-zone', el.front), msg = $('.catch-msg', el.front);
+    if (out.caught && r) {
+      S.catches.push({ id: sp.id, isNew: r.isNew, shiny: r.shiny });
+      zone?.classList.add('caught');
+      if (zone) zone.querySelector('.catch-art').innerHTML = `${r.isNew ? fxImg('badge-burst', 'catch-halo') : ''}${creatureArt(sp, { shiny: r.shiny })}`;
+      if (msg) msg.innerHTML = r.dup ? `Caught ${esc(sp.name)}! <span class="catch-xp">+${DUP_XP} XP</span>` : `You caught ${esc(sp.name)}! <span class="catch-xp">Lv ${r.lv}</span>`;
+      if (r.evolved?.length) setTimeout(() => toast(`${byId(r.evolved[0].from.split('.')[0]).name} is evolving! Check the home screen.`, 2600), 600);
+    } else {
+      zone?.classList.add('ran');
+      if (msg) msg.innerHTML = out.left ? `You let <strong>${esc(sp.name)}</strong> go.` : `<strong>${esc(sp.name)}</strong> ran off. Good battle!`;
+    }
+    S.phase = 'done';
+    await wait(quick(p) ? 500 : 900);
+    if (S.phase === 'done') advance();
   }
 
   function checkRetype() {
@@ -612,7 +677,7 @@ export function renderPlay(root, go, { table, focus, guide } = {}) {
   }
   const onKey = (e) => {
     if (!document.body.contains(root.querySelector('.play'))) { document.removeEventListener('keydown', onKey); return; }
-    if (document.querySelector('.sheet-wrap')) return;
+    if (document.querySelector('.sheet-wrap, .wild-host')) return; // [wild] a wild battle has its own keys
     if (e.target.closest?.('.coach') && (e.key === 'Enter' || e.key === ' ')) return; // Teacher K's button
     if (/^[0-9]$/.test(e.key)) $(`[data-k="${e.key}"]`, root)?.click();
     else if (e.key === 'Backspace') $('[data-k="del"]', root)?.click();

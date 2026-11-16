@@ -4,10 +4,11 @@ import { active, save } from '../core/store.js';
 import { regionOf, TYPES, byId, MYTHIC_ID, REGIONS } from '../data/creatures.js';
 import { creatureArt } from '../core/art.js';
 import { factsForTables, pickNext, onAnswer, answerOf, parseFact, hintLadder } from '../core/facts.js';
-import { answer, ball as giveBall, battle as recordBattle, session, caught as catchIt } from '../core/actions.js';
+import { answer, ball as giveBall, battle as recordBattle, session, caught as catchIt, escaped } from '../core/actions.js';
 import { myTeam, opponent, attack, powerFor, powerLabel, moveName, HIT_BACK, rewardFor, gymOpen } from '../core/battle.js';
-import { BALLS } from '../core/game.js';
-import { SHARE } from '../core/levels.js';
+import { BALLS, ballForStreak } from '../core/game.js';
+import { WILD, wildOpponent, wildHitBack, throwNow, rollWildCatch, runLine } from '../core/wild.js'; import { calmMode } from '../core/lightning.js'; // [wild] wild battles
+import { SHARE, DUP_XP } from '../core/levels.js';
 import { syncNow } from '../core/sync.js';
 import { dadJoke, DAD_JOKES } from '../data/dadjokes.js';
 import { voiceSupported, stop as stopVoice } from '../core/voice.js';
@@ -66,16 +67,21 @@ const duelThem = (opp, kind, won) => won && kind !== 'quiz'
 // The name gets the whole top line so long names fit; the team balls sit under the bar, beside the HP number.
 const hpBar = (who) => `<div class="hp hp-${who}"><div class="hp-top"><span class="hp-name"></span><span class="hp-lv"></span></div><div class="hp-bar"><span></span></div><div class="hp-bot"><span class="hp-dots"></span><span class="hp-num"></span></div></div>`;
 
-export function renderBattle(root, go, { kind = 'champ', table = 1, grunt } = {}) {
+export function renderBattle(root, go, { kind = 'champ', table = 1, grunt, wild = null } = {}) {
   const p = active();
   // A locked gym never starts a battle, whatever the way in. Back to Home.
   if (kind === 'champ' && !gymOpen(p, table)) { queueMicrotask(() => go('home')); return; }
   setSound(p.settings.sound);
   unlock();
-  const opp = opponent(p, kind, table, grunt);
+  // [wild] A wild battle (from practice, see play.js): one wild Kaimon against your
+  // Buddy. The rest of your team cheers from the side and still gets half the XP.
+  const isWild = kind === 'wild' && !!wild;
+  const calm = isWild && calmMode(p); // Calm mode: no speed meter, every hit the same
+  const opp = isWild ? wildOpponent(wild.species, wild.lv, wild.table) : opponent(p, kind, table, grunt);
   if (opp.ui?.go) go = opp.ui.go(go); // Hundred Tower hook: every way out goes back to the Tower
-  let mine = myTeam(p);
-  const pool = opp.facts || factsForTables(opp.tables);
+  let crew = myTeam(p);
+  let mine = isWild ? crew.slice(0, 1) : crew;
+  const pool = isWild && wild.pool?.length ? wild.pool : opp.facts || factsForTables(opp.tables);
   const useVoice = p.settings.voice && voiceSupported();
   const S = {
     me: 0, foe: 0, n: 0, streak: 0, best: 0, correct: 0, answered: 0, recent: [], requeue: [],
@@ -103,10 +109,11 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt } = {}
   }
 
   root.innerHTML = `
-    <section class="screen play battle v2 battle-${kind} intro-on">
+    <section class="screen play battle v2 battle-${kind}${isWild ? (calm ? ' calm-mode' : '') : ' intro-on'}">
       <header class="play-top">
         <button class="icon-btn" data-exit aria-label="Leave battle"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6 L18 18 M18 6 L6 18" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg></button>
-        <div class="vs-chip"><span class="vs-av">${trainerArt(opp)}</span><span><strong>${esc(opp.name)}</strong><small>${esc(opp.ui?.chip || (opp.kind === 'champ' ? `${opp.table}s Gym Leader` : opp.kind === 'boss' ? 'The final gym' : opp.kind === 'quiz' ? 'Pop Quiz' : 'Team Papa'))}</small></span></div>
+        ${isWild ? `<div class="vs-chip wild-chip-top"><span class="vs-av wild-av">${creatureArt(opp.team[0].species)}</span><span><strong>Wild ${esc(opp.name)}</strong><small class="wild-turns" aria-live="polite"></small></span></div>`
+        : `<div class="vs-chip"><span class="vs-av">${trainerArt(opp)}</span><span><strong>${esc(opp.name)}</strong><small>${esc(opp.ui?.chip || (opp.kind === 'champ' ? `${opp.table}s Gym Leader` : opp.kind === 'boss' ? 'The final gym' : opp.kind === 'quiz' ? 'Pop Quiz' : 'Team Papa'))}</small></span></div>`}
         ${soundButton(p.settings.sound)}
         <div class="streak" data-tier="0" aria-live="polite" title="Streak: right answers in a row" aria-label="Streak"><span class="streak-flame" aria-hidden="true"><svg viewBox="0 0 24 24"><path class="fl-out" d="M12 1.8c.9 3.2-1.2 5-2.7 6.8C7.7 10.5 6.6 12.3 6.6 14.6a5.4 5.4 0 0 0 10.8 0c0-2.9-1.5-4.8-2.6-6.2-.3 1.6-1.1 2.5-2.1 3 .5-3.1-.1-6.5-.7-9.6z" stroke="#14213D" stroke-width="1.5" stroke-linejoin="round"/><path class="fl-in" d="M12.1 10.6c.4 1.7-.6 2.6-1.3 3.5-.5.6-.9 1.3-.9 2.1a2.2 2.2 0 0 0 4.4 0c0-1.3-.7-2.1-1.2-2.8-.2.7-.5 1-1 1.2.2-1.4 0-2.7 0-4z"/></svg></span><span class="streak-num">0</span><span class="streak-ball" hidden></span></div>
       </header>
@@ -119,7 +126,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt } = {}
           </div>
           <div class="side me"><div class="mon me-mon"></div>${hpBar('me')}</div>
           <div class="fx" aria-hidden="true"></div>
-          <div class="overlay intro vs-intro" role="dialog" aria-modal="true" aria-label="${esc(opp.name)} wants to battle">
+          ${isWild ? '' : `<div class="overlay intro vs-intro" role="dialog" aria-modal="true" aria-label="${esc(opp.name)} wants to battle">
             <div class="vsi">
               <div class="vsi-stake">${stakeHTML()}</div>
               <div class="vsi-side vsi-foe">
@@ -144,7 +151,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt } = {}
               </div>
             </div>
             <span class="so-preload" aria-hidden="true">${playerArt(p, 'throw')}</span>
-          </div>
+          </div>`}
         </div>
         <div class="pad-wrap">
           <div class="answer" aria-live="polite"><span class="answer-val empty" data-ph="?"></span><span class="answer-hint"></span><span class="power-strip" aria-hidden="true"><span class="power-fill"></span></span></div>
@@ -244,12 +251,12 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt } = {}
       wakers.add(w);
     });
   }
-  const busy = () => S.phase === 'result' || S.phase === 'start';
+  const busy = () => S.phase === 'result' || S.phase === 'start' || S.phase === 'throw';
   function skip() {
     if (!busy() || S.skip) return;
     S.skip = true;
     [...wakers].forEach((w) => w());
-    el.fx.querySelectorAll('.so-ball, .so-trainer, .so-flash').forEach((n) => n.remove());
+    if (S.phase !== 'throw') el.fx.querySelectorAll('.so-ball, .so-trainer, .so-flash').forEach((n) => n.remove());
   }
   const anim = async (node, cls, ms) => { node.classList.remove(cls); void node.offsetWidth; node.classList.add(cls); await nap(ms); node.classList.remove(cls); };
   const spot = (node) => {
@@ -442,12 +449,13 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt } = {}
     S.phase = 'result';
     S.skip = false;
     const ms = performance.now() - S.shownAt;
-    const pw = powerFor(ms);
+    const pw = calm ? WILD.calmPower : powerFor(ms);
+    S.lastPw = pw;
     const ans = answerOf(S.fact);
     const ok = parseInt(S.input, 10) === ans;
     const [a, b] = parseFact(S.fact);
     // The Buddy gets the XP; the other two on the team get half (levels.js).
-    const res = answer(p, S.fact, ok, ms, via, mine.slice(1).map((m) => m.key));
+    const res = answer(p, S.fact, ok, ms, via, crew.slice(1).map((m) => m.key));
     if (res.xp) S.teamXP = (S.teamXP || 0) + Math.round(res.xp * SHARE);
     if (res.evolved.length) S.evolved = [...(S.evolved || []), ...res.evolved];
     onAnswer(S, S.fact, ok);
@@ -475,6 +483,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt } = {}
       await lunge;
       hit.crit ? sfx.crit() : sfx.hit();
       foe.hp -= hit.dmg;
+      if (isWild) foe.hp = Math.max(1, foe.hp); // [wild] worn out, never knocked out: it still has to be caught
       popNumber(el.foeMon, '-' + hit.dmg, hit.crit ? 'crit' : '');
       anim(el.foeMon, 'shake', 420);
       drawHp(el.foeHp, opp.team, S.foe, true);
@@ -484,6 +493,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt } = {}
       if (hit.crit) el.msg.textContent = hit.special ? `${move}! Critical hit!` : 'Critical hit!';
       if (S.snack) { await nap(q ? 160 : 220); feedSnack(); } // [systems] Power Snack
       await nap(q ? 240 : 320);
+      if (isWild) { drawTurns(); if (throwNow(foe.hp, foe.max, S.answered)) return wildThrow(pw); S.n++; return next(); } // [wild]
       if (foe.hp <= 0) {
         sfx.faint();
         el.foeMon.classList.add('faint');
@@ -512,8 +522,9 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt } = {}
       hitFx(el.meMon, foe.species.type, foe.species.type === 'papa');
       await back;
       sfx.ouch();
-      me.hp -= HIT_BACK;
-      popNumber(el.meMon, '-' + HIT_BACK, 'mine');
+      const hurt = isWild ? wildHitBack(HIT_BACK, foe.lv, me.lv) : HIT_BACK; // [wild] a much stronger wild one hits a bit harder
+      me.hp -= hurt;
+      popNumber(el.meMon, '-' + hurt, 'mine');
       anim(el.meMon, 'shake', 420);
       drawHp(el.meHp, mine, S.me, true);
       await nap(q ? 300 : 420);
@@ -548,9 +559,212 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt } = {}
       sfx.tap();
       S.phase = 'moving';
       if (S.lost) return finish(false);
+      if (isWild) { drawTurns(); const f = opp.team[0]; if (throwNow(f.hp, f.max, S.answered)) return wildThrow(S.lastPw || 0.5); } // [wild]
       S.n++;
       next();
     } else { setInput(''); sfx.wrong(); }
+  }
+
+  // ---------- wild battles [wild] ----------
+  // A wild Kaimon from practice. Every move is an answer: right ones knock its HP
+  // down (it never faints), wrong ones let it hit back. After a few answers, or once
+  // its HP is in the red, you throw a ball: the lower its HP, the better the odds.
+  function drawTurns() {
+    const box = $('.wild-turns', root);
+    if (!box) return;
+    const left = Math.max(0, WILD.turns - S.answered);
+    box.innerHTML = `<span class="wt-lv">Lv ${opp.team[0].lv}</span><span class="wt-pips" aria-hidden="true">${Array.from({ length: WILD.turns }, (_, i) => `<i class="${i < S.answered ? 'used' : ''}"></i>`).join('')}</span><span class="sr-only">${left} ${left === 1 ? 'answer' : 'answers'} until you throw</span>`;
+  }
+
+  async function startWild() {
+    S.phase = 'start';
+    const sp = opp.team[0].species;
+    drawMons();
+    drawTurns();
+    if (!reducedMotion()) el.meMon.classList.add('so-hidden');
+    el.qcard.classList.add('pre');
+    el.msg.textContent = `Wild ${sp.name} wants to battle!`;
+    sfx.special();
+    callout('Wild battle!', { type: sp.type, sub: 'Knock its HP down, then throw!' });
+    anim(el.foeHp, 'hp-in', 300);
+    await Promise.all([reducedMotion() ? nap(150) : anim(el.foeMon, 'so-pop', 340), sendOut('me', { trainer: true })]);
+    await nap(quick(p) ? 300 : 650);
+    next();
+    el.msg.textContent = 'Right answers knock its HP down!';
+  }
+
+  // Pick a ball for the throw. Only asks when you have special balls; the free
+  // ball (better on a streak) is always first.
+  function pickBall(why = '') {
+    const free = ballForStreak(p, Math.max(S.streak, wild.streak || 0));
+    const owned = ['super', 'mega', 'legend'].filter((k) => k !== free && (p.balls[k] || 0) > 0);
+    if (!owned.length) return Promise.resolve(free);
+    return new Promise((resolve) => {
+      const ov = document.createElement('div');
+      ov.className = 'wild-pick';
+      ov.setAttribute('role', 'group');
+      ov.setAttribute('aria-label', 'Pick a ball to throw');
+      ov.innerHTML = `<p class="wp-title">${why ? `<small>${esc(why)}</small>` : ''}Pick a ball to throw</p>
+        <div class="wp-row">${[free, ...owned].map((k, i) => `<button class="wp-ball${i ? '' : ' on'}" data-wp="${k}" data-free="${i ? 0 : 1}" aria-label="${BALLS[k].name}${i ? `, ${p.balls[k]} left` : ', free'}">${ballIcon(k)}<span>${BALLS[k].name.replace(' Ball', '')}</span><small>${i ? `${p.balls[k]} left` : 'Free'}</small></button>`).join('')}</div>`;
+      el.arena.appendChild(ov);
+      setTimeout(() => ov.querySelector('[data-wp]')?.focus({ preventScroll: true }), 50);
+      on(ov, 'click', '[data-wp]', (e, b) => {
+        if (!ov.isConnected) return;
+        sfx.tap();
+        const k = b.dataset.wp;
+        if (b.dataset.free !== '1') giveBall(p, k, -1);
+        ov.remove();
+        resolve(k);
+      });
+    });
+  }
+
+  // The throw: your trainer steps in, the ball arcs over, pulls the Kaimon in and
+  // shakes. About 1.5 seconds; a tap skips to the end. Reduced motion: a quick fade.
+  async function throwAnim(kindOfBall, roll) {
+    const mon = el.foeMon, q = quick(p);
+    sfx.throw();
+    if (reducedMotion()) {
+      await nap(150);
+      if (roll.caught) { mon.classList.add('wild-gone'); sfx.caught(); } else sfx.escape();
+      return;
+    }
+    const th = document.createElement('div');
+    th.className = 'so-trainer' + (q ? ' quick' : '');
+    th.innerHTML = playerArt(p, 'throw');
+    el.fx.appendChild(th);
+    await nap(q ? 100 : 160);
+    const t = spot(th), s = spot(mon);
+    const size = Math.max(34, Math.min(64, s.w * 0.28));
+    const from = { x: t.x - t.w * 0.4, y: t.y - t.h * 0.34 }, to = { x: s.x, y: s.y + s.h * 0.05 };
+    const b = document.createElement('img');
+    b.className = 'so-ball wild-ball';
+    b.src = ballSrc(kindOfBall);
+    b.alt = '';
+    b.style.cssText = `width:${size}px;height:${size}px;left:${-size / 2}px;top:${-size / 2}px`;
+    el.fx.appendChild(b);
+    const dur = q ? 260 : 380, peak = Math.min(from.y, to.y) - s.ah * 0.15;
+    const fly = b.animate([
+      { transform: `translate(${from.x}px, ${from.y}px) rotate(0deg) scale(.8)` },
+      { transform: `translate(${(from.x + to.x) / 2}px, ${peak}px) rotate(-320deg) scale(1)`, offset: 0.5 },
+      { transform: `translate(${to.x}px, ${to.y}px) rotate(-640deg) scale(1)` },
+    ], { duration: dur, easing: 'cubic-bezier(.3, .1, .6, 1)', fill: 'forwards' });
+    setTimeout(() => th.classList.add('out'), dur * 0.6);
+    await nap(dur);
+    th.remove();
+    fly.cancel();
+    b.style.transform = `translate(${to.x}px, ${to.y}px)`;
+    // Pop! It opens and pulls the Kaimon in, then snaps shut and drops.
+    b.src = ballSrc(kindOfBall, true);
+    mon.classList.add('wild-in');
+    await nap(q ? 200 : 320);
+    b.src = ballSrc(kindOfBall);
+    // Drop to the ground with the Web Animations API, so it always starts where it is.
+    const land = `translate(${to.x}px, ${s.y + s.h * 0.34}px)`;
+    b.animate([{ transform: b.style.transform }, { transform: land }], { duration: 180, easing: 'ease-in' });
+    b.style.transform = land;
+    await nap(200);
+    const shakes = Math.min(3, q ? Math.min(roll.shakes, 1) : roll.shakes);
+    for (let i = 0; i < shakes; i++) {
+      await nap(q ? 200 : 300);
+      sfx.wobble();
+      // One transform, so the shake turns the ball where it sits.
+      b.animate([{ transform: land }, { transform: `${land} rotate(-22deg)` }, { transform: `${land} rotate(18deg)` }, { transform: land }], { duration: 280, easing: 'ease-in-out' });
+    }
+    await nap(q ? 160 : 260);
+    if (roll.caught) {
+      sfx.caught();
+      b.animate([{ transform: land }, { transform: `${land} scale(1.2)` }, { transform: land }], { duration: 380, easing: 'cubic-bezier(.3, 1.6, .5, 1)' });
+      const fl = document.createElement('span');
+      const fs = size * 2.4, bs = spot(b);
+      fl.className = 'so-flash';
+      fl.style.cssText = `width:${fs}px;height:${fs}px;left:${bs.x - fs / 2}px;top:${bs.y - fs / 2}px`;
+      el.fx.appendChild(fl);
+      setTimeout(() => fl.remove(), 450);
+      await nap(380);
+    } else {
+      sfx.escape();
+      b.src = ballSrc(kindOfBall, true);
+      b.animate([{ transform: land, opacity: 1 }, { transform: `${land} translateY(-30%) scale(1.15)`, opacity: 0 }], { duration: 380, easing: 'ease-out', fill: 'forwards' });
+      mon.classList.remove('wild-in');
+      anim(mon, 'so-pop', 340);
+      await nap(380);
+      b.remove();
+      mon.classList.add('wild-run');
+      await nap(q ? 260 : 420);
+    }
+  }
+
+  async function wildThrow(pw = 0.5) {
+    S.phase = 'pick';
+    cancelAnimationFrame(S.raf);
+    S.mic?.pause();
+    stopVoice();
+    const foe = opp.team[0], sp = foe.species, left = foe.hp / foe.max;
+    el.qcard.classList.add('pre');
+    el.msg.textContent = left <= WILD.red ? `${sp.name} is worn out. Throw a ball!` : `${sp.name} wants to run. Throw a ball!`;
+    const ball = await pickBall(left <= WILD.red ? `${sp.name}'s HP is low!` : `${sp.name} wants to run!`);
+    if (S.phase !== 'pick') return; // let go while picking
+    S.phase = 'throw';
+    S.skip = false;
+    const roll = rollWildCatch(sp, ball, left, pw);
+    el.msg.textContent = `${BALLS[ball].name}, go!`;
+    await throwAnim(ball, roll);
+    let res = null;
+    if (roll.caught) res = catchIt(p, sp.id, sp, { lv: foe.lv, o: 'wild' });
+    else escaped(p, sp.id);
+    save();
+    return finishWild({ won: true, caught: roll.caught, res, shakes: roll.shakes, ball });
+  }
+
+  // The end of a wild battle: caught, broke free, or it ran off. No penalty either way.
+  async function finishWild(out) {
+    S.phase = 'over';
+    cancelAnimationFrame(S.raf);
+    S.mic?.destroy();
+    stopVoice();
+    const foe = opp.team[0], sp = foe.species;
+    const xp0 = p.xp || 0;
+    const bev = recordBattle(p, 'wild', opp.table, out.won, crew.slice(1).map((m) => m.key), { n: sp.id, lv: foe.lv, c: out.caught ? 1 : 0 });
+    if (out.res?.evolved?.length) S.evolved = [...(S.evolved || []), ...out.res.evolved];
+    if (bev.evolved?.length) S.evolved = [...(S.evolved || []), ...bev.evolved];
+    if (bev.d.x) S.teamXP = (S.teamXP || 0) + Math.round(bev.d.x * SHARE);
+    const bonusXP = (p.xp || 0) - xp0;
+    save();
+    syncNow();
+    if (out.caught) sfx.win(); else if (!out.won) sfx.lose();
+    const r = out.res;
+    const num = String(sp.num).padStart(3, '0');
+    const head = out.caught ? (r?.isNew ? 'New Kaimon!' : 'Caught!') : out.won ? 'So close!' : 'Good battle!';
+    const title = out.caught ? `You caught ${sp.name}!` : `${sp.name} got away`;
+    const line = out.caught
+      ? (r?.isNew ? `#${num} added to your Kaidex. It joins your team at Lv ${r.lv}.` : r?.dup ? `Your ${sp.name} got stronger: +${DUP_XP} XP.` : `It joins your team at Lv ${r?.lv || foe.lv}.`)
+      : out.won ? `${out.shakes === 2 ? 'Argh! It broke free at the last second.' : 'It broke free!'} ${runLine()}` : `${sp.name} was really strong. ${runLine()}`;
+    const rm = reducedMotion();
+    const ov = document.createElement('div');
+    ov.className = `overlay result br wild-res ${out.caught ? 'won' : 'lost'}`;
+    ov.setAttribute('role', 'dialog');
+    ov.setAttribute('aria-modal', 'true');
+    ov.setAttribute('aria-label', title);
+    ov.innerHTML = `
+      <div class="br-bg" aria-hidden="true"><span class="${out.caught ? 'br-rays' : 'br-glow'}"></span></div>
+      <div class="intro-card br-card">
+        <div class="br-ribbon"><span>${head}</span></div>
+        <div class="wr-art${out.caught ? ' got' : ' ran'}">${out.caught && !rm ? fxImg('badge-burst', 'wr-burst') : ''}${creatureArt(sp, { shiny: !!r?.shiny })}${out.caught ? `<span class="wr-ball">${ballIcon(out.ball)}</span>` : ''}</div>
+        <h2>${esc(title)}${r?.shiny ? ' <span class="new-tag shiny-tag">Shiny!</span>' : ''}</h2>
+        <p class="speech intro-speech">${esc(line)}</p>
+        <div class="br-stats result-stats">
+          <span class="br-stat"><strong>${S.correct}/${S.answered}</strong><small>right</small></span>
+          <span class="br-stat"><strong>Lv ${foe.lv}</strong><small>wild level</small></span>
+          ${bonusXP ? `<span class="br-stat xp"><strong>+${bonusXP}</strong><small>battle bonus XP</small></span>` : ''}
+        </div>
+        ${teamLine()}
+        ${out.caught ? '' : '<p class="br-kind">Every answer still counts as practice.</p>'}
+        <div class="sheet-actions"><button class="btn-chunky btn-primary btn-xl" data-done>Keep going</button></div>
+      </div>`;
+    el.arena.appendChild(ov);
+    setTimeout(() => ov.querySelector('[data-done]')?.focus({ preventScroll: true }), rm ? 0 : 300);
+    on(ov, 'click', '[data-done]', () => { sfx.tap(); go('wild-done', { won: out.won, caught: out.caught, res: r, ball: out.ball }); });
   }
 
   // ---------- badge ceremony ----------
@@ -596,7 +810,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt } = {}
 
   // The team's share of the XP, and any Kaimon that evolved during the battle.
   function teamLine() {
-    const others = mine.slice(1).map((m) => m.species.name);
+    const others = crew.slice(1).map((m) => m.species.name);
     const lines = [];
     if (others.length && S.teamXP) lines.push(`${others.join(' and ')} got +${S.teamXP} XP${others.length > 1 ? ' each' : ''}.`);
     const evo = (S.evolved || [])[0];
@@ -605,6 +819,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt } = {}
   }
 
   async function finish(won) {
+    if (isWild) return finishWild({ won, caught: false }); // [wild]
     S.phase = 'over'; drawSnack(); // [systems]
     cancelAnimationFrame(S.raf);
     S.mic?.destroy();
@@ -614,7 +829,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt } = {}
     const firstBadge = won && kind === 'champ' && !p.battles.champs[opp.table];
     const reward = won ? rewardFor(p, kind, opp.table) : null;
     const xpBefore = p.xp || 0;
-    const bev = recordBattle(p, kind, opp.table, won, mine.slice(1).map((m) => m.key));
+    const bev = recordBattle(p, kind, opp.table, won, crew.slice(1).map((m) => m.key));
     if (bev.evolved?.length) S.evolved = [...(S.evolved || []), ...bev.evolved];
     if (bev.d.x) S.teamXP = (S.teamXP || 0) + Math.round(bev.d.x * SHARE);
     const bonusXP = (p.xp || 0) - xpBefore;
@@ -703,13 +918,14 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt } = {}
   const screenEl = root.firstElementChild;
   const flushTime = () => {
     if (!document.body.contains(screenEl)) { document.removeEventListener('visibilitychange', flushTime); return; }
+    if (isWild) return; // [wild] practice counts the time of a wild battle
     if (!document.hidden || S.done) return;
     if (!S.answered) return;
     session(p, Date.now() - S.startedAt, S.best, !!S.flushed);
     S.flushed = true; S.startedAt = Date.now(); save(); syncNow();
   };
   document.addEventListener('visibilitychange', flushTime);
-  const endTime = () => { S.done = true; document.removeEventListener('visibilitychange', flushTime); session(p, Date.now() - S.startedAt, S.best, !!S.flushed); };
+  const endTime = () => { if (isWild) { S.done = true; return; } S.done = true; document.removeEventListener('visibilitychange', flushTime); session(p, Date.now() - S.startedAt, S.best, !!S.flushed); };
   // ---------- input ----------
   on(root, 'click', '[data-start]', async () => {
     if (S.phase !== 'intro') return;
@@ -733,7 +949,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt } = {}
     if (S.phase !== 'intro') return;
     sfx.tap();
     teamSheet(p, () => {
-      mine = myTeam(p);
+      crew = mine = myTeam(p);
       const row = root.querySelector('.team-change');
       if (row) row.innerHTML = mine.map((m) => `<span class="mini">${creatureArt(m.species)}</span>`).join('') + '<span class="tc-label">Change team</span>';
       drawMons();
@@ -758,6 +974,16 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt } = {}
     if (S.phase === 'learn' && S.input.length >= String(S.mustType).length) checkRetype();
   });
   on(root, 'click', '[data-exit]', () => {
+    if (isWild) { // [wild] let it go: it runs off, and the answers still count
+      if (S.phase === 'over') return root.querySelector('[data-done]')?.click();
+      const sh = sheet(`<h2>Let it go?</h2><p>${esc(opp.name)} will run off. Your answers still count.</p><div class="sheet-actions"><button class="btn-chunky btn-primary" data-stop>Let it go</button><button class="btn-chunky" data-close>Keep battling</button></div>`);
+      sh.el.querySelector('[data-stop]').addEventListener('click', () => {
+        sh.close(); S.mic?.destroy(); stopVoice(); cancelAnimationFrame(S.raf);
+        S.phase = 'over'; root.querySelector('.wild-pick')?.remove();
+        save(); go('wild-done', { left: true });
+      });
+      return;
+    }
     if (S.phase === 'over') { const h = root.querySelector('.overlay.result [data-home]'); return h ? h.click() : go('home'); }
     const sh = sheet(`<h2>Leave the battle?</h2><p>Your answers still count for practice.</p><div class="sheet-actions"><button class="btn-chunky btn-primary" data-stop>Leave</button><button class="btn-chunky" data-close>Keep battling</button></div>`);
     sh.el.querySelector('[data-stop]').addEventListener('click', () => {
@@ -783,6 +1009,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt } = {}
   const onKey = (e) => {
     if (!document.body.contains(root.querySelector('.battle'))) { document.removeEventListener('keydown', onKey); return; }
     if (document.querySelector('.sheet-wrap')) return;
+    if (isWild && (S.phase === 'over' || S.phase === 'pick')) { if (e.key === 'Enter') { e.preventDefault(); $(S.phase === 'over' ? '[data-done]' : '.wild-pick [data-wp]', root)?.click(); } return; } // [wild]
     if (S.phase === 'over') { if (e.key === 'Enter') { const c = $('.ceremony [data-continue]', root); if (c) { e.preventDefault(); c.click(); } } return; }
     if (busy()) {
       skip();
@@ -798,4 +1025,5 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt } = {}
   };
   document.addEventListener('keydown', onKey);
   drawMons();
+  if (isWild) startWild(); // [wild] no VS screen: the wild one jumps right in
 }

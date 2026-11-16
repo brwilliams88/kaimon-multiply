@@ -1,0 +1,102 @@
+/* Wild levels and wild battles (js/core/wild.js, play.js, battle.js kind 'wild'). */
+
+/* The level of every wild Kaimon: a small navy tag at the foot of its art. */
+.wild-art .wild-lv, .wild-call .wild-lv {
+  position: absolute; left: 50%; bottom: -2px; transform: translateX(-50%);
+  background: var(--ink); color: #fff; font-weight: 700; font-size: clamp(12px, 3.4cqh, 16px); line-height: 1;
+  padding: 4px 9px 5px; border-radius: 99px; border: 2px solid #fff; box-shadow: 0 2px 0 rgba(20, 33, 61, .35);
+  white-space: nowrap; pointer-events: none; z-index: 2;
+}
+.card-wild.strong .wild-art .wild-lv { background: var(--coral); }
+/* A strong one glows in its region's color. */
+.card-wild.strong .wild-art .kart { filter: drop-shadow(0 0 6px #fff) drop-shadow(0 0 14px var(--rc)); }
+.card-wild.strong .wild-strong { animation: wildAura 1.6s ease-in-out infinite; }
+@keyframes wildAura { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+.wild-strong {
+  display: inline-flex; align-items: center; gap: 6px; margin: 6px auto 8px; align-self: center; flex: none; max-width: calc(100% - 16px);
+  font-weight: 700; font-size: clamp(13px, 3.6cqh, 17px); line-height: 1.1; color: #fff;
+  background: var(--coral); border: 2.5px solid var(--ink); border-radius: 18px; padding: 4px 12px 5px; justify-content: center;
+  box-shadow: 0 3px 0 var(--ink); text-align: center;
+}
+
+/* The answer that starts a wild battle. */
+.wild-call .catch-art { position: relative; animation: wildCall .9s cubic-bezier(.3, 1.6, .5, 1) both; }
+@keyframes wildCall { 0% { transform: scale(.85); } 40% { transform: scale(1.08) translateY(-6px); } 70% { transform: scale(.98); } 100% { transform: none; } }
+.catch-zone.ran .catch-art { opacity: .35; transform: translateX(40%) scale(.8); transition: transform .4s ease-in, opacity .4s; }
+
+/* The wild battle opens on top of practice. */
+html.wild-open, html.wild-open body { overflow: hidden; }
+.wild-host { position: fixed; inset: 0; z-index: 30; overflow: hidden; background: var(--sky); transition: opacity .2s; }
+.wild-host.out { opacity: 0; pointer-events: none; }
+.wild-host > .screen { height: 100dvh; }
+
+/* Top bar: the wild Kaimon's face, its level and the answers left before the throw. */
+.wild-av { background: var(--rl, var(--paper)); }
+.wild-av .kart { width: 100%; height: 100%; display: block; }
+.wild-av .kart img { width: 100%; height: 100%; object-fit: contain; }
+.wild-turns { display: flex; align-items: center; gap: 8px; }
+.wild-turns .wt-lv { font-weight: 700; color: var(--ink); }
+.wild-turns .wt-pips { display: inline-flex; gap: 4px; }
+.wild-turns .wt-pips i { width: 10px; height: 10px; border-radius: 50%; background: var(--rc, var(--coral)); border: 2px solid var(--ink); transition: background .2s, transform .2s; }
+.wild-turns .wt-pips i.used { background: rgba(20, 33, 61, .15); transform: scale(.8); }
+
+/* Pick a ball for the throw. */
+.wild-pick {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 7;
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  background: var(--paper); border: 3px solid var(--ink); border-radius: 22px; box-shadow: 0 6px 0 var(--ink);
+  padding: 14px 14px 16px; width: min(calc(100% - 24px), 440px);
+  animation: wildPickIn .22s cubic-bezier(.3, 1.5, .5, 1) both;
+}
+@keyframes wildPickIn { from { transform: translate(-50%, -40%) scale(.9); opacity: 0; } }
+.wp-title { margin: 0; font-weight: 700; font-size: 19px; line-height: 1.15; text-align: center; }
+.wp-title small { display: block; font-size: 14px; font-weight: 600; color: var(--ink-2); }
+.wp-row { display: flex; gap: 8px; justify-content: center; width: 100%; }
+.wp-ball {
+  display: flex; flex-direction: column; align-items: center; gap: 2px; flex: 1 1 0; min-width: 0; max-width: 96px; padding: 8px 4px 6px;
+  background: var(--paper); border: 3px solid var(--ink); border-radius: 16px; box-shadow: 0 4px 0 var(--ink);
+  font-weight: 700; font-size: 15px; line-height: 1.1;
+}
+.wp-ball:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--ink); }
+.wp-ball.on { background: #FFF4C8; }
+.wp-ball .ball-ic, .wp-ball img, .wp-ball svg { width: 44px; height: 44px; }
+.wp-ball small { font-size: 12px; font-weight: 600; color: var(--ink-2); }
+
+/* The throw: the Kaimon goes into the ball, the ball shakes, then it holds or pops. */
+.battle .mon.wild-in { transform: scale(0); opacity: 0; filter: brightness(2.2); transition: transform .3s ease-in, opacity .3s ease-in, filter .2s; }
+.battle .mon.wild-gone { opacity: 0; transition: opacity .15s; }
+.battle .mon.wild-run { transform: translateX(70%); opacity: 0; transition: transform .4s ease-in, opacity .4s ease-in; }
+
+/* The result: caught, broke free, or it ran off. */
+.wild-res .wr-art { position: relative; width: min(46vw, 34vh, 210px); aspect-ratio: 1; margin: 2px auto 0; display: grid; place-items: center; }
+.wild-res .wr-art > .kart { width: 100%; height: 100%; position: relative; z-index: 1; }
+.wild-res .wr-art.got > .kart { animation: wildCall .7s cubic-bezier(.3, 1.6, .5, 1) both; }
+.wild-res .wr-art.ran > .kart { opacity: .55; filter: saturate(.7); }
+.wild-res .wr-burst { position: absolute; inset: -12%; width: 124%; height: 124%; object-fit: contain; z-index: 0; animation: wrSpin 12s linear infinite; }
+@keyframes wrSpin { to { rotate: 360deg; } }
+.wild-res .wr-ball { position: absolute; right: 2%; bottom: 4%; width: 26%; aspect-ratio: 1; z-index: 2; display: grid; place-items: center; }
+.wild-res .wr-ball > * { width: 100%; height: 100%; }
+.wild-res .br-stats { justify-content: center; }
+.wild-res .shiny-tag { font-size: 15px; vertical-align: middle; }
+
+/* Calm mode: no speed meter in a wild battle either. */
+.battle-wild.calm-mode .power-strip { display: none !important; }
+
+@media (prefers-reduced-motion: reduce) {
+  .card-wild.strong .wild-strong, .wild-call .catch-art, .wild-pick,
+  .wild-res .wr-art.got > .kart, .wild-res .wr-burst { animation: none !important; }
+  .battle .mon.wild-in, .battle .mon.wild-run, .catch-zone.ran .catch-art, .wild-host { transition: none !important; }
+}
+
+/* How to play: the wild battle card. */
+.hd-wild { right: 6%; bottom: 4%; width: 40%; aspect-ratio: 1; }
+.hd-wild .kart { width: 100%; height: 100%; }
+.hd-wlv { position: absolute; z-index: 2; left: 50%; bottom: 6%; transform: translateX(-50%); padding: 3px 12px; border-radius: 99px; background: var(--coral); color: #fff; border: 2.5px solid #fff; font-size: 18px; line-height: 1.1; white-space: nowrap; box-shadow: 0 3px 0 rgba(20, 33, 61, .3); }
+.hd-whp { right: 8%; top: 9%; width: 36%; height: 16px; border-radius: 99px; background: var(--paper); border: 3px solid var(--ink); box-shadow: 0 3px 0 var(--ink); overflow: hidden; }
+.hd-whp i { display: block; width: 22%; height: 100%; background: var(--coral); }
+.hd-wball { right: 44%; bottom: 46%; width: 12%; }
+
+/* With a Hint Scroll button in the corner, the tag stays centered and clear of it. */
+.card-wild.strong:has(.scroll-btn) .wild-strong { max-width: calc(100% - 164px); }
+.wild-strong { flex-wrap: wrap; column-gap: .3em; row-gap: 0; }
+.wild-strong > span { white-space: nowrap; }

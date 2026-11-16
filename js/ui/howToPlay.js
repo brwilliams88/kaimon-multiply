@@ -3,7 +3,7 @@
 import { creatureArt } from '../core/art.js';
 import { partnerOf, dexCounts } from '../core/game.js';
 import { BOOST } from '../core/levels.js';
-import { byId } from '../data/creatures.js';
+import { byId, SPECIES } from '../data/creatures.js';
 import { ballImg, itemImg, badgeImg, uiImg, trainerFace, trainerBody, sceneSrc, gymSrc, cssUrl } from '../core/assets.js';
 import { esc, sheet, reducedMotion } from './dom.js';
 import { sfx } from '../core/sound.js';
@@ -69,6 +69,16 @@ function cards(p) {
         <span class="hd-vs">VS</span>
         <span class="hd-side hd-them">${trainerBody('captain-tide', 'talking')}</span>
         <span class="hd-hit"><b>2</b><i>×</i><b>6</b></span>
+      </div>`,
+    },
+    { // [wild] wild levels and wild battles
+      key: 'wild', title: 'Strong ones battle first',
+      text: 'Every wild Kaimon has a level. Rare and strong ones want a battle first: right answers knock their HP down, then you throw. The lower their HP, the easier the catch!',
+      art: `<div class="hd-art hd-scene" ${scene('3')}>
+        <span class="hd-side hd-me">${creatureArt(buddy)}</span>
+        <span class="hd-wild">${creatureArt(SPECIES.find((s) => s.rarity === 'rare' && s.region === 3) || buddy)}<b class="hd-wlv">Lv 24</b></span>
+        <span class="hd-whp"><i></i></span>
+        <span class="hd-throw hd-wball">${ballImg('super')}</span>
       </div>`,
     },
     {
