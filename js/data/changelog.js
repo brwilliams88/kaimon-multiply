@@ -1,7 +1,21 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '1.0.3';
+export const VERSION = '1.0.4';
 
 export const CHANGELOG = [
+  {
+    version: '1.0.4',
+    date: '2026-11-16',
+    title: "Morning polish",
+    items: [
+      "Long pop-ups like the Menu now show a \"More below\" hint, so you know to scroll.",
+      "Send feedback now asks for what you don't like too. Telling us what you don't like helps the most!",
+      "Boss Papa's picture on the Papa's Gym tile is centered, with his whole P hat in the circle.",
+      "\"Play on another device\" in the Menu has a new, bigger icon that matches the others.",
+      "The Wardrobe's License preview shows your Kaidex count, best streak, medals and patches, just like your real Trainer License.",
+      "Easier taps: the Grown-ups times table grid, the \"Family device? Sign in\" link and the Kaidex page dots.",
+      "The Mega \"M\" badge in the Kaidex is easier to read.",
+    ],
+  },
   {
     version: '1.0.3',
     date: '2026-11-16',
