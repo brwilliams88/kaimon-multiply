@@ -75,6 +75,15 @@ export async function askPersistOnce(installed = false) {
   } catch { /* not allowed here; the save still works */ }
 }
 
+// A grown-up tapped Keep my data. Returns true when the browser agreed.
+export async function keepData() {
+  const s = navigator.storage;
+  try {
+    if (s?.persisted && await s.persisted()) return true;
+    return s?.persist ? !!(await s.persist()) : false;
+  } catch { return false; }
+}
+
 export async function storageInfo() {
   const s = navigator.storage;
   let persisted = null, usage = 0;

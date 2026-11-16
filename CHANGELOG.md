@@ -2,6 +2,14 @@
 
 All notable changes. Versioning: `0.MINOR.0` marks a roadmap phase, `0.x.PATCH` is any shipped change a player or parent can notice, and `1.0.0` is the public launch. See "Versioning" in CLAUDE.md. The in-app version history (Grown-ups > What's new) reads from `js/data/changelog.js`; keep both in sync. Each release is tagged in git as `vX.Y.Z`.
 
+## v0.6.7 (2026-11-16) Better offline play
+
+- A Works offline badge shows in the Menu once every picture is saved.
+- The offline download meter shows progress better. It pauses when the internet drops, starts again by itself, and has a Try again button if some pictures didn't download.
+- New in Grown-ups: Keep my data asks the browser to keep progress safe on this device.
+- Emails and feedback sent with no internet wait on the device and go out by themselves when it is back. Grown-ups shows how many are waiting to send.
+- If a round starts with no internet and Mic mode on, the game says the mic is resting and to use the number pad.
+
 ## v0.6.6 (2026-11-16) Big moments come alive
 
 - Big moments come alive: Gym Leaders shake off the battle before handing over your badge, Boss Papa drops his dumbbell, and beating him earns a Champion ribbon.

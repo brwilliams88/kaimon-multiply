@@ -6,7 +6,7 @@
 //   maybeAskRating()         a gentle one-time "Rate the game" after a happy
 //                            moment (3 badges or 7 days of play), at most once
 //                            every 60 days, never during a round
-//   flushFeedback()          sends notes that waited for the internet
+//   flushFeedback()          sends notes that waited for the internet (the outbox calls it)
 //
 // Every note is saved in the Supabase table public.feedback (insert only; only
 // the maker's dashboard can read it) and also emailed to the maker through the
@@ -18,6 +18,7 @@ import { active, deviceId } from '../core/store.js';
 import { REPORT_ENDPOINT, cleanEmail, validEmail } from '../core/mailer.js';
 import { VERSION } from '../data/changelog.js';
 import { deviceKind, browserKind, currentPlace } from '../core/analytics.js';
+import { registerOutbox, outboxChanged } from '../core/outbox.js';
 
 const SB_URL = 'https://qabevoqmalqjvesqzuse.supabase.co';
 const SB_KEY = 'sb_publishable_6VwJkmR4SMSCs7WXQKjbnA_R0hK8OUW';
@@ -42,7 +43,7 @@ const STAR = '<svg viewBox="0 0 48 48" aria-hidden="true"><path class="fb-star-b
 
 const store = {
   read() { try { const x = JSON.parse(localStorage.getItem(OUTBOX) || '[]'); return Array.isArray(x) ? x : []; } catch { return []; } },
-  write(list) { try { if (list.length) localStorage.setItem(OUTBOX, JSON.stringify(list.slice(-20))); else localStorage.removeItem(OUTBOX); } catch { /* private mode */ } },
+  write(list) { try { if (list.length) localStorage.setItem(OUTBOX, JSON.stringify(list.slice(-20))); else localStorage.removeItem(OUTBOX); } catch { /* private mode */ } outboxChanged(); },
 };
 export const queuedFeedback = () => store.read();
 const offline = () => typeof navigator !== 'undefined' && navigator.onLine === false;
@@ -130,7 +131,8 @@ export async function submitNote(note) {
   return store.read().some((x) => x.id === item.id && !x.db) ? 'queued' : 'sent';
 }
 
-if (typeof window !== 'undefined') window.addEventListener('online', () => setTimeout(() => flushFeedback().catch(() => {}), 4000));
+// Waiting notes go out with the rest of the outbox (core/outbox.js).
+registerOutbox('feedback', { count: () => store.read().length, flush: flushFeedback, one: 'feedback note', many: 'feedback notes' });
 
 // ------------------------------------------------------------------ the sheet
 
