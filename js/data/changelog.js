@@ -1,7 +1,17 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.5.31';
+export const VERSION = '0.5.32';
 
 export const CHANGELOG = [
+  {
+    version: '0.5.32',
+    date: '2026-11-15',
+    title: "Nicer report emails",
+    items: [
+      "Each kind of email now has its own picture at the top: a celebration for weekly reports, a sleepy Kaizo for quiet weeks, and Kaizo with an envelope for the \"Say yes\" email.",
+      "Fixed: small pictures in the emails (the trainer, medals and Kaimon) could look stretched on iPhone. They now keep their shape.",
+      "Fixed: Gmail could hide most of a new report under the \"...\" button when it landed in the same conversation as an earlier one. Every email now carries its own sent time, so the whole email shows.",
+    ],
+  },
   {
     version: '0.5.31',
     date: '2026-11-15',
