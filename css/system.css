@@ -101,7 +101,6 @@ a:focus-visible, .link-btn:focus-visible { border-radius: 6px; }
 .stars { color: var(--star-ink); }
 .lic-stars { color: #6E5000; }
 .lic-k { color: var(--ink-2); }
-.bc-slot:not(.won) .bc-name { color: rgba(255, 255, 255, .78); }
 .lv-new { color: var(--muted); }
 .wr-day b { color: var(--ink-2); }
 .wr-day.later b { opacity: 1; color: var(--muted); }

@@ -1,46 +1,28 @@
-// The trainer page: your Trainer License, battle team, Badge case, Item Bag, medals and stats.
+// The trainer page: your Trainer License, battle team, Trophy case (badges, medals,
+// patches and the Item Bag, in js/ui/trophy.js) and stats.
 import { active, touch, save } from '../core/store.js';
 import { REGIONS } from '../data/creatures.js';
-import { tableTier, LEVEL_LABEL } from '../core/facts.js';
 import { dexCounts, trainerTitle, trainerSince } from '../core/game.js';
-import { licenseExtras, gymBadges, papaWon, patchName, bagRows, bagEmpty } from '../core/extras.js';
+import { licenseExtras, patchName } from '../core/extras.js';
 import { syncNow } from '../core/sync.js';
 import { avatarSVG, trainerLook } from './avatars.js';
 import { licenseBg } from './licenseArt.js';
 import { wardrobeCardHTML, openWardrobe, wardrobeCheck, colorOwned, lookOf } from './wardrobe.js';
 import { byId as wearItem, moreText } from '../core/wardrobe.js';
 import { lookPickerHTML, wireLookPicker } from './lookPicker.js';
-import { medal } from './home.js';
-import { badgeImg, ballImg, itemImg, uiImg, ITEMS } from '../core/assets.js';
+import { itemImg, uiImg } from '../core/assets.js';
 import { teamRowHTML, teamSheet } from './teamPicker.js';
 import { renameSheet } from './renameSheet.js';
 import { esc, on, sheet, toast } from './dom.js';
 import { sfx } from '../core/sound.js';
-import { openItem, hintArt } from './items.js'; // [systems] Item Bag
 import { patchSVG } from './patchArt.js';
-export { patchSVG };
+import { trophyCaseHTML, wireTrophyCase } from './trophy.js';
 
-const INK = '#14213D';
 const minutes = (ms) => {
   const m = Math.round(ms / 60000);
   return m < 60 ? `${m} min` : `${Math.floor(m / 60)} hr ${m % 60} min`;
 };
 const sinceDay = (t) => new Date(t).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
-
-// A Gym badge: the badge art in full color once won, a faded outline until then.
-export function gymBadge(r, won) {
-  return `<span class="gym-badge${won ? ' won' : ''}">${badgeImg(r.table)}</span>`;
-}
-
-// Papa's Gym badge: a kettlebell with Boss Papa's red P (it's a CrossFit gym).
-export const papaBadgeSVG = (cls = '') => `<svg class="papa-badge ${cls}" viewBox="0 0 64 64" aria-hidden="true">
-  <path d="M19.5 29 C16 9 48 9 44.5 29" fill="none" stroke="${INK}" stroke-width="12" stroke-linecap="round"/>
-  <path d="M19.5 29 C16 9 48 9 44.5 29" fill="none" stroke="#3A3A45" stroke-width="6" stroke-linecap="round"/>
-  <circle cx="32" cy="40" r="19.5" fill="#2B2B33" stroke="${INK}" stroke-width="3"/>
-  <path d="M18.5 35 A14.5 14.5 0 0 1 27 25.8" fill="none" stroke="#fff" stroke-opacity=".4" stroke-width="3.2" stroke-linecap="round"/>
-  <path d="M26 51 V30 H33.5 A6.6 6.6 0 0 1 33.5 43.2 H26" fill="none" stroke="#fff" stroke-width="8.5" stroke-linejoin="round" stroke-linecap="round"/>
-  <path d="M26 51 V30 H33.5 A6.6 6.6 0 0 1 33.5 43.2 H26" fill="none" stroke="#E8492A" stroke-width="4.6" stroke-linejoin="round" stroke-linecap="round"/>
-</svg>`;
 
 // ---- Trainer License
 function licenseHTML(p, x) {
@@ -80,68 +62,6 @@ function unlocksHTML(x) {
   return `<div class="tr-unlocks"><h2 class="ul-title">License extras</h2>${frameRow}${patchRow}${trimRow}</div>`;
 }
 
-// ---- Badge case
-function badgeCaseHTML(p) {
-  const list = gymBadges(p);
-  const papa = papaWon(p);
-  return `<div class="badge-case">
-    ${list.map((b, i) => `<button class="bc-slot${b.won ? ' won' : ''}" data-badge="${b.table}" style="--rc:${b.color};--i:${i}" aria-label="${esc(b.won ? b.badge : `${b.region} badge, not won yet`)}">
-      <span class="bc-pit">${badgeImg(b.table, 'bc-img')}</span><span class="bc-name">${esc(b.won ? b.badge.replace(' Badge', '') : b.region)}</span></button>`).join('')}
-    <button class="bc-slot bc-papa${papa ? ' won' : ''}" data-badge="papa" style="--i:10" aria-label="${papa ? 'Papa badge' : 'Papa’s Gym badge, not won yet'}">
-      <span class="bc-pit">${papaBadgeSVG('bc-img')}</span><span class="bc-name">${papa ? 'Papa Badge' : 'Papa’s Gym'}</span></button>
-  </div>`;
-}
-function badgeSheet(p, key) {
-  if (key === 'papa') {
-    const won = papaWon(p);
-    sheet(`<div class="badge-detail${won ? ' won' : ''}"><span class="bd-art">${papaBadgeSVG()}</span>
-      <h2>${won ? 'Papa Badge' : 'Papa’s Gym'}</h2>
-      <p>${won ? `You beat Boss Papa at Papa’s Gym${p.battles.boss > 1 ? ` ${p.battles.boss} times` : ''}! The last badge of all.` : 'Win all 10 Gym badges, then beat Boss Papa at his gym to win this one.'}</p>
-      <button class="btn-chunky btn-primary" data-close>${won ? 'Nice!' : 'Got it'}</button></div>`, { x: true });
-    return;
-  }
-  const b = gymBadges(p).find((x) => String(x.table) === String(key));
-  const ready = !!tableTier(p, b.table);
-  sheet(`<div class="badge-detail${b.won ? ' won' : ''}" style="--rc:${b.color}"><span class="bd-art">${badgeImg(b.table)}</span>
-    <h2>${esc(b.badge)}</h2>
-    <p class="bd-where">${esc(b.leader)} · ${esc(b.region)} · ${b.table}s</p>
-    ${b.won
-      ? `<p>You won it from ${esc(b.leader)}${p.battles.champs[b.table] > 1 ? ` (${p.battles.champs[b.table]} wins)` : ''}. It sewed this patch on your License:</p><span class="bd-patch">${patchSVG(b.type)}<b>${esc(patchName(b))}</b></span>`
-      : `<p>${ready ? `You have a Bronze medal on the ${b.table}s, so you can battle ${esc(b.leader)} now! Win to get this badge and its patch.` : `Get a Bronze medal on the ${b.table}s, then beat ${esc(b.leader)} to win this badge.`}</p>`}
-    <button class="btn-chunky btn-primary" data-close>Got it</button></div>`, { x: true });
-}
-
-// ---- Item Bag: a satchel with a leather flap. Balls ride in one pocket, items in another.
-// Each row keeps its data-bag key so items can be tapped to use them.
-const HAS_ITEM_ART = new Set(ITEMS);
-function bagArt(r) {
-  if (r.kind === 'ball') return ballImg(r.key, 'bag-art');
-  if (r.key === 'scroll') return hintArt('bag-art'); // Teacher K's face, drawn around her face art
-  if (r.art && HAS_ITEM_ART.has(r.art)) return itemImg(r.art, 'bag-art');
-  return itemImg('bag', 'bag-art bag-generic');
-}
-function bagRowHTML(r) {
-  const n = r.count === Infinity ? '∞' : '×' + r.count;
-  return `<div class="bag-item${r.count ? '' : ' none'}" data-bag="${esc(r.key)}">
-    <span class="bag-pic">${bagArt(r)}</span>
-    <div class="bag-txt"><strong>${esc(r.name)}</strong><p>${esc(r.does)}</p><p class="bag-earn"><span>Get more</span> ${esc(r.earn)}</p></div>
-    <span class="bag-n" aria-label="${r.count === Infinity ? 'Never runs out' : `You have ${r.count}`}">${n}</span>
-  </div>`;
-}
-function bagHTML(p) {
-  const rows = bagRows(p);
-  const balls = rows.filter((r) => r.kind === 'ball'), items = rows.filter((r) => r.kind !== 'ball');
-  const pocket = (title, list) => `<div class="bag-pocket"><h3 class="bag-pocket-title">${title}</h3><div class="bag-grid">${list.map(bagRowHTML).join('')}</div></div>`;
-  return `<div class="bag">
-    <div class="bag-flap" aria-hidden="true"><i class="bag-rivet"></i><span class="bag-emblem">${itemImg('bag', 'bag-emblem-img')}</span><i class="bag-rivet"></i></div>
-    <div class="bag-body">
-      ${bagEmpty(p) ? `<div class="bag-empty">${uiImg('kaizo-search', 'bag-kaizo')}<p><strong>Just Capture Balls for now.</strong> Win Gym battles and earn medals to fill your bag!</p></div>` : ''}
-      ${pocket('Balls', balls)}
-      ${items.length ? pocket('Items', items) : ''}
-    </div>
-  </div>`;
-}
-
 export function renderTrainer(root, go, params = {}) {
   const p = active();
   const draw = () => {
@@ -170,14 +90,7 @@ export function renderTrainer(root, go, params = {}) {
           <div class="tr-team">${teamRowHTML(p)}<button class="btn-chunky" data-team>Change team</button></div>
         </div>
         <div class="tr-col">
-          <h2 class="section-title">Badge case <span class="tr-count">${x.badges} of ${REGIONS.length}</span></h2>
-          ${badgeCaseHTML(p)}
-          <h2 class="section-title">Item Bag</h2>
-          ${bagHTML(p)}
-          <h2 class="section-title">Medals</h2>
-          <div class="tr-medals">
-            ${REGIONS.map((r) => { const tier = tableTier(p, r.table); return `<div class="tr-medal${tier ? '' : ' none'}"><span class="tr-m-num">${r.table}s</span>${tier ? medal(tier) : '<span class="tr-m-empty"></span>'}<span class="tr-m-label">${tier ? LEVEL_LABEL[tier] : 'Not yet'}</span></div>`; }).join('')}
-          </div>
+          ${trophyCaseHTML(p)}
           <h2 class="section-title">Stats</h2>
           <dl class="tr-stats">
             <div><dt>Kaimon caught</dt><dd>${dex.caught} of ${dex.total}</dd></div>
@@ -198,9 +111,8 @@ export function renderTrainer(root, go, params = {}) {
   on(root, 'click', '[data-back]', () => { sfx.tap(); go('home'); });
   on(root, 'click', '[data-team]', () => { sfx.tap(); teamSheet(p, draw); });
   on(root, 'click', '[data-switch]', () => { sfx.tap(); go('welcome'); });
-  on(root, 'click', '[data-badge]', (e, el) => { sfx.tap(); badgeSheet(p, el.dataset.badge); });
-  on(root, 'click', '[data-bag]', (e, el) => { if (openItem(p, el.dataset.bag, { go, onUse: draw })) sfx.tap(); }); // [systems] Item Bag: what it does, and Use
   // Tap your name on the License to change it (the same sheet as Grown-ups > Trainers).
+  wireTrophyCase(root, p, { go, draw }); // badges, medals, patches, Tower cups and the Item Bag drawer
   on(root, 'click', '[data-rename]', () => { sfx.tap(); renameSheet(p, { title: 'Change your name', onDone: () => draw() }); });
   on(root, 'click', '[data-wardrobe]', () => { sfx.tap(); openWardrobe(p, { onChange: draw }); });
   if (params.wardrobe) setTimeout(() => openWardrobe(p, { onChange: draw }), 250);

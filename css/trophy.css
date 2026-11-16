@@ -1,0 +1,115 @@
+/* Trophy case on the trainer page (js/ui/trophy.js): a wooden case with glass.
+   Gym badges on stands, medals on a rail, patches and Tower cups on the bottom shelf,
+   the Item Bag in the drawer. The plaque and trim take the trainer's jacket color (--jk). */
+
+.trc { --pin: 46px; --med: 46px; --pat: 38px; --tap: 44px;
+  --jk-l: color-mix(in srgb, var(--jk) 30%, #fff);
+  --wood: #B9773B; --wood-d: #8A5226; --brass: linear-gradient(180deg, #FBE08A, #E2AE3A 60%, #C98F22);
+  container-type: inline-size; position: relative; padding: 12px 12px 14px; border: 3px solid var(--ink); border-radius: 24px;
+  box-shadow: inset 0 0 0 4px var(--jk), inset 0 0 0 5.5px var(--ink), 0 6px 0 var(--ink);
+  background: repeating-linear-gradient(100deg, rgba(0, 0, 0, .05) 0 3px, transparent 3px 11px, rgba(255, 255, 255, .05) 11px 13px, transparent 13px 22px), linear-gradient(180deg, #C9894A, var(--wood)); }
+.trc button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+
+/* The name plaque, in the jacket color: a light tint of it behind navy text, ringed in the color itself. */
+.trc-top { display: flex; justify-content: center; margin: 2px 0 10px; }
+.trc-plaque { max-width: 100%; overflow-wrap: anywhere; text-align: center; background: var(--jk-l); color: var(--ink); border: 2.5px solid var(--ink); border-radius: 12px; padding: 4px 18px; font-size: 17px; font-weight: 700; line-height: 1.2;
+  box-shadow: inset 0 0 0 3.5px var(--jk), inset 0 0 0 5px rgba(20, 33, 61, .35), 0 3px 0 var(--ink); }
+
+/* The glass front: navy felt behind, a soft glare across it. */
+.trc-glass { position: relative; overflow: hidden; border: 3px solid var(--ink); border-radius: 14px; color: #fff;
+  background: linear-gradient(115deg, rgba(255, 255, 255, .07) 0 18%, transparent 18% 100%), radial-gradient(120% 70% at 50% 0%, #2C4278 0%, #1B2A52 60%, #142040 100%);
+  box-shadow: inset 0 0 0 4px rgba(255, 255, 255, .06); }
+.trc-row { position: relative; padding: 10px 10px 20px; }
+/* Each shelf ends on a wooden plank. */
+.trc-row::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 10px; background: linear-gradient(180deg, #D39A5C, var(--wood) 60%, var(--wood-d)); border-top: 2px solid var(--ink); border-bottom: 2px solid var(--ink); }
+.trc-last { padding-bottom: 12px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+.trc-last::after { display: none; }
+.trc-label { display: block; font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: rgba(255, 255, 255, .8); margin: 0 0 6px 2px; }
+.trc-tag { display: block; font-size: 12px; font-weight: 700; line-height: 1; color: rgba(255, 255, 255, .85); }
+
+/* Tap feedback, shared */
+.trc-bimg, .trc-mimg, .trc-patch > *, .trc-twart { transition: transform .12s; }
+.trc-badge:active .trc-bimg, .trc-medal:active .trc-mimg, .trc-patch:active > *, .trc-tower:active .trc-twart { transform: scale(.92); }
+
+/* Gym badges, each on a little brass stand. Not won yet: a faint shape of the badge. */
+.trc-badges { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px 4px; justify-items: center; }
+.trc-badge { position: relative; min-width: var(--tap); min-height: var(--tap); display: flex; flex-direction: column; align-items: center; gap: 4px; border-radius: 12px; }
+.trc-bimg { position: relative; z-index: 0; width: var(--pin); height: var(--pin); display: grid; place-items: center; }
+.trc-bi { width: 100%; height: 100%; object-fit: contain; display: block; }
+.trc-badge.won .trc-bimg { filter: drop-shadow(0 0 8px color-mix(in srgb, var(--rc, #FFD23F) 55%, transparent)); }
+.trc-badge.won .trc-bi { filter: drop-shadow(0 3px 0 rgba(0, 0, 0, .4)); }
+.trc-badge:not(.won) .trc-bi { filter: brightness(0) invert(1); opacity: .16; }
+.trc-badge:not(.won) .trc-tag { color: rgba(255, 255, 255, .6); }
+.trc-bimg::before { content: ''; position: absolute; left: 18%; right: 18%; bottom: -4px; height: 7px; border-radius: 50%; background: var(--brass); border: 1.5px solid var(--ink); z-index: -1; }
+.trc-badge:not(.won) .trc-bimg::before { background: rgba(255, 255, 255, .14); border-color: rgba(255, 255, 255, .22); }
+.trc-papa.won .trc-bimg { filter: drop-shadow(0 0 8px rgba(232, 73, 42, .6)); }
+
+/* Medals hang from a brass rail. */
+.trc-rail { height: 6px; margin: 0 4px -2px; border-radius: 3px; background: var(--brass); border: 1.5px solid var(--ink); }
+.trc-medals { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px 4px; justify-items: center; }
+.trc-medal { min-width: var(--tap); min-height: var(--tap); display: flex; flex-direction: column; align-items: center; gap: 3px; border-radius: 12px; }
+.trc-mimg { width: var(--med); height: var(--med); display: grid; place-items: center; transform-origin: 50% 0; }
+.trc-mi { width: 100%; height: 100%; object-fit: contain; display: block; }
+.trc-medal.won .trc-mi { filter: drop-shadow(0 3px 0 rgba(0, 0, 0, .4)); }
+.trc-mempty { color: rgba(255, 255, 255, .4); }
+.trc-medal:not(.won) .trc-tag { color: rgba(255, 255, 255, .6); }
+
+/* Patches and Tower cups share the bottom shelf. */
+.trc-patches { display: grid; grid-template-columns: repeat(5, var(--tap)); justify-content: start; gap: 6px 8px; }
+.trc-patch { width: var(--tap); height: var(--tap); display: grid; place-items: center; border-radius: 50%; color: #fff; }
+.trc-pi { width: var(--pat); height: var(--pat); display: block; }
+.trc-pempty { width: calc(var(--pat) - 4px); height: calc(var(--pat) - 4px); border-radius: 50%; border: 2.5px dashed currentColor; opacity: .4; }
+.trc-towers { display: flex; gap: 8px; }
+.trc-tower { min-width: var(--tap); display: flex; flex-direction: column; align-items: center; gap: 4px; border-radius: 12px; }
+.trc-twart { width: 48px; height: 48px; display: grid; place-items: center; border-radius: 12px; background: rgba(255, 255, 255, .06); border: 2px dashed rgba(255, 255, 255, .28); color: #3C4C78; }
+.trc-tower.won .trc-twart { border: 2px solid #FFD23F; background: rgba(255, 210, 63, .12); }
+.trc-tower:not(.won) .trc-tag { color: rgba(255, 255, 255, .6); }
+.trc-cup { width: 80%; height: 80%; }
+.trc-tower-detail .bd-art { color: #FFD23F; }
+.trc-tower-detail .bd-art > svg, .trc-medal-detail:not(.won) .bd-art > svg { width: 70%; height: 70%; filter: none !important; opacity: 1 !important; }
+.trc-medal-detail:not(.won) .bd-art { color: rgba(255, 255, 255, .5); }
+
+/* The glass glint sweeps across once when the case opens. Reduce Motion: no glint at all. */
+.trc-glint { display: none; position: absolute; top: -20%; bottom: -20%; left: 0; width: 40%; pointer-events: none; opacity: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .10) 40%, rgba(255, 255, 255, .18) 50%, transparent); }
+@media (prefers-reduced-motion: no-preference) {
+  .trc-glint { display: block; animation: trcGlint 1.4s ease-in-out .35s 1 both; }
+}
+@keyframes trcGlint { 0% { transform: translateX(-120%) skewX(-18deg); opacity: 1; } 75% { opacity: 1; } 100% { transform: translateX(330%) skewX(-18deg); opacity: 0; } }
+
+/* The drawer holds the Item Bag: a press-down button that opens the full Bag. */
+.trc-drawer { position: relative; container-type: inline-size; display: flex; align-items: center; gap: 10px; width: 100%; min-height: 66px; margin-top: 12px; padding: 18px 12px 8px; text-align: left;
+  background: linear-gradient(180deg, #D9A066, #C1843F) !important; color: var(--ink); border: 3px solid var(--ink) !important; border-radius: 12px; box-shadow: 0 5px 0 var(--ink); transition: transform .1s, box-shadow .1s; }
+.trc-drawer:active { transform: translateY(4px); box-shadow: 0 1px 0 var(--ink); }
+.trc-drawer::before { content: ''; position: absolute; left: 50%; top: 6px; width: 46px; height: 7px; margin-left: -23px; border-radius: 99px; background: var(--brass); border: 1.5px solid var(--ink); }
+.trc-bagart { flex: 0 0 auto; width: 50px; height: 50px; display: grid; place-items: center; }
+.trc-bagimg { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 3px 0 rgba(20, 33, 61, .3)); }
+.trc-bagtxt { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
+.trc-bagtxt strong { font-size: 18px; line-height: 1.15; }
+.trc-bagtxt small { font-size: 14px; font-weight: 600; color: var(--ink); }
+.trc-peeks { flex: 0 0 auto; display: flex; gap: 2px; }
+.trc-peek { position: relative; width: 34px; height: 34px; display: grid; place-items: center; }
+.trc-peek-i { width: 100%; height: 100%; object-fit: contain; }
+.trc-peek b { position: absolute; right: -3px; bottom: -3px; min-width: 18px; height: 18px; padding: 0 4px; border-radius: 99px; background: var(--ink); color: #fff; font-size: 11px; line-height: 18px; text-align: center; }
+.trc-go { flex: 0 0 auto; font-size: 28px; font-weight: 700; line-height: 1; margin-left: 2px; }
+@container (max-width: 400px) { .trc-peek:nth-child(n + 3) { display: none; } }
+@container (max-width: 250px) { .trc-peeks { display: none; } }
+
+/* Wider cases: one row of badges, one row of medals. */
+@container (min-width: 440px) {
+  .trc-last { grid-template-columns: auto auto; justify-content: space-between; align-items: start; }
+}
+@container (min-width: 520px) {
+  .trc-glass { --pin: 40px; --med: 44px; }
+  .trc-badges { grid-template-columns: repeat(11, minmax(0, 1fr)); }
+  .trc-medals { grid-template-columns: repeat(10, minmax(0, 1fr)); }
+}
+@container (min-width: 700px) {
+  .trc-glass { --pin: 54px; --med: 56px; --pat: 42px; --tap: 48px; }
+  .trc-patches { grid-template-columns: repeat(10, var(--tap)); gap: 6px 4px; }
+  .trc-twart { width: 52px; height: 52px; }
+}
+
+/* The Item Bag sheet: the same Bag, rows tap to open each item. */
+.trc-bag-sheet .bag { margin-top: 6px; }
+.trc-bag-sheet .bag-item { cursor: pointer; }
