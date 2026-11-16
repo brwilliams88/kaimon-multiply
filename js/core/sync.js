@@ -201,6 +201,12 @@ export function applySnapshot(p, d) {
     const cur = p.play[day] || (p.play[day] = { open: 0, ms: 0, a: 0, c: 0, n: 0, h: {}, bonus: 0 });
     for (const k of ['open', 'ms', 'a', 'c', 'n', 'bonus']) cur[k] += r[k] || 0;
     for (const [h, ms] of Object.entries(r.h || {})) cur.h[h] = (cur.h[h] || 0) + ms;
+    // Weekly report tallies (see apply in actions.js). Older saves don't have them.
+    for (const k of ['k', 'b', 'w']) if (r[k]) cur[k] = (cur[k] || 0) + r[k];
+    if (r.s) cur.s = Math.max(cur.s || 0, r.s);
+    for (const [tb, x] of Object.entries(r.t || {})) { const c = (cur.t = cur.t || {})[tb] || (cur.t[tb] = [0, 0]); c[0] += x[0] || 0; c[1] += x[1] || 0; }
+    for (const k of ['m', 'kn']) for (const [id, n] of Object.entries(r[k] || {})) { const o = cur[k] = cur[k] || {}; o[id] = (o[id] || 0) + n; }
+    for (const [id, lv] of Object.entries(r.up || {})) { const o = cur.up = cur.up || {}; o[id] = Math.max(o[id] || 0, lv); }
   }
 }
 

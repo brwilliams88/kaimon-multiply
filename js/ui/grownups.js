@@ -16,6 +16,7 @@ import { levelOf, factId, LEVEL_LABEL, RULES, countAtLeast } from '../core/facts
 import { voiceSupported } from '../core/voice.js';
 import { CHANGELOG, VERSION } from '../data/changelog.js';
 import { esc, on, sheet, toast, $, busy, cleanCode, codeOk } from './dom.js';
+import { reportPanelHTML, bindReportPanel } from './reportPanel.js';
 
 const mins = (ms) => Math.round(ms / 60000);
 
@@ -223,6 +224,8 @@ function renderMain(root, go) {
           })()}
         </div>
 
+        <div class="panel wr-panel" data-wrpanel>${reportPanelHTML(p)}</div>
+
         <div class="panel" data-syncpanel></div>
 
         <div class="panel trainers-panel">
@@ -281,6 +284,8 @@ function renderMain(root, go) {
     msg.textContent = r.msg;
     if (!r.updating) btn.disabled = false;
   });
+
+  bindReportPanel(root.querySelector('[data-wrpanel]'), p);
 
   const syncPanel = root.querySelector('[data-syncpanel]');
   let pendingEmail = '';
