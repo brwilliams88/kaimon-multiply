@@ -2,7 +2,7 @@
 // local profile right away and queued for family sync. Events from other
 // devices are applied the same way when they arrive, so devices merge cleanly.
 import { save, deviceId } from './store.js';
-import { applyAnswer, levelOf } from './facts.js';
+import { applyAnswer, levelOf, levelRank, parseFact } from './facts.js';
 import { dayRec } from './playtime.js';
 import { answerXP, XP } from './xp.js';
 import { today } from './store.js';
@@ -17,13 +17,22 @@ function dexEntry(p, id) {
 export function apply(p, ev) {
   const d = ev.d || {};
   switch (ev.k) {
-    case 'a':
-      p.xp = (p.xp || 0) + answerXP(levelOf(p.facts[d.f]), !!d.ok, d.ms || 0, p.settings.fastMs || 5000);
+    case 'a': {
+      const before = levelOf(p.facts[d.f]);
+      p.xp = (p.xp || 0) + answerXP(before, !!d.ok, d.ms || 0, p.settings.fastMs || 5000);
       applyAnswer(p, d.f, !!d.ok, d.ms || 0, ev.t);
       p.stats.answers++;
       if (d.ok) p.stats.correct++;
-      { const r = dayRec(p, today(ev.t)); r.a++; if (d.ok) r.c++; }
+      const r = dayRec(p, today(ev.t)); r.a++; if (d.ok) r.c++;
+      // For the weekly report: answers and right answers per times table (t),
+      // misses per fact (m), and medals reached that day (up: fact -> level rank).
+      const tb = parseFact(String(d.f))[0];
+      if (tb) { r.t = r.t || {}; const x = r.t[tb] || (r.t[tb] = [0, 0]); x[0]++; if (d.ok) x[1]++; }
+      if (!d.ok) { r.m = r.m || {}; r.m[d.f] = (r.m[d.f] || 0) + 1; }
+      const after = levelRank(levelOf(p.facts[d.f]));
+      if (after >= 2 && after > levelRank(before)) { r.up = r.up || {}; r.up[d.f] = Math.max(r.up[d.f] || 0, after); }
       break;
+    }
     case 'seen': {
       const e = dexEntry(p, d.n);
       e.seen++;
@@ -41,6 +50,7 @@ export function apply(p, ev) {
       e.last = ev.t;
       if (d.s) e.shiny++;
       p.stats.catches++;
+      { const r = dayRec(p, today(ev.t)); r.k = (r.k || 0) + 1; r.kn = r.kn || {}; r.kn[d.n] = (r.kn[d.n] || 0) + 1; }
       break;
     }
     case 'ball':
@@ -59,7 +69,7 @@ export function apply(p, ev) {
       if (!d.c) p.stats.sessions++; // d.c: more time from a session already counted
       p.stats.msPlayed += d.ms || 0;
       p.stats.bestStreak = Math.max(p.stats.bestStreak, d.best || 0);
-      { const start = ev.t - (d.ms || 0); const r = dayRec(p, today(start)); r.ms += d.ms || 0; r.n++; const h = new Date(start).getHours(); r.h[h] = (r.h[h] || 0) + (d.ms || 0); }
+      { const start = ev.t - (d.ms || 0); const r = dayRec(p, today(start)); r.ms += d.ms || 0; r.n++; const h = new Date(start).getHours(); r.h[h] = (r.h[h] || 0) + (d.ms || 0); if (d.best) r.s = Math.max(r.s || 0, d.best); }
       break;
     case 'open':
       dayRec(p, today(ev.t)).open += d.ms || 0;
@@ -73,6 +83,7 @@ export function apply(p, ev) {
     case 'battle': {
       const b = p.battles;
       b.played++;
+      { const r = dayRec(p, today(ev.t)); r.b = (r.b || 0) + 1; if (d.w) r.w = (r.w || 0) + 1; }
       if (d.w) {
         b.wins++;
         p.xp = (p.xp || 0) + (XP[d.o] || 0);
