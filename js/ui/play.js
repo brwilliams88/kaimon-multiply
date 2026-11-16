@@ -18,6 +18,7 @@ import { ballIcon, medal } from './home.js';
 import { trainerLook, trainerImg } from './avatars.js';
 import { ballSrc, sceneSrc, cssUrl, sceneKey, uiImg, itemImg, fxSrc, typeIcon, trainerFace, trainerBody, CARD_BACK } from '../core/assets.js';
 import { trickyPool, markTrickyDone } from '../core/nextup.js';
+import { fxImg, glowBall } from './moments.js';
 import { quick } from '../core/prefs.js';
 import { $, on, esc, sheet, wait, toast, soundButton, reducedMotion, setFlame } from './dom.js';
 
@@ -253,7 +254,10 @@ export function renderPlay(root, go, { table, focus } = {}) {
       const roll = rollCatch(S.species, ball, pw);
       const caught = roll.caught;
       let result = null;
+      // The trainer's very first wild catch (only their starter so far) gets its own banner.
+      const firstEver = caught && !Object.entries(p.dex).some(([id, e]) => e?.caught && byId(id)?.region !== 0);
       if (caught) result = catchIt(p, S.species.id);
+      if (result) result.firstEver = firstEver;
       if (caught) S.catches.push({ id: S.species.id, isNew: result.isNew, shiny: result.shiny });
       else { escaped(p, S.species.id); if (Math.random() < 0.5) S.linger = S.species; }
       save();
@@ -265,13 +269,13 @@ export function renderPlay(root, go, { table, focus } = {}) {
       el.front.innerHTML = (`
         <div class="card-head"><span class="chip">${region.name}</span><span class="head-tags">${fast ? '<span class="chip card-type fast">Fast</span>' : ''}<span class="chip xp-chip">${itemImg('xp-star')}+${gained} XP</span></span></div>
         <div class="qplate done"><span>${a}</span><span class="times">×</span><span>${b}</span><span class="eq">=</span><span class="ans">${ans}</span></div>
-        <div class="catch-zone">
-          <div class="catch-art">${creatureArt(S.species, { shiny: result?.shiny })}</div>
+        <div class="catch-zone${glowBall(ball) ? ' ball-glow' : ''}">
+          <div class="catch-art">${result?.isNew ? fxImg('badge-burst', 'catch-halo') : ''}${creatureArt(S.species, { shiny: result?.shiny })}</div>
           <div class="catch-thrower" aria-hidden="true">${trainerImg(trainerLook(p), 'throw')}</div>
           <img class="catch-fx beam" src="${fxSrc('capture-beam')}" alt="" aria-hidden="true">
           <img class="catch-fx swirl" src="${fxSrc('capture-swirl')}" alt="" aria-hidden="true">
           <img class="catch-fx burst" src="${fxSrc('capture-burst')}" alt="" aria-hidden="true">
-          <div class="throw-ball"><img class="ball-svg ball-img" src="${ballSrc(ball)}" alt="" draggable="false"></div>
+          <div class="throw-ball">${glowBall(ball) ? fxImg('shiny-ring', 'ball-aura') : ''}<img class="ball-svg ball-img" src="${ballSrc(ball)}" alt="" draggable="false"></div>
         </div>
         <p class="catch-msg" aria-live="polite">${powerLabel(pw)} throw! ${BALLS[ball].name}!</p>`);
       S.skip = false;
@@ -335,7 +339,7 @@ export function renderPlay(root, go, { table, focus } = {}) {
     const caught = roll.caught;
     const zone = $('.catch-zone', el.front);
     const msg = $('.catch-msg', el.front);
-    const ballEl = $('.throw-ball img', zone);
+    const ballEl = $('.throw-ball .ball-img', zone);
     const q = quick(p);
     const shakes = q ? Math.min(roll.shakes, 1) : roll.shakes;
     zone.classList.toggle('quick', q);
@@ -365,7 +369,8 @@ export function renderPlay(root, go, { table, focus } = {}) {
       if (result.isNew) {
         sfx.newCatch();
         const hard = s.rarity === 'rare' || s.rarity === 'legendary';
-        zone.insertAdjacentHTML('beforeend', `<div class="new-banner" aria-hidden="true"><span class="nb-rays"></span><strong>New Kaimon!</strong><small>${hard ? 'A rare find! ' : ''}#${String(s.num).padStart(3, '0')} added to your Kaidex</small></div>`);
+        const head = result.firstEver ? 'Your first catch!' : 'New Kaimon!';
+        zone.insertAdjacentHTML('beforeend', `<div class="new-banner${result.firstEver ? ' first' : ''}" aria-hidden="true"><span class="nb-rays"></span><strong>${head}</strong><small>${hard ? 'A rare find! ' : ''}#${String(s.num).padStart(3, '0')} added to your Kaidex</small></div>`);
         msg.innerHTML = `You caught ${esc(s.name)}!${shinyTag}`;
       } else {
         sfx.caught();

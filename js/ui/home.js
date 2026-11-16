@@ -8,7 +8,8 @@ import { limitReached, cardsToday, roundSize, roundsToday, GOAL_ROUNDS } from '.
 import { nextUp, quizUseful } from '../core/nextup.js';
 import { VERSION } from '../data/changelog.js';
 import { trainerArt } from './trainerArt.js';
-import { ballImg, itemImg, sceneSrc, gymSrc, gymImg, badgeImg, cssUrl, uiImg, fxSrc, trainerFace, trainerBody, trainerKey, CARD_BACK, LOGO } from '../core/assets.js';
+import { evolveMoment, poseSwap, kairoArrive, kairoCaught, legendThrow } from './moments.js';
+import { ballImg, itemImg, sceneSrc, gymSrc, gymImg, badgeImg, cssUrl, uiImg, trainerFace, trainerBody, trainerKey, CARD_BACK, LOGO } from '../core/assets.js';
 import { kairoEvolves } from '../core/game.js';
 import { evolveKairo, ball as giveBall, caught as catchIt } from '../core/actions.js';
 import { save, touch, setSetting } from '../core/store.js';
@@ -263,13 +264,13 @@ export function renderHome(root, go, params = {}) {
     const seen = +localStorage.getItem(key) || 0;
     if (seen && partner.stage > seen) {
       const from = SPECIES.find((s) => s.line === partner.species.line && s.stage === seen);
-      setTimeout(() => { sfx.evolve(); sheet(`<div class="celebrate evolve"><p class="evo-kicker">What? ${esc(from.name)} is evolving!</p><div class="evo-row"><div class="partner-art">${creatureArt(from)}</div><span class="evo-arrow">›</span><div class="partner-art evo-new"><img class="evo-glow" src="${fxSrc('evolve-glow')}" alt="" draggable="false">${creatureArt(partner.species)}</div></div><h2>${esc(from.name)} evolved into ${esc(partner.species.name)}!</h2><p>All those right answers paid off. Lv ${partner.level}!</p><button class="btn-chunky btn-primary" data-close>Awesome!</button></div>`); }, 400);
+      setTimeout(() => evolveMoment({ from, to: partner.species, kicker: `What? ${esc(from.name)} is evolving!`, title: `${esc(from.name)} evolved into ${esc(partner.species.name)}!`, text: `All those right answers paid off. Lv ${partner.level}!` }), 400);
     }
     localStorage.setItem(key, partner.stage);
   } catch {}
   if (kairoEvolves(p)) {
     evolveKairo(p); save(); syncNow();
-    setTimeout(() => { sfx.evolve(); sheet(`<div class="celebrate evolve"><p class="evo-kicker">A whole year with Kairo... and it's glowing!</p><div class="evo-row"><div class="partner-art">${creatureArt(byId(MYTHIC_ID))}</div><span class="evo-arrow">›</span><div class="partner-art evo-new"><img class="evo-glow" src="${fxSrc('evolve-glow')}" alt="" draggable="false">${creatureArt(byId(FUTURE_ID))}</div></div><h2>Kairo evolved into Kairos!</h2><p>Kaidex #060, the very last page. Kairo grew up right alongside you.</p><button class="btn-chunky btn-primary" data-close>Amazing!</button></div>`); }, 500);
+    setTimeout(() => evolveMoment({ from: byId(MYTHIC_ID), to: byId(FUTURE_ID), kicker: "A whole year with Kairo... and it's glowing!", title: 'Kairo evolved into Kairos!', text: 'Kaidex #060, the very last page. Kairo grew up right alongside you.', btn: 'Amazing!' }), 500);
   }
   // Beat Boss Papa but never caught Kairo (the app closed, or the result was skipped):
   // Kairo waits on the home screen until it's caught. It can never be missed.
@@ -289,7 +290,7 @@ export function renderHome(root, go, params = {}) {
   if (params.celebrate === 'stamp') {
     sfx.levelUp();
     sheet(`<div class="celebrate">
-      <div class="stamp-row" aria-hidden="true"><span class="stamp-teacher">${trainerBody('teacher-k', 'stamp')}</span><span class="celebrate-stamp">${uiImg('starburst', 'cs-burst')}${itemImg('good-work-stamp')}</span></div>
+      <div class="stamp-row" aria-hidden="true"><span class="stamp-teacher">${poseSwap(trainerBody('teacher-k', 'stamp'), trainerBody('teacher-k', 'won'), 'stamp-swap')}</span><span class="celebrate-stamp">${uiImg('starburst', 'cs-burst')}${itemImg('good-work-stamp')}</span></div>
       <h2>Good Work Stamp!</h2>
       <p>${esc(p.name)}, your grown-up says you did great on real math work. Teacher K is proud of you! Here's a reward:</p>
       <div class="celebrate-row"><span>${ballIcon('mega')} Mega Ball</span><span>${snackIcon()} 3 Power Snacks</span><span class="stars">★ Gold star</span></div>
@@ -319,19 +320,21 @@ function kairoWaiting(p, go) {
   const m = byId(MYTHIC_ID);
   sfx.mythic();
   const sh = sheet(`<div class="celebrate kairo-wait">
-    <div class="mythic-arrive">${creatureArt(m)}</div>
+    ${kairoArrive(m)}
     <h2>Kairo is waiting for you!</h2>
     <p>The Kaimon that watched you beat Boss Papa came back. It wants to join your team.</p>
     <button class="btn-chunky btn-primary btn-xl" data-throw>${ballIcon('legend')} Throw a Legend Ball</button></div>`);
   let thrown = false;
-  sh.el.querySelector('[data-throw]').addEventListener('click', () => {
+  sh.el.querySelector('[data-throw]').addEventListener('click', async (e) => {
     if (thrown) return;
     thrown = true;
+    e.currentTarget.disabled = true;
     if ((p.balls.legend || 0) > 0) giveBall(p, 'legend', -1);
     catchIt(p, MYTHIC_ID);
     save(); syncNow();
+    await legendThrow(sh.el.querySelector('.mythic-arrive'));
     sfx.caught();
-    sh.el.querySelector('.celebrate').innerHTML = `<div class="mythic-arrive caught"><img class="mythic-swirl" src="${fxSrc('capture-swirl')}" alt="" draggable="false">${creatureArt(m)}</div>
+    sh.el.querySelector('.celebrate').innerHTML = `${kairoCaught(m)}
       <h2>You caught Kairo!</h2>
       <p>The mythic Kaimon, Kaidex #${String(m.num).padStart(3, '0')}. Some say a trainer named Kai dreamed it up.</p>
       <button class="btn-chunky btn-primary" data-dex>See it in the Kaidex</button>`;

@@ -1,7 +1,7 @@
 import { active } from '../core/store.js';
 import { SPECIES, TYPES, REGIONS, byId, lineOf, MYTHIC_ID, FUTURE_ID } from '../data/creatures.js';
 import { creatureArt, shinyStar, setShiny } from '../core/art.js';
-import { typeIcon } from '../core/assets.js';
+import { typeIcon, habitatSrc, cssUrl } from '../core/assets.js';
 import { dexState, dexCounts, dexVisible } from '../core/game.js';
 import { esc, on, sheet, reducedMotion } from './dom.js';
 import { sfx } from '../core/sound.js';
@@ -255,9 +255,11 @@ function showEntry(p, s) {
       ${line.length > 1 ? `<div class="entry-line">${line.map((x) => { const xs = dexState(p, x.id); return `<div class="line-step${x.num === s.num ? ' cur' : ''}">${creatureArt(x, { mode: xs === 'caught' ? 'full' : xs })}<span>${esc(shownName(x, xs))}</span></div>`; }).join('<span class="line-arrow" aria-hidden="true">›</span>')}</div>` : ''}
       ${s.mega && st === 'caught' ? `<div class="entry-mega"><span class="mega-peek">${creatureArt(s, { mode: 'seen', mega: true })}</span><p>Has a rare Mega form. You'll be able to unlock it later in the adventure.</p></div>` : ''}`;
   }
+  // Its home scene sits behind the art, once you have met it.
+  const hab = unknown ? null : habitatSrc(s.region);
   const sh = sheet(`
     <div class="entry${unknown ? ' entry-unknown' : ''}"${unknown ? '' : ` style="--rc:${t.color};--rl:${t.light}"`}>
-      <div class="entry-art">${unknown ? `<span class="entry-big" aria-hidden="true">${String(s.num).padStart(3, '0')}</span>` : creatureArt(s, { mode: st === 'caught' ? 'full' : st, shiny: false })}</div>
+      <div class="entry-art${hab ? ' has-hab' : ''}"${hab ? ` style="--hab:${cssUrl(hab)}"` : ''}>${unknown ? `<span class="entry-big" aria-hidden="true">${String(s.num).padStart(3, '0')}</span>` : creatureArt(s, { mode: st === 'caught' ? 'full' : st, shiny: false })}</div>
       ${e.shiny && st === 'caught' ? `<div class="look-toggle" role="group" aria-label="Colors"><button class="on" data-look="normal" aria-pressed="true">Normal</button><button data-look="shiny" aria-pressed="false">${shinyStar()}Shiny</button></div>` : ''}
       <p class="entry-num">${num3(s.num)}</p>
       <h2 class="entry-name">${esc(shownName(s, st))}</h2>
