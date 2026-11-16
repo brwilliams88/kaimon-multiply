@@ -195,6 +195,8 @@ async function token() {
   const s = session.get();
   if (!s) throw Object.assign(new Error('signed-out'), { status: 401 });
   if (Date.now() < s.exp - 60000) return s.access;
+  // A pass from the game's Maker tab has no refresh token: sign in here once it runs out.
+  if (!s.refresh) { session.set(null); throw Object.assign(new Error('signed-out'), { status: 401 }); }
   const r = await api('/auth/v1/token?grant_type=refresh_token', { method: 'POST', body: { refresh_token: s.refresh } });
   session.set({ ...s, access: r.access_token, refresh: r.refresh_token, exp: Date.now() + (r.expires_in || 3600) * 1000 });
   return r.access_token;

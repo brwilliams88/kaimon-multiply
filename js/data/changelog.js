@@ -1,7 +1,49 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '1.0.1';
+export const VERSION = '1.0.5';
 
 export const CHANGELOG = [
+  {
+    version: '1.0.5',
+    date: '2026-11-16',
+    title: "Fun hats",
+    items: [
+      "New hats in the Wardrobe: the Kaizo Hood, the Papa Cap and the Kairo Crown!",
+      "Earn the Kaizo Hood with 750 right answers, the Papa Cap by beating Boss Papa, and the Kairo Crown with 3,000 right answers.",
+      "Kai and all the ready-made trainers can wear them. Your hat shows on Home, your License and Who's playing. In battles it waits in your bag.",
+    ],
+  },
+  {
+    version: '1.0.4',
+    date: '2026-11-16',
+    title: "Morning polish",
+    items: [
+      "Long pop-ups like the Menu now show a \"More below\" hint, so you know to scroll.",
+      "Send feedback now asks for what you don't like too. Telling us what you don't like helps the most!",
+      "Boss Papa's picture on the Papa's Gym tile is centered, with his whole P hat in the circle.",
+      "\"Play on another device\" in the Menu has a new, bigger icon that matches the others.",
+      "The Wardrobe's License preview shows your Kaidex count, best streak, medals and patches, just like your real Trainer License.",
+      "Easier taps: the Grown-ups times table grid, the \"Family device? Sign in\" link and the Kaidex page dots.",
+      "The Mega \"M\" badge in the Kaidex is easier to read.",
+    ],
+  },
+  {
+    version: '1.0.3',
+    date: '2026-11-16',
+    title: "Maker tab",
+    items: [
+      "Grown-ups has a new Maker tab, only for the game's maker. It shows players, minutes, rounds, home screen installs, ratings, where new players came from and their devices, with a button to open the full dashboard.",
+      "The full dashboard now opens straight from the Maker tab, without signing in again.",
+    ],
+  },
+  {
+    version: '1.0.2',
+    date: '2026-11-16',
+    title: "Open from Facebook",
+    items: [
+      "Opened Kaimon from Facebook, Instagram or Messenger? Those apps use their own browser, which can't add Kaimon to your Home Screen. Kaimon now spots this and shows an Open in Safari (or Open in Chrome) button, plus easy steps and a Copy link button if the button doesn't work.",
+      "The install help page and Grown-ups show the same steps when you're inside one of those apps.",
+    ],
+  },
   {
     version: '1.0.1',
     date: '2026-11-16',

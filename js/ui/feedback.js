@@ -1,7 +1,8 @@
 // Rate the game and Send feedback: one sheet, two modes.
 //
 //   openRate({ place })      1 to 5 stars, an optional comment and name
-//   openFeedback({ place })  Something I love / An idea / A bug, a note, an
+//   openFeedback({ place })  Something I love / I don't like / An idea / Something's
+//                            broken, a note, an
 //                            optional name and reply email (for grown-ups)
 //   maybeAskRating()         a gentle one-time "Rate the game" after a happy
 //                            moment (3 badges or 7 days of play), at most once
@@ -31,11 +32,15 @@ export const TEXT_MAX = 2000;
 export const NAME_MAX = 40;
 
 export const STAR_LABELS = ['Not for me', 'It’s OK', 'Good', 'Really good', 'I love it!'];
+// The feedback table (and the mailer) only know love, idea, bug and rating, so
+// "Something I don't like" is saved as an idea whose text starts with "Don't like: ".
 export const KINDS = [
   { id: 'love', label: 'Something I love', ph: 'What do you love? A Kaimon, a battle, a sound...' },
+  { id: 'dislike', label: 'Something I don\u2019t like', ph: 'What don\u2019t you like? Is something too hard, too slow or boring?', as: 'idea', prefix: "Don't like: " },
   { id: 'idea', label: 'An idea', ph: 'What would make the game better?' },
-  { id: 'bug', label: 'A bug', ph: 'What went wrong, or what bugs you? What were you doing just before?' },
+  { id: 'bug', label: 'Something\u2019s broken', ph: 'What went wrong? What were you doing just before?' },
 ];
+export const HONEST = 'Tell us anything, good or bad. What you don\u2019t like helps most, so we can fix it.';
 
 const STAR = '<svg viewBox="0 0 48 48" aria-hidden="true"><path class="fb-star-body" d="M24 4.5 L29.6 16.6 L42.8 18.1 L33 27.2 L35.7 40.3 L24 33.7 L12.3 40.3 L15 27.2 L5.2 18.1 L18.4 16.6 Z"/><path class="fb-star-shine" d="M17.5 20.5 Q19 18.6 21.6 18.2"/></svg>';
 
@@ -50,7 +55,11 @@ const offline = () => typeof navigator !== 'undefined' && navigator.onLine === f
 
 // What goes to the table, and what goes to the mailer, for one note.
 export function buildNote({ kind, stars = 0, text = '', name = '', email = '', place = '' }) {
-  const t = String(text || '').replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, '').trim().slice(0, TEXT_MAX);
+  const K = KINDS.find((k) => k.id === kind);
+  if (K?.as) kind = K.as;
+  let t = String(text || '').replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, '').trim();
+  if (K?.prefix && t) t = K.prefix + t;
+  t = t.slice(0, TEXT_MAX);
   const n = String(name || '').replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, NAME_MAX);
   const e = cleanEmail(email);
   const s = Math.max(0, Math.min(5, Math.round(+stars || 0)));
@@ -154,7 +163,7 @@ function formHTML(mode, prompt) {
       <h2>${rate ? 'Rate Kaimon Multiply' : 'Send feedback'}</h2>
       <p class="fb-sub">${rate ? (prompt ? 'Having fun? Tell us what you think.' : 'How do you like the game?') : 'Kaizo will take your note straight to the maker.'}</p>
     </div></div>
-    <p class="fb-honest">All feedback is good feedback: what works and what doesn\u2019t. Telling us what doesn\u2019t work helps the most.</p>
+    <p class="fb-honest">${HONEST}</p>
     ${rate ? starsHTML() : kindsHTML()}
     <label class="fb-field"><span>${rate ? 'Tell us more <em>(optional)</em>' : 'Your note'}</span>
       <textarea class="fb-text" data-text rows="4" maxlength="${TEXT_MAX}" placeholder="${rate ? 'What works? What doesn\u2019t? Both help.' : 'Pick a kind above, then write here.'}"></textarea></label>

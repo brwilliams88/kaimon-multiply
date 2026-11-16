@@ -88,7 +88,7 @@ Built from existing art only. No new images.
 | Jacket colors | The key-green jackets of p01 to p14 and the make-your-own trainers are repainted in the browser (js/ui/avatars.js), as before. 3 colors are free; 6 are earned by answering | trainers/* |
 | License colors | The rainbow License card is repainted in the browser (js/ui/licenseArt.js): the pastel areas change hue, the navy ink and the gold seal stay | ui/trainer-license |
 | Unlock moment | The trainer hops from the old jacket into the new one (Kai: the License changes color) with a burst behind | trainer `base` then `won`, fx/badge-burst |
-| Hats | Shown as "Coming soon" slots with simple icon shapes. Their earn rules already count | none yet (see the hat request below) |
+| Hats | Kaizo Hood, Papa Cap and Kairo Crown on the standing pose and the face only (Home, Trainer page, Who's playing, Wardrobe). Battles keep the hatless poses | trainers/<id>/base-<hat>, face-<hat> |
 
 Kai keeps his red jacket. A test repaint of his red jacket (all 6 poses) also recolored his tongue in
 the `won` and `lost` poses, so his colors go on his License instead.
@@ -130,19 +130,14 @@ background, WebP.
 7. **Drawn confetti** (`fx/confetti.webp`): chunky rounded pieces and stars in the app palette, to
    replace the CSS confetti on win screens.
 8. **Empty badge case** (`ui/empty-badges.webp`): an open case with soft glowing empty slots.
-9. **Wardrobe hats** (for the "Coming soon" slots; rules are in `js/data/wardrobe.js`, set `ready: true`
-   when the art lands). Four hats: **Trainer Cap** (a medal on any times table), **Cozy Beanie**
-   (2,000 right answers), **Explorer Hat** (medals on 5 times tables), **Star Crown** (10 facts at
-   Star). Two ways to make them, Blair to pick:
-   - **A. Hat layers** (`trainers/<id>/hat-<hat>-<pose>.webp`): one transparent hat image per trainer
-     and pose, lined up on the same 512 x 512 canvas so it stacks right on top of the pose. 15 drawn
-     trainers x 6 poses x 4 hats = 360 small images. Several drawn trainers already wear a cap or a
-     beanie (Kai, p01, p05), so their hat art has to replace that headwear, not sit on top of it.
-   - **B. Whole poses with the hat on** (`trainers/<id>-<hat>/<pose>.webp`): simplest in code, same
-     count, bigger files.
-   Either way: hat in the key green (#22C55E) so it repaints with the jacket color, navy line art,
-   cel shading, no logos or letters. Kai: his red cap stays his look, so his hats could be extra
-   badges pinned on the cap instead (4 small `trainers/kai/pin-<hat>.webp`).
-   The make-your-own trainers already have Cap and Beanie hairstyles (`cap-*`, `beanie-*`); those
-   stay free and are not part of the Wardrobe.
+9. **Wardrobe hats: done (Nov 16, 2026).** Blair picked 3 hats from the game's world instead of the
+   4 plain ones: **Kaizo Hood** (750 right answers), **Papa Cap** (beat Boss Papa), **Kairo Crown**
+   (3,000 right answers). Fixed colors (no jacket repaint), no chin cords. Made for Kai and p01 to p14
+   in the base pose only: an image edit of each trainer's own base art, then only the head patch is
+   kept, so the body stays the original pixels. `base-<hat>.webp` is 512 x 576 (64 px of headroom on
+   top; the bottom 512 rows line up with `base.webp`); `face-<hat>.webp` is cropped like `face.webp`
+   (same center and bottom edge, the top grows up to 1.3x so the hat fits). Originals on Blair's Mac:
+   `~/kaimon-art/final/hats/<id>/base-<hat>.png` (1024 x 1152); scripts in `~/kaimon-art/out/hats-fun/`.
+   Hood pixels were nudged just outside the jacket repaint hues so the hood stays teal on any jacket.
+   Make-your-own trainers have no hat art yet (their Wardrobe says so).
 

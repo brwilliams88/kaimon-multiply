@@ -1,6 +1,9 @@
 // Trainer looks. A look is { skin, hair, hairColor, outfit, hat } and draws as a
 // sticker-style portrait. Old trainers saved a number (0 to 5); that still works.
 // These are stand-ins until the real trainer art is made from family photos.
+import { playerSrc } from '../core/assets.js';
+import { HAT_IDS } from '../data/wardrobe.js';
+
 const INK = '#14213D';
 export const SKINS = ['#FBE0C8', '#F1C6A0', '#E0A97E', '#C68A63', '#9A6646', '#6B4430'];
 export const HAIR_COLORS = ['#1C1410', '#4A2C17', '#7A4A26', '#E0B04A', '#B5462A', '#2D5FD9'];
@@ -125,6 +128,7 @@ export const charLook = (x) => {
   if (!x || typeof x !== 'object') return { char: 'kai', color: 'green' };
   const L = migrateLook(x.char ? x : lookOf(x));
   if (x.card && JACKETS[x.card]) L.card = x.card;
+  if (x.char && L.char !== 'm' && HAT_IDS.includes(x.hat)) L.hat = x.hat; // hats fit the drawn trainers
   return L;
 };
 export const randomLook = () => {
@@ -133,7 +137,7 @@ export const randomLook = () => {
 };
 
 const folder = (char) => (char.startsWith('m:') ? char.slice(2) : char);
-const src = (char, pose) => `assets/trainers/${folder(char)}/${pose}.webp`;
+const src = (char, pose, hat = '') => playerSrc(folder(char), pose, hat);
 const painted = new Map();   // paint key -> data URL
 const waiting = new Map();
 const hsv = (hex) => {
@@ -148,11 +152,12 @@ const toRGB = (h, s, v) => {
   const [R, G, B] = h < 60 ? [c, x, 0] : h < 120 ? [x, c, 0] : h < 180 ? [0, c, x] : h < 240 ? [0, x, c] : h < 300 ? [x, 0, c] : [c, 0, x];
   return [(R + m) * 255, (G + m) * 255, (B + m) * 255];
 };
-// key: "char|pose|jacket|hair|skin" (hair and skin only for make-your-own trainers)
+// key: "char|pose|jacket|hair|skin|hat" (hair and skin only for make-your-own trainers,
+// hat only for drawn trainers in a standing pose)
 function paint(key) {
   if (painted.has(key)) return Promise.resolve(painted.get(key));
   if (waiting.has(key)) return waiting.get(key);
-  const [char, pose, color, hair, skinS] = key.split('|');
+  const [char, pose, color, hair, skinS, hat] = key.split('|');
   const target = HUE[color];
   const hairT = hair ? hsv(HAIR_TONES[hair] || HAIR_TONES.brown) : null;
   const skin = skinS === '' || skinS == null ? SKIN_KEY : +skinS;
@@ -193,27 +198,38 @@ function paint(key) {
         resolve(url);
       } catch { resolve(im.src); }
     };
-    im.onerror = () => resolve(src(char, pose));
-    im.src = src(char, pose);
+    im.onerror = () => resolve(src(char, pose, hat));
+    im.src = src(char, pose, hat);
   });
   waiting.set(key, job);
   return job;
 }
 const BLANK = 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
+// Poses: base, face, won, lost, throw, talking, plus 'stand': the base pose wearing
+// the trainer's hat. A hat shows only in 'stand' and 'face' (places where a trainer
+// stands still); battles ask for base, throw, won and lost, so they stay hatless.
+const poseOf = (L, pose) => {
+  const hat = L.hat && (pose === 'stand' || pose === 'face') ? L.hat : '';
+  return [pose === 'stand' ? 'base' : pose, hat];
+};
 // The paint key for a look and pose, or null when the art can show as drawn.
 export function paintKey(x, pose) {
   const L = charLook(x);
-  if (L.char === 'm') return `m:${L.head}-${L.outfit}|${pose}|${L.color}|${L.hair}|${L.skin}`;
+  const [ps, hat] = poseOf(L, pose);
+  if (L.char === 'm') return `m:${L.head}-${L.outfit}|${ps}|${L.color}|${L.hair}|${L.skin}|`;
   if (L.char === 'kai' || L.color === 'green') return null;
-  return `${L.char}|${pose}|${L.color}||`;
+  return `${L.char}|${ps}|${L.color}|||${hat}`;
 }
+const plainSrc = (x, pose) => { const L = charLook(x); const [ps, hat] = poseOf(L, pose); return src(L.char, ps, hat); };
 // An image URL for a look (painted if needed). For places that need a finished
 // picture, like an email or a share image.
-export const lookImage = (x, pose = 'base') => { const k = paintKey(x, pose); return k ? paint(k) : Promise.resolve(src(charLook(x).char, pose)); };
+export const lookImage = (x, pose = 'base') => { const k = paintKey(x, pose); return k ? paint(k) : Promise.resolve(plainSrc(x, pose)); };
 // An <img> for a trainer. Repainted art fills in a moment later (see watcher below).
 export function trainerImg(x, pose = 'face', cls = '') {
   const key = paintKey(x, pose);
-  if (!key) return `<img class="pl-img ${cls}" src="${src(charLook(x).char, pose)}" alt="" draggable="false" decoding="async">`;
+  // A hatted standing pose is taller (512 x 576): CSS lines its bottom up with base.webp.
+  if (pose === 'stand' && charLook(x).hat) cls += ' tall';
+  if (!key) return `<img class="pl-img ${cls}" src="${plainSrc(x, pose)}" alt="" draggable="false" decoding="async">`;
   return `<img class="pl-img ${cls}" src="${painted.get(key) || BLANK}" data-paint="${key}" alt="" draggable="false">`;
 }
 function fill(img) {
