@@ -16,8 +16,9 @@ import { micMode, micButton } from './micMode.js';
 import { sfx, setSound } from '../core/sound.js';
 import { ballIcon, medal } from './home.js';
 import { trainerLook, trainerImg } from './avatars.js';
-import { ballSrc, sceneSrc, cssUrl, sceneKey, uiImg, itemImg, fxSrc, typeIcon, trainerFace, CARD_BACK } from '../core/assets.js';
+import { ballSrc, sceneSrc, cssUrl, sceneKey, uiImg, itemImg, fxSrc, typeIcon, trainerFace, trainerBody, CARD_BACK } from '../core/assets.js';
 import { trickyPool, markTrickyDone } from '../core/nextup.js';
+import { fxImg, glowBall } from './moments.js';
 import { quick } from '../core/prefs.js';
 import { $, on, esc, sheet, wait, toast, soundButton, reducedMotion, setFlame } from './dom.js';
 import { firstGameGuide, finishFirstGame, wantsFirstGame, GUIDE_FACTS } from './firstGame.js';
@@ -263,7 +264,10 @@ export function renderPlay(root, go, { table, focus, guide } = {}) {
       const roll = G?.mustCatch() ? { caught: true, shakes: 2 } : rollCatch(S.species, ball, pw);
       const caught = roll.caught;
       let result = null;
+      // The trainer's very first wild catch (only their starter so far) gets its own banner.
+      const firstEver = caught && !Object.entries(p.dex).some(([id, e]) => e?.caught && byId(id)?.region !== 0);
       if (caught) result = catchIt(p, S.species.id);
+      if (result) result.firstEver = firstEver;
       if (caught) S.catches.push({ id: S.species.id, isNew: result.isNew, shiny: result.shiny });
       else { escaped(p, S.species.id); if (Math.random() < 0.5) S.linger = S.species; }
       save();
@@ -275,12 +279,13 @@ export function renderPlay(root, go, { table, focus, guide } = {}) {
       el.front.innerHTML = (`
         <div class="card-head"><span class="chip">${region.name}</span><span class="head-tags">${fast ? '<span class="chip card-type fast">Fast</span>' : ''}<span class="chip xp-chip">${itemImg('xp-star')}+${gained} XP</span></span></div>
         <div class="qplate done"><span>${a}</span><span class="times">×</span><span>${b}</span><span class="eq">=</span><span class="ans">${ans}</span></div>
-        <div class="catch-zone">
-          <div class="catch-art">${creatureArt(S.species, { shiny: result?.shiny })}</div>
+        <div class="catch-zone${glowBall(ball) ? ' ball-glow' : ''}">
+          <div class="catch-art">${result?.isNew ? fxImg('badge-burst', 'catch-halo') : ''}${creatureArt(S.species, { shiny: result?.shiny })}</div>
           <div class="catch-thrower" aria-hidden="true">${trainerImg(trainerLook(p), 'throw')}</div>
           <img class="catch-fx beam" src="${fxSrc('capture-beam')}" alt="" aria-hidden="true">
+          <img class="catch-fx swirl" src="${fxSrc('capture-swirl')}" alt="" aria-hidden="true">
           <img class="catch-fx burst" src="${fxSrc('capture-burst')}" alt="" aria-hidden="true">
-          <div class="throw-ball"><img class="ball-svg ball-img" src="${ballSrc(ball)}" alt="" draggable="false"></div>
+          <div class="throw-ball">${glowBall(ball) ? fxImg('shiny-ring', 'ball-aura') : ''}<img class="ball-svg ball-img" src="${ballSrc(ball)}" alt="" draggable="false"></div>
         </div>
         <p class="catch-msg" aria-live="polite">${powerLabel(pw)} throw! ${BALLS[ball].name}!</p>`);
       S.skip = false;
@@ -318,7 +323,7 @@ export function renderPlay(root, go, { table, focus, guide } = {}) {
       el.back.innerHTML = `
         <div class="card-head"><span class="chip">Not quite</span></div>
         <div class="card-q answer-reveal"><span>${a}</span><span class="times">×</span><span>${b}</span><span class="eq">=</span><span class="ans">${ans}</span></div>
-        <div class="hint-scroll"><p>Count by ${a}s</p><div class="ladder">${hintLadder(S.fact).map((v, i, arr) => `<span class="${i === arr.length - 1 ? 'last' : ''}">${v}</span>`).join('')}</div>${trickHTML(p, S.fact)}</div>
+        <div class="hint-scroll"><p>Count by ${a}s</p><div class="ladder">${hintLadder(S.fact).map((v, i, arr) => `<span class="${i === arr.length - 1 ? 'last' : ''}">${v}</span>`).join('')}</div>${trickHTML(p, S.fact)}<span class="hint-teacher" aria-hidden="true">${trainerBody('teacher-k', 'point')}</span></div>
         <div class="retype"><span class="learn-teacher">${trainerFace('teacher-k')}</span><span class="retype-label">Type it to keep going</span><span class="answer-val empty" data-ph="${ans}"></span></div>`;
       flip(true, 'wrong');
       G?.wrong();
@@ -347,7 +352,7 @@ export function renderPlay(root, go, { table, focus, guide } = {}) {
     const caught = roll.caught;
     const zone = $('.catch-zone', el.front);
     const msg = $('.catch-msg', el.front);
-    const ballEl = $('.throw-ball img', zone);
+    const ballEl = $('.throw-ball .ball-img', zone);
     const q = quick(p);
     const shakes = q ? Math.min(roll.shakes, 1) : roll.shakes;
     zone.classList.toggle('quick', q);
@@ -377,7 +382,8 @@ export function renderPlay(root, go, { table, focus, guide } = {}) {
       if (result.isNew) {
         sfx.newCatch();
         const hard = s.rarity === 'rare' || s.rarity === 'legendary';
-        zone.insertAdjacentHTML('beforeend', `<div class="new-banner" aria-hidden="true"><span class="nb-rays"></span><strong>New Kaimon!</strong><small>${hard ? 'A rare find! ' : ''}#${String(s.num).padStart(3, '0')} added to your Kaidex</small></div>`);
+        const head = result.firstEver ? 'Your first catch!' : 'New Kaimon!';
+        zone.insertAdjacentHTML('beforeend', `<div class="new-banner${result.firstEver ? ' first' : ''}" aria-hidden="true"><span class="nb-rays"></span><strong>${head}</strong><small>${hard ? 'A rare find! ' : ''}#${String(s.num).padStart(3, '0')} added to your Kaidex</small></div>`);
         msg.innerHTML = `You caught ${esc(s.name)}!${shinyTag}`;
       } else {
         sfx.caught();
@@ -490,12 +496,12 @@ export function renderPlay(root, go, { table, focus, guide } = {}) {
             <section class="res-card res-sec">
               <h2 class="res-h">${ballIcon('capture')}Caught this round${uniq.length ? `<span class="res-count">${S.catches.length}</span>` : ''}</h2>
               ${uniq.length ? `<div class="res-catches">${uniq.map((c, i) => { const s = byId(c.id); return `<div class="res-catch${c.isNew ? ' new' : ''}" style="--i:${i}">${creatureArt(s, { shiny: c.shiny })}<span${s.name.length > 10 ? ' class="long"' : ''}>${esc(s.name)}</span>${c.isNew ? '<em>New!</em>' : ''}</div>`; }).join('')}</div>`
-                : '<p class="res-empty">No catches this time. Fast answers throw harder!</p>'}
+                : `<p class="res-empty">${uiImg('kaizo-oops', 'res-empty-kaizo')}<span>No catches this time. Fast answers throw harder!</span></p>`}
             </section>
             <section class="res-card res-sec">
               <h2 class="res-h"><img class="res-h-ic" src="${fxSrc('levelup-wings')}" alt="" aria-hidden="true" draggable="false">Medals moving up${ups.length ? `<span class="res-count">${ups.length}</span>` : ''}</h2>
               ${ups.length ? `<div class="res-facts">${shown.map((l, i) => { const [a, b] = parseFact(l.id); return `<span class="res-fact lvl-${l.level}" style="--i:${i}">${itemImg('medal-' + l.level, 'res-fact-medal')}<b>${a} × ${b}</b><small>${LEVEL_LABEL[l.level]}</small></span>`; }).join('')}${ups.length > shown.length ? `<span class="res-fact more">+${ups.length - shown.length} more</span>` : ''}</div>`
-                : '<p class="res-empty">Get facts right and fast on different days to move them up: Bronze, Silver, Gold, then Star.</p>'}
+                : `<p class="res-empty">${uiImg('kaizo-think', 'res-empty-kaizo')}<span>Get facts right and fast on different days to move them up: Bronze, Silver, Gold, then Star.</span></p>`}
             </section>
             ${ambush ? `<div class="ambush">
               <span class="ambush-av">${trainerArt({ kind: 'grunt', grunt })}</span>
