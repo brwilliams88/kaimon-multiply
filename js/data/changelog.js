@@ -1,7 +1,19 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '1.1.1';
+export const VERSION = '1.1.2';
 
 export const CHANGELOG = [
+  {
+    version: '1.1.2',
+    date: '2026-11-16',
+    title: "Trophy case",
+    items: [
+      "Your badges, medals, patches and Item Bag now live together in one Trophy case on your trainer page.",
+      "Badges stand on shelves from 1s to 10s, then Papa's Gym. Medals hang on a rail, and Hundred Tower cups wait on the bottom shelf.",
+      "Tap a medal to see what the next one needs.",
+      "The Trophy case matches your jacket color!",
+      "Fixed: on iPhone and iPad, the Trainer page no longer jumps up after you change your team.",
+    ],
+  },
   {
     version: '1.1.1',
     date: '2026-11-16',

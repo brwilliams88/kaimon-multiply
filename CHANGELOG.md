@@ -2,6 +2,14 @@
 
 All notable changes. Versioning: `0.MINOR.0` marks a roadmap phase, `0.x.PATCH` is any shipped change a player or parent can notice, and `1.0.0` is the public launch. See "Versioning" in CLAUDE.md. The in-app version history (Grown-ups > What's new) reads from `js/data/changelog.js`; keep both in sync. Each release is tagged in git as `vX.Y.Z`.
 
+## v1.1.2 (2026-11-16) Trophy case
+
+- Your badges, medals, patches and Item Bag now live together in one Trophy case on your trainer page.
+- Badges stand on shelves from 1s to 10s, then Papa's Gym. Medals hang on a rail, and Hundred Tower cups wait on the bottom shelf.
+- Tap a medal to see what the next one needs.
+- The Trophy case matches your jacket color!
+- Fixed: on iPhone and iPad, the Trainer page no longer jumps up after you change your team.
+
 ## v1.1.1 (2026-11-16) Smoother play, hats for everyone, easier feedback
 
 - The number pad is faster: a key counts the moment your finger touches it, and quick double taps both count.
