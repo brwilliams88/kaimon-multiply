@@ -3,6 +3,8 @@
 import { SPECIES, byId, REGIONS } from '../data/creatures.js';
 import { tableTier, levelRank, levelOf, factsForTables } from './facts.js';
 import { roster, buddyOf, current, ownedList, hpForLevel, powerForLevel } from './levels.js';
+import { towerOpponent, towerReward } from './tower.js'; // Hundred Tower hook
+import { megaForm, MEGA_HP, MEGA_POWER } from './megas.js'; // Mega hook
 
 export const MY_HP = 40;      // a Lv 5 Kaimon (HP grows with level: levels.js)
 export const HIT_BACK = 12;   // damage you take on a wrong answer
@@ -14,9 +16,8 @@ export const HIT_BACK = 12;   // damage you take on a wrong answer
 const MYTHIC = { 1: { hp: 120, base: 4, perPower: 46 }, 2: { hp: 200, base: 4, perPower: 62 } };
 const COMBO_STEP = 0.12, COMBO_MAX = 0.6; // mythic bonus per right answer in a row
 const mythicStats = (sp) => sp.type === 'mythic' ? MYTHIC[sp.stage] || MYTHIC[1] : null;
-// HP from level. Kairo and Kairos keep their own HP whatever their level.
-// [v1.1 Megas] a Mega form adds MEGA_HP (+10) on top of hpForLevel; keep +4 damage.
-export const maxHpFor = (sp, lv = 5) => mythicStats(sp)?.hp || hpForLevel(lv);
+// HP from level. Kairo and Kairos keep their own HP whatever their level. A Mega form adds MEGA_HP.
+export const maxHpFor = (sp, lv = 5) => mythicStats(sp)?.hp || hpForLevel(lv) + (sp.megaForm ? MEGA_HP : 0); // Mega hook
 
 // Power meter: full for a quick answer, slowly drains, never runs out.
 // 1.0 at 1.5 seconds or faster, about 0.5 at 5 seconds, floor 0.15.
@@ -57,11 +58,12 @@ export function teamMons(profile, R = roster(profile)) {
 }
 
 export function myTeam(profile) {
-  return teamMons(profile).map((m) => ({ species: m.species, key: m.key, lv: m.level, hp: maxHpFor(m.species, m.level), max: maxHpFor(m.species, m.level) }));
+  return teamMons(profile).map((m) => { const s = megaForm(profile, m.species); return { species: s, key: m.key, lv: m.level, hp: maxHpFor(s, m.level), max: maxHpFor(s, m.level) }; }); // Mega hook: Mega forms battle
 }
 
 // Opponents. kind: 'champ' (one table), 'grunt' (Team Papa ambush), 'boss' (Boss Papa).
 export function opponent(profile, kind, table, grunt) {
+  if (kind === 'tower') return towerOpponent(profile, table); // Hundred Tower hook: table is the floor
   if (kind === 'champ') {
     const r = REGIONS.find((x) => x.table === table);
     const beaten = profile.battles.champs[table] || 0;
@@ -128,8 +130,8 @@ export function attack(mine, power, streak) {
   const crit = power >= 0.9;
   const special = streak > 0 && streak % 3 === 0;
   const my = mythicStats(mine.species);
-  // Everyone else: damage grows with level (+1 every 5 levels).
-  let dmg = my ? (my.base + my.perPower * power) * (1 + Math.min(COMBO_MAX, COMBO_STEP * Math.max(0, streak - 1))) : 8 + 10 * power + powerForLevel(mine.lv || 1);
+  // Everyone else: damage grows with level (+1 every 5 levels); a Mega form hits harder.
+  let dmg = my ? (my.base + my.perPower * power) * (1 + Math.min(COMBO_MAX, COMBO_STEP * Math.max(0, streak - 1))) : 8 + 10 * power + powerForLevel(mine.lv || 1) + (mine.species.megaForm ? MEGA_POWER : 0); // Mega hook
   if (crit) dmg *= 1.5;
   if (special) dmg *= 1.5;
   return { dmg: Math.round(dmg), crit, special };
@@ -173,6 +175,7 @@ export const gymOpen = (profile, table) => !!profile.battles.champs[table] || ch
 
 // Rewards for a win, given before the win is recorded.
 export function rewardFor(profile, kind, table) {
+  if (kind === 'tower') return towerReward(profile, table); // Hundred Tower hook
   if (kind === 'boss') return profile.battles.boss ? { ball: 'mega', n: 1 } : { ball: 'legend', n: 1, mythic: true };
   if (kind === 'champ') return profile.battles.champs[table] ? { ball: 'super', n: 1 } : { ball: 'mega', n: 1 };
   if (kind === 'quiz') return { ball: 'mega', n: 1 };

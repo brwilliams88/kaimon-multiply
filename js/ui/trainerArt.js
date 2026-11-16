@@ -4,8 +4,9 @@
 import { trainerKey, trainerFace, trainerBody } from '../core/assets.js';
 import { trainerImg, trainerLook } from './avatars.js';
 
-export const trainerArt = (opp) => trainerFace(trainerKey(opp));
-export const trainerFull = (opp, pose = 'base') => trainerBody(trainerKey(opp), pose);
+// opp.art: an opponent with no trainer (a Hundred Tower guardian) draws itself.
+export const trainerArt = (opp) => opp.art ? opp.art('face') : trainerFace(trainerKey(opp)); // Hundred Tower hook
+export const trainerFull = (opp, pose = 'base') => opp.art ? opp.art(pose) : trainerBody(trainerKey(opp), pose); // Hundred Tower hook
 // The player's own trainer in a result: their look, cheering or a little down.
 export const playerArt = (p, pose = 'base') => trainerImg(trainerLook(p), pose, 'player-body');
 

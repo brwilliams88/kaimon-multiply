@@ -2,6 +2,22 @@
 
 All notable changes. Versioning: `0.MINOR.0` marks a roadmap phase, `0.x.PATCH` is any shipped change a player or parent can notice, and `1.0.0` is the public launch. See "Versioning" in CLAUDE.md. The in-app version history (Grown-ups > What's new) reads from `js/data/changelog.js`; keep both in sync. Each release is tagged in git as `vX.Y.Z`.
 
+## v0.6.13 (2026-11-16) The Hundred Tower and Megas
+
+- The Hundred Tower: climb floors of legendary Kaimon. Every move is an answer.
+- Beating a new floor gives one Mega Crystal, even if you play on more than one device.
+- Mega forms add 10 more HP on top of your Kaimon's level, and tower guardians show their level.
+- Tower wins give XP to your Buddy and your team.
+
+## v0.6.12 (2026-11-16) Lightning Round, Hint Scrolls and battle snacks
+
+- The Lightning Round opens after one warm-up round. Find it on Home or in the Menu. Grown-ups can play too!
+- New item: the Hint Scroll. Tap it on a card to see Teacher K's trick before you answer.
+- Power Snacks now work in battles: tap one, then get a card right to heal your Kaimon.
+- The Evolve Crystal evolves your Buddy if it is 3 levels or less from evolving. It keeps its level.
+- Shiny Kaimon are rarer now, so each one is special. A Lucky Lantern makes them easier to find.
+- How to play has new cards for quests, items and the Lightning Round.
+
 ## v0.6.11 (2026-11-16) Stay where you were
 
 - Closing a window no longer jumps you back to the top of Home. You stay right where you were.

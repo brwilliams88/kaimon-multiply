@@ -26,6 +26,7 @@ import { esc, on, sheet, toast, $, busy, cleanCode, codeOk, keyOf } from './dom.
 import { reportPanelHTML, bindReportPanel } from './reportPanel.js';
 import { offlineChipHTML, offlinePanelHTML, bindOfflinePanel, pendingNote, outboxPillHTML } from './offline.js';
 import { isOnline, onOfflineChange } from '../core/offline.js';
+import { calmModeRow } from './lightning.js'; // [systems] Calm mode
 
 
 let unlockedUntil = 0;
@@ -374,6 +375,7 @@ function drawMain(root, go) {
           <div class="row"><span class="note" data-soundmsg>No sound on an iPhone? Turn the volume up with the side buttons, then tap Test sound.</span><button class="btn-chunky btn-sm" data-soundtest>Test sound</button></div>
           <label class="row"><span>Music<small class="row-note">Plays on Home and in battles, never during practice cards. Sound effects stay on. Turning Sound off silences both.</small></span><input type="checkbox" class="switch" data-set="music" ${s.music !== false ? 'checked' : ''}></label>
           <label class="row"><span>Voice answers <span class="beta-tag">Beta</span><small class="row-note">Kids turn on Mic mode with the mic button and say the answer. The phone asks to use the microphone the first time each day. On iPhone, the mic has its own volume: if sounds seem quiet after using it, press volume up while a sound plays.</small></span><input type="checkbox" class="switch" data-set="voice" ${s.voice ? 'checked' : ''}></label>
+          ${calmModeRow(s) /* [systems] Calm mode: hides the Lightning Round timer */}
           <p class="note">${voiceSupported() ? 'Voice works on this device. Kids tap the mic button to turn Mic mode on, then say each answer.' : 'Voice isn’t available here. On iPad and iPhone it may work in Safari but not from the home screen icon; the number pad always works.'}</p>
         </div>
 

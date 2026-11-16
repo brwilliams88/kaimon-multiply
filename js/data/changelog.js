@@ -1,7 +1,31 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.6.11';
+export const VERSION = '0.6.13';
 
 export const CHANGELOG = [
+  {
+    version: '0.6.13',
+    date: '2026-11-16',
+    title: "The Hundred Tower and Megas",
+    items: [
+      "The Hundred Tower: climb floors of legendary Kaimon. Every move is an answer.",
+      "Beating a new floor gives one Mega Crystal, even if you play on more than one device.",
+      "Mega forms add 10 more HP on top of your Kaimon's level, and tower guardians show their level.",
+      "Tower wins give XP to your Buddy and your team.",
+    ],
+  },
+  {
+    version: '0.6.12',
+    date: '2026-11-16',
+    title: "Lightning Round, Hint Scrolls and battle snacks",
+    items: [
+      "The Lightning Round opens after one warm-up round. Find it on Home or in the Menu. Grown-ups can play too!",
+      "New item: the Hint Scroll. Tap it on a card to see Teacher K's trick before you answer.",
+      "Power Snacks now work in battles: tap one, then get a card right to heal your Kaimon.",
+      "The Evolve Crystal evolves your Buddy if it is 3 levels or less from evolving. It keeps its level.",
+      "Shiny Kaimon are rarer now, so each one is special. A Lucky Lantern makes them easier to find.",
+      "How to play has new cards for quests, items and the Lightning Round.",
+    ],
+  },
   {
     version: '0.6.11',
     date: '2026-11-16',
