@@ -2919,9 +2919,9 @@ button.tp-slot:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--in
 /* Levels: white, pale, then one warm ramp. Star is the only special one. */
 .lv-new { background: #fff; color: #A3AEC2; border-color: #DFE5EE; }
 .lv-learning { background: #FFF6EC; color: #8A5A2B; }
-.lv-bronze { background: #FFE3BC; color: #6B3F00; }
-.lv-silver { background: #FFC35C; color: #4F2C00; }
-.lv-gold { background: #F0961A; color: #351D00; }
+.lv-bronze { background: #EFC39A; color: #5B2C0B; }
+.lv-silver { background: #DDE3EC; color: #2B3752; }
+.lv-gold { background: #F8CB4A; color: #4A3200; }
 .lv-star { background: #6B45C9; color: #fff; border-color: #4B2F96; }
 /* By heart: three calm colors */
 .tg-sw.fl-heart, .fd-fl.fl-heart { background: #B9DBFF; color: #0B3F86; }
