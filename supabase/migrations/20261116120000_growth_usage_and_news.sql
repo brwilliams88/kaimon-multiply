@@ -81,7 +81,11 @@ create table if not exists public.usage_events (
   installed boolean not null default false,
   city text check (city is null or char_length(city) between 1 and 60),
   region text check (region is null or char_length(region) between 1 and 60),
-  country text check (country is null or country ~ '^[A-Z]{2}$')
+  country text check (country is null or country ~ '^[A-Z]{2}$'),
+  -- The player's own time zone, local day and local hour (worked out on the device; t stays UTC).
+  tz text check (tz is null or tz ~ '^[A-Za-z0-9_+/-]{1,64}$'),
+  lday date check (lday is null or lday between date '2024-01-01' and date '2100-01-01'),
+  lhour smallint check (lhour is null or lhour between 0 and 23)
 );
 create index if not exists usage_events_t on public.usage_events (t);
 create index if not exists usage_events_device on public.usage_events (device, received_at);
@@ -100,6 +104,8 @@ returns trigger language plpgsql security definer set search_path = '' as $$
 begin
   new.received_at := now();
   if new.t is null or new.t > now() + interval '1 day' or new.t < now() - interval '60 days' then new.t := now(); end if;
+  -- A local day more than a day away from t (in UTC) can't be right.
+  if new.lday is not null and abs(new.lday - (new.t at time zone 'UTC')::date) > 1 then new.lday := null; new.lhour := null; end if;
   if (select count(*) from public.usage_events e where e.device = new.device and e.received_at > now() - interval '1 day') >= 2000 then
     return null;
   end if;
@@ -175,21 +181,25 @@ create table if not exists public.admins (
 alter table public.admins enable row level security;
 revoke all on public.admins from public, anon, authenticated;
 
--- Aggregates only. Days are counted in California time.
+-- Aggregates only. Active players per day are counted in Pacific time; per-player
+-- days (days played, came back) use each player's own local day.
 create or replace function public.usage_summary_(days integer)
 returns jsonb language sql stable security definer set search_path = '' as $$
   with p as (select greatest(1, least(coalesce(days, 30), 365)) as n),
   bounds as (select (now() at time zone 'America/Los_Angeles')::date as today, n from p),
   w as (
-    select e.*, (e.t at time zone 'America/Los_Angeles')::date as day
+    select e.*, (e.t at time zone 'America/Los_Angeles')::date as day,
+      coalesce(e.lday, (e.t at time zone 'America/Los_Angeles')::date) as ld
     from public.usage_events e, bounds b
     where e.t >= ((b.today - (b.n - 1)) at time zone 'America/Los_Angeles')
   ),
-  firsts as (select e.device, min(e.t) as first_t from public.usage_events e group by e.device),
+  firsts as (select e.device, min(e.t) as first_t, min(coalesce(e.lday, (e.t at time zone 'America/Los_Angeles')::date)) as first_ld from public.usage_events e group by e.device),
   firsts_w as (select f.*, (f.first_t at time zone 'America/Los_Angeles')::date as day from firsts f, bounds b where (f.first_t at time zone 'America/Los_Angeles')::date > b.today - b.n),
-  dd as (select w.device, count(distinct w.day) as nd from w group by w.device),
-  -- New devices in the window that came back on a later day.
-  back as (select f.device from firsts_w f where exists (select 1 from w where w.device = f.device and w.day > f.day)),
+  -- Per-player days use the player's own local day (a session past local midnight
+  -- counts on their day). Active-player counts below use Pacific days.
+  dd as (select w.device, count(distinct w.ld) as nd from w group by w.device),
+  -- New devices in the window that came back on a later (local) day.
+  back as (select f.device from firsts_w f where exists (select 1 from w where w.device = f.device and w.ld > f.first_ld)),
   daily as (
     select g::date as day,
       count(distinct w.device) as players,
@@ -228,6 +238,7 @@ returns jsonb language sql stable security definer set search_path = '' as $$
     union all select 'browsers', coalesce(x.browser, 'unknown'), count(distinct x.device) from w x group by 1, 2
     union all select 'versions', coalesce(x.v, 'unknown'), count(distinct x.device) from w x group by 1, 2
     union all select 'countries', x.country, count(distinct x.device) from w x where x.country is not null group by 1, 2
+    union all select 'timezones', x.tz, count(distinct x.device) from w x where x.tz is not null group by 1, 2
   ),
   -- Devices seen in each place (a device that travels counts in each place).
   places as (
@@ -266,6 +277,11 @@ returns jsonb language sql stable security definer set search_path = '' as $$
     'places', (select coalesce(jsonb_agg(jsonb_build_object('city', pl.city, 'region', pl.region, 'country', pl.country, 'devices', pl.devices) order by pl.devices desc, pl.country, pl.region, pl.city), '[]'::jsonb)
       from (select * from places order by devices desc, country, region nulls last, city nulls last limit 15) pl),
     'active', (select coalesce(jsonb_agg(jsonb_build_object('day', a.day, 'dau', a.dau, 'wau', a.wau, 'mau', a.mau) order by a.day), '[]'::jsonb) from active a),
+    -- When kids play, by the player's own local hour.
+    'hours', (select coalesce(jsonb_agg(jsonb_build_object('hour', h.lhour, 'minutes', h.minutes, 'opens', h.opens, 'devices', h.devices) order by h.lhour), '[]'::jsonb) from (
+      select w.lhour, coalesce(sum(w.n) filter (where w.k = 'minutes'), 0) as minutes, count(*) filter (where w.k = 'open') as opens, count(distinct w.device) as devices
+      from w where w.lhour is not null group by w.lhour) h),
+    'timezones', (select coalesce(jsonb_agg(jsonb_build_object('name', t.name, 'devices', t.devices) order by t.devices desc, t.name), '[]'::jsonb) from (select * from top where what = 'timezones' order by devices desc, name limit 10) t),
     'tables', (select coalesce(jsonb_agg(jsonb_build_object('table', t.tb, 'answers', t.answers) order by t.answers desc, t.tb), '[]'::jsonb) from tbl t),
     'comments', (select coalesce(jsonb_agg(jsonb_build_object('kind', c.kind, 'stars', c.stars, 'text', left(c.text, 300), 'name', c.name, 'created_at', c.created_at, 'country', c.country, 'city', c.city) order by c.created_at desc), '[]'::jsonb)
       from (select * from public.feedback f where f.text is not null order by f.created_at desc limit 5) c),

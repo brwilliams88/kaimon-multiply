@@ -88,6 +88,15 @@ table.data th { color: var(--ink-2); font-weight: 600; }
 .rank .v { text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
 @keyframes grow { from { transform: scaleX(0); } }
 .empty { color: var(--muted); font-size: 15px; padding: 8px 0; }
+.when { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-bottom: 14px; }
+.wb { border: 2.5px solid var(--ink); border-radius: 16px; padding: 10px 10px 8px; background: var(--tint); display: flex; flex-direction: column; }
+.wb b { font-size: 26px; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.wb span { font-weight: 700; font-size: 15px; }
+.wb small { color: var(--ink-2); font-size: 12px; }
+.hours { display: flex; align-items: flex-end; gap: 2px; height: 70px; border-bottom: 2px solid var(--ink); }
+.hours .hr { flex: 1; background: #8A5CF6; border-radius: 3px 3px 0 0; min-width: 2px; }
+.hax { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-top: 4px; }
+@media (max-width: 480px) { .when { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .lists { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; margin-bottom: 18px; }
 
 /* Ratings */
@@ -153,6 +162,21 @@ const nice = (s) => NAMES[s] || s;
 let regionNames = null;
 try { regionNames = new Intl.DisplayNames(['en'], { type: 'region' }); } catch {}
 const countryName = (cc) => { try { return (regionNames && regionNames.of(cc)) || cc; } catch { return cc; } };
+// When kids play, by each player's own local hour.
+const BUCKETS = [['Morning', '5 to 11 am', (h) => h >= 5 && h <= 11], ['Afternoon', '12 to 4 pm', (h) => h >= 12 && h <= 16], ['Evening', '5 to 8 pm', (h) => h >= 17 && h <= 20], ['Late', '9 pm to 4 am', (h) => h >= 21 || h <= 4]];
+function whenHTML(hours) {
+  const rows = hours || [];
+  const useMin = rows.some((x) => +x.minutes > 0), key = useMin ? 'minutes' : 'opens';
+  const total = rows.reduce((a, x) => a + (+x[key] || 0), 0);
+  if (!total) return '<p class="empty">No local times yet.</p>';
+  const b = BUCKETS.map(([name, span, f]) => ({ name, span, n: rows.filter((x) => f(+x.hour)).reduce((a, x) => a + (+x[key] || 0), 0) }));
+  const max = Math.max(...rows.map((x) => +x[key] || 0), 1);
+  const bars = Array.from({ length: 24 }, (_, h) => { const v = +((rows.find((x) => +x.hour === h) || {})[key]) || 0; return `<span class="hr" style="height:${Math.max(v ? 4 : 0, (100 * v) / max)}%" title="${h}:00 to ${h}:59: ${fmt(v)} ${key}"></span>`; }).join('');
+  return `<div class="when">${b.map((x) => `<div class="wb"><b>${pct(x.n, total)}</b><span>${x.name}</span><small>${x.span}</small></div>`).join('')}</div>
+    <div class="hours" role="img" aria-label="${useMin ? 'Minutes' : 'App opens'} by local hour">${bars}</div><div class="hax"><span>12 am</span><span>6 am</span><span>12 pm</span><span>6 pm</span><span>11 pm</span></div>
+    <p class="sub" style="margin-top:8px">Share of ${useMin ? 'minutes played' : 'app opens'}, by each player\u2019s own local time.</p>`;
+}
+const tzName = (z) => { const parts = String(z).split('/'); return parts[parts.length - 1].replace(/_/g, ' ') + (parts.length > 1 ? ' (' + parts[0].replace(/_/g, ' ') + ')' : ''); };
 const placeName = (p) => [p.city, p.region].filter(Boolean).join(', ') || countryName(p.country);
 
 // ---------------------------------------------------------------- session
@@ -304,7 +328,7 @@ function render(s, fb) {
   const dist = r.dist || [0, 0, 0, 0, 0], dmax = Math.max(1, ...dist);
   root.innerHTML = `
   <header class="top">
-    <h1>Kaimon dashboard<small>Last ${days} days, California time. Updated ${new Date(s.generated_at || Date.now()).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}.</small></h1>
+    <h1>Kaimon dashboard<small>Last ${days} days. Days are Pacific time. Updated ${new Date(s.generated_at || Date.now()).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}.</small></h1>
     <div class="seg" role="group" aria-label="Time range">${[7, 30, 90].map((d) => `<button data-days="${d}" aria-pressed="${d === days}">${d} days</button>`).join('')}</div>
     <button class="btn ghost small" id="out" title="Signed in as ${esc(me)}">Sign out</button>
   </header>
@@ -329,8 +353,8 @@ function render(s, fb) {
   </section>
 
   <section class="grid">
-    <div class="card panel"><div class="head"><h2>Players each day</h2><button class="linkbtn" data-table>${tableOpen ? 'Hide table' : 'Show as table'}</button></div><p class="sub">Devices that opened the game</p>${barChart('c-players', daily, 'players', { unit: 'players', label: 'Players each day' })}</div>
-    <div class="card panel"><h2>Minutes played each day</h2><p class="sub">Time with the game on screen</p>${barChart('c-minutes', daily, 'minutes', { color: 'var(--grass)', unit: 'minutes', label: 'Minutes played each day' })}</div>
+    <div class="card panel"><div class="head"><h2>Players each day</h2><button class="linkbtn" data-table>${tableOpen ? 'Hide table' : 'Show as table'}</button></div><p class="sub">Devices that opened the game, by Pacific day</p>${barChart('c-players', daily, 'players', { unit: 'players', label: 'Players each day' })}</div>
+    <div class="card panel"><h2>Minutes played each day</h2><p class="sub">Time with the game on screen, by Pacific day</p>${barChart('c-minutes', daily, 'minutes', { color: 'var(--grass)', unit: 'minutes', label: 'Minutes played each day' })}</div>
   </section>
   ${tableOpen ? `<section class="card panel" style="margin-bottom:18px;overflow:auto"><table class="data"><thead><tr><th>Day</th><th>Players</th><th>New</th><th>Opens</th><th>Minutes</th><th>Rounds</th><th>Cards</th></tr></thead><tbody>${daily.slice().reverse().map((d) => `<tr><td>${esc(dayLabel(d.day))}</td><td>${fmt(d.players)}</td><td>${fmt(d.new_devices)}</td><td>${fmt(d.opens)}</td><td>${fmt(d.minutes)}</td><td>${fmt(d.rounds)}</td><td>${fmt(d.cards)}</td></tr>`).join('')}</tbody></table></section>` : ''}
 
@@ -339,6 +363,11 @@ function render(s, fb) {
     <div class="card panel"><h2>Devices</h2><p class="sub">Players by device</p>${ranked(s.os)}</div>
     <div class="card panel"><h2>Browsers</h2><p class="sub">Players by browser</p>${ranked(s.browsers)}</div>
     <div class="card panel"><h2>Versions</h2><p class="sub">Players by app version</p>${ranked(s.versions)}</div>
+  </section>
+
+  <section class="grid" id="when">
+    <div class="card panel"><h2>When kids play</h2><p class="sub">By each player's own local time</p>${whenHTML(s.hours)}</div>
+    <div class="card panel"><h2>Time zones</h2><p class="sub">Players by their device's time zone</p>${ranked((s.timezones || []).map((z) => ({ name: tzName(z.name), devices: z.devices })), 'No time zones yet.', true)}</div>
   </section>
 
   <section class="grid" id="places">

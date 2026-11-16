@@ -50,6 +50,7 @@ export const COLLECTED = [
   'Trainer names',
   'Kind of device and browser, and whether the game is installed',
   'Rough place: city, region and country (looked up once a day; the internet address is never kept)',
+  'Time zone, and the local day and hour of play',
   'App opens, rounds, battles, catches and minutes played',
   'Where the game was first opened from: a shared link tag, or the site name only (like linkedin.com)',
 ];
@@ -137,6 +138,16 @@ export function lookupPlace(now = Date.now()) {
   return looking;
 }
 
+// ------------------------------------------------------------------ local time
+
+// The player's own time zone, day and hour, worked out on the device (t stays UTC).
+export function timeZone() {
+  try { const z = Intl.DateTimeFormat().resolvedOptions().timeZone; return /^[A-Za-z0-9_+\/-]{1,64}$/.test(z || '') ? z : null; } catch { return null; }
+}
+export function localTime(now = Date.now()) {
+  return { tz: timeZone(), lday: localDay(now), lhour: new Date(now).getHours() };
+}
+
 // ------------------------------------------------------------------ queue
 
 export const queued = () => { const q = ls.json(Q_KEY, []); return Array.isArray(q) ? q : []; };
@@ -149,6 +160,7 @@ export function track(k, n = 1, d = {}, extra = {}) {
   const row = {
     device: analyticsId(), k, t: new Date().toISOString(),
     trainer: cleanTrainer(extra.trainer ?? p?.name), n: Math.max(0, Math.min(10000, Math.round(n) || 0)), d,
+    ...localTime(),
     ref: extra.ref || null, ref_host: extra.refHost || null, v: ver, os: deviceKind(), browser: browserKind(), installed: installed(),
     ...placeFields(),
   };

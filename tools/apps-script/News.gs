@@ -614,7 +614,7 @@ function renderUsageEmail_(d, opt) {
   rows.push(newsCard_(usageH2_('Active players', '001')
     + usageTiles_([usageTile_(usageFmt_(dauAvg), 'daily (average)', '', N_BLUE), usageTile_(usageFmt_(last.wau), 'weekly', usageChange_(+last.wau || 0, +prev.wau || 0), N_GRASS), usageTile_(usageFmt_(last.mau), 'monthly', 'last 30 days', N_CORAL)])
     + (cids.active ? usageImg_(cids.active, 'Daily, weekly and monthly active players, last 8 weeks') : usageMiniBars_(act, 'dau'))
-    + '<div style="font-family:' + N_FONT + ';font-size:13px;color:#8A94AA;padding-top:6px;">Last 8 weeks. Weekly and monthly count each device once over the past 7 and 30 days.</div>'));
+    + '<div style="font-family:' + N_FONT + ';font-size:13px;color:#8A94AA;padding-top:6px;">Last 8 weeks, Pacific time. Weekly and monthly count each device once over the past 7 and 30 days.</div>'));
 
   // New devices
   rows.push(newsCard_(usageH2_('New devices', '004')
@@ -628,6 +628,17 @@ function renderUsageEmail_(d, opt) {
     + usageTiles_([usageTile_(usageFmt_(t.battles), 'battles', usageFmt_(t.wins) + ' won'), usageTile_(usageFmt_(t.catches), 'Kaimon caught', ''), usageTile_(usageFmt_(t.opens), 'app opens', '')])
     + ((s.tables || []).length ? '<div style="font-family:' + N_FONT + ';font-size:16px;font-weight:700;padding:16px 0 6px 0;">Top times tables</div>'
       + usageBars_((s.tables || []).slice(0, 6).map(function (x) { return { name: x.table + 's', devices: x.answers }; }), 60, N_GRASS) : '')));
+
+  // When kids play, by each player's own local hour
+  var hrs = s.hours || [], useMin = hrs.some(function (x) { return +x.minutes > 0; }), hkey = useMin ? 'minutes' : 'opens';
+  var htot = hrs.reduce(function (a, x) { return a + (+x[hkey] || 0); }, 0);
+  var buckets = [['Morning', '5 to 11 am', function (h) { return h >= 5 && h <= 11; }], ['Afternoon', '12 to 4 pm', function (h) { return h >= 12 && h <= 16; }],
+    ['Evening', '5 to 8 pm', function (h) { return h >= 17 && h <= 20; }], ['Late', '9 pm to 4 am', function (h) { return h >= 21 || h <= 4; }]];
+  if (htot) rows.push(newsCard_(usageH2_('When kids play')
+    + usageBars_(buckets.map(function (b) { return { name: b[0] + ' (' + b[1] + ')', devices: hrs.filter(function (x) { return b[2](+x.hour); }).reduce(function (a, x) { return a + (+x[hkey] || 0); }, 0) }; }), 190, '#8A5CF6')
+    + '<div style="font-family:' + N_FONT + ';font-size:13px;color:#8A94AA;padding-top:6px;">' + (useMin ? 'Minutes played' : 'App opens') + ' by each player\u2019s own local time.</div>'
+    + ((s.timezones || []).length ? '<div style="font-family:' + N_FONT + ';font-size:16px;font-weight:700;padding:16px 0 6px 0;">Time zones</div>'
+      + usageBars_((s.timezones || []).map(function (z) { var p = String(z.name).split('/'); return { name: p[p.length - 1].replace(/_/g, ' ') + (p.length > 1 ? ' (' + p[0] + ')' : ''), devices: z.devices }; }), 190) : '')));
 
   // Where players are and how they found the game
   rows.push(newsCard_(usageH2_('Places')
@@ -742,6 +753,8 @@ function usageSample_() {
     os: [{ name: 'ipad', devices: 7 }, { name: 'iphone', devices: 4 }, { name: 'chromebook', devices: 3 }],
     places: [{ city: 'Mountain View', region: 'California', country: 'US', devices: 6 }, { city: 'Brooklyn', region: 'New York', country: 'US', devices: 3 }, { city: 'Toronto', region: 'Ontario', country: 'CA', devices: 2 }],
     tables: [{ table: 7, answers: 320 }, { table: 8, answers: 260 }, { table: 6, answers: 210 }, { table: 9, answers: 150 }],
+    hours: [{ hour: 7, minutes: 60 }, { hour: 8, minutes: 40 }, { hour: 15, minutes: 150 }, { hour: 16, minutes: 110 }, { hour: 18, minutes: 120 }, { hour: 19, minutes: 30 }, { hour: 21, minutes: 10 }],
+    timezones: [{ name: 'America/Los_Angeles', devices: 9 }, { name: 'America/New_York', devices: 4 }, { name: 'America/Toronto', devices: 1 }],
     feedback: { new_comments: 3 },
     comments: [{ kind: 'idea', text: 'Can the Kaidex show where each Kaimon lives?', name: 'Mia', created_at: days[55].day, city: 'Brooklyn' },
       { kind: 'bug', text: 'The music kept playing after I closed the game.', created_at: days[54].day, city: 'Mountain View' },
