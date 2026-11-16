@@ -5,7 +5,7 @@
 //
 // Every change is an event (see actions.js), so family devices merge cleanly:
 //   'use'  { i, ... }   spends one item (and does what it does)
-//   'got'  { r, g }     claims reward r once and gives g: [['b', ball, n] | ['i', item, n] | ['x', 'xp', n]]
+//   'prize' { r, g }    claims reward r once and gives g: [['b', ball, n] | ['i', item, n] | ['x', 'xp', n]]
 //                       Claims are keyed, so two devices can never claim one twice.
 //
 // Names, art and kid lines come from ITEM_INFO in extras.js (one source of truth).
@@ -62,7 +62,7 @@ export function applySystems(p, ev) {
     if (d.i === 'evolve' && d.n) { const C = p.crys || (p.crys = {}); C[d.n] = C[d.n] ? Math.min(C[d.n], ev.t) : ev.t; }
     return true;
   }
-  if (ev.k === 'got') {
+  if (ev.k === 'prize') { // ('got' is the Wardrobe's event)
     const got = p.got || (p.got = {});
     if (got[d.r]) return true; // already claimed, maybe on another device
     got[d.r] = ev.t;
@@ -130,7 +130,7 @@ export function grant(p, key, gives) {
   const d = { r: key, g: gives };
   const xp = gives.some(([k]) => k === 'x');
   if (xp) d.b = buddyOf(p).key; // XP goes to the Buddy of the moment, on every device
-  const ev = emit(p, 'got', d);
+  const ev = emit(p, 'prize', d);
   if (xp) ev.evolved = evolveReady(p);
   return ev;
 }

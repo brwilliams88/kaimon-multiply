@@ -44,7 +44,7 @@ test('itemCount reads p.items safely', () => {
 
 test('got event gives once, even when applied twice (two devices)', () => {
   const p = fresh();
-  const e = ev('got', { r: 'q:2026-11-15:0', g: [['b', 'super', 1], ['i', 'charm', 2]] });
+  const e = ev('prize', { r: 'q:2026-11-15:0', g: [['b', 'super', 1], ['i', 'charm', 2]] });
   apply(p, e); apply(p, { ...e, id: 'other' });
   assert.equal(p.balls.super, 1);
   assert.equal(p.items.charm, 2);
@@ -77,7 +77,7 @@ test('old megacrystal key folds into megaCrystal everywhere', () => {
   const p = fresh(); p.items.megacrystal = 2; p.items.megaCrystal = 1;
   items.fixItemKeys(p);
   assert.equal(p.items.megaCrystal, 3); assert.ok(!('megacrystal' in p.items));
-  apply(p, ev('got', { r: 'old:1', g: [['i', 'megacrystal', 1]] }));
+  apply(p, ev('prize', { r: 'old:1', g: [['i', 'megacrystal', 1]] }));
   apply(p, ev('use', { i: 'megacrystal' }));
   assert.equal(p.items.megaCrystal, 3); assert.ok(!('megacrystal' in p.items));
   const b = fresh('pB');
@@ -95,7 +95,7 @@ test('a save with the old megacrystal key loads as megaCrystal', async () => {
 
 test('got event can give Buddy XP', () => {
   const p = fresh(); p.xp = 10;
-  apply(p, ev('got', { r: 'q:x:0', g: [['x', 'xp', 50]] }));
+  apply(p, ev('prize', { r: 'q:x:0', g: [['x', 'xp', 50]] }));
   assert.equal(p.xp, 60);
   assert.equal(p.items.xp, undefined);
 });

@@ -118,7 +118,7 @@ export function apply(p, ev) {
       }
       break;
     }
-    default: applySystems(p, ev); // [systems] 'use', 'got', 'bolt' events
+    default: applySystems(p, ev); // [systems] 'use', 'prize', 'bolt' events
   }
 }
 
