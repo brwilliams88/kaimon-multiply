@@ -25,6 +25,8 @@ import { shareGame, shareIcon } from './share.js';
 import { openPlayElsewhere, deviceIcon } from './playElsewhere.js';
 import { openFeedback } from './feedback.js';
 import { trainerChipSheet } from './onboarding.js';
+import { questsCard, bindQuests, boltLockedNote } from './quests.js'; // [systems] daily quests, Lightning Round
+import { boltUnlocked, boltBest, calmMode } from '../core/lightning.js'; // [systems] Lightning Round in the Menu
 import { offlineBadgeHTML } from './offline.js';
 import { homeTour } from './firstGame.js';
 import { howToPlay } from './howToPlay.js';
@@ -211,6 +213,7 @@ export function renderHome(root, go, params = {}) {
               ${p.items.snack ? `<span class="ball-count" title="Power Snacks">${snackIcon()}${p.items.snack}</span>` : ''}
             </button>
           </div>
+          ${questsCard(p) /* [systems] daily quests */}
 
           <div class="rg-head"><h2 class="section-title">Pick a region</h2><span class="rg-count">${ribbon()}${beaten} of ${total} badges</span></div>
           <p class="section-sub">Tap a region to practice its times table. Tap a gym to battle.</p>
@@ -288,6 +291,7 @@ export function renderHome(root, go, params = {}) {
   on(root, 'click', '[data-dex]', () => { sfx.tap(); go('kaidex'); });
   on(root, 'click', '[data-quiz]', () => { unlock(); sfx.tap(); if (timesUp()) return; keepPlace(); go('battle', { kind: 'quiz' }); });
   on(root, 'click', '[data-trainer]', () => { sfx.tap(); trainerChipSheet(go); }); // trainer page or Switch trainer
+  bindQuests(root, go); // [systems] daily quests
 
   try {
     const place = JSON.parse(sessionStorage.getItem('kaimon.homePlace') || 'null');
@@ -391,6 +395,7 @@ function homeMenu(p, go) {
     <h2>Menu</h2>
     <label class="menu-row menu-switch"><span class="menu-ic" aria-hidden="true">${uiImg('icon-sound')}</span><span class="menu-txt"><strong>Sound</strong><small>Music and sound effects</small></span><input type="checkbox" class="switch" data-sound ${p.settings.sound ? 'checked' : ''} aria-label="Sound"></label>
     <label class="menu-row menu-switch"><span class="menu-ic" aria-hidden="true">${uiImg('icon-quick')}</span><span class="menu-txt"><strong>Quick mode</strong><small>Shorter catches and battle moves, more cards</small></span><input type="checkbox" class="switch" data-quick ${p.settings.quick ? 'checked' : ''} aria-label="Quick mode"></label>
+    ${calmMode(p) ? '' : row(`data-m="bolt"${boltUnlocked(p) ? '' : ' data-locked'}`, itemImg('time-freeze', 'menu-bolt-img'), 'Lightning Round', boltUnlocked(p) ? (boltBest(p) ? `60-second sprint. Your best: ${boltBest(p)}` : '60-second sprint. Grown-ups can play too!') : boltLockedNote(p)) /* [systems] */}
     ${row('data-m="how"', uiImg('icon-howto'), 'How to play', 'Teacher K explains everything')}
     ${row('data-m="balls"', ballIcon('capture'), 'Ball guide', 'Which ball to throw, and how to earn more')}
     ${row('data-m="switch"', uiImg('icon-trainers'), 'Title screen', 'Switch trainer or add a new one')}
@@ -416,6 +421,7 @@ function homeMenu(p, go) {
     if (m === 'device') setTimeout(() => openPlayElsewhere({ back }), 200);
     if (m === 'feedback') setTimeout(() => openFeedback({ place: 'menu', back }), 200);
     if (m === 'switch') go('welcome');
+    if (m === 'bolt') { if (!boltUnlocked(p)) { setTimeout(() => toast(`Lightning Round: ${boltLockedNote(p)}.`, 2600), 200); return; } if (!limitReached(p)) go('lightning'); } // [systems]
   });
   // Grown-ups is behind the PIN, so a plain tap is enough.
   sh.el.querySelector('[data-grownups]').addEventListener('click', () => { sfx.tap(); sh.close(); go('grownups'); });

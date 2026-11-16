@@ -22,6 +22,7 @@ import { quick } from '../core/prefs.js';
 import { limitReached } from '../core/playtime.js';
 import { startMusic, stopMusic, setPinch } from '../core/music.js';
 import { $, on, esc, sheet, reducedMotion, soundButton, setFlame, fitText } from './dom.js';
+import { canSnack, useSnack, itemCount } from '../core/items.js'; import { itemIcon } from './items.js'; // [systems] Power Snack
 
 // Special hit-back moves for the big opponents. Papazilla lifts.
 const FOE_MOVES = { papa: 'Dumbbell Drop', legend: 'Hundred Blast', mythic: 'Dream Burst' };
@@ -157,6 +158,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt } = {}
     </section>`;
 
   { const mic = root.querySelector('[data-mic]'); const snd = root.querySelector('.play-top .sound-btn'); if (mic && snd) snd.before(mic); }
+  root.querySelector('.hp-me')?.insertAdjacentHTML('beforeend', '<button class="snack-btn" data-snack hidden></button>'); // [systems] Power Snack, just above your HP
   const el = {
     arena: $('.arena', root), q: $('.q', root), qcard: $('.q-card', root), msg: $('.b-msg', root),
     foeMon: $('.foe-mon', root), meMon: $('.me-mon', root), foeHp: $('.hp-foe', root), meHp: $('.hp-me', root),
@@ -183,6 +185,27 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt } = {}
     bar.style.width = pct + '%';
     bar.className = pct <= 25 ? 'low' : pct <= 50 ? 'mid' : '';
     $('.hp-num', box).textContent = `${Math.max(0, m.hp)} / ${m.max}`;
+    if (box === el.meHp) drawSnack(); // [systems]
+  }
+  // [systems] Power Snack: tap it, then a right answer feeds it to the Kaimon out now.
+  // Every move stays an answer: the snack only works on a right one.
+  function drawSnack() {
+    const btn = root.querySelector('[data-snack]');
+    if (!btn) return;
+    const show = S.snack || (canSnack(p, mine[S.me]) && S.phase !== 'intro' && S.phase !== 'over');
+    btn.hidden = !show;
+    if (!show) return;
+    btn.classList.toggle('armed', !!S.snack);
+    btn.setAttribute('aria-pressed', !!S.snack);
+    btn.setAttribute('aria-label', S.snack ? 'Power Snack ready. Get a card right to feed it.' : `Use a Power Snack. You have ${itemCount(p, 'snack')}.`);
+    btn.innerHTML = `${itemIcon('snack', 'snk-img')}<b>${S.snack ? 'Ready!' : itemCount(p, 'snack')}</b>`;
+  }
+  function feedSnack() {
+    if (!S.snack) return;
+    const r = useSnack(p, mine, S.me);
+    S.snack = false;
+    if (r) { save(); sfx.levelUp(); popNumber(el.meMon, '+' + r.healed, 'heal'); drawHp(el.meHp, mine, S.me, true); el.msg.textContent = `${mine[S.me].species.name} ate the Power Snack!`; }
+    drawSnack();
   }
   function drawMons() {
     el.foeMon.innerHTML = creatureArt(opp.team[S.foe].species);
@@ -379,6 +402,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt } = {}
     S.phase = 'ask';
     S.skip = false;
     S.mustType = null;
+    drawSnack(); // [systems]
     S.shownAt = performance.now();
     startPower();
     S.mic?.ready();
@@ -455,6 +479,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt } = {}
       if (last && foe.hp > 0 && foe.hp / foe.max < 0.4) setPinch(true);
       if (last && foe.hp > 0 && foe.hp / foe.max < 0.5 && !S.joked && opp.team[S.foe].species.id !== 'papazilla') { S.joked = true; joke(dadJoke('appear')); }
       if (hit.crit) el.msg.textContent = hit.special ? `${move}! Critical hit!` : 'Critical hit!';
+      if (S.snack) { await nap(q ? 160 : 220); feedSnack(); } // [systems] Power Snack
       await nap(q ? 240 : 320);
       if (foe.hp <= 0) {
         sfx.faint();
@@ -576,7 +601,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt } = {}
   }
 
   async function finish(won) {
-    S.phase = 'over';
+    S.phase = 'over'; drawSnack(); // [systems]
     cancelAnimationFrame(S.raf);
     S.mic?.destroy();
     stopVoice();
@@ -708,6 +733,14 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt } = {}
       if (row) row.innerHTML = mine.map((m) => `<span class="mini">${creatureArt(m.species)}</span>`).join('') + '<span class="tc-label">Change team</span>';
       drawMons();
     });
+  });
+  on(root, 'click', '[data-snack]', (e) => { // [systems] Power Snack
+    e.stopPropagation();
+    if (S.phase === 'intro' || S.phase === 'over') return;
+    sfx.tap();
+    S.snack = !S.snack && canSnack(p, mine[S.me]);
+    if (S.snack) el.msg.textContent = 'Snack ready! Get a card right to feed it.';
+    drawSnack();
   });
   on(root, 'click', '[data-leave]', () => { sfx.tap(); go('home'); });
   on(root, 'click', '[data-k]', (e, k) => {

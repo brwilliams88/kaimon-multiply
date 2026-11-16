@@ -62,14 +62,15 @@ export const BALL_INFO = {
   legend: { name: 'Legend Ball', does: 'Never misses. Save it for one you really want!', earn: 'Get a new medal on any times table.' },
 };
 export const ITEM_INFO = {
-  snack: { name: 'Power Snack', art: 'power-snack', does: 'A tasty treat that powers up your Kaimon.', earn: 'Comes with a Good Work Stamp from your grown-ups.' },
-  charm: { name: 'Second Chance Charm', art: 'sparkle-charm', does: 'Gives you one more try after a miss.', earn: 'Keep answering to find more.' },
-  lantern: { name: 'Lucky Lantern', art: 'hint-lamp', does: 'Lights the way to rare Kaimon.', earn: 'Keep answering to find more.' },
-  evolve: { name: 'Evolve Crystal', art: 'evolution-crystal', does: 'Helps a Kaimon grow into its next form.', earn: 'Keep answering to find more.' },
-  mega: { name: 'Mega Crystal', art: 'evolution-crystal', does: 'Wakes up a Kaimon’s Mega form.', earn: 'Keep answering to find more.' },
+  snack: { name: 'Power Snack', art: 'power-snack', does: 'In a battle, tap it, then get a card right. Your Kaimon eats it and heals half its HP.', earn: 'Daily quests, Gym wins and Good Work Stamps.' },
+  scroll: { name: 'Hint Scroll', art: null, does: 'Stuck on a card? Open it to see Teacher K’s trick before you answer.', earn: 'Daily quests and right-answer milestones.' },
+  charm: { name: 'Second Chance Charm', art: 'sparkle-charm', does: 'Miss a card on a streak of 3 or more? Try it once more and keep your streak.', earn: 'Daily quests, long streaks and Gold medals.' },
+  lantern: { name: 'Lucky Lantern', art: 'hint-lamp', does: 'Light it, then practice. Rare and shiny Kaimon show up more for 15 cards.', earn: 'Daily quests, right-answer milestones and Silver medals.' },
+  evolve: { name: 'Evolve Crystal', art: 'evolution-crystal', does: 'Evolves your Buddy right now, when it is 3 levels or less from evolving.', earn: 'Right-answer milestones and Lightning Round bests.' },
+  megaCrystal: { name: 'Mega Crystal', art: 'evolution-crystal', does: 'Wakes up a Kaimon’s Mega form.', earn: 'Climb the Hundred Tower.' },
 };
 // Other spellings of the same item.
-const ALIAS = { powerSnack: 'snack', secondChance: 'charm', secondChanceCharm: 'charm', luckyLantern: 'lantern', evolveCrystal: 'evolve', evolutionCrystal: 'evolve', megaCrystal: 'mega' };
+const ALIAS = { powerSnack: 'snack', secondChance: 'charm', secondChanceCharm: 'charm', luckyLantern: 'lantern', evolveCrystal: 'evolve', evolutionCrystal: 'evolve', megacrystal: 'megaCrystal', hintScroll: 'scroll' };
 const words = (k) => String(k).replace(/[-_]+/g, ' ').replace(/([a-z])([A-Z])/g, '$1 $2').replace(/\b\w/g, (c) => c.toUpperCase());
 export function itemInfo(key) {
   const i = ITEM_INFO[key] || ITEM_INFO[ALIAS[key]];

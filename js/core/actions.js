@@ -7,6 +7,7 @@ import { dayRec } from './playtime.js';
 import { answerXP, XP } from './xp.js';
 import { byId as SPECIES_BY } from '../data/creatures.js';
 import { today } from './store.js';
+import { applySystems, onSeen, shinyChance } from './items.js'; // [systems] items, quests, Lightning Round
 import { giveXP, applyCatch, applyEvo, applyBud, roster, buddyOf, nextGen, arrivalLevel, readyToEvolve, BOOST } from './levels.js';
 
 let counter = 0;
@@ -43,6 +44,7 @@ export function apply(p, ev) {
       const e = dexEntry(p, d.n);
       e.seen++;
       if (!e.firstSeen) e.firstSeen = ev.t;
+      onSeen(p); // [systems] Lucky Lantern counts wild Kaimon
       break;
     }
     case 'esc':
@@ -116,6 +118,7 @@ export function apply(p, ev) {
       }
       break;
     }
+    default: applySystems(p, ev); // [systems] 'use', 'prize', 'bolt' events
   }
 }
 
@@ -166,7 +169,7 @@ export const seen = (p, speciesId) => emit(p, 'seen', { n: speciesId });
 // A catch. A species you already own gets +50 XP; a new one arrives at its own level.
 export function caught(p, speciesId, sp = null) {
   const isNew = !(p.dex[speciesId] && p.dex[speciesId].caught);
-  const shiny = Math.random() < 1 / 32;
+  const shiny = Math.random() < shinyChance(p); // [systems] 1 in 128, better with a Lucky Lantern
   const R = roster(p);
   const have = R.byId[speciesId];
   const d = { n: speciesId, s: shiny ? 1 : 0 };

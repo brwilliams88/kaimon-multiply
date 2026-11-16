@@ -16,6 +16,7 @@ import { teamRowHTML, teamSheet } from './teamPicker.js';
 import { renameSheet } from './renameSheet.js';
 import { esc, on, sheet, toast } from './dom.js';
 import { sfx } from '../core/sound.js';
+import { openItem, scrollArt } from './items.js'; // [systems] Item Bag
 
 const INK = '#14213D';
 const minutes = (ms) => {
@@ -148,6 +149,7 @@ function badgeSheet(p, key) {
 const HAS_ITEM_ART = new Set(ITEMS);
 function bagArt(r) {
   if (r.kind === 'ball') return ballImg(r.key, 'bag-art');
+  if (r.key === 'scroll') return scrollArt('bag-art'); // [systems] drawn, no painted art yet
   if (r.art && HAS_ITEM_ART.has(r.art)) return itemImg(r.art, 'bag-art');
   return itemImg('bag', 'bag-art bag-generic');
 }
@@ -230,6 +232,7 @@ export function renderTrainer(root, go, params = {}) {
   on(root, 'click', '[data-team]', () => { sfx.tap(); teamSheet(p, draw); });
   on(root, 'click', '[data-switch]', () => { sfx.tap(); go('welcome'); });
   on(root, 'click', '[data-badge]', (e, el) => { sfx.tap(); badgeSheet(p, el.dataset.badge); });
+  on(root, 'click', '[data-bag]', (e, el) => { if (openItem(p, el.dataset.bag, { go, onUse: draw })) sfx.tap(); }); // [systems] Item Bag: what it does, and Use
   // Tap your name on the License to change it (the same sheet as Grown-ups > Trainers).
   on(root, 'click', '[data-rename]', () => { sfx.tap(); renameSheet(p, { title: 'Change your name', onDone: () => draw() }); });
   on(root, 'click', '[data-wardrobe]', () => { sfx.tap(); openWardrobe(p, { onChange: draw }); });

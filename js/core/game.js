@@ -2,6 +2,7 @@ import { buddyOf, roster, everOwned } from './levels.js';
 // Kaimon core rules: encounters, Capture Balls, catching, partner evolution, mythic cameos.
 import { SPECIES, MYTHIC_ID, FUTURE_ID } from '../data/creatures.js';
 import { tableTier, levelRank, countAtLeast } from './facts.js';
+import { luckWeight } from './items.js'; // [systems] Lucky Lantern
 
 export const BALLS = {
   capture: { name: 'Capture Ball', power: 1 },
@@ -24,7 +25,7 @@ export function pickEncounter(profile, table) {
     else if (s.stage === 1) w = 50;
     else if (s.stage === 2 && tier >= 2) w = 16;
     else if (s.stage === 3 && tier >= 3) w = 6;
-    if (w) weighted.push([s, w]);
+    if (w) weighted.push([s, luckWeight(profile, s, w)]); // [systems] Lucky Lantern
   }
   const total = weighted.reduce((t, [, w]) => t + w, 0);
   let r = Math.random() * total;
