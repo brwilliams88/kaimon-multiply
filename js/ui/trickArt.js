@@ -73,8 +73,9 @@ export function trickPicture(id) {
 // The whole trick block for the hint scroll: turnaround line first (if the partner
 // fact is known), then the dot picture beside Teacher K's trick.
 export function trickHTML(profile, id) {
+  // One simple hint, easy to read: the turnaround if Kai already knows the partner fact, otherwise Teacher K's trick.
+  // (The dot pictures were too busy on a phone, so they are no longer shown.)
   const turn = turnaroundHint(profile, id);
-  const pic = trickPicture(id);
-  const tip = `<p class="trick"><span class="trick-tag">${itemImg('hint-lamp')}Teacher K's trick</span> ${esc(trickFor(id))}</p>`;
-  return `${turn ? `<p class="trick turn"><span class="trick-tag turn-tag">Turnaround!</span> ${esc(turn.replace(/^Turnaround! /, ''))}</p>` : ''}${pic ? `<div class="trick-row">${pic}${tip}</div>` : tip}`;
+  if (turn) return `<p class="trick turn"><span class="trick-tag turn-tag">Turnaround!</span> ${esc(turn.replace(/^Turnaround! /, ''))}</p>`;
+  return `<p class="trick"><span class="trick-tag">${itemImg('hint-lamp')}Teacher K's trick</span> ${esc(trickFor(id))}</p>`;
 }
