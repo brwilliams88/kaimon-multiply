@@ -8,7 +8,7 @@ import { pickEncounter, ballForStreak, rollCatch, mythicCameo, BALLS, dexState }
 import { powerFor, powerLabel, GRUNTS } from '../core/battle.js';
 import { dadJoke } from '../data/dadjokes.js';
 import { trainerArt } from './trainerArt.js';
-import { limitReached } from '../core/playtime.js';
+import { limitReached, roundsToday, GOAL_ROUNDS } from '../core/playtime.js';
 import { partnerOf } from '../core/game.js';
 import { voiceSupported, stop as stopVoice } from '../core/voice.js';
 import { micMode, micButton } from './micMode.js';
@@ -16,14 +16,20 @@ import { sfx, setSound } from '../core/sound.js';
 import { ballIcon, medal } from './home.js';
 import { trainerLook, trainerImg } from './avatars.js';
 import { ballSrc, sceneSrc, cssUrl, sceneKey, uiImg, itemImg, fxSrc, typeIcon, trainerFace, CARD_BACK } from '../core/assets.js';
+import { trickyPool, markTrickyDone } from '../core/nextup.js';
 import { quick } from '../core/prefs.js';
 import { $, on, esc, sheet, wait, toast, soundButton, reducedMotion, setFlame } from './dom.js';
 
-export function renderPlay(root, go, { table }) {
+export function renderPlay(root, go, { table, focus } = {}) {
   const p = active();
   setSound(p.settings.sound);
   const tables = table ? [table] : p.settings.tables;
-  const pool = factsForTables(tables);
+  // focus 'tricky': a round of the facts that got away lately (from Home's Next up).
+  const tricky = focus === 'tricky' ? trickyPool(p) : null;
+  const pool = tricky?.length ? tricky : factsForTables(tables);
+  const bestBefore = p.stats.bestStreak || 0;
+  const goalBefore = roundsToday(p);
+  const buddyBefore = partnerOf(p);
   const S = {
     n: 0, length: p.settings.sessionLength, streak: 0, best: 0, correct: 0, answered: 0,
     recent: [], requeue: [], catches: [], levelUps: [], misses: [], startedAt: Date.now(),
@@ -31,6 +37,8 @@ export function renderPlay(root, go, { table }) {
   };
   const useVoice = p.settings.voice && voiceSupported();
   const tierBefore = Object.fromEntries([1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((t) => [t, tableTier(p, t)]));
+  // Warm up every ball picture, so a fast throw never cuts a half-loaded picture short.
+  for (const k of Object.keys(BALLS)) for (const o of [false, true]) new Image().src = ballSrc(k, o);
 
   root.innerHTML = `
     <section class="screen play v2">
@@ -399,6 +407,7 @@ export function renderPlay(root, go, { table }) {
     S.mic?.destroy();
     stopVoice();
     endTime();
+    if (tricky) markTrickyDone(p);
     const newBadges = [];
     for (let t = 1; t <= 10; t++) {
       const now = tableTier(p, t);
@@ -406,34 +415,88 @@ export function renderPlay(root, go, { table }) {
     }
     save();
     syncNow();
+    document.getElementById('toast')?.classList.remove('show');
     // Team Papa sometimes jumps out at the end of a practice.
     const ambush = S.answered >= 8 && Math.random() < 0.3 && !limitReached(p);
     const grunt = 1 + Math.floor(Math.random() * 6);
     const uniq = [];
-    for (const c of S.catches) if (!uniq.find((u) => u.id === c.id)) uniq.push(c);
+    for (const c of S.catches) { const u = uniq.find((x) => x.id === c.id); if (!u) uniq.push({ ...c }); else { u.isNew ||= c.isNew; u.shiny ||= c.shiny; } }
+    const ups = [];
+    for (const l of S.levelUps) { const i = ups.findIndex((x) => x.id === l.id); if (i < 0) ups.push(l); else ups[i] = l; }
+    ups.sort((x, y) => levelRank(y.level) - levelRank(x.level));
+
+    // Results: celebrate, then one big "Play again" so the next round is one tap away.
+    const n = S.answered, ok = S.correct, acc = n ? ok / n : 0;
+    const tone = acc >= 0.9 ? 'great' : acc >= 0.7 ? 'good' : acc >= 0.5 ? 'ok' : 'tough';
+    const title = { great: 'Amazing round', good: 'Great round', ok: 'Nice work', tough: 'Good practice' }[tone];
+    const sub = n && ok === n ? 'Every single card right!' : `${S.misses.length ? 'Missed ones come back soon for another try.' : 'Keep it going!'}`;
+    const pose = { great: 'kaizo-cheer', good: 'kaizo-cheer', ok: 'kaizo-wave', tough: 'kaizo-hint' }[tone];
+    const party = tone === 'great' || tone === 'good';
+    const buddy = partnerOf(p);
+    const leveled = buddy.level > buddyBefore.level, evolved = buddy.stage > buddyBefore.stage;
+    const newBest = S.best > bestBefore && S.best >= 3;
+    const results = Array.from({ length: n }, (_, i) => !!S.results?.[i]);
+    const shown = ups.slice(0, 8);
     root.innerHTML = `
-      <section class="screen summary">
-        <div class="sum-hero">${uiImg(S.answered && S.correct / S.answered < 0.6 ? 'kaizo-oops' : 'kaizo-cheer', 'sum-kaizo')}<h1 class="screen-title">${S.answered && S.correct / S.answered < 0.6 ? `Good practice, ${esc(p.name)}!` : `Nice work, ${esc(p.name)}!`}</h1></div>
-        <div class="sum-stats">
-          <div><strong>${S.correct}/${S.answered}</strong><span>right</span></div>
-          <div>${itemImg('streak-flame', 'sum-ic')}<strong>${S.best}</strong><span>best streak</span></div>
-          <div>${ballIcon('capture')}<strong>${S.catches.length}</strong><span>caught</span></div>
-          <div>${itemImg('xp-star', 'sum-ic')}<strong>${S.xp || 0}</strong><span>XP</span></div>
+      <section class="screen summary res res-${tone}">
+        <div class="res-grid">
+          <div class="res-col">
+            <div class="res-hero">
+              <div class="res-mascot" aria-hidden="true">${party ? `<img class="res-burst" src="${fxSrc('badge-burst')}" alt="" draggable="false">` : ''}${uiImg(pose, 'res-kaizo')}</div>
+              <div class="res-hero-text">
+                <h1 class="screen-title res-title">${title}, ${esc(p.name)}!</h1>
+                <p class="res-sub">${sub}</p>
+                ${goalBefore < GOAL_ROUNDS && roundsToday(p) >= GOAL_ROUNDS ? `<span class="res-goal"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5 L10 17.5 L19 7" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/></svg>Today's goal done!</span>` : ''}
+              </div>
+            </div>
+            <div class="res-card res-score">
+              <div class="res-big" role="img" aria-label="${ok} of ${n} cards right"><strong>${ok}<span>/${n}</span></strong><small>cards right</small></div>
+              <div class="res-mini">
+                <span class="res-stat">${itemImg('streak-flame', 'res-ic')}<span><b>${S.best}</b> best streak${newBest ? '<em>New best!</em>' : ''}</span></span>
+                <span class="res-stat">${ballIcon('capture')}<span><b>${S.catches.length}</b> caught</span></span>
+              </div>
+              <div class="res-pips" aria-hidden="true">${results.map((r, i) => `<i class="${r ? 'ok' : 'miss'}" style="--i:${i}"></i>`).join('')}</div>
+            </div>
+            <div class="res-card res-buddy${leveled ? ' up' : ''}">
+              <span class="res-buddy-art">${leveled ? `<img class="res-glow" src="${fxSrc('evolve-glow')}" alt="" aria-hidden="true" draggable="false">` : ''}${creatureArt(buddy.species)}</span>
+              <span class="res-buddy-text">
+                <strong>${evolved ? `${esc(buddyBefore.species.name)} is evolving!` : leveled ? `${esc(buddy.species.name)} reached Lv ${buddy.level}!` : `${esc(buddy.species.name)} got stronger`}</strong>
+                <span class="bar xp-bar"><span style="width:${Math.round((buddy.into / buddy.need) * 100)}%"></span></span>
+                <small><span class="res-xp">${itemImg('xp-star', 'res-ic')}+${S.xp || 0} XP</span>${evolved ? ' Go Home to see it.' : ` ${buddy.need - buddy.into} XP to Lv ${buddy.level + 1}`}</small>
+              </span>
+            </div>
+          </div>
+          <div class="res-col">
+            ${newBadges.map((b) => `<div class="res-card res-newmedal">
+              <span class="res-newmedal-art" aria-hidden="true"><img class="res-burst" src="${fxSrc('badge-burst')}" alt="" draggable="false">${itemImg('medal-' + b.tier)}</span>
+              <span class="res-newmedal-text"><strong>${LEVEL_LABEL[b.tier]} medal for the ${b.t}s!</strong><small>You won a Legend Ball.</small></span>
+              <span class="res-newmedal-ball" aria-hidden="true">${ballIcon('legend')}</span>
+            </div>`).join('')}
+            <section class="res-card res-sec">
+              <h2 class="res-h">${ballIcon('capture')}Caught this round${uniq.length ? `<span class="res-count">${S.catches.length}</span>` : ''}</h2>
+              ${uniq.length ? `<div class="res-catches">${uniq.map((c, i) => { const s = byId(c.id); return `<div class="res-catch${c.isNew ? ' new' : ''}" style="--i:${i}">${creatureArt(s, { shiny: c.shiny })}<span${s.name.length > 10 ? ' class="long"' : ''}>${esc(s.name)}</span>${c.isNew ? '<em>New!</em>' : ''}</div>`; }).join('')}</div>`
+                : '<p class="res-empty">No catches this time. Fast answers throw harder!</p>'}
+            </section>
+            <section class="res-card res-sec">
+              <h2 class="res-h"><img class="res-h-ic" src="${fxSrc('levelup-wings')}" alt="" aria-hidden="true" draggable="false">Medals moving up${ups.length ? `<span class="res-count">${ups.length}</span>` : ''}</h2>
+              ${ups.length ? `<div class="res-facts">${shown.map((l, i) => { const [a, b] = parseFact(l.id); return `<span class="res-fact lvl-${l.level}" style="--i:${i}">${itemImg('medal-' + l.level, 'res-fact-medal')}<b>${a} × ${b}</b><small>${LEVEL_LABEL[l.level]}</small></span>`; }).join('')}${ups.length > shown.length ? `<span class="res-fact more">+${ups.length - shown.length} more</span>` : ''}</div>`
+                : '<p class="res-empty">Get facts right and fast on different days to move them up: Bronze, Silver, Gold, then Star.</p>'}
+            </section>
+            ${ambush ? `<div class="ambush">
+              <span class="ambush-av">${trainerArt({ kind: 'grunt', grunt })}</span>
+              <div class="ambush-text"><strong>${esc(GRUNTS[grunt - 1])} jumps out!</strong><p>${esc(dadJoke('appear'))}</p></div>
+              <button class="btn-chunky" data-ambush>Battle!</button>
+            </div>` : ''}
+          </div>
         </div>
-        ${newBadges.length ? `<div class="sum-badges">${newBadges.map((b) => `<p>${medal(b.tier)} ${LEVEL_LABEL[b.tier]} medal for the ${b.t}s! You got a Legend Ball.</p>`).join('')}</div>` : ''}
-        ${uniq.length ? `<h2 class="section-title">Caught this time</h2><div class="sum-catches">${uniq.map((c) => { const s = byId(c.id); return `<div class="sum-catch">${creatureArt(s, { shiny: c.shiny })}<span>${esc(s.name)}</span>${c.isNew ? '<span class="new-tag">New</span>' : ''}</div>`; }).join('')}</div>` : ''}
-        ${S.levelUps.length ? `<h2 class="section-title">Facts you leveled up</h2><div class="sum-levels">${S.levelUps.map((l) => { const [a, b] = parseFact(l.id); return `<span class="lvl lvl-${l.level}">${a} × ${b} · ${LEVEL_LABEL[l.level]}</span>`; }).join('')}</div>` : ''}
-        ${ambush ? `<div class="ambush">
-          <span class="ambush-av">${trainerArt({ kind: 'grunt', grunt })}</span>
-          <div class="ambush-text"><strong>${esc(GRUNTS[grunt - 1])} jumps out!</strong><p>${esc(dadJoke('appear'))}</p></div>
-          <button class="btn-chunky btn-primary" data-ambush>Battle!</button>
-        </div>` : ''}
-        <div class="sum-actions">
-          <button class="btn-chunky btn-primary btn-xl" data-again>Practice again</button>
-          <button class="btn-chunky btn-xl" data-home>Home</button>
+        <div class="res-actions">
+          <button class="btn-chunky res-home" data-home>Home</button>
+          <button class="btn-chunky btn-primary btn-xl res-again" data-again>Play again<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12 H18 M13 6.5 L18.5 12 L13 17.5" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
         </div>
       </section>`;
-    on(root, 'click', '[data-again]', () => go(limitReached(p) ? 'home' : 'play', { table }));
+    if (newBadges.length) setTimeout(() => sfx.levelUp(), 250);
+    else if (party) setTimeout(() => sfx.win(), 250);
+    on(root, 'click', '[data-again]', () => go(limitReached(p) ? 'home' : 'play', { table, focus }));
     on(root, 'click', '[data-home]', () => go('home'));
     on(root, 'click', '[data-ambush]', () => go('battle', { kind: 'grunt', grunt }));
   }
