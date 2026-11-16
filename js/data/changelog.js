@@ -1,7 +1,19 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.5.34';
+export const VERSION = '0.5.35';
 
 export const CHANGELOG = [
+  {
+    version: '0.5.35',
+    date: '2026-11-15',
+    title: "New sounds and music",
+    items: [
+      "All new sounds: every number key plays its own note, and correct answers, catches, level ups, evolving, badges and battles have new friendly sounds that go together. A wrong answer is a soft \"uh-oh\".",
+      "The streak flame makes a sound as it grows, with brighter chimes at 5, 10, 15 and 25 in a row.",
+      "New music: a cheerful theme on Home and the Kaidex, a longer battle theme, and a stompy march for Papa's Gym. Practice cards stay quiet.",
+      "With Mic mode on, battle music stays soft the whole battle so the mic can hear you.",
+      "Grown-ups: the Music switch now covers Home and battle music. Sound effects stay on unless you turn Sound off.",
+    ],
+  },
   {
     version: '0.5.34',
     date: '2026-11-15',
