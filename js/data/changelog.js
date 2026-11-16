@@ -1,7 +1,20 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.5.35';
+export const VERSION = '0.5.36';
 
 export const CHANGELOG = [
+  {
+    version: '0.5.36',
+    date: '2026-11-15',
+    title: "Battle polish",
+    items: [
+      "Battles start with a real send-out: your trainer throws a ball, it pops open, and your Kaimon bursts out. Gym Leaders throw Super Balls and Boss Papa throws a Mega Ball.",
+      "Big callouts: \"Critical!\" for a perfect answer, and the move name with its type for special moves. Every hit gets a flash in the attacker's type color.",
+      "Winning a Gym badge for the first time now has its own moment: the badge flies into your badge case, and the Gym Leader says something kind.",
+      "Papa's Gym feels like a gym: a chalkboard workout sign, dad jokes mid-battle, and a big entrance for Papazilla.",
+      "New win and lose screens. Losing says \"Good battle!\" and reminds you every answer still counts as practice.",
+      "Tap anywhere during an attack to skip ahead. With reduced motion on, battles fade instead of flying.",
+    ],
+  },
   {
     version: '0.5.35',
     date: '2026-11-15',

@@ -2,6 +2,15 @@
 
 All notable changes. Versioning: `0.MINOR.0` marks a roadmap phase, `0.x.PATCH` is any shipped change a player or parent can notice, and `1.0.0` is the public launch. See "Versioning" in CLAUDE.md. The in-app version history (Grown-ups > What's new) reads from `js/data/changelog.js`; keep both in sync. Each release is tagged in git as `vX.Y.Z`.
 
+## v0.5.36 (2026-11-15) Battle polish
+
+- Battles start with a real send-out: your trainer throws a ball, it pops open, and your Kaimon bursts out. Gym Leaders throw Super Balls and Boss Papa throws a Mega Ball.
+- Big callouts: "Critical!" for a perfect answer, and the move name with its type for special moves. Every hit gets a flash in the attacker's type color.
+- Winning a Gym badge for the first time now has its own moment: the badge flies into your badge case, and the Gym Leader says something kind.
+- Papa's Gym feels like a gym: a chalkboard workout sign, dad jokes mid-battle, and a big entrance for Papazilla.
+- New win and lose screens. Losing says "Good battle!" and reminds you every answer still counts as practice.
+- Tap anywhere during an attack to skip ahead. With reduced motion on, battles fade instead of flying.
+
 ## v0.5.35 (2026-11-15) New sounds and music
 
 - All new sounds: every number key plays its own note, and correct answers, catches, level ups, evolving, badges and battles have new friendly sounds that go together. A wrong answer is a soft "uh-oh".
