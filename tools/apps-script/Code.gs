@@ -22,6 +22,7 @@
 
 var APP_URL = 'https://brwilliams88.github.io/kaimon-multiply/';
 var ASSET_BASE = APP_URL + 'assets/email/';
+var IMG_VERSION = '2'; // bump when files in assets/email change
 // Yes and Stop links open this page on the game's own site. It posts back here.
 // (Links straight to this script fail for people signed in to several Google accounts.)
 var PAGE_URL = APP_URL + 'reports.html';
@@ -472,7 +473,8 @@ function chip_(text, bg, fg) {
 function renderReportEmail_(d, opt) {
   opt = opt || {};
   var base = opt.base || ASSET_BASE, app = opt.appUrl || APP_URL;
-  var img = function (f) { return base + f; };
+  // ?v= makes Gmail fetch fresh copies when the pictures change (its image proxy caches by address).
+  var img = function (f) { return base + f + '?v=' + IMG_VERSION; };
   var note = teacherNote_(d);
   var name = esc_(d.trainer);
   var empty = !d.cards && !d.minutes;
