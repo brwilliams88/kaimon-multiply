@@ -1,7 +1,17 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.6.3';
+export const VERSION = '0.6.4';
 
 export const CHANGELOG = [
+  {
+    version: '0.6.4',
+    date: '2026-11-16',
+    title: "A guided first game with Teacher K",
+    items: [
+      "New trainers now play a short first game with Teacher K: four easy cards, a first catch, and a quick look around Home. Skip any time. It only happens once.",
+      "How to play is now a set of swipeable cards. Swipe, tap the arrows, or use the arrow keys.",
+      "Grown-ups can open How to play from the Help tab.",
+    ],
+  },
   {
     version: '0.6.3',
     date: '2026-11-16',
