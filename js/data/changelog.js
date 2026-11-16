@@ -1,7 +1,17 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.6.8';
+export const VERSION = '0.6.9';
 
 export const CHANGELOG = [
+  {
+    version: '0.6.9',
+    date: '2026-11-16',
+    title: "Share with a class",
+    items: [
+      "New: Share with a class. A page for teachers and families with a QR code, privacy in plain words and a one-page letter to print. Find it in Grown-ups, on the Help tab.",
+      "Grown-ups can make a class code, so we can see how many players came from a class.",
+      "Kids who come from a class link see a small Beta note the first time, with a quick way to send feedback.",
+    ],
+  },
   {
     version: '0.6.8',
     date: '2026-11-16',

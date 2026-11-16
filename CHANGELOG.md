@@ -2,6 +2,12 @@
 
 All notable changes. Versioning: `0.MINOR.0` marks a roadmap phase, `0.x.PATCH` is any shipped change a player or parent can notice, and `1.0.0` is the public launch. See "Versioning" in CLAUDE.md. The in-app version history (Grown-ups > What's new) reads from `js/data/changelog.js`; keep both in sync. Each release is tagged in git as `vX.Y.Z`.
 
+## v0.6.9 (2026-11-16) Share with a class
+
+- New: Share with a class. A page for teachers and families with a QR code, privacy in plain words and a one-page letter to print. Find it in Grown-ups, on the Help tab.
+- Grown-ups can make a class code, so we can see how many players came from a class.
+- Kids who come from a class link see a small Beta note the first time, with a quick way to send feedback.
+
 ## v0.6.8 (2026-11-16) Every Kaimon levels up
 
 - Every Kaimon you own now has its own level. Make any of them your Buddy from the Kaidex, or with Switch on Home.
