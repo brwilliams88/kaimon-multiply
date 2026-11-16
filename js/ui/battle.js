@@ -19,7 +19,7 @@ import { sceneSrc, cssUrl, sceneKey, fxSrc, typeIcon, badgeImg } from '../core/a
 import { quick } from '../core/prefs.js';
 import { limitReached } from '../core/playtime.js';
 import { startMusic, stopMusic, setPinch } from '../core/music.js';
-import { $, on, esc, sheet, wait, reducedMotion, soundButton, flameTier } from './dom.js';
+import { $, on, esc, sheet, wait, reducedMotion, soundButton, setFlame } from './dom.js';
 
 // Special hit-back moves for the big opponents. Papazilla lifts.
 const FOE_MOVES = { papa: 'Dumbbell Drop', legend: 'Hundred Blast', mythic: 'Dream Burst' };
@@ -148,7 +148,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt } = {}
     el.streak.textContent = S.streak;
     const box = el.streak.closest('.streak');
     box.classList.toggle('hot', S.streak >= 3);
-    box.dataset.tier = flameTier(S.streak);
+    setFlame(box, S.streak);
   }
   function popNumber(target, text, cls = '') {
     const r = target.getBoundingClientRect(), a = el.arena.getBoundingClientRect();

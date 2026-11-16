@@ -89,6 +89,14 @@ export async function busy(btn, label, work) {
 export const cleanCode = (v) => (v || '').replace(/\D/g, '');
 export const codeOk = (c) => c.length >= 6 && c.length <= 10;
 
-// Streak flame size and heat: 0 a small ember, then warmer and bigger as the
-// streak grows (1-2, 3-4, 5-9, 10+). The hottest flame burns blue.
-export const flameTier = (n) => (n >= 10 ? 4 : n >= 5 ? 3 : n >= 3 ? 2 : n >= 1 ? 1 : 0);
+// Streak flame size and heat. It grows at 1, 3, 5, 10, 15 and 25 in a row:
+// orange, hotter orange, red with a glow (free Super Ball), blue (free Mega Ball),
+// violet, then white-hot rainbow at 25.
+export const FLAME_STEPS = [1, 3, 5, 10, 15, 25];
+export const flameTier = (n) => FLAME_STEPS.filter((x) => n >= x).length;
+// Set the tier on a streak box; a short flare when it moves up a step.
+export function setFlame(box, n) {
+  const t = flameTier(n), old = +box.dataset.tier || 0;
+  box.dataset.tier = t;
+  if (t > old && t >= 3) { box.classList.remove('flare'); void box.offsetWidth; box.classList.add('flare'); setTimeout(() => box.classList.remove('flare'), 700); }
+}

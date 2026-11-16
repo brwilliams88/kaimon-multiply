@@ -22,6 +22,7 @@
 
 var APP_URL = 'https://brwilliams88.github.io/kaimon-multiply/';
 var ASSET_BASE = APP_URL + 'assets/email/';
+var IMG_VERSION = '2'; // bump when files in assets/email change
 // Yes and Stop links open this page on the game's own site. It posts back here.
 // (Links straight to this script fail for people signed in to several Google accounts.)
 var PAGE_URL = APP_URL + 'reports.html';
@@ -321,7 +322,7 @@ var TYPE_COLORS = {
   papa: ['#2B2B33', '#F3D6DA', '#111111'], mythic: ['#FF6B9A', '#FFE0EC', '#5C1030'],
 };
 var TABLE_TYPE = ['leaf', 'water', 'fire', 'wind', 'spark', 'stone', 'frost', 'metal', 'shadow', 'cosmic'];
-var DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+var DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']; // weeks run Sunday to Saturday (the device's own time zone)
 var MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 function int_(x, max, min) {
@@ -367,7 +368,7 @@ function cleanReport_(r, trainer, week) {
     cards: cards,
     right: right,
     accuracy: cards ? Math.round((right / cards) * 100) : null,
-    daily: DAY_NAMES.map(function (name, i) { var x = arr(r.daily, 7)[i] || {}; return { name: name, minutes: int_(x.minutes, 1440), cards: int_(x.cards, 100000) }; }),
+    daily: DAY_NAMES.map(function (name, i) { var x = arr(r.daily, 7)[i] || {}; return { name: DAY_NAMES.indexOf(x.name) >= 0 ? x.name : name, minutes: int_(x.minutes, 1440), cards: int_(x.cards, 100000) }; }),
     tables: arr(r.tables, 10).map(function (t) {
       t = t || {}; var a = int_(t.answers, 100000), c = Math.min(int_(t.right, 100000), a);
       return { table: int_(t.table, 10, 1), answers: a, right: c, accuracy: a ? Math.round((c / a) * 100) : 0 };
@@ -472,7 +473,8 @@ function chip_(text, bg, fg) {
 function renderReportEmail_(d, opt) {
   opt = opt || {};
   var base = opt.base || ASSET_BASE, app = opt.appUrl || APP_URL;
-  var img = function (f) { return base + f; };
+  // ?v= makes Gmail fetch fresh copies when the pictures change (its image proxy caches by address).
+  var img = function (f) { return base + f + '?v=' + IMG_VERSION; };
   var note = teacherNote_(d);
   var name = esc_(d.trainer);
   var empty = !d.cards && !d.minutes;
@@ -481,7 +483,7 @@ function renderReportEmail_(d, opt) {
   // Header art and title
   rows.push('<tr><td style="padding:0;">'
     + '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate;background:#FFFFFF;border:3px solid ' + INK + ';border-radius:24px;overflow:hidden;">'
-    + '<tr><td style="padding:0;line-height:0;font-size:0;"><a href="' + app + '"><img src="' + img('header.jpg') + '" width="594" alt="Kaimon Multiply" style="display:block;width:100%;max-width:594px;height:auto;border:0;border-radius:21px 21px 0 0;"></a></td></tr>'
+    + '<tr><td style="padding:0;line-height:0;font-size:0;"><a href="' + app + '"><img src="' + img((!d.cards && !d.minutes) ? 'header-quiet.jpg' : 'header-report.jpg') + '" width="594" alt="Kaimon Multiply" style="display:block;width:100%;max-width:594px;height:auto;border:0;border-radius:21px 21px 0 0;"></a></td></tr>'
     + '<tr><td class="kp" style="padding:18px 22px 20px 22px;border-top:3px solid ' + INK + ';">'
     + '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>'
     + '<td width="104" valign="middle" style="padding:0 16px 0 0;"><div style="width:96px;height:96px;border:3px solid ' + INK + ';border-radius:50%;background:' + SKY + ';overflow:hidden;text-align:center;"><img src="' + (opt.image || img('trainer-kai.png')) + '" width="96" height="96" alt="" style="display:block;width:96px;height:96px;border:0;"></div></td>'
@@ -493,7 +495,7 @@ function renderReportEmail_(d, opt) {
 
   if (empty) {
     rows.push(card_('<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>'
-      + '<td width="96" valign="middle"><img src="' + img('kaizo-sleep.png') + '" width="84" alt="" style="display:block;border:0;"></td>'
+      + '<td width="96" valign="middle"><img src="' + img('kaizo-sleep.png') + '" width="84" height="84" alt="" style="display:block;width:84px;height:84px;border:0;"></td>'
       + '<td valign="middle" style="font-family:' + FONT + ';color:' + INK + ';padding-left:10px;"><div style="font-size:20px;font-weight:700;line-height:26px;">No cards this week</div><div style="font-size:16px;line-height:22px;color:' + INK2 + ';">Kaizo is napping. A few minutes a day keeps the facts fresh.</div></td>'
       + '</tr></table>'));
   } else {
@@ -559,7 +561,7 @@ function renderReportEmail_(d, opt) {
       if (wins.length) {
         w += '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr><td style="font-size:0;line-height:0;">' + wins.map(function (x) {
           return '<table role="presentation" align="left" cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate;margin:0 8px 8px 0;background:#FFF8DC;border:2px solid ' + INK + ';border-radius:14px;"><tr>'
-            + '<td style="padding:6px 4px 6px 8px;"><img src="' + x[0] + '" width="32" height="32" alt="" style="display:block;border:0;"></td>'
+            + '<td style="padding:6px 4px 6px 8px;"><img src="' + x[0] + '" width="32" height="32" alt="" style="display:block;width:32px;height:32px;border:0;"></td>'
             + '<td style="padding:6px 12px 6px 4px;font-family:' + FONT + ';color:' + INK + ';"><div style="font-size:20px;font-weight:700;line-height:22px;">' + x[1] + '</div><div style="font-size:12px;line-height:15px;color:' + INK2 + ';white-space:nowrap;">' + x[2] + '</div></td></tr></table>';
         }).join('') + '</td></tr></table>';
       }
@@ -568,7 +570,7 @@ function renderReportEmail_(d, opt) {
           return '<td class="kmon" width="' + Math.floor(100 / 6) + '%" align="center" valign="top" style="padding:8px 3px 0 3px;font-family:' + FONT + ';">'
             + '<div style="border:2px solid ' + INK + ';border-radius:14px;background:#FFFFFF;padding:6px 2px 6px 2px;">'
             + (isNew.indexOf(s.num) >= 0 ? '<div style="font-size:10px;font-weight:700;letter-spacing:.5px;line-height:14px;color:' + INK + ';"><span style="background:#FFD23F;border-radius:99px;padding:0 6px;">NEW</span></div>' : '<div style="font-size:10px;line-height:14px;">&nbsp;</div>')
-            + '<img src="' + img('kaimon/' + pad3_(s.num) + '.png') + '" width="56" height="56" alt="" style="display:block;margin:0 auto;border:0;">'
+            + '<img src="' + img('kaimon/' + pad3_(s.num) + '.png') + '" width="56" height="56" alt="" style="display:block;width:56px;height:56px;margin:0 auto;border:0;">'
             + '<div style="font-size:12px;font-weight:600;line-height:15px;color:' + INK + ';padding-top:2px;">' + esc_(s.name) + (s.n > 1 ? ' <span style="color:' + INK2 + ';">&times;' + s.n + '</span>' : '') + '</div></div></td>';
         }).join('') + (mons.length < 6 ? '<td class="kfill" width="' + (6 - mons.length) * Math.floor(100 / 6) + '%">&nbsp;</td>' : '') + '</tr></table>';
       }
@@ -609,7 +611,7 @@ function renderInviteEmail_(trainer, url, opt) {
   var name = esc_(trainer);
   var rows = '<tr><td style="padding:0;">'
     + '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate;background:#FFFFFF;border:3px solid ' + INK + ';border-radius:24px;">'
-    + '<tr><td style="padding:0;line-height:0;font-size:0;"><img src="' + base + 'header.jpg" width="594" alt="Kaimon Multiply" style="display:block;width:100%;max-width:594px;height:auto;border:0;border-radius:21px 21px 0 0;"></td></tr>'
+    + '<tr><td style="padding:0;line-height:0;font-size:0;"><img src="' + base + 'header-invite.jpg" width="594" alt="Kaimon Multiply" style="display:block;width:100%;max-width:594px;height:auto;border:0;border-radius:21px 21px 0 0;"></td></tr>'
     + '<tr><td class="kp" style="padding:24px 26px 26px 26px;border-top:3px solid ' + INK + ';font-family:' + FONT + ';color:' + INK + ';">'
     + '<div style="font-size:26px;font-weight:700;line-height:32px;">Weekly reports for ' + name + '?</div>'
     + '<div style="font-size:17px;line-height:25px;padding-top:10px;">A grown-up wants to email you <b>' + esc_(possessive_(trainer)) + '</b> times tables report from Kaimon Multiply each Sunday morning: minutes played, cards answered, tricky facts and new Kaimon.</div>'
@@ -619,6 +621,11 @@ function renderInviteEmail_(trainer, url, opt) {
     + '</td></tr></table></td></tr>'
     + '<tr><td align="center" style="padding:18px 16px 8px 16px;font-family:' + FONT + ';font-size:13px;line-height:19px;color:' + INK2 + ';"><a href="' + app + '" style="color:' + INK2 + ';">Kaimon Multiply</a> &middot; times tables practice for kids</td></tr>';
   return shell_('Say yes to weekly reports', 'A grown-up wants to send you ' + possessive_(trainer) + ' weekly times tables report.', rows);
+}
+
+function sentStamp_() {
+  try { return Utilities.formatDate(new Date(), Session.getScriptTimeZone() || 'America/Los_Angeles', "EEE, MMM d 'at' h:mm a"); }
+  catch (e) { return new Date().toISOString().slice(0, 16).replace('T', ' '); }
 }
 
 function shell_(title, preheader, rows) {
@@ -635,6 +642,9 @@ function shell_(title, preheader, rows) {
     + '<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:' + SKY + ';">' + esc_(preheader) + '&#8199;&#847;&#8199;&#847;&#8199;&#847;&#8199;&#847;</div>'
     + '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:' + SKY + ';"><tr><td class="kwrap" align="center" style="padding:24px 12px;">'
     + '<table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;">' + rows + '</table>'
+    // A small, different line on every email. Gmail hides parts of a new email that
+    // look the same as an earlier one in the thread; this keeps the whole email showing.
+    + '<div style="font-family:Arial,sans-serif;font-size:11px;line-height:16px;color:#5B6B8C;padding:10px 0 0 0;">Sent ' + sentStamp_() + '</div>'
     + '</td></tr></table></body></html>';
 }
 
@@ -661,7 +671,39 @@ function page_(o) {
   var html = '<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet"></head>'
     + '<body style="margin:0;background:' + SKY + ';font-family:Fredoka,Arial,sans-serif;color:' + INK + ';">'
     + '<div style="max-width:520px;margin:24px auto;padding:0 12px;"><div style="background:#fff;border:3px solid ' + INK + ';border-radius:24px;overflow:hidden;">'
-    + '<img src="' + ASSET_BASE + 'header.jpg" alt="Kaimon Multiply" style="display:block;width:100%;height:auto;border-bottom:3px solid ' + INK + ';">'
+    + '<img src="' + ASSET_BASE + 'header-invite.jpg" alt="Kaimon Multiply" style="display:block;width:100%;height:auto;border-bottom:3px solid ' + INK + ';">'
     + '<div style="padding:22px 24px 26px;"><h1 style="margin:0;font-size:26px;">' + esc_(o.title) + '</h1><p style="font-size:17px;line-height:25px;">' + o.body + '</p>' + btn + '</div></div></div></body></html>';
   return HtmlService.createHtmlOutput(html).setTitle('Kaimon Multiply').addMetaTag('viewport', 'width=device-width, initial-scale=1');
+}
+
+// ---------------------------------------------------------------- samples
+
+// Run from the editor (pick sendTestEmails, then Run) to get one of every email
+// this script sends, with [Test] in the subject, at the FEEDBACK_TO address.
+function sendTestEmails() {
+  var to = cleanEmail_(props_().getProperty('FEEDBACK_TO') || '');
+  if (!to) throw new Error('Add Script Property FEEDBACK_TO first.');
+  var week = Utilities.formatDate(new Date(Date.now() - 7 * 86400000), 'America/Los_Angeles', 'yyyy-MM-dd');
+  var stop = PAGE_URL + '?a=stop&e=sample&p=sample&s=sample';
+  var full = { cards: 184, right: 163, minutes: 74, daysPlayed: 5,
+    daily: [['Sun', 12, 30], ['Mon', 18, 44], ['Tue', 0, 0], ['Wed', 15, 36], ['Thu', 9, 22], ['Fri', 20, 52], ['Sat', 0, 0]].map(function (x) { return { name: x[0], minutes: x[1], cards: x[2] }; }),
+    tables: [{ table: 7, answers: 60, right: 50 }, { table: 8, answers: 48, right: 44 }, { table: 6, answers: 40, right: 36 }, { table: 2, answers: 36, right: 33 }],
+    topTables: [7, 8], strongest: [{ a: 2, b: 5, fastDays: 4 }, { a: 8, b: 2, fastDays: 3 }, { a: 6, b: 6, fastDays: 3 }],
+    trickiest: [{ a: 7, b: 8, misses: 5 }, { a: 6, b: 9, misses: 3 }, { a: 8, b: 7, misses: 2 }],
+    medals: { bronze: 4, silver: 2, gold: 1, star: 0, total: 7 }, caught: 6,
+    caughtList: [{ id: 'gearpus', num: 37, name: 'Gearpus', type: 'metal', n: 2 }, { id: 'puddlepup', num: 10, name: 'Puddlepup', type: 'water', n: 1 }],
+    newEntries: [{ id: 'puddlepup', num: 10, name: 'Puddlepup', type: 'water' }], dex: { caught: 23, total: 60 },
+    battles: { played: 3, won: 2 }, bestStreak: 14, prev: { minutes: 52, cards: 130, accuracy: 84 }, change: { minutes: 22, cards: 54, accuracy: 5 } };
+  var empty = { cards: 0, right: 0, minutes: 0, daysPlayed: 0, daily: [], tables: [], dex: { caught: 23, total: 60 } };
+  var mails = [];
+  mails.push({ subject: '[Test] Say yes to Kai’s weekly Kaimon report', htmlBody: renderInviteEmail_('Kai', PAGE_URL + '?a=yes&t=' + new Array(41).join('0'), {}) });
+  [['', full], [' (a week with no play)', empty]].forEach(function (x) {
+    var d = cleanReport_(x[1], 'Kai', week);
+    mails.push({ subject: '[Test] ' + possessive_(d.trainer) + ' weekly report: ' + d.label + x[0], htmlBody: renderReportEmail_(d, { image: null, stopUrl: stop, test: false }) });
+  });
+  var stamp = ' (' + sentStamp_() + ')';
+  mails.forEach(function (m) { MailApp.sendEmail({ to: to, subject: m.subject + stamp, htmlBody: m.htmlBody, body: 'Sample email from Kaimon Multiply.', name: 'Kaimon Multiply' }); });
+  // The feedback relay, as it arrives from the game.
+  MailApp.sendEmail({ to: to, name: 'Kaimon Multiply feedback', subject: '[Test] Kaimon Multiply: An idea ★★★★★', body: 'An idea (5 of 5 stars)\n\nCan the Kaidex show which region each Kaimon lives in?\n\n---\nVersion 0.5.31, from menu\nNo reply address given.' });
+  Logger.log('Sent ' + (mails.length + 1) + ' sample emails to ' + to);
 }

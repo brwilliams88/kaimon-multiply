@@ -1,7 +1,36 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.5.29';
+export const VERSION = '0.5.32';
 
 export const CHANGELOG = [
+  {
+    version: '0.5.32',
+    date: '2026-11-15',
+    title: "Nicer report emails",
+    items: [
+      "Each kind of email now has its own picture at the top: a celebration for weekly reports, a sleepy Kaizo for quiet weeks, and Kaizo with an envelope for the \"Say yes\" email.",
+      "Fixed: small pictures in the emails (the trainer, medals and Kaimon) could look stretched on iPhone. They now keep their shape.",
+      "Fixed: Gmail could hide most of a new report under the \"...\" button when it landed in the same conversation as an earlier one. Every email now carries its own sent time, so the whole email shows.",
+    ],
+  },
+  {
+    version: '0.5.31',
+    date: '2026-11-15',
+    title: "A bigger streak flame",
+    items: [
+      "The streak flame now grows in six steps: 1, 3, 5, 10, 15 and 25 right in a row. Orange, then hotter orange, then red with a glow (your next throw is a free Super Ball), blue at 10 (free Mega Ball), violet at 15, and a white-hot rainbow flame at 25.",
+      "Each new step gives the flame a quick flare so you notice it.",
+    ],
+  },
+  {
+    version: '0.5.30',
+    date: '2026-11-15',
+    title: "Weekly report fixes",
+    items: [
+      "Fixed: the minutes for each day in the report email were labeled one day off (Sunday showed as Monday). Days now match the week, Sunday to Saturday.",
+      "Every family gets the report on their own Sunday morning: days are counted in each device's own time zone, and the report goes out from 9 am local time, whether you are in California, New York or Japan.",
+      "The trainer in the report email is now a closer picture of their head and shoulders, so it shows up better in the small circle.",
+    ],
+  },
   {
     version: '0.5.29',
     date: '2026-11-15',
