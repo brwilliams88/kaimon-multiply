@@ -127,6 +127,15 @@ export function putProfile(p) {
 
 export function touch(p) { p.updatedAt = Date.now(); save(); }
 
+// Change one setting. Each setting remembers when it was changed, so family sync
+// keeps the newest value of each one, even when two devices change different
+// settings around the same time.
+export function setSetting(p, key, value) {
+  p.settings[key] = value;
+  (p.setAt || (p.setAt = {}))[key] = Date.now();
+  touch(p);
+}
+
 export function switchProfile(id) {
   if (state.profiles[id]) { state.activeId = id; save(); }
 }

@@ -362,7 +362,7 @@ export function renderPlay(root, go, { table }) {
   function finish() {
     S.mic?.destroy();
     stopVoice();
-    session(p, Date.now() - S.startedAt, S.best);
+    endTime();
     const newBadges = [];
     for (let t = 1; t <= 10; t++) {
       const now = tableTier(p, t);
@@ -402,6 +402,19 @@ export function renderPlay(root, go, { table }) {
     on(root, 'click', '[data-ambush]', () => go('battle', { kind: 'grunt', grunt }));
   }
 
+
+  // Count play time even if the app is closed mid-session: when the app is hidden,
+  // record the time so far, and carry on from there if the player comes back.
+  const screenEl = root.firstElementChild;
+  const flushTime = () => {
+    if (!document.body.contains(screenEl)) { document.removeEventListener('visibilitychange', flushTime); return; }
+    if (!document.hidden || S.done) return;
+    if (!S.answered) return;
+    session(p, Date.now() - S.startedAt, S.best, !!S.flushed);
+    S.flushed = true; S.startedAt = Date.now(); save(); syncNow();
+  };
+  document.addEventListener('visibilitychange', flushTime);
+  const endTime = () => { S.done = true; document.removeEventListener('visibilitychange', flushTime); session(p, Date.now() - S.startedAt, S.best, !!S.flushed); };
   // Input handlers
   on(root, 'click', '[data-k]', (e, k) => {
     const v = k.dataset.k;
@@ -431,7 +444,7 @@ export function renderPlay(root, go, { table }) {
   });
   on(root, 'click', '[data-exit]', () => {
     const sh = sheet(`<h2>Stop practicing?</h2><p>Your catches and progress are saved.</p><div class="sheet-actions"><button class="btn-chunky btn-primary" data-stop>Stop</button><button class="btn-chunky" data-close>Keep going</button></div>`);
-    sh.el.querySelector('[data-stop]').addEventListener('click', () => { sh.close(); S.mic?.destroy(); stopVoice(); session(p, Date.now() - S.startedAt, S.best); save(); syncNow(); go('home'); });
+    sh.el.querySelector('[data-stop]').addEventListener('click', () => { sh.close(); S.mic?.destroy(); stopVoice(); endTime(); save(); syncNow(); go('home'); });
   });
   if (el.mic) {
     let bubbleTimer = 0;

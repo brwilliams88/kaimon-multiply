@@ -1,4 +1,4 @@
-import { touch, switchProfile, renameProfile, hideProfile, hiddenProfiles } from '../core/store.js';
+import { touch, setSetting, switchProfile, renameProfile, hideProfile, hiddenProfiles } from '../core/store.js';
 import { deleteEverywhere, addBackFromFamily } from '../core/sync.js';
 import { avatarSVG, trainerLook } from './avatars.js';
 import { dexCounts } from '../core/game.js';
@@ -369,16 +369,16 @@ function renderMain(root, go) {
   });
   on(root, 'click', '[data-t]', (e, el) => {
     const t = +el.dataset.t;
-    if (s.tables.includes(t)) { if (s.tables.length === 1) { toast('Keep at least one times table on.'); return; } s.tables = s.tables.filter((x) => x !== t); }
-    else s.tables = [...s.tables, t].sort((a, b) => a - b);
-    el.classList.toggle('on'); el.setAttribute('aria-pressed', s.tables.includes(t)); save();
+    if (s.tables.includes(t)) { if (s.tables.length === 1) { toast('Keep at least one times table on.'); return; } setSetting(p, 'tables', s.tables.filter((x) => x !== t)); }
+    else setSetting(p, 'tables', [...s.tables, t].sort((a, b) => a - b));
+    el.classList.toggle('on'); el.setAttribute('aria-pressed', s.tables.includes(t)); syncNow();
   });
   root.querySelectorAll('[data-set]').forEach((inp) => inp.addEventListener('change', () => {
     const k = inp.dataset.set;
-    s[k] = inp.type === 'checkbox' ? inp.checked : +inp.value;
-    touch(p); toast('Saved');
+    setSetting(p, k, inp.type === 'checkbox' ? inp.checked : +inp.value);
+    syncNow(); toast('Saved');
   }));
-  on(root, 'change', '[data-limit]', (e, el) => { s.dailyLimit = +el.value; touch(p); toast(s.dailyLimit ? `Daily limit: ${s.dailyLimit} minutes` : 'Daily limit off'); renderMain(root, go); });
+  on(root, 'change', '[data-limit]', (e, el) => { setSetting(p, 'dailyLimit', +el.value); syncNow(); toast(s.dailyLimit ? `Daily limit: ${s.dailyLimit} minutes` : 'Daily limit off'); renderMain(root, go); });
   on(root, 'click', '[data-bonus]', () => { bonusTime(p, 15); save(); toast('Added 15 minutes for today'); renderMain(root, go); });
   on(root, 'click', '[data-fact]', (e, el) => {
     const rec = p.facts[el.dataset.fact];

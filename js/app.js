@@ -13,7 +13,7 @@ import { startAutoSync, completeLinkSignIn } from './core/sync.js';
 import { toast, soundIcon } from './ui/dom.js';
 import { openTime } from './core/actions.js';
 import { stopMusic, startMusic } from './core/music.js';
-import { save, touch } from './core/store.js';
+import { save, touch, setSetting } from './core/store.js';
 import { startUpdates, justUpdated } from './core/update.js';
 import './ui/install.js'; // listens for Chrome's install prompt from the start
 import { maybeIconNotice } from './ui/iconNotice.js'; // must load before justUpdated() runs
@@ -71,8 +71,7 @@ document.addEventListener('click', (e) => {
   const btn = e.target.closest('[data-sound]');
   const p = active();
   if (!btn || !p) return;
-  p.settings.sound = !p.settings.sound;
-  touch(p);
+  setSetting(p, 'sound', !p.settings.sound);
   setSound(p.settings.sound);
   unlock();
   btn.classList.toggle('off', !p.settings.sound);

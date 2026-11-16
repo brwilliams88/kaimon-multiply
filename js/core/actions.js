@@ -56,7 +56,7 @@ export function apply(p, ev) {
       p.mythic.lastSeen = Math.max(p.mythic.lastSeen || 0, ev.t);
       break;
     case 'sess':
-      p.stats.sessions++;
+      if (!d.c) p.stats.sessions++; // d.c: more time from a session already counted
       p.stats.msPlayed += d.ms || 0;
       p.stats.bestStreak = Math.max(p.stats.bestStreak, d.best || 0);
       { const start = ev.t - (d.ms || 0); const r = dayRec(p, today(start)); r.ms += d.ms || 0; r.n++; const h = new Date(start).getHours(); r.h[h] = (r.h[h] || 0) + (d.ms || 0); }
@@ -116,7 +116,7 @@ export const item = (p, kind, n) => emit(p, 'item', { i: kind, n });
 export const sighting = (p, future = false) => emit(p, 'sight', future ? { f: 1 } : {});
 // Kairo evolving into Kairos counts as catching it (never shiny).
 export const evolveKairo = (p) => emit(p, 'catch', { n: 'kairos', s: 0 });
-export const session = (p, ms, best) => emit(p, 'sess', { ms: Math.round(ms), best });
+export const session = (p, ms, best, cont = false) => emit(p, 'sess', cont ? { ms: Math.round(ms), best, c: 1 } : { ms: Math.round(ms), best });
 export const openTime = (p, ms) => emit(p, 'open', { ms: Math.round(ms) });
 export const bonusTime = (p, m) => emit(p, 'bonus', { m });
 export const battle = (p, kind, table, won) => emit(p, 'battle', { o: kind, tb: table, w: won ? 1 : 0 });

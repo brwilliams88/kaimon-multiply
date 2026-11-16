@@ -9,8 +9,8 @@ import { VERSION } from '../data/changelog.js';
 import { trainerArt } from './trainerArt.js';
 import { ballImg, itemImg, sceneSrc, cssUrl, uiImg, trainerFace, trainerBody, LOGO } from '../core/assets.js';
 import { kairoEvolves } from '../core/game.js';
-import { evolveKairo } from '../core/actions.js';
-import { save, touch } from '../core/store.js';
+import { evolveKairo, ball as giveBall, caught as catchIt } from '../core/actions.js';
+import { save, touch, setSetting } from '../core/store.js';
 import { syncNow } from '../core/sync.js';
 import { byId, MYTHIC_ID, FUTURE_ID } from '../data/creatures.js';
 import { avatarSVG, trainerLook } from './avatars.js';
@@ -158,6 +158,9 @@ export function renderHome(root, go, params = {}) {
     evolveKairo(p); save(); syncNow();
     setTimeout(() => { sfx.levelUp(); sheet(`<div class="celebrate evolve"><p class="evo-kicker">A whole year with Kairo... and it's glowing!</p><div class="evo-row"><div class="partner-art">${creatureArt(byId(MYTHIC_ID))}</div><span class="evo-arrow">›</span><div class="partner-art">${creatureArt(byId(FUTURE_ID))}</div></div><h2>Kairo evolved into Kairos!</h2><p>Kaidex #060, the very last page. Kairo grew up right alongside you.</p><button class="btn-chunky btn-primary" data-close>Amazing!</button></div>`); }, 500);
   }
+  // Beat Boss Papa but never caught Kairo (the app closed, or the result was skipped):
+  // Kairo waits on the home screen until it's caught. It can never be missed.
+  if (p.battles.boss > 0 && !p.dex[MYTHIC_ID]?.caught) setTimeout(() => kairoWaiting(p, go), 600);
   on(root, 'click', '[data-dex]', () => { sfx.tap(); go('kaidex'); });
   on(root, 'click', '[data-quiz]', () => { unlock(); sfx.tap(); if (timesUp()) return; keepPlace(); go('battle', { kind: 'quiz' }); });
   on(root, 'click', '[data-trainer]', () => { sfx.tap(); go('trainer'); });
@@ -183,6 +186,31 @@ export function renderHome(root, go, params = {}) {
   }
 }
 
+function kairoWaiting(p, go) {
+  if (document.querySelector('.sheet-wrap') || p.dex[MYTHIC_ID]?.caught) return;
+  const m = byId(MYTHIC_ID);
+  sfx.mythic();
+  const sh = sheet(`<div class="celebrate kairo-wait">
+    <div class="mythic-arrive">${creatureArt(m)}</div>
+    <h2>Kairo is waiting for you!</h2>
+    <p>The Kaimon that watched you beat Boss Papa came back. It wants to join your team.</p>
+    <button class="btn-chunky btn-primary btn-xl" data-throw>${ballIcon('legend')} Throw a Legend Ball</button></div>`);
+  let thrown = false;
+  sh.el.querySelector('[data-throw]').addEventListener('click', () => {
+    if (thrown) return;
+    thrown = true;
+    if ((p.balls.legend || 0) > 0) giveBall(p, 'legend', -1);
+    catchIt(p, MYTHIC_ID);
+    save(); syncNow();
+    sfx.caught();
+    sh.el.querySelector('.celebrate').innerHTML = `<div class="mythic-arrive caught">${creatureArt(m)}</div>
+      <h2>You caught Kairo!</h2>
+      <p>The mythic Kaimon, Kaidex #${String(m.num).padStart(3, '0')}. Some say a trainer named Kai dreamed it up.</p>
+      <button class="btn-chunky btn-primary" data-dex>See it in the Kaidex</button>`;
+    sh.el.querySelector('[data-dex]').addEventListener('click', () => { sh.close(); go('kaidex'); });
+  });
+}
+
 // The four balls get cooler as they get stronger: blue, emerald, gold, prismatic.
 export const ballIcon = (kind) => ballImg(kind, 'ball-svg');
 
@@ -204,8 +232,8 @@ function homeMenu(p, go) {
     <p class="menu-ver">Kaimon Multiply v${VERSION}</p>
   </div>`, { cls: 'menu-sheet' });
   sh.el.querySelector('[data-quick]').addEventListener('change', (e) => {
-    p.settings.quick = e.target.checked;
-    touch(p); syncNow();
+    setSetting(p, 'quick', e.target.checked);
+    syncNow();
     sfx.tap();
     toast(p.settings.quick ? 'Quick mode on. Catches and attacks go faster.' : 'Quick mode off', 2000);
   });

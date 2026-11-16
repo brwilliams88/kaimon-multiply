@@ -83,14 +83,23 @@ async function token() {
 
 const profileRow = (p) => ({
   id: p.id, name: p.name, avatar: p.avatar,
-  settings: { ...p.settings, starter: p.starter, look: p.look || null, team: p.team || null, lookAt: p.lookAt || 0, teamAt: p.teamAt || 0 },
+  settings: { ...p.settings, starter: p.starter, look: p.look || null, team: p.team || null, lookAt: p.lookAt || 0, teamAt: p.teamAt || 0, setAt: p.setAt || {} },
   created_at: p.createdAt, updated_at: p.updatedAt, deleted: false,
 });
 
 // Team and look each carry the time they were last changed, so the newest pick wins
 // on every device, even if another device saved some other setting later.
+const NOT_SETTINGS = new Set(['starter', 'look', 'team', 'lookAt', 'teamAt', 'setAt']);
 function mergePicks(p, r, remoteNewer) {
   const st = r.settings || {};
+  // Settings: the newest change to each one wins. Old rows without change times
+  // fall back to "the newer row wins", as before.
+  const rAt = st.setAt || {}, lAt = p.setAt || (p.setAt = {});
+  for (const [k, v] of Object.entries(st)) {
+    if (NOT_SETTINGS.has(k)) continue;
+    const rt = rAt[k] || 0, lt = lAt[k] || 0;
+    if (rt > lt || (!rt && !lt && remoteNewer)) { p.settings[k] = v; if (rt) lAt[k] = rt; }
+  }
   for (const f of ['team', 'look']) {
     const rt = st[f + 'At'] || 0, lt = p[f + 'At'] || 0;
     if (rt > lt || (!rt && !lt && remoteNewer)) { if (st[f]) p[f] = st[f]; if (rt) p[f + 'At'] = rt; }
@@ -102,9 +111,7 @@ function profileFromRow(r) {
   p.family = true;
   p.createdAt = r.created_at;
   p.updatedAt = r.updated_at;
-  const { starter, look, team, lookAt, teamAt, ...rest } = r.settings || {};
-  p.settings = { ...p.settings, ...rest };
-  p.starter = starter || 'kaimo';
+  p.starter = (r.settings || {}).starter || 'kaimo';
   mergePicks(p, r, true);
   return p;
 }
@@ -226,9 +233,7 @@ export function syncNow() {
           putProfile(profileFromRow(r));
         } else if (p.family && r.updated_at > p.updatedAt) {
           p.name = r.name; p.avatar = r.avatar; p.updatedAt = r.updated_at;
-          const { starter, look, team, lookAt, teamAt, ...rest } = r.settings || {};
-          p.settings = { ...p.settings, ...rest };
-          if (starter) p.starter = starter;
+          if (r.settings?.starter) p.starter = r.settings.starter;
           mergePicks(p, r, true);
         }
       }

@@ -1791,3 +1791,6 @@ html.lock-screen #app { height: 100%; }
 }
 @media (max-aspect-ratio: 1/1) { .vsi-vs { left: 66%; top: 51%; } }
 @media (min-width: 700px) and (max-aspect-ratio: 1/1) { .vsi-speech { font-size: 19px; max-width: 360px; } .vsi-team .mini { width: 60px; height: 60px; } .vsi-stake { transform: scale(1.2); } }
+.kairo-wait [data-throw] { display: flex; align-items: center; justify-content: center; gap: 10px; }
+.kairo-wait [data-throw] .ball-svg { width: 34px; height: 34px; }
+.kairo-wait .mythic-arrive { width: min(60vw, 220px); margin: 0 auto; }

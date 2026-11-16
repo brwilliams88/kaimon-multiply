@@ -3,7 +3,7 @@
 // again on the next card. It turns itself off after 2 minutes without a spoken
 // answer, when the app is hidden, and when you leave practice or a battle.
 import { listen, stop as stopVoice } from '../core/voice.js';
-import { save } from '../core/store.js';
+import { setSetting } from '../core/store.js';
 
 const IDLE_MS = 2 * 60 * 1000;
 const RETRIES = 2; // quiet restarts per card when nobody spoke
@@ -52,8 +52,7 @@ export function micMode(opts) {
 
   function setOn(v) {
     on = v;
-    profile.settings.micMode = v;
-    save();
+    setSetting(profile, 'micMode', v);
     clearTimeout(startTimer);
     if (v) { lastHeard = Date.now(); tries = 0; start(); }
     else if (listening) { stopVoice(); listening = false; }

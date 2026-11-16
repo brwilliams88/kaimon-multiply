@@ -85,16 +85,17 @@ export function renderTrainer(root, go) {
   on(root, 'click', '[data-switch]', () => { sfx.tap(); go('welcome'); });
   on(root, 'click', '[data-look]', () => {
     sfx.tap();
-    let look = trainerLook(p);
-    const sh = sheet(`<h2>Change look</h2><div class="tr-lp">${lookPickerHTML(look)}</div>
-      <div class="sheet-actions"><button class="btn-chunky btn-primary" data-save>Save</button><button class="btn-chunky" data-close>Cancel</button></div>`);
-    wireLookPicker(sh.el.querySelector('.tr-lp'), look, (L) => { look = L; });
-    sh.el.querySelector('[data-save]').addEventListener('click', () => {
-      p.look = look;
+    // Every change saves right away, so closing the sheet any way keeps the new look.
+    let changed = false;
+    const sh = sheet(`<h2>Change look</h2><div class="tr-lp">${lookPickerHTML(trainerLook(p))}</div>
+      <div class="sheet-actions"><button class="btn-chunky btn-primary" data-close>Done</button></div>`, {
+      onClose: () => { if (changed) { syncNow(); draw(); toast('Looking good!', 1400); } },
+    });
+    wireLookPicker(sh.el.querySelector('.tr-lp'), trainerLook(p), (L) => {
+      p.look = L;
       p.lookAt = Date.now();
-      touch(p); save(); syncNow();
-      sh.close(); draw();
-      toast('Looking good!', 1400);
+      touch(p); save();
+      changed = true;
     });
   });
 }

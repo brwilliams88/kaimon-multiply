@@ -1,7 +1,20 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.5.8';
+export const VERSION = '0.5.9';
 
 export const CHANGELOG = [
+  {
+    version: '0.5.9',
+    date: '2026-11-15',
+    title: "Bug sweep fixes",
+    items: [
+      "Fixed: changing your trainer's look now saves even if you close the picker without tapping Save. It saves as you pick, with one Done button.",
+      "Fixed: on family accounts, a settings change on one device (times tables, cards per session, sound, quick mode, daily limit) could be undone by another device. Each setting now keeps its newest value.",
+      "Fixed: turning a times table on or off in Grown-ups now syncs to the family's other devices.",
+      "Fixed: if you beat Boss Papa but left before meeting Kairo, Kairo could never be caught. Now Kairo waits on the home screen until you catch it.",
+      "Fixed: tapping the Legend Ball twice when catching Kairo could use two balls.",
+      "Fixed: play time now counts even when the app is closed in the middle of practice or a battle.",
+    ],
+  },
   {
     version: '0.5.8',
     date: '2026-11-15',

@@ -322,7 +322,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt } = {}
     recordBattle(p, kind, opp.table, won);
     const bonusXP = (p.xp || 0) - xpBefore;
     if (reward) giveBall(p, reward.ball, reward.n);
-    session(p, Date.now() - S.startedAt, S.best);
+    endTime();
     save();
     syncNow();
     won ? sfx.win() : sfx.lose();
@@ -367,8 +367,11 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt } = {}
         <button class="btn-chunky btn-primary btn-xl" data-throw>${ballIcon('legend')} Throw a Legend Ball</button>
       </div>`;
     sfx.mythic();
+    let thrown = false;
     on(ov, 'click', '[data-throw]', async () => {
-      giveBall(p, 'legend', -1);
+      if (thrown) return;
+      thrown = true;
+      if ((p.balls.legend || 0) > 0) giveBall(p, 'legend', -1);
       catchIt(p, MYTHIC_ID);
       save(); syncNow();
       sfx.caught();
@@ -381,6 +384,19 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt } = {}
     });
   }
 
+
+  // Count play time even if the app is closed mid-session: when the app is hidden,
+  // record the time so far, and carry on from there if the player comes back.
+  const screenEl = root.firstElementChild;
+  const flushTime = () => {
+    if (!document.body.contains(screenEl)) { document.removeEventListener('visibilitychange', flushTime); return; }
+    if (!document.hidden || S.done) return;
+    if (!S.answered) return;
+    session(p, Date.now() - S.startedAt, S.best, !!S.flushed);
+    S.flushed = true; S.startedAt = Date.now(); save(); syncNow();
+  };
+  document.addEventListener('visibilitychange', flushTime);
+  const endTime = () => { S.done = true; document.removeEventListener('visibilitychange', flushTime); session(p, Date.now() - S.startedAt, S.best, !!S.flushed); };
   // ---------- input ----------
   on(root, 'click', '[data-start]', async () => {
     sfx.tap();
@@ -416,11 +432,11 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt } = {}
     if (S.phase === 'learn' && S.input.length >= String(S.mustType).length) checkRetype();
   });
   on(root, 'click', '[data-exit]', () => {
-    if (S.phase === 'over') return go('home');
+    if (S.phase === 'over') { const h = root.querySelector('.overlay.result [data-home]'); return h ? h.click() : go('home'); }
     const sh = sheet(`<h2>Leave the battle?</h2><p>Your answers still count for practice.</p><div class="sheet-actions"><button class="btn-chunky btn-primary" data-stop>Leave</button><button class="btn-chunky" data-close>Keep battling</button></div>`);
     sh.el.querySelector('[data-stop]').addEventListener('click', () => {
       sh.close(); S.mic?.destroy(); stopVoice(); stopMusic(); cancelAnimationFrame(S.raf);
-      if (S.answered) { session(p, Date.now() - S.startedAt, S.best); save(); syncNow(); }
+      if (S.answered) { endTime(); save(); syncNow(); }
       go('home');
     });
   });
