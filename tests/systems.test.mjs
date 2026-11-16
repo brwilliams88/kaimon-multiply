@@ -25,12 +25,12 @@ const ev = (k, d, t = Date.now()) => ({ id: Math.random().toString(36), t, k, d 
 test('every item gets its name, art and kid line from extras.js, no em dashes', () => {
   for (const k of items.ITEM_KEYS) {
     const i = itemInfo(k);
-    assert.ok(i.name && (i.art || k === 'scroll') && i.does && i.earn, k); // the Hint Scroll is drawn in ui/items.js
+    assert.ok(i.name && (i.art || k === 'scroll') && i.does && i.earn, k); // the Teacher K Hint is drawn in ui/items.js
     assert.ok(!/\u2014/.test(i.name + i.does + i.earn), k);
     assert.equal(items.itemName(k), i.name);
   }
   assert.deepEqual(items.ITEM_KEYS, ['snack', 'scroll', 'charm', 'lantern', 'evolve', 'megaCrystal']);
-  assert.equal(items.itemName('scroll'), 'Hint Scroll');
+  assert.equal(items.itemName('scroll'), 'Teacher K Hint'); // renamed from Hint Scroll in 1.1.1
   assert.equal(itemInfo('megacrystal').name, 'Mega Crystal'); // old spelling still finds its row
   assert.equal(items.itemName('megaCrystal'), 'Mega Crystal');
   assert.equal(items.itemName('evolve'), 'Evolve Crystal');
