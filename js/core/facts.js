@@ -29,7 +29,7 @@ export function levelOf(rec) {
 
 export const levelRank = (lvl) => LEVELS.indexOf(lvl);
 
-// A region's badge tier is the lowest level among its 10 facts.
+// A region's medal tier is the lowest level among its 10 facts.
 export function tableTier(profile, table) {
   let min = 5;
   for (const id of factsForTables([table])) min = Math.min(min, levelRank(levelOf(profile.facts[id])));

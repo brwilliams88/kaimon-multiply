@@ -135,7 +135,7 @@ function badgeSheet(p, key) {
     <p class="bd-where">${esc(b.leader)} · ${esc(b.region)} · ${b.table}s</p>
     ${b.won
       ? `<p>You won it from ${esc(b.leader)}${p.battles.champs[b.table] > 1 ? ` (${p.battles.champs[b.table]} wins)` : ''}. It sewed this patch on your License:</p><span class="bd-patch">${patchSVG(b.type)}<b>${esc(patchName(b))}</b></span>`
-      : `<p>${ready ? `You can battle ${esc(b.leader)} now! Beat them to win this badge and its patch.` : `Get the ${b.table}s to Bronze, then beat ${esc(b.leader)} to win this badge.`}</p>`}
+      : `<p>${ready ? `You have a Bronze medal on the ${b.table}s, so you can battle ${esc(b.leader)} now! Win to get this badge and its patch.` : `Get a Bronze medal on the ${b.table}s, then beat ${esc(b.leader)} to win this badge.`}</p>`}
     <button class="btn-chunky btn-primary" data-close>Got it</button></div>`, { x: true });
 }
 
