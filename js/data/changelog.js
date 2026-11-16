@@ -1,7 +1,16 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.5.18';
+export const VERSION = '0.5.19';
 
 export const CHANGELOG = [
+  {
+    version: '0.5.19',
+    date: '2026-11-15',
+    title: "News emails",
+    items: [
+      "When a grown-up turns on family sync, a checked box adds their email to occasional news about Kaimon games. They can uncheck it, turn it off any time with the News emails switch in Grown-ups, or tap Unsubscribe in any news email to delete it from the list.",
+      "The unsubscribe page now says Play Kaimon Multiply.",
+    ],
+  },
   {
     version: '0.5.18',
     date: '2026-11-15',

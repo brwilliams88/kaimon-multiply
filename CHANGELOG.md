@@ -2,6 +2,11 @@
 
 All notable changes. Versioning: `0.MINOR.0` marks a roadmap phase, `0.x.PATCH` is any shipped change a player or parent can notice, and `1.0.0` is the public launch. See "Versioning" in CLAUDE.md. The in-app version history (Grown-ups > What's new) reads from `js/data/changelog.js`; keep both in sync. Each release is tagged in git as `vX.Y.Z`.
 
+## v0.5.19 (2026-11-15) News emails
+
+- When a grown-up turns on family sync, a checked box adds their email to occasional news about Kaimon games. They can uncheck it, turn it off any time with the News emails switch in Grown-ups, or tap Unsubscribe in any news email to delete it from the list.
+- The unsubscribe page now says Play Kaimon Multiply.
+
 ## v0.5.18 (2026-11-15) Play offline
 
 - After one visit online, the whole game plays with no internet, including all 620 pictures. Grown-ups shows a "Ready to play offline" meter while pictures download.
