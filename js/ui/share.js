@@ -9,7 +9,7 @@ const PUBLIC_URL = 'https://brwilliams88.github.io/kaimon-multiply/';
 export const shareUrl = () => document.querySelector('link[rel="canonical"]')?.href || PUBLIC_URL;
 
 export const SHARE_TITLE = 'Kaimon Multiply';
-export const SHARE_TEXT = 'Kai made a times tables game with his own creatures. Want to play?';
+export const SHARE_TEXT = 'Kaimon Multiply is a free times tables game. Answer cards, catch creatures and beat the gyms. Made by a dad and his son Kai. Want to play?';
 const MAIL_SUBJECT = 'A times tables game for you';
 
 const hasNativeShare = () => typeof navigator.share === 'function';

@@ -1,7 +1,16 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.5.16';
+export const VERSION = '0.5.17';
 
 export const CHANGELOG = [
+  {
+    version: '0.5.17',
+    date: '2026-11-15',
+    title: "Share the game",
+    items: [
+      "New in the Menu: Share the game. A grown-up presses and holds, then can share the link with the device share menu, Copy link, Email or WhatsApp. Only the link is shared, never anything about your trainers.",
+      "Links to the game now show a nice preview card in iMessage, WhatsApp and other apps.",
+    ],
+  },
   {
     version: '0.5.16',
     date: '2026-11-15',
