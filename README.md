@@ -44,7 +44,7 @@ It was made for Kai, an 8 year old learning his times tables, and shared with hi
 
 ## For grown-ups
 
-- **Parent PIN area.** Press and hold Grown-ups in the Menu. See all 100 facts by medal, pick which tables are in play, set a daily time limit and give a **Good Work Stamp** for great math done off screen.
+- **Parent PIN area.** Open Grown-ups from the Menu and enter the PIN. See all 100 facts by medal, pick which tables are in play, set a daily time limit and give a **Good Work Stamp** for great math done off screen.
 - **Weekly reports.** Turn them on to email a short summary each Sunday morning to up to 5 grown-ups. Each person taps Yes in a first email before any report comes.
 - **Family sync.** Optional. Sign in with a grown-up's email and a code, and the same trainers stay in step on every family phone, tablet and Chromebook.
 - **No ads, no purchases, no cost.** The game is free and runs for $0.
