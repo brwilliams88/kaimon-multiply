@@ -5,6 +5,7 @@ import { tableTier, levelRank, levelOf, factsForTables } from './facts.js';
 import { roster, buddyOf, current, ownedList, hpForLevel, powerForLevel } from './levels.js';
 import { towerOpponent, towerReward } from './tower.js'; // Hundred Tower hook
 import { megaForm, MEGA_HP, MEGA_POWER } from './megas.js'; // Mega hook
+import { matchup } from '../data/types.js'; // type matchups
 
 export const MY_HP = 40;      // a Lv 5 Kaimon (HP grows with level: levels.js)
 export const HIT_BACK = 12;   // damage you take on a wrong answer
@@ -125,8 +126,10 @@ export const foeLevel = (table, beaten, i) => 3 + 2 * table + i * 2 + (beaten ? 
 // In the same order as their art (assets/trainers/grunt-1 to grunt-6).
 export const GRUNTS = ['Grunt Squat Sam', 'Grunt Jump Rope Jo', 'Grunt Deadlift Dan', 'Grunt Kettlebell Kat', 'Grunt Med Ball Max', 'Grunt Snatch Sasha'];
 
-// Damage for a right answer.
-export function attack(mine, power, streak) {
+// Damage for a right answer. foe (optional): the Kaimon being hit, for type matchups
+// (data/types.js): x1.5 when your type is strong against it, x0.75 when weak.
+// Worked out the same way on every device, so nothing new needs to sync.
+export function attack(mine, power, streak, foe = null) {
   const crit = power >= 0.9;
   const special = streak > 0 && streak % 3 === 0;
   const my = mythicStats(mine.species);
@@ -134,7 +137,9 @@ export function attack(mine, power, streak) {
   let dmg = my ? (my.base + my.perPower * power) * (1 + Math.min(COMBO_MAX, COMBO_STEP * Math.max(0, streak - 1))) : 8 + 10 * power + powerForLevel(mine.lv || 1) + (mine.species.megaForm ? MEGA_POWER : 0); // Mega hook
   if (crit) dmg *= 1.5;
   if (special) dmg *= 1.5;
-  return { dmg: Math.round(dmg), crit, special };
+  const m = foe ? matchup(mine.species, foe.species) : { mult: 1, eff: null };
+  dmg *= m.mult;
+  return { dmg: Math.round(dmg), crit, special, eff: m.eff, why: m.why || '' };
 }
 
 // Special move name by type.
@@ -168,6 +173,14 @@ export function bossUnlocked(profile) {
 
 export function champReady(profile, table) {
   return levelRank(tableTier(profile, table) || 'learning') >= 2;
+}
+
+// The next gym to beat: the first open one without a badge, else the first without
+// one. null once every badge is won. (The team picker shows types against it.)
+export function nextGym(profile) {
+  const tables = (profile.settings.tables.length ? profile.settings.tables : [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]).slice().sort((a, b) => a - b);
+  const left = tables.filter((t) => !profile.battles.champs[t]);
+  return left.find((t) => champReady(profile, t)) ?? left[0] ?? null;
 }
 
 // A gym opens once its table has a Bronze medal (and stays open once its badge is won).
