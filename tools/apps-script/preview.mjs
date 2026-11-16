@@ -17,7 +17,7 @@ vm.runInContext(readFileSync(new URL('Code.gs', here), 'utf8') + '\n;globalThis.
 const T = ctx.__t;
 
 // A sample trainer: a week of play built from events, like the game does.
-const WEEK = '2026-11-09';
+const WEEK = '2026-11-08';
 const p = newProfile('Kai', 0, 'pSample');
 let seed = 7;
 const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
@@ -50,12 +50,13 @@ ev(at(14, 17), 'catch', { n: 'flurrypup', s: 0 });
 ev(at(11, 17), 'battle', { o: 'champ', tb: 7, w: 1 });
 ev(at(14, 17), 'battle', { o: 'grunt', tb: 8, w: 1 });
 
-const report = weeklyReport(p, WEEK, at(16, 9));
+const report = weeklyReport(p, WEEK, at(15, 9, 30));
 const data = T.cleanReport_(JSON.parse(JSON.stringify(report)), 'Kai', WEEK);
 const base = '../../assets/email/';
 const html = T.renderReportEmail_(data, { base, image: base + 'trainer-kai.png', stopUrl: '#stop' });
 writeFileSync(new URL('preview.html', here), html);
-const empty = T.cleanReport_(JSON.parse(JSON.stringify(weeklyReport(newProfile('Mia'), WEEK, at(16, 9)))), 'Mia', WEEK);
+// A quiet week: the same trainer the week after, with no play.
+const empty = T.cleanReport_(JSON.parse(JSON.stringify(weeklyReport(p, '2026-11-15', at(22, 9, 30)))), 'Kai', '2026-11-15');
 writeFileSync(new URL('preview-empty.html', here), T.renderReportEmail_(empty, { base, image: base + 'trainer-kai.png', stopUrl: '#stop' }));
 writeFileSync(new URL('preview-invite.html', here), T.renderInviteEmail_('Kai', '#yes', { base }));
 console.log(`Wrote preview.html (${html.length} bytes), preview-empty.html and preview-invite.html. ${data.cards} cards, ${data.accuracy}% right.`);

@@ -4,7 +4,6 @@ import { setSetting, save } from '../core/store.js';
 import { syncNow } from '../core/sync.js';
 import { weeklyReport, reportText, thisWeek, weekLabel, dayKey } from '../core/report.js';
 import { senderReady, invite, recipientStatus, sendReport, errorText, cleanEmail, validEmail, MAX_RECIPIENTS, queuedInvites } from '../core/mailer.js';
-import { REGIONS, TYPES } from '../data/creatures.js';
 import { kaimonSrc } from '../core/art.js';
 import { itemImg, ballImg, uiImg } from '../core/assets.js';
 import { avatarSVG, trainerLook, lookImage } from './avatars.js';
@@ -23,7 +22,6 @@ export async function trainerPNG(p, size = 200) {
   return png.length < 190000 ? png : null; // the server refuses bigger pictures
 }
 
-const fact = (x) => `${x.a} × ${x.b}`;
 const plural = (n, one, many = one + 's') => `${n} ${n === 1 ? one : many}`;
 
 function change(n, unit, what) {
@@ -37,7 +35,6 @@ export function reportCardHTML(p, r) {
   const empty = !r.cards && !r.minutes;
   const maxMin = Math.max(15, ...r.daily.map((d) => d.minutes));
   const todayIdx = r.partial ? r.daily.findIndex((d) => d.key === dayKey(new Date())) : 7;
-  const maxAns = Math.max(1, ...r.tables.map((t) => t.answers));
   const wins = [
     ...['star', 'gold', 'silver', 'bronze'].filter((k) => r.medals[k]).map((k) => `<div class="wr-win">${itemImg('medal-' + k)}<strong>${r.medals[k]}</strong><span>${k[0].toUpperCase() + k.slice(1)}</span></div>`),
     r.caught ? `<div class="wr-win">${ballImg('capture')}<strong>${r.caught}</strong><span>caught</span></div>` : '',
@@ -62,21 +59,6 @@ export function reportCardHTML(p, r) {
       <div class="wr-days" role="img" aria-label="Minutes each day: ${r.daily.map((d) => `${d.name} ${d.minutes}`).join(', ')}">
         ${r.daily.map((d, i) => `<div class="wr-day${i > todayIdx ? ' later' : ''}${i === todayIdx && r.partial ? ' today' : ''}"><span class="wr-dmin">${d.minutes || ''}</span><span class="wr-dbar"><i style="height:${d.minutes ? Math.max(8, Math.round((d.minutes / maxMin) * 100)) : 0}%"></i></span><b>${d.name[0]}</b></div>`).join('')}
       </div>
-      ${r.tables.length ? `
-      <h4 class="wr-h">Times tables practiced</h4>
-      <div class="wr-tables">
-        ${r.tables.map((t) => { const ty = TYPES[REGIONS[t.table - 1]?.type] || TYPES.water; return `
-          <div class="wr-tb" style="--tc:${ty.color};--tl:${ty.light};--ti:${ty.ink}">
-            <span class="wr-tb-n">${t.table}s</span>
-            <span class="wr-tb-bar" aria-hidden="true"><i style="width:${Math.max(4, Math.round((t.answers / maxAns) * 100))}%"></i></span>
-            <span class="wr-tb-v"><b>${t.answers}</b> ${t.answers === 1 ? 'card' : 'cards'} <span class="wr-acc${t.accuracy >= 90 ? ' hi' : t.accuracy < 70 ? ' lo' : ''}">${t.accuracy}%</span></span>
-          </div>`; }).join('')}
-      </div>` : ''}
-      ${r.strongest.length || r.trickiest.length ? `
-      <div class="wr-two">
-        <div><h4 class="wr-h">Strongest facts</h4>${r.strongest.length ? `<div class="wr-chips">${r.strongest.map((x) => `<span class="wr-chip good">${fact(x)}</span>`).join('')}</div>` : '<p class="note">Fast, right answers show up here.</p>'}</div>
-        <div><h4 class="wr-h">Tricky facts</h4>${r.trickiest.length ? `<div class="wr-chips">${r.trickiest.map((x) => `<span class="wr-chip tricky" title="${x.misses ? `Missed ${plural(x.misses, 'time')} this week` : 'Missed this week'}">${fact(x)} = ${x.a * x.b}</span>`).join('')}</div>` : '<p class="note">No misses this week!</p>'}</div>
-      </div>` : ''}
       ${wins.length ? `<div class="wr-wins">${wins.join('')}</div>` : ''}
       ${mons.length ? `<div class="wr-mons">${mons.map((s) => `<figure class="wr-mon"><img src="${kaimonSrc(s.num)}" alt="" decoding="async"><figcaption>${esc(s.name)}${s.n > 1 ? ` <small>×${s.n}</small>` : ''}</figcaption>${isNew.has(s.id) ? '<span class="wr-new">New</span>' : ''}</figure>`).join('')}</div>` : ''}
       `}
