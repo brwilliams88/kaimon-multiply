@@ -33,14 +33,14 @@ function panel(tab, L, owned) {
   const hairs = swatches('hair', Object.entries(HAIR_TONES).map(([k, h]) => [k, h, HAIR_NAME[k]]), L.hair, 'Hair color');
   if (tab === 'trainer') {
     return `<div class="tc-chars" role="radiogroup" aria-label="Trainers">
-      <button type="button" class="tc-char tc-make${custom ? ' on' : ''}" data-make role="radio" aria-checked="${custom}" aria-label="Make your own trainer">${custom ? trainerImg(L, 'face') : `<span class="tc-plus" aria-hidden="true">+</span>`}<span class="tc-kai">${custom ? 'Yours' : 'Make'}</span></button>
+      <button type="button" class="tc-char tc-make${custom ? ' on' : ''}" data-make role="radio" aria-checked="${custom}" aria-label="Make your own trainer">${custom ? trainerImg({ ...L, hat: undefined }, 'face') : `<span class="tc-plus" aria-hidden="true">+</span>`}<span class="tc-kai">${custom ? 'Yours' : 'Make'}</span></button>
       ${CHARS.map((c, i) => `<button type="button" class="tc-char${L.char === c ? ' on' : ''}" data-char="${c}" role="radio" aria-checked="${L.char === c}" aria-label="${c === 'kai' ? 'Kai, the hero trainer' : `Trainer ${i}`}">${trainerImg({ char: c, color: c === 'kai' || custom ? 'green' : L.color }, 'face')}${c === 'kai' ? '<span class="tc-kai">Kai</span>' : ''}</button>`).join('')}
     </div>`;
   }
   if (tab === 'hair') {
     if (!custom) return needCustom('Choosing a hairstyle');
     return `<p class="lp-label">Hairstyle</p>
-      <div class="tc-chars tc-heads" role="radiogroup" aria-label="Hairstyle">${HEADS.map((h) => `<button type="button" class="tc-char${L.head === h ? ' on' : ''}" data-head="${h}" role="radio" aria-checked="${L.head === h}" aria-label="${HEAD_LABEL[h]}">${trainerImg({ ...L, head: h }, 'face')}<span class="tc-kai">${HEAD_LABEL[h]}</span></button>`).join('')}</div>
+      <div class="tc-chars tc-heads" role="radiogroup" aria-label="Hairstyle">${HEADS.map((h) => `<button type="button" class="tc-char${L.head === h ? ' on' : ''}" data-head="${h}" role="radio" aria-checked="${L.head === h}" aria-label="${HEAD_LABEL[h]}">${trainerImg({ ...L, head: h, hat: undefined }, 'face')}<span class="tc-kai">${HEAD_LABEL[h]}</span></button>`).join('')}</div>
       <p class="lp-label">Hair color</p>${hairs}`;
   }
   if (tab === 'outfit') {
@@ -104,7 +104,7 @@ export function wireLookPicker(el, look, onChange, { owned = starterOnly, why = 
       else if (ds.color) L = { ...L, color: ds.color };
       else return;
       if (prev.card && !L.card) L.card = prev.card; // the License color stays put
-      if (prev.hat && !L.hat && L.char !== 'm') L.hat = prev.hat; // so does a Wardrobe hat (drawn trainers only)
+      if (prev.hat && !L.hat) L.hat = prev.hat; // so does a Wardrobe hat
       sfx.tap();
       onChange?.(L);
       redraw();

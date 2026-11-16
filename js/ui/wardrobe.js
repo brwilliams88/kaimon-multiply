@@ -1,6 +1,6 @@
 // The Wardrobe: colors for your jacket and your Trainer License, and hats from the
 // game's world. Everything in it is earned by answering. Kai always wears his red
-// jacket, so for Kai the colors go on his License; Kai can wear every hat.
+// jacket, so for Kai the colors go on his License. Every trainer can wear every hat.
 import { STARTER_COLORS, COLOR_ORDER, COLOR_NAME, CARD_DEFAULT, HAT_IDS } from '../data/wardrobe.js';
 import { byId, owns, progress, howTo, moreText, nextUp, keepCurrent, fresh, markSeen, hatItems } from '../core/wardrobe.js';
 import { touch, save } from '../core/store.js';
@@ -17,10 +17,8 @@ import { patchSVG } from './patchArt.js';
 export const LOCK = '<svg class="wd-lock" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="2.6" fill="currentColor"/><path d="M8.2 10.5 V8 a3.8 3.8 0 0 1 7.6 0 V10.5" fill="none" stroke="currentColor" stroke-width="2.6"/><circle cx="12" cy="15.2" r="1.7" fill="#fff"/></svg>';
 const CHECK = '<svg class="wd-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M5.5 12.5 L10 17 L18.5 7.5" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
-// Hats: a little photo of you wearing it. Make-your-own trainers have no hat art yet,
-// so their tiles show Kai wearing it.
-const hatLook = (L, hat) => (L.char === 'm' ? { char: 'kai', color: 'green', hat } : { ...L, hat });
-export const hatPic = (L, hat) => trainerImg(hat ? hatLook(L, hat) : { ...L, hat: undefined }, 'face');
+// Hats: a little photo of you wearing it.
+export const hatPic = (L, hat) => trainerImg({ ...L, hat: hat || undefined }, 'face');
 // A round chip for the next thing to earn: a color dot, or a hat photo with a lock.
 export function itemDot(L, it, cls = '', locked = true) {
   const lk = locked ? ' locked' : '';
@@ -116,9 +114,8 @@ function stageHTML(p, L, tab) {
 
 function panelHTML(p, L, tab) {
   if (tab === 'hats') {
-    const note = L.char === 'm' ? 'Hats fit Kai and the ready-made trainers. Switch to one in Change look to wear a hat!' : HAT_NOTE;
-    return `<p class="wd-note">${note}</p>
-      <div class="wd-grid hats">${L.char === 'm' ? '' : noHatTile(L)}${hatItems().map((it) => hatTile(p, L, it, L.hat === it.id)).join('')}</div>`;
+    return `<p class="wd-note">${HAT_NOTE}</p>
+      <div class="wd-grid hats">${noHatTile(L)}${hatItems().map((it) => hatTile(p, L, it, L.hat === it.id)).join('')}</div>`;
   }
   if (tab === 'card') {
     return `<p class="wd-note">Your Trainer License can wear your colors too.</p>
@@ -171,7 +168,6 @@ export function openWardrobe(p, { tab, onChange } = {}) {
     if (h) {
       sfx.tap();
       if (h !== 'none' && !owns(p, h)) { const it = byId(h); toast(`${moreText(p, it)} to unlock the ${it.name}!`, 2200); return; }
-      if (L.char === 'm') { toast('Hats fit Kai and the ready-made trainers.', 2200); return; }
       const next = { ...L };
       if (h === 'none') delete next.hat; else next.hat = h;
       if (next.hat === L.hat) return;
@@ -201,10 +197,9 @@ export function openWardrobe(p, { tab, onChange } = {}) {
   return sh;
 }
 
-// Put a new hat on (drawn trainers only).
+// Put a new hat on.
 export function wearHat(p, h) {
   const L = lookOf(p);
-  if (L.char === 'm') return false;
   p.look = { ...L, hat: h }; p.lookAt = Date.now();
   touch(p); save(); syncNow();
   return true;
