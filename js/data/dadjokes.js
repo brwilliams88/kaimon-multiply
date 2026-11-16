@@ -55,7 +55,7 @@ export const DAD_JOKES = {
     "You beat me?! Impossible! Did you practice on different days like a responsible trainer?!",
     "Fine. You win. But I'm keeping the hat.",
     "Hmph. You remind me of someone. Someone very smart. Who loves dragons. Never mind.",
-    "Papazilla, use Dad Joke! It's super effective... at making everyone groan.",
+    "Papazilla, use Dad Joke! It works every time... at making everyone groan.",
   ],
 };
 

@@ -1,7 +1,64 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.5.33';
+export const VERSION = '0.5.38';
 
 export const CHANGELOG = [
+  {
+    version: '0.5.38',
+    date: '2026-11-15',
+    title: "Full Kaimon names in battle",
+    items: [
+      "Fixed: long Kaimon names in battle (like Supernovasaur) were cut off with \"...\" on phones. Names now get the whole top line of the HP box and shrink a little if needed, and the team balls moved under the HP bar.",
+    ],
+  },
+  {
+    version: '0.5.37',
+    date: '2026-11-15',
+    title: "Pick a trainer, then Play",
+    items: [
+      "Who's playing is easier: swipe or tap to pick a trainer, then press the big Play button under the cards.",
+      "The last trainer who played is picked and centered when the game opens, marked \"Last played\".",
+      "The cards no longer get cut off on phones, and the New trainer \"+\" sits right in the middle of its circle.",
+      "Tap your trainer at the top of Home to open your trainer page or switch trainers.",
+    ],
+  },
+  {
+    version: '0.5.36',
+    date: '2026-11-15',
+    title: "Battle polish",
+    items: [
+      "Battles start with a real send-out: your trainer throws a ball, it pops open, and your Kaimon bursts out. Gym Leaders throw Super Balls and Boss Papa throws a Mega Ball.",
+      "Big callouts: \"Critical!\" for a perfect answer, and the move name with its type for special moves. Every hit gets a flash in the attacker's type color.",
+      "Winning a Gym badge for the first time now has its own moment: the badge flies into your badge case, and the Gym Leader says something kind.",
+      "Papa's Gym feels like a gym: a chalkboard workout sign, dad jokes mid-battle, and a big entrance for Papazilla.",
+      "New win and lose screens. Losing says \"Good battle!\" and reminds you every answer still counts as practice.",
+      "Tap anywhere during an attack to skip ahead. With reduced motion on, battles fade instead of flying.",
+    ],
+  },
+  {
+    version: '0.5.35',
+    date: '2026-11-15',
+    title: "New sounds and music",
+    items: [
+      "All new sounds: every number key plays its own note, and correct answers, catches, level ups, evolving, badges and battles have new friendly sounds that go together. A wrong answer is a soft \"uh-oh\".",
+      "The streak flame makes a sound as it grows, with brighter chimes at 5, 10, 15 and 25 in a row.",
+      "New music: a cheerful theme on Home and the Kaidex, a longer battle theme, and a stompy march for Papa's Gym. Practice cards stay quiet.",
+      "With Mic mode on, battle music stays soft the whole battle so the mic can hear you.",
+      "Grown-ups: the Music switch now covers Home and battle music. Sound effects stay on unless you turn Sound off.",
+    ],
+  },
+  {
+    version: '0.5.34',
+    date: '2026-11-15',
+    title: "A smarter Home",
+    items: [
+      "New Home: Next up now suggests what to play based on how you are doing. Tables that keep getting away get a Power up card, ready gyms come before Pop Quiz, and suggestions take turns so Home stays fresh.",
+      "Quick practice (mixed times tables) is one tap from Home, with the Kaidex and Pop Quiz right under it.",
+      "A gentle daily goal of 3 rounds, shown as a ring that fills in three parts. No pressure: playing more or less is fine.",
+      "Gyms open once their table has a Bronze medal. Tap a locked gym to see how to open it, or practice that table right away.",
+      "Pick a region is easier: every region and gym is listed with clear Battle labels.",
+      "Long Kaimon names now fit on the results screen.",
+    ],
+  },
   {
     version: '0.5.33',
     date: '2026-11-15',
