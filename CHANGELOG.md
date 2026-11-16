@@ -2,6 +2,16 @@
 
 All notable changes. Versioning: `0.MINOR.0` marks a roadmap phase, `0.x.PATCH` is any shipped change a player or parent can notice, and `1.0.0` is the public launch. See "Versioning" in CLAUDE.md. The in-app version history (Grown-ups > What's new) reads from `js/data/changelog.js`; keep both in sync. Each release is tagged in git as `vX.Y.Z`.
 
+## v0.5.33 (2026-11-15) Kaidex binder and Trainer License
+
+- The Kaidex is now a binder you can page through: swipe or tap the arrows. Caught Kaimon sit in card sleeves, ones you have seen show as shadows, and empty sleeves show their number.
+- New Trainer License on the trainer page, with your face, rank, Kaidex count, best streak and medals.
+- Earn License extras by playing: a patch for each Gym badge, a frame that gets fancier as more facts reach Bronze, Silver, Gold and Star, and gold trim for all 10 badges.
+- New badge case: tap a badge to see how to win it.
+- Picking your battle team is simpler: your buddy leads, tap two more, and it saves as you go.
+- The Bag now shows every item you have, with a short line about each one.
+- Badges now always mean Gym Leader wins, and medals mean how well you know a times table. Trainer ranks count badges.
+
 ## v0.5.32 (2026-11-15) Nicer report emails
 
 - Each kind of email now has its own picture at the top: a celebration for weekly reports, a sleepy Kaizo for quiet weeks, and Kaizo with an envelope for the "Say yes" email.
