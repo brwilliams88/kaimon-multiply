@@ -1,7 +1,16 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.5.30';
+export const VERSION = '0.5.31';
 
 export const CHANGELOG = [
+  {
+    version: '0.5.31',
+    date: '2026-11-15',
+    title: "A bigger streak flame",
+    items: [
+      "The streak flame now grows in six steps: 1, 3, 5, 10, 15 and 25 right in a row. Orange, then hotter orange, then red with a glow (your next throw is a free Super Ball), blue at 10 (free Mega Ball), violet at 15, and a white-hot rainbow flame at 25.",
+      "Each new step gives the flame a quick flare so you notice it.",
+    ],
+  },
   {
     version: '0.5.30',
     date: '2026-11-15',

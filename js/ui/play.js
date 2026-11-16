@@ -17,7 +17,7 @@ import { ballIcon, medal } from './home.js';
 import { trainerLook, trainerImg } from './avatars.js';
 import { ballSrc, sceneSrc, cssUrl, sceneKey, uiImg, itemImg, fxSrc, typeIcon, trainerFace, CARD_BACK } from '../core/assets.js';
 import { quick } from '../core/prefs.js';
-import { $, on, esc, sheet, wait, toast, soundButton, reducedMotion, flameTier } from './dom.js';
+import { $, on, esc, sheet, wait, toast, soundButton, reducedMotion, setFlame } from './dom.js';
 
 export function renderPlay(root, go, { table }) {
   const p = active();
@@ -97,7 +97,7 @@ export function renderPlay(root, go, { table }) {
     const box = el.streak.closest('.streak');
     const nextBall = ballForStreak(p, S.streak + 1);
     box.classList.toggle('hot', S.streak >= 3);
-    box.dataset.tier = flameTier(S.streak);
+    setFlame(box, S.streak);
     el.streakBall.hidden = nextBall === 'capture';
     el.streakBall.innerHTML = nextBall === 'capture' ? '' : `${ballIcon(nextBall)}<small>free</small>`;
     box.querySelector('.streak-sr').textContent = `${S.streak} right in a row${nextBall === 'capture' ? '' : `. Next throw: free ${BALLS[nextBall].name}`}`;

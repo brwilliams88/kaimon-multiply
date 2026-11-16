@@ -2,6 +2,11 @@
 
 All notable changes. Versioning: `0.MINOR.0` marks a roadmap phase, `0.x.PATCH` is any shipped change a player or parent can notice, and `1.0.0` is the public launch. See "Versioning" in CLAUDE.md. The in-app version history (Grown-ups > What's new) reads from `js/data/changelog.js`; keep both in sync. Each release is tagged in git as `vX.Y.Z`.
 
+## v0.5.31 (2026-11-15) A bigger streak flame
+
+- The streak flame now grows in six steps: 1, 3, 5, 10, 15 and 25 right in a row. Orange, then hotter orange, then red with a glow (your next throw is a free Super Ball), blue at 10 (free Mega Ball), violet at 15, and a white-hot rainbow flame at 25.
+- Each new step gives the flame a quick flare so you notice it.
+
 ## v0.5.30 (2026-11-15) Weekly report fixes
 
 - Fixed: the minutes for each day in the report email were labeled one day off (Sunday showed as Monday). Days now match the week, Sunday to Saturday.
