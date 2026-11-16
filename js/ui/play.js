@@ -1,13 +1,14 @@
 import { active, save } from '../core/store.js';
 import { regionOf, TYPES, byId, MYTHIC_ID, FUTURE_ID } from '../data/creatures.js';
 import { creatureArt, shinyStar } from '../core/art.js';
-import { factsForTables, pickNext, answerOf, parseFact, hintLadder, trickFor, levelRank, LEVEL_LABEL, tableTier } from '../core/facts.js';
+import { factsForTables, pickNext, onAnswer, answerOf, parseFact, hintLadder, levelRank, LEVEL_LABEL, tableTier } from '../core/facts.js';
 import { answer, seen, caught as catchIt, escaped, ball as giveBall, sighting, session } from '../core/actions.js';
 import { syncNow } from '../core/sync.js';
 import { pickEncounter, ballForStreak, rollCatch, mythicCameo, BALLS, dexState } from '../core/game.js';
 import { powerFor, powerLabel, GRUNTS } from '../core/battle.js';
 import { dadJoke } from '../data/dadjokes.js';
 import { trainerArt } from './trainerArt.js';
+import { trickHTML } from './trickArt.js';
 import { limitReached, roundsToday, GOAL_ROUNDS } from '../core/playtime.js';
 import { partnerOf } from '../core/game.js';
 import { voiceSupported, stop as stopVoice } from '../core/voice.js';
@@ -227,6 +228,7 @@ export function renderPlay(root, go, { table, focus } = {}) {
     const region = regionOf(a);
     const xp0 = p.xp || 0, pl0 = partnerOf(p);
     const lv = answer(p, S.fact, ok, ms, via);
+    onAnswer(S, S.fact, ok);
     const gained = (p.xp || 0) - xp0;
     S.xp = (S.xp || 0) + gained;
     const pl1 = partnerOf(p);
@@ -288,7 +290,6 @@ export function renderPlay(root, go, { table, focus } = {}) {
       S.streak = 0;
       updateStreak();
       S.misses.push(S.fact);
-      S.requeue.push({ id: S.fact, at: S.n + 3 });
       sfx.wrong();
       save();
       cancelAnimationFrame(S.raf);
@@ -305,7 +306,7 @@ export function renderPlay(root, go, { table, focus } = {}) {
       el.back.innerHTML = `
         <div class="card-head"><span class="chip">Not quite</span></div>
         <div class="card-q answer-reveal"><span>${a}</span><span class="times">×</span><span>${b}</span><span class="eq">=</span><span class="ans">${ans}</span></div>
-        <div class="hint-scroll"><p>Count by ${a}s</p><div class="ladder">${hintLadder(S.fact).map((v, i, arr) => `<span class="${i === arr.length - 1 ? 'last' : ''}">${v}</span>`).join('')}</div><p class="trick"><span class="trick-tag">${itemImg('hint-lamp')}Teacher K's trick</span> ${esc(trickFor(S.fact))}</p></div>
+        <div class="hint-scroll"><p>Count by ${a}s</p><div class="ladder">${hintLadder(S.fact).map((v, i, arr) => `<span class="${i === arr.length - 1 ? 'last' : ''}">${v}</span>`).join('')}</div>${trickHTML(p, S.fact)}</div>
         <div class="retype"><span class="learn-teacher">${trainerFace('teacher-k')}</span><span class="retype-label">Type it to keep going</span><span class="answer-val empty" data-ph="${ans}"></span></div>`;
       flip(true, 'wrong');
       S.phase = 'learn';

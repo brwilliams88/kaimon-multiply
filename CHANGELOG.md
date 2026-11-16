@@ -2,6 +2,14 @@
 
 All notable changes. Versioning: `0.MINOR.0` marks a roadmap phase, `0.x.PATCH` is any shipped change a player or parent can notice, and `1.0.0` is the public launch. See "Versioning" in CLAUDE.md. The in-app version history (Grown-ups > What's new) reads from `js/data/changelog.js`; keep both in sync. Each release is tagged in git as `vX.Y.Z`.
 
+## v0.6.0 (2026-11-15) Smarter practice
+
+- This starts the polish and share phase on the way to the public launch (v1.0).
+- Smarter card picking, based on how kids learn best: a few new or tricky facts are mixed in with ones you already know, and a missed fact comes back a little later, then again a bit later.
+- New facts come in a proven order: the 1s, 2s, 5s and 10s first, then squares like 6 x 6, then the rest.
+- Turnaround facts: if you know 7 x 3, the game reminds you that 3 x 7 is the same answer.
+- Hints after a miss are simpler: one short tip from Teacher K, or the turnaround, under the count-by line.
+
 ## v0.5.38 (2026-11-15) Full Kaimon names in battle
 
 - Fixed: long Kaimon names in battle (like Supernovasaur) were cut off with "..." on phones. Names now get the whole top line of the HP box and shrink a little if needed, and the team balls moved under the HP bar.
