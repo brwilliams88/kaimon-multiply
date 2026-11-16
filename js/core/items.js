@@ -76,6 +76,7 @@ export function applySystems(p, ev) {
   }
   if (ev.k === 'bolt') {
     const b = p.bolt || (p.bolt = { best: 0, runs: 0, last: 0 });
+    if (!b.top && b.best) b.top = [{ s: b.best, t: b.last || 0 }]; // a best from before the list keeps its day
     b.best = Math.max(b.best, d.sc | 0);
     b.runs++;
     b.last = Math.max(b.last, ev.t);

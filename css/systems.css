@@ -230,6 +230,16 @@ body[data-screen="lightning"] {
 .be-list b { font-size: 15px; color: var(--ink); }
 .be-list small { font-size: 13px; color: var(--ink-2); }
 .be-ic { width: 32px; height: 32px; flex-shrink: 0; object-fit: contain; }
+@media (max-width: 520px) {
+  .be-list ul { grid-template-columns: 1fr; gap: 4px; }
+  .be-list li { padding: 4px 10px; }
+  .be-list li > span { flex-direction: row; align-items: baseline; gap: 6px; flex-wrap: wrap; }
+  .be-ic { width: 28px; height: 28px; }
+  .intro-panel { gap: 6px; }
+  .bp-duo { height: 92px; }
+  .bp-trainer { width: 98px; height: 98px; }
+  .bp-buddy { width: 84px; height: 84px; }
+}
 .br-list { list-style: none; margin: 0; padding: 0; border: 2px solid #E3E9F4; border-radius: 14px; overflow: hidden; }
 .br-row { display: grid; grid-template-columns: 22px 50px minmax(0, 1fr) 46px 64px; align-items: center; gap: 6px; padding: 4px 10px; font-size: 15px; line-height: 1.3; color: var(--ink-2); font-variant-numeric: tabular-nums; }
 .br-row + .br-row { border-top: 1.5px solid #EEF2F9; }

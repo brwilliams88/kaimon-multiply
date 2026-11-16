@@ -502,7 +502,7 @@ test('boltRuns shows a best from an old save (no list yet) on its own', () => {
   const p = fresh(); p.bolt = { best: 15, runs: 4, last: 50 };
   assert.deepEqual(bolt.boltRuns(p), [{ s: 15, t: 50 }]);
   apply(p, ev('bolt', { sc: 8, n: 9, st: 5 }, 60));
-  assert.deepEqual(bolt.boltRuns(p).map((r) => r.s), [15, 8]);
+  assert.deepEqual(bolt.boltRuns(p), [{ s: 15, t: 50 }, { s: 8, n: 9, st: 5, t: 60 }]); // the old best keeps its day
   assert.deepEqual(bolt.boltRuns(fresh()), []);
 });
 
