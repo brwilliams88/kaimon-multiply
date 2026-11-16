@@ -13,7 +13,11 @@ const walk = (p) => {
   if (st.isDirectory()) readdirSync(p).forEach((f) => walk(join(p, f)));
   else if (!/\.(md|txt)$/.test(p) && !p.endsWith('.DS_Store')) files.push(relative(root, p));
 };
+// Pictures for emails (assets/email) are only loaded by email apps, never by the
+// game, so they stay out of the offline cache.
+const forApp = (f) => !f.startsWith('assets/email/');
 include.forEach((f) => walk(join(root, f)));
+files.splice(0, files.length, ...files.filter(forApp));
 files.sort();
 
 const version = /VERSION = '([^']+)'/.exec(readFileSync(join(root, 'js/data/changelog.js'), 'utf8'))[1];
