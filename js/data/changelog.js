@@ -1,7 +1,17 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.5.15';
+export const VERSION = '0.5.16';
 
 export const CHANGELOG = [
+  {
+    version: '0.5.16',
+    date: '2026-11-15',
+    title: "Weekly report emails",
+    items: [
+      "New in Grown-ups: a Weekly report for each trainer, with minutes played, cards, right answers, each times table, strongest and trickiest facts, medals and catches, compared with the week before.",
+      "Grown-ups can have it emailed every Monday to up to 5 people. Each person gets one \"Say yes\" email first, and every report has a \"Stop these emails\" link. Emails come from the Kaimon Gmail and cost nothing to send.",
+      "Reports and invites made with no internet wait on the device and send when it is back online.",
+    ],
+  },
   {
     version: '0.5.15',
     date: '2026-11-15',

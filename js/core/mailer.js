@@ -7,7 +7,7 @@ import { weeklyReport, lastFullWeek, mondayOf } from './report.js';
 
 // The web app URL from Deploy > Manage deployments in Apps Script. Empty means
 // the sender is not set up yet: Grown-ups then offers "Copy report" instead.
-export const REPORT_ENDPOINT = '';
+export const REPORT_ENDPOINT = 'https://script.google.com/macros/s/AKfycbwKPSCF8wmDgn9KPxz0-YkBUCEYjqv3PjD_ynytTcLiyS0colGFhqKhLJxZ7IUuxou5bA/exec';
 export const MAX_RECIPIENTS = 5;
 export const senderReady = () => !!REPORT_ENDPOINT;
 

@@ -2,6 +2,12 @@
 
 All notable changes. Versioning: `0.MINOR.0` marks a roadmap phase, `0.x.PATCH` is any shipped change a player or parent can notice, and `1.0.0` is the public launch. See "Versioning" in CLAUDE.md. The in-app version history (Grown-ups > What's new) reads from `js/data/changelog.js`; keep both in sync. Each release is tagged in git as `vX.Y.Z`.
 
+## v0.5.16 (2026-11-15) Weekly report emails
+
+- New in Grown-ups: a Weekly report for each trainer, with minutes played, cards, right answers, each times table, strongest and trickiest facts, medals and catches, compared with the week before.
+- Grown-ups can have it emailed every Monday to up to 5 people. Each person gets one "Say yes" email first, and every report has a "Stop these emails" link. Emails come from the Kaimon Gmail and cost nothing to send.
+- Reports and invites made with no internet wait on the device and send when it is back online.
+
 ## v0.5.15 (2026-11-15) Family sync for every family
 
 - Family sync now works for any family, not just ours. A grown-up turns it on in Grown-ups with their email and a code, then uses the same email on each device (phone, iPad, Chromebook) to keep progress in step. Each family only ever sees its own trainers.

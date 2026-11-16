@@ -65,7 +65,7 @@ function doGet(e) {
       : { title: 'This link has run out', body: 'Ask the grown-up who added you to tap Resend in Kaimon\u2019s Grown-ups area.' });
   }
   if (q.a === 'stop' && q.e && q.p && q.s) {
-    return page_({ title: 'Stop weekly reports?', body: 'You won\u2019t get Kaimon weekly reports for this trainer anymore.', button: 'Stop these emails', call: 'stopReports', arg: [q.e, q.p, q.s].join('\n'), done: 'Done. No more weekly reports will come for this trainer.' });
+    return page_({ title: 'Stop weekly reports?', body: 'You won\u2019t get Kaimon Multiply weekly reports for this trainer anymore.', button: 'Stop these emails', call: 'stopReports', arg: [q.e, q.p, q.s].join('\n'), done: 'Done. No more weekly reports will come for this trainer.' });
   }
   return page_({ title: 'Kaimon Multiply', body: 'Times tables practice with Kaimon. <a href="' + APP_URL + '">Open the game</a>.' });
 }
@@ -132,7 +132,7 @@ function feedback_(b) {
   if (!ok) return { ok: false, error: 'daily-limit' };
   var lines = [kinds[kind] + (stars ? ' (' + stars + ' of 5 stars)' : ''), '', text || '(no words, just stars)', '',
     '---', 'Version ' + version + (place ? ', from ' + place : ''), from ? 'They\u2019d like a reply: ' + from : 'No reply address given.'];
-  var msg = { to: to, name: 'Kaimon feedback', subject: 'Kaimon: ' + kinds[kind] + (stars ? ' ' + new Array(stars + 1).join('\u2605') : ''), body: lines.join('\n') };
+  var msg = { to: to, name: 'Kaimon Multiply feedback', subject: 'Kaimon Multiply: ' + kinds[kind] + (stars ? ' ' + new Array(stars + 1).join('\u2605') : ''), body: lines.join('\n') };
   if (from) msg.replyTo = from;
   MailApp.sendEmail(msg);
   return { ok: true };
