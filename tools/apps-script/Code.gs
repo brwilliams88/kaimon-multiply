@@ -481,7 +481,7 @@ function renderReportEmail_(d, opt) {
   // Header art and title
   rows.push('<tr><td style="padding:0;">'
     + '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate;background:#FFFFFF;border:3px solid ' + INK + ';border-radius:24px;overflow:hidden;">'
-    + '<tr><td style="padding:0;line-height:0;font-size:0;"><a href="' + app + '"><img src="' + img('header.jpg') + '" width="594" alt="Kaimon Multiply" style="display:block;width:100%;max-width:594px;height:auto;border:0;border-radius:21px 21px 0 0;"></a></td></tr>'
+    + '<tr><td style="padding:0;line-height:0;font-size:0;"><a href="' + app + '"><img src="' + img((!d.cards && !d.minutes) ? 'header-quiet.jpg' : 'header-report.jpg') + '" width="594" alt="Kaimon Multiply" style="display:block;width:100%;max-width:594px;height:auto;border:0;border-radius:21px 21px 0 0;"></a></td></tr>'
     + '<tr><td class="kp" style="padding:18px 22px 20px 22px;border-top:3px solid ' + INK + ';">'
     + '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>'
     + '<td width="104" valign="middle" style="padding:0 16px 0 0;"><div style="width:96px;height:96px;border:3px solid ' + INK + ';border-radius:50%;background:' + SKY + ';overflow:hidden;text-align:center;"><img src="' + (opt.image || img('trainer-kai.png')) + '" width="96" height="96" alt="" style="display:block;width:96px;height:96px;border:0;"></div></td>'
@@ -609,7 +609,7 @@ function renderInviteEmail_(trainer, url, opt) {
   var name = esc_(trainer);
   var rows = '<tr><td style="padding:0;">'
     + '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate;background:#FFFFFF;border:3px solid ' + INK + ';border-radius:24px;">'
-    + '<tr><td style="padding:0;line-height:0;font-size:0;"><img src="' + base + 'header.jpg" width="594" alt="Kaimon Multiply" style="display:block;width:100%;max-width:594px;height:auto;border:0;border-radius:21px 21px 0 0;"></td></tr>'
+    + '<tr><td style="padding:0;line-height:0;font-size:0;"><img src="' + base + 'header-invite.jpg" width="594" alt="Kaimon Multiply" style="display:block;width:100%;max-width:594px;height:auto;border:0;border-radius:21px 21px 0 0;"></td></tr>'
     + '<tr><td class="kp" style="padding:24px 26px 26px 26px;border-top:3px solid ' + INK + ';font-family:' + FONT + ';color:' + INK + ';">'
     + '<div style="font-size:26px;font-weight:700;line-height:32px;">Weekly reports for ' + name + '?</div>'
     + '<div style="font-size:17px;line-height:25px;padding-top:10px;">A grown-up wants to email you <b>' + esc_(possessive_(trainer)) + '</b> times tables report from Kaimon Multiply each Sunday morning: minutes played, cards answered, tricky facts and new Kaimon.</div>'
@@ -661,7 +661,7 @@ function page_(o) {
   var html = '<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet"></head>'
     + '<body style="margin:0;background:' + SKY + ';font-family:Fredoka,Arial,sans-serif;color:' + INK + ';">'
     + '<div style="max-width:520px;margin:24px auto;padding:0 12px;"><div style="background:#fff;border:3px solid ' + INK + ';border-radius:24px;overflow:hidden;">'
-    + '<img src="' + ASSET_BASE + 'header.jpg" alt="Kaimon Multiply" style="display:block;width:100%;height:auto;border-bottom:3px solid ' + INK + ';">'
+    + '<img src="' + ASSET_BASE + 'header-invite.jpg" alt="Kaimon Multiply" style="display:block;width:100%;height:auto;border-bottom:3px solid ' + INK + ';">'
     + '<div style="padding:22px 24px 26px;"><h1 style="margin:0;font-size:26px;">' + esc_(o.title) + '</h1><p style="font-size:17px;line-height:25px;">' + o.body + '</p>' + btn + '</div></div></div></body></html>';
   return HtmlService.createHtmlOutput(html).setTitle('Kaimon Multiply').addMetaTag('viewport', 'width=device-width, initial-scale=1');
 }
