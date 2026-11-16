@@ -3,9 +3,9 @@
 // from progress (so answers given before the Wardrobe existed count), and each
 // one is also recorded once as a 'got' event, which syncs to family devices so a
 // celebration never shows twice. Kaimon core: no subject logic here.
-import { UNLOCKS, STARTER_COLORS, COLOR_NAME } from '../data/wardrobe.js';
+import { UNLOCKS, STARTER_COLORS, COLOR_NAME, HAT_IDS } from '../data/wardrobe.js';
 import { countAtLeast, LEVEL_LABEL } from './facts.js';
-import { tableMedals } from './extras.js';
+import { tableMedals, papaWon } from './extras.js';
 import { gotWear } from './actions.js';
 
 export const byId = (id) => UNLOCKS.find((u) => u.id === id) || null;
@@ -19,6 +19,7 @@ export function progress(p, item) {
   if (n.right != null) { need = n.right; have = p.stats?.correct || 0; }
   else if (n.facts) { need = n.n; have = countAtLeast(p, n.facts); }
   else if (n.tables != null) { need = n.tables; have = tableMedals(p); }
+  else if (n.papa) { need = 1; have = papaWon(p) ? 1 : 0; }
   return { have: Math.min(have, need), need };
 }
 const done = (p, item) => { const g = progress(p, item); return g.have >= g.need; };
@@ -32,6 +33,9 @@ export function owns(p, id) {
   return !!it && it.ready !== false && done(p, it);
 }
 export const ownsColor = (p, c) => !!COLOR_NAME[c] && owns(p, c);
+export const ownsHat = (p, h) => HAT_IDS.includes(h) && owns(p, h);
+// The kid line for how an item was earned: "You got 750 right answers", "You beat Boss Papa".
+export const gotText = (item) => (item.need?.papa ? 'You beat Boss Papa' : howTo(item).replace(/^Get/, 'You got'));
 
 // Kid lines for a rule. "Get 100 right answers" and "40 more right answers".
 export function howTo(item) {
@@ -39,6 +43,7 @@ export function howTo(item) {
   if (n.right != null) return `Get ${n.right.toLocaleString()} right answers`;
   if (n.facts) return `Get ${n.n} facts to ${LEVEL_LABEL[n.facts]}`;
   if (n.tables != null) return n.tables === 1 ? 'Get a medal on any times table' : `Get medals on ${n.tables} times tables`;
+  if (n.papa) return 'Beat Boss Papa';
   return 'Keep answering';
 }
 export function moreText(p, item) {
@@ -47,6 +52,7 @@ export function moreText(p, item) {
   if (n.right != null) return `${left.toLocaleString()} more right answer${left === 1 ? '' : 's'}`;
   if (n.facts) return `${left} more fact${left === 1 ? '' : 's'} to ${LEVEL_LABEL[n.facts]}`;
   if (n.tables != null) return `${left} more times table medal${left === 1 ? '' : 's'}`;
+  if (n.papa) return 'Beat Boss Papa';
   return 'Keep answering';
 }
 

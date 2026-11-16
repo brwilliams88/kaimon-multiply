@@ -9,8 +9,9 @@ import { sheet, wait, reducedMotion, esc } from './dom.js';
 import { trainerImg, JACKETS } from './avatars.js';
 import { save } from '../core/store.js';
 import { syncNow } from '../core/sync.js';
-import { howTo } from '../core/wardrobe.js';
-import { lookOf, isKai, miniLicense, markSeen, wearColor } from './wardrobe.js';
+import { gotText } from '../core/wardrobe.js';
+import { HAT_BLURB } from '../data/wardrobe.js';
+import { lookOf, isKai, miniLicense, markSeen, wearColor, wearHat, itemDot } from './wardrobe.js';
 
 // One fx picture, always decorative.
 export const fxImg = (name, cls = '') => `<img class="${cls}" src="${fxSrc(name)}" alt="" aria-hidden="true" draggable="false" decoding="async">`;
@@ -71,29 +72,40 @@ export async function legendThrow(arriveEl) {
 
 // Something new for the Wardrobe, earned by answering. A card in the page (never a
 // pop-up, so it never stops a kid mid-tap): the trainer's photo hops into the new
-// jacket color (Kai's License changes color instead), with a burst turning behind.
-// Several at once (like a long-time player's first visit after the Wardrobe
-// arrived): the new colors pop in one by one. Reduced motion: the end picture.
+// jacket color or hat (Kai's License changes color instead), with a burst turning
+// behind. Several at once (like a long-time player's first visit after the Wardrobe
+// arrived): the new things pop in one by one. Reduced motion: the end picture.
 const listOf = (names) => (names.length > 1 ? `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}` : names[0]);
 export function unlockCardHTML(p, items, { close = false, cls = '' } = {}) {
   const L = lookOf(p), kai = isKai(L), one = items.length === 1, it = items[0];
-  let art, kicker, title, text, btn;
-  if (one) {
+  let art, kicker, title, text, btn, lic = false;
+  if (one && it.kind === 'hat') {
+    const maker = L.char === 'm';
+    art = maker ? `<span class="wn-face">${itemDot(L, it, 'wn-hatdot', false)}</span>`
+      : `<span class="wn-face">${poseSwap(trainerImg(L, 'face'), trainerImg({ ...L, hat: it.id }, 'face'), 'wn-swap')}</span>`;
+    kicker = 'New hat!';
+    title = `The ${esc(it.name)} is yours!`;
+    text = `${esc(gotText(it))}. ${esc(HAT_BLURB[it.id] || '')}`;
+    btn = maker ? '<button class="btn-chunky btn-primary wn-btn" data-wn-open>Open Wardrobe</button>'
+      : `<button class="btn-chunky btn-primary wn-btn" data-wn-hat="${it.id}">Wear it!</button>`;
+  } else if (one) {
     const after = kai ? { ...L, card: it.id } : { ...L, color: it.id };
+    lic = kai;
     art = kai ? poseSwap(miniLicense(p, L), miniLicense(p, after), 'wn-swap')
       : `<span class="wn-face">${poseSwap(trainerImg(L, 'face'), trainerImg(after, 'face'), 'wn-swap')}</span>`;
     kicker = kai ? 'New License color!' : 'New jacket color!';
     title = `${esc(it.name)} is yours!`;
-    text = `${esc(howTo(it).replace(/^Get/, 'You got'))}.${kai ? ' Kai keeps his red jacket, so it goes on your License.' : ''}`;
+    text = `${esc(gotText(it))}.${kai ? ' Kai keeps his red jacket, so it goes on your License.' : ''}`;
     btn = `<button class="btn-chunky btn-primary wn-btn" data-wn-wear="${it.id}">Wear it!</button>`;
   } else {
-    art = `<span class="wn-dots">${items.map((x, i) => `<i style="--c:${JACKETS[x.id]};--i:${i}"></i>`).join('')}</span>`;
+    const hats = items.filter((x) => x.kind === 'hat').length;
+    art = `<span class="wn-dots">${items.map((x, i) => (x.kind === 'hat' ? itemDot(L, x, 'wn-hatdot', false).replace('class="wd-dot', `style="--i:${i}" class="wd-dot`) : `<i style="--c:${JACKETS[x.id]};--i:${i}"></i>`)).join('')}</span>`;
     kicker = 'Your Wardrobe is open!';
-    title = `${items.length} new colors!`;
-    text = `Your right answers earned ${esc(listOf(items.map((x) => x.name)))}.`;
+    title = !hats ? `${items.length} new colors!` : hats === items.length ? `${items.length} new hats!` : `${items.length} new things to wear!`;
+    text = `Your right answers earned ${esc(listOf(items.map((x) => (x.kind === 'hat' ? `the ${x.name}` : x.name))))}.`;
     btn = '<button class="btn-chunky btn-primary wn-btn" data-wn-open>Open Wardrobe</button>';
   }
-  return `<div class="res-card wd-new${kai && one ? ' wn-card' : ''}${one ? '' : ' wn-many'} ${cls}" role="status">
+  return `<div class="res-card wd-new${lic ? ' wn-card' : ''}${one ? '' : ' wn-many'} ${cls}" role="status">
     <span class="wn-art" aria-hidden="true">${fxImg('badge-burst', 'wn-burst')}${art}</span>
     <span class="wn-text"><em>${kicker}</em><strong>${title}</strong><small>${text}</small></span>
     <span class="wn-act">${btn}</span>
@@ -108,12 +120,14 @@ export function wireUnlockCard(card, p, items, { onWear, onOpen, onHide } = {}) 
   save(); syncNow();
   if (!card) return;
   card.addEventListener('click', (e) => {
+    const h = e.target.closest('[data-wn-hat]')?.dataset.wnHat;
     const w = e.target.closest('[data-wn-wear]')?.dataset.wnWear;
-    if (w) {
-      wearColor(p, w); sfx.tap();
+    if (h || w) {
+      if (h) wearHat(p, h); else wearColor(p, w);
+      sfx.tap();
       const act = card.querySelector('.wn-act');
       if (act) act.innerHTML = '<span class="wn-on">Wearing it!</span>';
-      onWear?.(w);
+      onWear?.(h || w);
       return;
     }
     if (e.target.closest('[data-wn-open]')) { sfx.tap(); onOpen?.(); return; }

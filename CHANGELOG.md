@@ -2,6 +2,16 @@
 
 All notable changes. Versioning: `0.MINOR.0` marks a roadmap phase, `0.x.PATCH` is any shipped change a player or parent can notice, and `1.0.0` is the public launch. See "Versioning" in CLAUDE.md. The in-app version history (Grown-ups > What's new) reads from `js/data/changelog.js`; keep both in sync. Each release is tagged in git as `vX.Y.Z`.
 
+## v1.0.4 (2026-11-16) Morning polish
+
+- Long pop-ups like the Menu now show a "More below" hint, so you know to scroll.
+- Send feedback now asks for what you don't like too. Telling us what you don't like helps the most!
+- Boss Papa's picture on the Papa's Gym tile is centered, with his whole P hat in the circle.
+- "Play on another device" in the Menu has a new, bigger icon that matches the others.
+- The Wardrobe's License preview shows your Kaidex count, best streak, medals and patches, just like your real Trainer License.
+- Easier taps: the Grown-ups times table grid, the "Family device? Sign in" link and the Kaidex page dots.
+- The Mega "M" badge in the Kaidex is easier to read.
+
 ## v1.0.3 (2026-11-16) Maker tab
 
 - Grown-ups has a new Maker tab, only for the game's maker. It shows players, minutes, rounds, home screen installs, ratings, where new players came from and their devices, with a button to open the full dashboard.

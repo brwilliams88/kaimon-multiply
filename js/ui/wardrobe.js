@@ -1,7 +1,7 @@
-// The Wardrobe: colors for your jacket and your Trainer License, and hats (coming
-// soon). Everything in it is earned by answering. Kai always wears his red jacket,
-// so for Kai the colors go on his License.
-import { STARTER_COLORS, COLOR_ORDER, COLOR_NAME, CARD_DEFAULT } from '../data/wardrobe.js';
+// The Wardrobe: colors for your jacket and your Trainer License, and hats from the
+// game's world. Everything in it is earned by answering. Kai always wears his red
+// jacket, so for Kai the colors go on his License; Kai can wear every hat.
+import { STARTER_COLORS, COLOR_ORDER, COLOR_NAME, CARD_DEFAULT, HAT_IDS } from '../data/wardrobe.js';
 import { byId, owns, progress, howTo, moreText, nextUp, keepCurrent, fresh, markSeen, hatItems } from '../core/wardrobe.js';
 import { touch, save } from '../core/store.js';
 import { syncNow } from '../core/sync.js';
@@ -17,15 +17,17 @@ import { patchSVG } from './patchArt.js';
 export const LOCK = '<svg class="wd-lock" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="2.6" fill="currentColor"/><path d="M8.2 10.5 V8 a3.8 3.8 0 0 1 7.6 0 V10.5" fill="none" stroke="currentColor" stroke-width="2.6"/><circle cx="12" cy="15.2" r="1.7" fill="#fff"/></svg>';
 const CHECK = '<svg class="wd-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M5.5 12.5 L10 17 L18.5 7.5" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
-// Simple hat shapes for the "Coming soon" slots. Icons only: hats never get drawn
-// onto trainer art in code (real hat art is on the art list in docs/art-audit.md).
-const HAT_ICON = {
-  cap: '<path d="M10 33 C10 19 18 12 28 12 C38 12 44 19 44 30 L44 33 Z" /><path d="M42 33 L57 33 C57 37 53 39 48 39 L10 39 C8 39 8 33 10 33 Z" /><circle cx="28" cy="13" r="3"/>',
-  beanie: '<path d="M12 36 C12 21 19 13 30 13 C41 13 48 21 48 36 Z" /><rect x="9" y="34" width="42" height="10" rx="5"/><circle cx="30" cy="10" r="5"/>',
-  explorer: '<path d="M18 34 C18 22 22 15 30 15 C38 15 42 22 42 34 Z" /><path d="M6 37 C10 33 18 33 30 33 C42 33 50 33 54 37 C50 41 42 42 30 42 C18 42 10 41 6 37 Z" />',
-  crown: '<path d="M10 42 L8 18 L20 28 L30 12 L40 28 L52 18 L50 42 Z" /><rect x="10" y="40" width="40" height="7" rx="3"/>',
-};
-const hatSVG = (id) => `<svg class="wd-hat" viewBox="0 0 60 56" aria-hidden="true"><g fill="currentColor" stroke="currentColor" stroke-width="3" stroke-linejoin="round">${HAT_ICON[id] || HAT_ICON.cap}</g></svg>`;
+// Hats: a little photo of you wearing it. Make-your-own trainers have no hat art yet,
+// so their tiles show Kai wearing it.
+const hatLook = (L, hat) => (L.char === 'm' ? { char: 'kai', color: 'green', hat } : { ...L, hat });
+export const hatPic = (L, hat) => trainerImg(hat ? hatLook(L, hat) : { ...L, hat: undefined }, 'face');
+// A round chip for the next thing to earn: a color dot, or a hat photo with a lock.
+export function itemDot(L, it, cls = '', locked = true) {
+  const lk = locked ? ' locked' : '';
+  if (it.kind === 'hat') return `<span class="wd-dot hatdot${lk} ${cls}" aria-hidden="true">${hatPic(L, it.id)}${locked ? LOCK : ''}</span>`;
+  return `<span class="wd-dot${lk} ${cls}" style="--c:${JACKETS[it.id]}" aria-hidden="true">${locked ? LOCK : ''}</span>`;
+}
+export const HAT_NOTE = 'Your hat shows on Home and your License. In battles it waits in your bag.';
 
 const isKai = (L) => L.char === 'kai';
 export const lookOf = (p) => charLook(trainerLook(p));
@@ -59,17 +61,17 @@ export function wardrobeCardHTML(p) {
   wardrobeCheck(p);
   const L = lookOf(p);
   const next = nextUp(p);
-  const have = COLOR_ORDER.filter((c) => owns(p, c)).length;
+  const have = COLOR_ORDER.filter((c) => owns(p, c)).length, hats = HAT_IDS.filter((h) => owns(p, h)).length;
   const dots = COLOR_ORDER.map((c) => {
     const own = owns(p, c), on = isKai(L) ? L.card === c : L.color === c;
     return `<span class="wd-dot${own ? '' : ' locked'}${on ? ' on' : ''}" style="--c:${JACKETS[c]}" title="${COLOR_NAME[c]}${own ? '' : ': locked'}">${own ? '' : LOCK}</span>`;
   }).join('');
   const g = next && progress(p, next);
   return `<div class="tr-wardrobe">
-    <div class="wdc-head"><h2 class="ul-title">Wardrobe</h2><span class="wdc-count">${have} of ${COLOR_ORDER.length} colors</span></div>
+    <div class="wdc-head"><h2 class="ul-title">Wardrobe</h2><span class="wdc-count">${have} of ${COLOR_ORDER.length} colors, ${hats} of ${HAT_IDS.length} hats</span></div>
     <div class="wdc-dots" role="img" aria-label="${have} of ${COLOR_ORDER.length} colors unlocked">${dots}</div>
-    ${next ? `<div class="wdc-next"><span class="wd-dot locked big" style="--c:${JACKETS[next.id]}" aria-hidden="true">${LOCK}</span><div class="ul-txt"><strong>${esc(moreText(p, next))} to unlock ${esc(next.name)}</strong><span class="ul-bar" aria-hidden="true"><i style="width:${pct(g)}%"></i></span></div><span class="ul-n">${g.have.toLocaleString()}<small>/${g.need.toLocaleString()}</small></span></div>`
-      : `<p class="wdc-all">Every color is yours. Hats are coming soon!</p>`}
+    ${next ? `<div class="wdc-next">${itemDot(L, next, 'big')}<div class="ul-txt"><strong>${esc(moreText(p, next))} to unlock ${esc(next.name)}</strong><span class="ul-bar" aria-hidden="true"><i style="width:${pct(g)}%"></i></span></div><span class="ul-n">${g.have.toLocaleString()}<small>/${g.need.toLocaleString()}</small></span></div>`
+      : `<p class="wdc-all">Every color and every hat is yours. Wow!</p>`}
     <button class="btn-chunky wdc-open" data-wardrobe>Open Wardrobe</button>
   </div>`;
 }
@@ -89,20 +91,34 @@ function rainbowTile(on) {
   return `<button type="button" class="wd-tile rainbow${on ? ' on' : ''}" data-wc="${CARD_DEFAULT}" data-what="card" aria-pressed="${on}" aria-label="Rainbow${on ? ', wearing now' : ''}">
     <span class="wd-sw">${on ? CHECK : ''}</span><span class="wd-rb"><span class="wd-name">Rainbow</span><span class="wd-sub">The first License color. Free</span></span></button>`;
 }
-function hatTile(it) {
-  return `<div class="wd-tile hat locked soon" role="listitem" aria-label="${esc(it.name)}, coming soon">
-    <span class="wd-sw">${hatSVG(it.id)}</span><span class="wd-name">${esc(it.name)}</span><span class="wd-sub">Coming soon</span></div>`;
+function hatTile(p, L, it, on) {
+  const own = owns(p, it.id), g = own ? null : progress(p, it);
+  const label = own ? `${it.name}${on ? ', wearing now' : ''}` : `${it.name}, locked. ${howTo(it)} to unlock it.`;
+  const mark = own ? (on ? `<span class="wd-hatck">${CHECK}</span>` : '') : `<span class="wd-hatlk">${LOCK}</span>`;
+  return `<button type="button" class="wd-tile hat${on ? ' on' : ''}${own ? '' : ' locked'}" data-wh="${it.id}" aria-pressed="${on}" ${own ? '' : 'aria-disabled="true"'} aria-label="${esc(label)}">
+    <span class="wd-hatpic">${hatPic(L, it.id)}${mark}</span>
+    <span class="wd-name">${esc(it.name)}</span>
+    ${own ? `<span class="wd-sub">${on ? 'Wearing it' : 'Earned'}</span>`
+      : `<span class="wd-sub">${esc(howTo(it).replace(/^Get /, ''))}</span>${g.need > 1 ? `<span class="wd-bar" aria-hidden="true"><i style="width:${pct(g)}%"></i></span>` : ''}`}
+  </button>`;
+}
+function noHatTile(L) {
+  const on = !L.hat;
+  return `<button type="button" class="wd-tile hat${on ? ' on' : ''}" data-wh="none" aria-pressed="${on}" aria-label="No hat${on ? ', wearing now' : ''}">
+    <span class="wd-hatpic">${hatPic(L, '')}${on ? `<span class="wd-hatck">${CHECK}</span>` : ''}</span>
+    <span class="wd-name">No hat</span><span class="wd-sub">${on ? 'Wearing it' : 'Free'}</span></button>`;
 }
 
 function stageHTML(p, L, tab) {
   if (tab === 'card') return `<div class="wd-stage card">${miniLicense(p, L, 'wd-lic')}</div>`;
-  return `<div class="wd-stage"><span class="wd-disc" aria-hidden="true"></span><span class="wd-me">${trainerImg(L, 'base')}</span></div>`;
+  return `<div class="wd-stage"><span class="wd-disc" aria-hidden="true"></span><span class="wd-me">${trainerImg(L, 'stand')}</span></div>`;
 }
 
 function panelHTML(p, L, tab) {
   if (tab === 'hats') {
-    return `<p class="wd-note">Hats are on the way! Every right answer you give now will count toward them.</p>
-      <div class="wd-grid hats" role="list">${hatItems().map(hatTile).join('')}</div>`;
+    const note = L.char === 'm' ? 'Hats fit Kai and the ready-made trainers. Switch to one in Change look to wear a hat!' : HAT_NOTE;
+    return `<p class="wd-note">${note}</p>
+      <div class="wd-grid hats">${L.char === 'm' ? '' : noHatTile(L)}${hatItems().map((it) => hatTile(p, L, it, L.hat === it.id)).join('')}</div>`;
   }
   if (tab === 'card') {
     return `<p class="wd-note">Your Trainer License can wear your colors too.</p>
@@ -117,9 +133,9 @@ function panelHTML(p, L, tab) {
 
 function nextHTML(p) {
   const next = nextUp(p);
-  if (!next) return '<p class="wd-next done">You have every color. Wow!</p>';
+  if (!next) return '<p class="wd-next done">You have every color and every hat. Wow!</p>';
   const g = progress(p, next);
-  return `<p class="wd-next"><span class="wd-dot locked" style="--c:${JACKETS[next.id]}" aria-hidden="true">${LOCK}</span><span><b>${esc(moreText(p, next))}</b> to unlock ${esc(next.name)}</span><span class="wd-next-n">${g.have.toLocaleString()}/${g.need.toLocaleString()}</span></p>`;
+  return `<p class="wd-next">${itemDot(lookOf(p), next)}<span><b>${esc(moreText(p, next))}</b> to unlock ${esc(next.name)}</span><span class="wd-next-n">${g.have.toLocaleString()}/${g.need.toLocaleString()}</span></p>`;
 }
 
 function sheetHTML(p, L, tab) {
@@ -151,6 +167,18 @@ export function openWardrobe(p, { tab, onChange } = {}) {
     const t = e.target.closest('button');
     if (!t) return;
     if (t.dataset.wtab) { tab = t.dataset.wtab; sfx.tap(); return redraw(); }
+    const h = t.dataset.wh;
+    if (h) {
+      sfx.tap();
+      if (h !== 'none' && !owns(p, h)) { const it = byId(h); toast(`${moreText(p, it)} to unlock the ${it.name}!`, 2200); return; }
+      if (L.char === 'm') { toast('Hats fit Kai and the ready-made trainers.', 2200); return; }
+      const next = { ...L };
+      if (h === 'none') delete next.hat; else next.hat = h;
+      if (next.hat === L.hat) return;
+      L = next; p.look = L; p.lookAt = Date.now();
+      touch(p); save(); changed = true;
+      return redraw();
+    }
     const c = t.dataset.wc;
     if (!c) return;
     if (c !== CARD_DEFAULT && !owns(p, c)) {
@@ -173,6 +201,14 @@ export function openWardrobe(p, { tab, onChange } = {}) {
   return sh;
 }
 
+// Put a new hat on (drawn trainers only).
+export function wearHat(p, h) {
+  const L = lookOf(p);
+  if (L.char === 'm') return false;
+  p.look = { ...L, hat: h }; p.lookAt = Date.now();
+  touch(p); save(); syncNow();
+  return true;
+}
 // Put a new color on: the jacket, or the License for Kai.
 export function wearColor(p, c) {
   const L = lookOf(p);

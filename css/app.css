@@ -3657,8 +3657,10 @@ button.buddy-art:active { transform: translateY(2px); }
 .wd { display: grid; grid-template-columns: 1fr; gap: 12px; }
 .wd-stage { position: relative; display: grid; place-items: center; height: 196px; border: 2.5px solid var(--ink); border-radius: 20px; overflow: hidden; background: linear-gradient(180deg, #DCEBFF, #F4F9FF); }
 .wd-disc { position: absolute; left: 50%; bottom: 10px; width: 64%; aspect-ratio: 3.4; translate: -50% 0; border-radius: 50%; background: radial-gradient(closest-side, rgba(20, 33, 61, .16), rgba(20, 33, 61, 0)); }
-.wd-me { position: relative; height: 100%; aspect-ratio: 1; }
-.wd-me .pl-img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.wd-me { position: relative; height: 100%; aspect-ratio: 512 / 576; }
+/* Room on top for a hat: hat art is 512 x 576 and lines up with base.webp at the bottom. */
+.wd-me .pl-img { position: absolute; left: 0; bottom: 0; width: 100%; height: auto; aspect-ratio: 1; object-fit: contain; display: block; }
+.wd-me .pl-img.tall { aspect-ratio: 512 / 576; }
 .wd-stage.card { padding: 18px 26px 24px; }
 .wd-stage .wd-lic { width: min(100%, 230px); }
 .wd-side { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
@@ -3689,9 +3691,21 @@ button.buddy-art:active { transform: translateY(2px); }
 .wd-tile.locked { background: #F6F8FB; border-color: rgba(20, 33, 61, .6); box-shadow: 0 3px 0 rgba(20, 33, 61, .45); }
 .wd-tile.locked .wd-sw { background: color-mix(in srgb, var(--c, #B9C3D3) 30%, #EEF2F8); border-color: rgba(20, 33, 61, .55); box-shadow: none; }
 .wd-tile.locked .wd-lock { width: 22px; height: 22px; color: var(--ink); opacity: .65; }
-.wd-tile.hat .wd-sw { background: #EEF2F8; }
-.wd-hat { width: 32px; height: 30px; color: #9AA6BC; }
-.wd-tile.soon .wd-sub { color: #1E6FD9; }
+.wd-hatpic { position: relative; flex: 0 0 auto; width: 64px; height: 64px; margin-bottom: 4px; border-radius: 50%; border: 2.5px solid var(--ink); overflow: hidden; background: #DCEBFF; }
+.wd-hatpic .pl-img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.wd-tile.hat.locked .wd-hatpic { border-color: rgba(20, 33, 61, .55); }
+.wd-tile.hat.locked .wd-hatpic .pl-img { filter: grayscale(.6); opacity: .5; }
+.wd-hatlk { position: absolute; inset: 0; display: grid; place-items: center; }
+.wd-hatlk .wd-lock { width: 26px; height: 26px; color: var(--ink); opacity: .8; }
+.wd-hatck { position: absolute; right: 3px; bottom: 3px; width: 24px; height: 24px; border-radius: 50%; background: #22A35A; border: 2px solid var(--ink); display: grid; place-items: center; }
+.wd-hatck .wd-check { width: 15px; height: 15px; }
+.wd-dot.hatdot { background: #DCEBFF; overflow: hidden; }
+.wd-dot.hatdot .pl-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+.wd-dot.hatdot.locked { background: #EEF2F8; }
+.wd-dot.hatdot.locked .pl-img { filter: grayscale(.6); opacity: .5; }
+.wd-dot.hatdot .wd-lock { position: relative; }
+.wn-dots .wd-dot.hatdot { width: 24px; height: 24px; animation: umPop .42s cubic-bezier(.2, 1.6, .4, 1) both; animation-delay: calc(.3s + var(--i) * .12s); }
+.wn-face .wd-dot.wn-hatdot { width: 100%; height: 100%; border: 0; box-shadow: none; }
 .wd-kai { display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; padding: 14px 12px 16px; border-radius: 18px; background: #FFF6D6; border: 2px solid #F2D27A; }
 .wd-kai p { margin: 0; font-size: 16px; font-weight: 600; }
 @media (min-width: 700px) {
@@ -3739,7 +3753,7 @@ button.buddy-art:active { transform: translateY(2px); }
 .wd-new:has(.wn-x) .wn-text { padding-right: 34px; }
 @media (prefers-reduced-motion: reduce) {
   .wn-burst { animation: none; opacity: .85; }
-  .wn-dots i, .wd-new { animation: none; }
+  .wn-dots i, .wn-dots .wd-dot, .wd-new { animation: none; }
 }
 .tc-note.tc-unlock { margin-top: 10px; font-size: 14px; font-weight: 600; }
 
