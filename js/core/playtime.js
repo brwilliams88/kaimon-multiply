@@ -12,6 +12,10 @@ export function usedToday(p) {
   return r ? Math.max(r.open, r.ms) / 60000 : 0;
 }
 
+// Cards answered today, and a small daily goal: two practice rounds.
+export const cardsToday = (p) => p.play[today()]?.a || 0;
+export const dailyGoal = (p) => Math.max(10, 2 * (p.settings.sessionLength || 15));
+
 export function limitReached(p) {
   const lim = p.settings.dailyLimit || 0;
   if (!lim) return false;

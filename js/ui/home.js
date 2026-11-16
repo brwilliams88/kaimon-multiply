@@ -1,13 +1,14 @@
 import { active } from '../core/store.js';
 import { SPECIES, REGIONS, TYPES } from '../data/creatures.js';
 import { creatureArt } from '../core/art.js';
-import { tableTier, tableProgress, LEVEL_LABEL } from '../core/facts.js';
+import { tableTier, tableProgress, LEVEL_LABEL, parseFact } from '../core/facts.js';
 import { partnerOf, dexCounts, trainerTitle } from '../core/game.js';
-import { bossUnlocked, quizReady, quizNextIn } from '../core/battle.js';
-import { limitReached } from '../core/playtime.js';
+import { bossUnlocked, quizReady, quizNextIn, champReady } from '../core/battle.js';
+import { limitReached, cardsToday, dailyGoal } from '../core/playtime.js';
+import { nextUp } from '../core/nextup.js';
 import { VERSION } from '../data/changelog.js';
 import { trainerArt } from './trainerArt.js';
-import { ballImg, itemImg, sceneSrc, cssUrl, uiImg, trainerFace, trainerBody, LOGO } from '../core/assets.js';
+import { ballImg, itemImg, sceneSrc, gymSrc, gymImg, badgeImg, cssUrl, uiImg, trainerFace, trainerBody, trainerKey, CARD_BACK, LOGO } from '../core/assets.js';
 import { kairoEvolves } from '../core/game.js';
 import { evolveKairo, ball as giveBall, caught as catchIt } from '../core/actions.js';
 import { save, touch, setSetting } from '../core/store.js';
@@ -21,12 +22,110 @@ export const medal = (tier) => tier
   ? `<span class="medal medal-${tier}" title="${LEVEL_LABEL[tier]} medal">${itemImg('medal-' + tier)}</span>`
   : '';
 
+const ARROW = '<svg class="nu-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12 H18 M13 6.5 L18.5 12 L13 17.5" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+// A region's star Kaimon for the Next up card: the most evolved one this trainer
+// has caught there. None caught yet: Teacher K points the way.
+function regionStar(p, table) {
+  const caught = SPECIES.filter((s) => s.region === table && p.dex[s.id]?.caught).sort((a, b) => b.stage - a.stage);
+  return caught.length ? `<span class="nu-mon">${creatureArt(caught[0])}</span>` : trainerBody('teacher-k', 'point', 'nu-trainer');
+}
+
+// Next up: one big card that says exactly what to do now. One tap starts it.
+function nextCard(p, nu) {
+  const R = nu.table ? REGIONS.find((r) => r.table === nu.table) : null;
+  const T = R ? TYPES[R.type] : null;
+  const prog = (n, lvl, frac) => `<span class="nu-prog"><span class="nu-prog-top">${medal(lvl)}<span><b>${n} of 10</b> facts at ${LEVEL_LABEL[lvl]}</span></span><span class="bar"><span style="width:${Math.round(frac * 100)}%"></span></span></span>`;
+  let c;
+  switch (nu.kind) {
+    case 'rest':
+      c = { kicker: 'All done today', title: 'Kaimon nap time', sub: 'Your Kaimon are napping so they get stronger. Come back tomorrow!', cta: 'See you tomorrow', bg: sceneSrc('training'), who: uiImg('kaizo-sleep', 'nu-kaizo') };
+      break;
+    case 'gym':
+      c = { kicker: 'Gym ready!', title: `Battle ${esc(R.champion)}`, sub: `Your ${R.table}s have a medal. Win the ${esc(R.badge)}!`, cta: 'Battle!', bg: gymSrc(R.table), who: trainerBody(trainerKey({ kind: 'champ', table: R.table }), 'talking', 'nu-trainer'),
+        extra: `<span class="nu-prize">${badgeImg(R.table)}<span>${esc(R.badge)}</span></span>` };
+      break;
+    case 'boss':
+      c = { kicker: 'The final gym', title: 'Battle Boss Papa', sub: "You won every badge. Papa's Gym is open!", cta: 'Battle!', bg: gymSrc('papa'), who: trainerBody('boss-papa', 'talking', 'nu-trainer') };
+      break;
+    case 'quiz':
+      c = { kicker: 'Pop Quiz', title: "Teacher K's Pop Quiz", sub: 'A quick battle with the facts that keep getting away. Win a Mega Ball!', cta: 'Start the quiz', bg: sceneSrc('training'), who: trainerBody('teacher-k', 'quiz', 'nu-trainer') };
+      break;
+    case 'tricky': {
+      const show = nu.facts.slice(0, 4);
+      c = { kicker: 'Fix it', title: 'Catch your tricky facts', sub: 'These got away this week. One round to catch them!', cta: 'Practice tricky facts', bg: sceneSrc('training'), who: uiImg('kaizo-search', 'nu-kaizo'),
+        extra: `<span class="nu-facts">${show.map((id) => { const [a, b] = parseFact(id); return `<span>${a} × ${b}</span>`; }).join('')}${nu.facts.length > show.length ? `<span class="more">+${nu.facts.length - show.length}</span>` : ''}</span>` };
+      break;
+    }
+    case 'region':
+      c = { kicker: nu.first ? 'Start here' : 'Keep exploring', title: `Explore ${esc(R.name)}`,
+        sub: nu.first ? `Your first region is the ${R.table}s. Answer cards to catch the Kaimon that live here.` : `Practice the ${R.table}s. Get every fact to Bronze to open the gym.`,
+        cta: `Play the ${R.table}s`, bg: sceneSrc(String(R.table)), who: nu.first ? trainerBody('teacher-k', 'point', 'nu-trainer') : regionStar(p, R.table), extra: nu.first ? '' : prog(nu.count, nu.next, nu.frac) };
+      break;
+    case 'shine':
+      c = { kicker: `Next medal: ${LEVEL_LABEL[nu.next]}`, title: `Make the ${R.table}s shine`, sub: `Fast right answers on different days earn ${LEVEL_LABEL[nu.next]}.`,
+        cta: `Play the ${R.table}s`, bg: sceneSrc(String(R.table)), who: regionStar(p, R.table), extra: prog(nu.count, nu.next, nu.frac) };
+      break;
+    default:
+      c = { kicker: 'Hundred Hero', title: 'Every fact is a Star!', sub: 'Keep them shining with a mixed round.', cta: 'Mixed practice', bg: sceneSrc('tower'), who: uiImg('kaizo-badge', 'nu-kaizo') };
+  }
+  const style = T ? `--rc:${T.color};--rl:${T.light};--ri:${T.ink}` : '';
+  return `<button class="nu nu-${nu.kind}" data-next="${nu.kind}"${nu.table ? ` data-table="${nu.table}"` : ''} style="${style}" aria-label="Next up: ${c.title.replace(/"/g, '&quot;')}. ${esc(c.cta)}">
+    <span class="nu-art" aria-hidden="true">
+      <img class="nu-bg" src="${c.bg}" alt="" draggable="false" decoding="async">
+      <span class="nu-who">${c.who}</span>
+      <span class="nu-kicker">${esc(c.kicker)}</span>
+    </span>
+    <span class="nu-body">
+      <span class="nu-title">${c.title}</span>
+      <span class="nu-sub">${c.sub}</span>
+      ${c.extra || ''}
+      <span class="nu-go">${esc(c.cta)}${ARROW}</span>
+    </span>
+  </button>`;
+}
+
+// Today ring: cards answered today toward a small daily goal (two rounds).
+function todayRing(p) {
+  const n = cardsToday(p), goal = dailyGoal(p), done = n >= goal;
+  const C = 2 * Math.PI * 26, f = Math.min(1, n / goal);
+  return `<div class="today${done ? ' done' : ''}" role="img" aria-label="Today: ${n} of ${goal} cards${done ? '. Goal done!' : ''}">
+    <span class="today-ring"><svg viewBox="0 0 64 64" aria-hidden="true"><circle class="today-out" cx="32" cy="32" r="26"/><circle class="today-track" cx="32" cy="32" r="26"/>${n ? `<circle class="today-fill" cx="32" cy="32" r="26" stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${(C * (1 - f)).toFixed(1)}" transform="rotate(-90 32 32)"/>` : ''}</svg>
+    <span class="today-num" aria-hidden="true">${done ? '<svg viewBox="0 0 24 24"><path d="M5 12.5 L10 17.5 L19 7" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/></svg>' : `${n}<small>/${goal}</small>`}</span></span>
+    <span class="today-label" aria-hidden="true">${done ? 'Goal done!' : 'Today'}</span>
+  </div>`;
+}
+
+function regionRow(p, r, nu) {
+  const t = TYPES[r.type];
+  const tier = tableTier(p, r.table);
+  const prog = tableProgress(p, r.table);
+  const enabled = p.settings.tables.includes(r.table);
+  const won = p.battles.champs[r.table];
+  const ready = !won && champReady(p, r.table);
+  const now = nu.table === r.table && ['region', 'shine', 'gym'].includes(nu.kind);
+  const gymState = won ? 'won' : ready ? 'ready' : 'later';
+  const gymLabel = `${r.champion}'s gym, ${r.table}s${won ? ', badge earned' : ready ? ', ready to battle' : ''}`;
+  return `<div class="rg-row${enabled ? '' : ' off'}${now ? ' now' : ''}" style="--rc:${t.color};--rl:${t.light};--ri:${t.ink}">
+    <button class="rg" data-play="${r.table}" ${enabled ? '' : 'aria-disabled="true"'} aria-label="${esc(r.name)}, the ${r.table}s${tier ? `, ${LEVEL_LABEL[tier]} medal` : ''}">
+      <span class="rg-thumb" style="--scene:${esc(cssUrl(sceneSrc(String(r.table), true)))}" aria-hidden="true"><b>${r.table}<small>s</small></b></span>
+      <span class="rg-text"><strong>${esc(r.name)}</strong><span class="rg-prog"><span class="bar mini"><span style="width:${Math.round(prog * 100)}%"></span></span>${medal(tier)}</span></span>
+    </button>
+    ${enabled ? `<button class="rg-gym ${gymState}" data-champ="${r.table}" aria-label="${esc(gymLabel)}">${gymImg(r.table)}${won ? badgeImg(r.table, 'rg-badge') : ready ? '<span class="rg-ready">Battle!</span>' : '<span class="rg-gym-tag">Gym</span>'}</button>` : ''}
+  </div>`;
+}
+
 export function renderHome(root, go, params = {}) {
   const p = active();
   const partner = partnerOf(p);
   const dex = dexCounts(p);
+  const nu = nextUp(p);
+  const total = p.settings.tables.length || 10;
+  const beaten = p.settings.tables.filter((t) => p.battles.champs[t]).length;
+  const open = bossUnlocked(p);
+  const qReady = quizReady(p), qNext = quizNextIn(p);
   root.innerHTML = `
-    <section class="screen home">
+    <section class="screen home home2">
       <header class="topbar">
         <button class="trainer-chip" data-trainer aria-label="Your trainer page">
           <span class="trainer-av">${avatarSVG(trainerLook(p))}</span>
@@ -36,82 +135,48 @@ export function renderHome(root, go, params = {}) {
       </header>
 
       <div class="home-main">
-        <div class="partner">
-          <div class="partner-art">${creatureArt(partner.species)}</div>
-          <div class="partner-info">
-            <p class="partner-name">${partner.species.name}<span class="partner-tag">Buddy</span><span class="lv-tag">Lv ${partner.level}</span></p>
-            <div class="bar xp-bar" role="progressbar" aria-label="XP to the next level" aria-valuemin="0" aria-valuemax="${partner.need}" aria-valuenow="${partner.into}"><span style="width:${Math.round((partner.into / partner.need) * 100)}%"></span></div>
-            <p class="partner-note">${partner.need - partner.into} XP to Lv ${partner.level + 1}. ${partner.evolveAt ? `Evolves at Lv ${partner.evolveAt}!` : 'Fully evolved!'}</p>
-          </div>
-          <button class="balls-row" data-balls aria-label="Your balls. Tap to learn how to use them.">
+        <div class="home-side">
+          ${nextCard(p, nu)}
+
+          <div class="buddy">
+            <span class="buddy-art">${creatureArt(partner.species)}</span>
+            <span class="buddy-info">
+              <span class="buddy-name">${partner.species.name}<span class="lv-tag">Lv ${partner.level}</span></span>
+              <span class="bar xp-bar" role="progressbar" aria-label="XP to the next level" aria-valuemin="0" aria-valuemax="${partner.need}" aria-valuenow="${partner.into}"><span style="width:${Math.round((partner.into / partner.need) * 100)}%"></span></span>
+              <small class="buddy-note">${partner.need - partner.into} XP to Lv ${partner.level + 1}${partner.evolveAt ? `. Evolves at Lv ${partner.evolveAt}` : ''}</small>
+            </span>
+            ${todayRing(p)}
+            <button class="balls-row" data-balls aria-label="Your balls. Tap to learn how to use them.">
               <span class="ball-count" title="Capture Balls">${ballIcon('capture')}∞</span>
               <span class="ball-count" title="Super Balls">${ballIcon('super')}${p.balls.super}</span>
               <span class="ball-count" title="Mega Balls">${ballIcon('mega')}${p.balls.mega}</span>
               <span class="ball-count" title="Legend Balls">${ballIcon('legend')}${p.balls.legend}</span>
               ${p.items.snack ? `<span class="ball-count" title="Power Snacks">${snackIcon()}${p.items.snack}</span>` : ''}
             </button>
-          <button class="btn-chunky btn-primary btn-xl play-btn" data-play="mix"><span>Practice</span><small>All your times tables, mixed</small></button>
-        </div>
-
-        <button class="kdx-tile" data-dex>
-          <span class="kdx-art">${kaidexIcon()}</span>
-          <span class="kdx-text"><strong>Kaidex</strong><small>Your Kaimon collection. ${dex.caught} of ${dex.total} caught${dex.seen > dex.caught ? `, ${dex.seen - dex.caught} more spotted` : ''}.</small></span>
-          <span class="kdx-go" aria-hidden="true">›</span>
-        </button>
-
-        <h2 class="section-title">Regions</h2>
-        <p class="section-sub">Each region is a times table. Pick a region, catch the Kaimon that live there, and earn its medal: Bronze, Silver, Gold, then Star.</p>
-        <div class="regions">
-          ${REGIONS.map((r) => {
-            const t = TYPES[r.type];
-            const tier = tableTier(p, r.table);
-            const prog = tableProgress(p, r.table);
-            const enabled = p.settings.tables.includes(r.table);
-            return `<button class="region${enabled ? '' : ' off'}" data-play="${r.table}" style="--rc:${t.color};--rl:${t.light};--ri:${t.ink};--scene:${esc(cssUrl(sceneSrc(String(r.table), true)))}" ${enabled ? '' : 'aria-disabled="true"'}>
-              <span class="region-num">${r.table}<small>s</small></span>
-              <span class="region-name">${r.name}</span>
-              <span class="region-foot"><span class="bar mini"><span style="width:${Math.round(prog * 100)}%"></span></span>${medal(tier)}</span>
-            </button>`;
-          }).join('')}
-        </div>
-
-        <h2 class="section-title">Gym battles</h2>
-        <p class="section-sub">Every right answer is an attack. Beat a Gym Leader to win their badge and bonus XP. Win every badge to face Boss Papa.</p>
-        <div class="battles">
-          <div class="champs">
-            ${REGIONS.filter((r) => p.settings.tables.includes(r.table)).map((r) => {
-              const t = TYPES[r.type];
-              const won = p.battles.champs[r.table];
-              return `<button class="champ${won ? ' won' : ''}" data-champ="${r.table}" style="--rc:${t.color};--rl:${t.light}" aria-label="Battle ${esc(r.champion)}, ${r.table}s Gym Leader${won ? ', badge earned' : ''}">
-                <span class="champ-av">${trainerArt({ kind: 'champ', table: r.table })}</span>
-                <span class="champ-name">${esc(r.champion.replace('Little Leader ', '').replace('Professor ', 'Prof. ').replace('Commander ', 'Cmdr. '))}</span>
-                <span class="champ-tag">${r.table}s${won ? ' ' + ribbon() : ''}</span>
-              </button>`;
-            }).join('')}
           </div>
-          ${(() => {
-            const total = p.settings.tables.length || 10;
-            const beaten = p.settings.tables.filter((t) => p.battles.champs[t]).length;
-            const open = bossUnlocked(p);
-            return `<button class="tower${open ? ' open' : ''}" data-boss ${open ? '' : 'aria-disabled="true"'} style="--scene:${esc(cssUrl(sceneSrc('papa', true)))}">
-              <span class="tower-av">${trainerArt({ kind: 'boss' })}</span>
-              <span class="tower-text"><strong>Papa's Gym</strong>
-                <small>${open ? (p.battles.boss ? 'Boss Papa wants a rematch.' : 'The final gym. Boss Papa is waiting.') : `The final gym. Earn every Gym Leader badge to get in. ${beaten} of ${total} badges.`}</small>
+
+          <div class="tiles">
+            <button class="tile" data-play="mix"><span class="tile-ic tile-cards" aria-hidden="true"><img src="${CARD_BACK}" alt="" draggable="false"><img src="${CARD_BACK}" alt="" draggable="false"></span><strong>Mixed</strong><small>All tables</small></button>
+            <button class="tile${qReady ? ' ready' : ''}" data-quiz><span class="tile-ic tile-face" aria-hidden="true">${trainerFace('teacher-k')}</span><strong>Pop Quiz</strong><small>${qReady ? 'Ready!' : `In ${qNext} day${qNext === 1 ? '' : 's'}`}</small></button>
+            <button class="tile" data-dex><span class="tile-ic" aria-hidden="true">${kaidexIcon()}</span><strong>Kaidex</strong><small>${dex.caught} of ${dex.total}</small></button>
+          </div>
+        </div>
+
+        <div class="home-regions">
+          <div class="rg-head"><h2 class="section-title">Regions</h2><span class="rg-count">${ribbon()}${beaten} of ${total} badges</span></div>
+          <p class="section-sub">Tap a region to practice its times table. Tap its gym to battle the Gym Leader.</p>
+          <div class="rg-list">
+            ${REGIONS.map((r) => regionRow(p, r, nu)).join('')}
+            <button class="rg-boss${open ? ' open' : ''}" data-boss ${open ? '' : 'aria-disabled="true"'}>
+              <span class="rg-thumb rg-thumb-gym" aria-hidden="true">${gymImg('papa')}</span>
+              <span class="rg-text"><strong>Papa's Gym</strong>
+                <small>${open ? (p.battles.boss ? 'Boss Papa wants a rematch.' : 'Boss Papa is waiting!') : `The final gym. Win all ${total} badges to get in.`}</small>
                 ${open ? '' : `<span class="bar mini"><span style="width:${Math.round((beaten / total) * 100)}%"></span></span>`}
               </span>
-            </button>`;
-          })()}
+              <span class="rg-boss-face" aria-hidden="true">${trainerFace('boss-papa')}</span>
+            </button>
+          </div>
         </div>
-        <h2 class="section-title">Teacher K's Pop Quiz</h2>
-        ${(() => {
-          const ready = quizReady(p), next = quizNextIn(p);
-          return `<button class="quiz-card${ready ? ' ready' : ''}" data-quiz>
-            <span class="quiz-av">${trainerFace('teacher-k')}</span>
-            <span class="quiz-text"><strong>${ready ? 'A new Pop Quiz is ready!' : 'Quiz done this week'}</strong>
-              <small>${ready ? 'Teacher K battles you with the facts that keep getting away. Win a Mega Ball.' : `Great work! The next quiz is in ${next} day${next === 1 ? '' : 's'}. You can still take this one again for practice.`}</small></span>
-            <span class="kdx-go" aria-hidden="true">›</span>
-          </button>`;
-        })()}
         <p class="ver-foot">© 2026 Kaimon Games · Kaimon Multiply v${VERSION}</p>
       </div>
     </section>`;
@@ -134,7 +199,21 @@ export function renderHome(root, go, params = {}) {
   });
   // Remember where the player was, so coming back from a battle (or backing out of
   // a Gym Leader's intro) lands in the same spot instead of the top of the page.
-  const keepPlace = () => { try { sessionStorage.setItem('kaimon.homePlace', JSON.stringify({ y: (document.scrollingElement || document.documentElement).scrollTop, x: root.querySelector('.champs')?.scrollLeft || 0, at: Date.now() })); } catch {} };
+  const keepPlace = () => { try { sessionStorage.setItem('kaimon.homePlace', JSON.stringify({ y: (document.scrollingElement || document.documentElement).scrollTop, at: Date.now() })); } catch {} };
+  // Next up: one tap starts it.
+  on(root, 'click', '[data-next]', (e, el) => {
+    unlock(); sfx.tap();
+    if (timesUp()) return;
+    const t = +el.dataset.table || null;
+    switch (el.dataset.next) {
+      case 'gym': keepPlace(); return go('battle', { kind: 'champ', table: t });
+      case 'boss': keepPlace(); return go('battle', { kind: 'boss' });
+      case 'quiz': keepPlace(); return go('battle', { kind: 'quiz' });
+      case 'tricky': return go('play', { table: null, focus: 'tricky' });
+      case 'master': return go('play', { table: null });
+      default: return go('play', { table: t });
+    }
+  });
   on(root, 'click', '[data-champ]', (e, el) => { unlock(); sfx.tap(); if (timesUp()) return; keepPlace(); go('battle', { kind: 'champ', table: +el.dataset.champ }); });
   on(root, 'click', '[data-boss]', () => {
     unlock(); sfx.tap();
@@ -169,9 +248,7 @@ export function renderHome(root, go, params = {}) {
     const place = JSON.parse(sessionStorage.getItem('kaimon.homePlace') || 'null');
     sessionStorage.removeItem('kaimon.homePlace');
     if (place && Date.now() - place.at < 30 * 60000) {
-      const champs = root.querySelector('.champs');
-      if (champs) champs.scrollLeft = place.x;
-      requestAnimationFrame(() => { (document.scrollingElement || document.documentElement).scrollTop = place.y; if (champs) champs.scrollLeft = place.x; });
+      requestAnimationFrame(() => { (document.scrollingElement || document.documentElement).scrollTop = place.y; });
     }
   } catch {}
 

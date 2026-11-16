@@ -90,6 +90,20 @@ export function pickNext(profile, pool, recent, requeue, n) {
   return best || pool[Math.floor(Math.random() * pool.length)];
 }
 
+// Tricky facts: missed in the last week and not answered right on a later day
+// since. Getting one right on another day fixes it. Newest misses first.
+export function trickyFacts(profile, tables, now = Date.now()) {
+  const out = [];
+  for (const id of factsForTables(tables)) {
+    const r = profile.facts[id];
+    if (!r?.lastMiss || now - r.lastMiss > 7 * 86400000) continue;
+    const missDay = today(r.lastMiss);
+    if ((r.days || []).some((d) => d > missDay)) continue;
+    out.push([id, r.lastMiss]);
+  }
+  return out.sort((a, b) => b[1] - a[1]).map(([id]) => id);
+}
+
 // Skip-count ladder used by the Hint Scroll.
 export function hintLadder(id) {
   const [a, b] = parseFact(id);
