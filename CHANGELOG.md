@@ -2,6 +2,16 @@
 
 All notable changes. Versioning: `0.MINOR.0` marks a roadmap phase, `0.x.PATCH` is any shipped change a player or parent can notice, and `1.0.0` is the public launch. See "Versioning" in CLAUDE.md. The in-app version history (Grown-ups > What's new) reads from `js/data/changelog.js`; keep both in sync. Each release is tagged in git as `vX.Y.Z`.
 
+## v0.6.6 (2026-11-16) Big moments come alive
+
+- Big moments come alive: Gym Leaders shake off the battle before handing over your badge, Boss Papa drops his dumbbell, and beating him earns a Champion ribbon.
+- Kairo glides down from the sky, and throwing the Legend Ball is a real moment.
+- Evolution flashes and glows as your Kaimon changes into its new form.
+- Your very first catch gets its own banner, and Mega and Legend Balls sparkle when you throw them.
+- Teacher K jumps for joy when you get a Good Work Stamp.
+- Each Kaimon's Kaidex page shows the place where it lives.
+- With reduced motion turned on, each big moment shows its finished picture right away.
+
 ## v0.6.5 (2026-11-16) Pick your trainer, then Play
 
 - Who's playing: tap your trainer, then press the big Play button.

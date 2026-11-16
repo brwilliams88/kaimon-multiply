@@ -1,7 +1,21 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.6.5';
+export const VERSION = '0.6.6';
 
 export const CHANGELOG = [
+  {
+    version: '0.6.6',
+    date: '2026-11-16',
+    title: "Big moments come alive",
+    items: [
+      "Big moments come alive: Gym Leaders shake off the battle before handing over your badge, Boss Papa drops his dumbbell, and beating him earns a Champion ribbon.",
+      "Kairo glides down from the sky, and throwing the Legend Ball is a real moment.",
+      "Evolution flashes and glows as your Kaimon changes into its new form.",
+      "Your very first catch gets its own banner, and Mega and Legend Balls sparkle when you throw them.",
+      "Teacher K jumps for joy when you get a Good Work Stamp.",
+      "Each Kaimon's Kaidex page shows the place where it lives.",
+      "With reduced motion turned on, each big moment shows its finished picture right away.",
+    ],
+  },
   {
     version: '0.6.5',
     date: '2026-11-16',
