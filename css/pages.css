@@ -2,12 +2,13 @@
 @font-face { font-family: 'Fredoka'; font-weight: 500; font-display: swap; src: url(../fonts/fredoka-latin-500-normal.woff2) format('woff2'); }
 @font-face { font-family: 'Fredoka'; font-weight: 600; font-display: swap; src: url(../fonts/fredoka-latin-600-normal.woff2) format('woff2'); }
 @font-face { font-family: 'Fredoka'; font-weight: 700; font-display: swap; src: url(../fonts/fredoka-latin-700-normal.woff2) format('woff2'); }
-:root { --ink: #14213D; --ink-2: #4A5675; --sky: #CFE8FF; --paper: #fff; --sun: #FFD23F; --coral: #FF6B4A; --blue: #2D7FF9; --tint: #F4F8FD; --line: #E3EAF4; }
+:root { --ink: #14213D; --ink-2: #4A5675; --sky: #CFE8FF; --paper: #fff; --sun: #FFD23F; --coral: #EE5530; --blue: #2D7FF9; --tint: #F4F8FD; --line: #E3EAF4; }
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
 body { margin: 0; background: var(--sky); font-family: 'Fredoka', ui-rounded, system-ui, sans-serif; font-weight: 500; color: var(--ink); font-size: 18px; line-height: 1.5; }
 a { color: #1E6FD9; font-weight: 600; }
-:focus-visible { outline: 3px solid var(--coral); outline-offset: 3px; border-radius: 8px; }
+:focus-visible { outline: 4px solid #1E6FD9; outline-offset: 3px; }
+a:focus-visible { border-radius: 6px; }
 .page { max-width: 760px; margin: 0 auto; padding: calc(20px + env(safe-area-inset-top)) 16px calc(36px + env(safe-area-inset-bottom)); }
 .back { display: inline-flex; align-items: center; gap: 4px; margin: 0 0 14px -4px; padding: 6px 10px 6px 4px; border-radius: 12px; font-weight: 700; text-decoration: none; color: var(--ink); }
 .back svg { width: 22px; height: 22px; }
@@ -147,3 +148,4 @@ button.btn { font: inherit; font-weight: 700; font-size: 20px; cursor: pointer; 
   .l-foot { font-size: 12pt; margin-top: auto; padding-top: 12pt; }
   .letter * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } * { animation-duration: .001ms !important; transition-duration: .05s !important; } }

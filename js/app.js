@@ -73,6 +73,7 @@ function go(name, params = {}) {
   SCREENS[name](root, go, params);
   // A quick fade-and-rise between screens (none with Reduce Motion).
   root.firstElementChild?.classList.add('screen-in');
+  nameScreen(root, name);
   window.scrollTo(0, 0);
   if (backTo) { window.scrollTo(0, backTo); requestAnimationFrame(() => { if (document.body.dataset.nav === String(navCount) && Math.abs(window.scrollY - backTo) > 1) window.scrollTo(0, backTo); }); }
   if (name === 'welcome' || name === 'home') maybeIconNotice();
@@ -80,6 +81,23 @@ function go(name, params = {}) {
   afterScreen(name, root); // offline chip, storage protection, a waiting "Back online" note
   // The title screen is one fixed screen: no rubber-band scrolling on iPhone.
   document.documentElement.classList.toggle('lock-screen', name === 'welcome');
+}
+// Each screen has a name: in the browser tab, and as a heading screen readers land on.
+const SCREEN_NAMES = { welcome: '', newTrainer: 'New trainer', meetPartner: 'Meet your Buddy', home: 'Home', play: 'Practice', kaidex: 'Kaidex', grownups: 'Grown-ups', battle: 'Battle', trainer: 'Trainer', lightning: 'Lightning Round', tower: 'The Hundred Tower' };
+let firstScreen = true;
+function nameScreen(root, name) {
+  const label = SCREEN_NAMES[name] || '';
+  document.title = label ? `${label} · Kaimon Multiply` : 'Kaimon Multiply';
+  let h1 = root.querySelector('h1');
+  if (!h1 && label) {
+    h1 = document.createElement('h1');
+    h1.className = 'sr';
+    h1.textContent = label;
+    (root.querySelector('.screen') || root).prepend(h1);
+  }
+  // After a screen change, focus starts at the top of the new screen (not on the first load).
+  if (h1 && !firstScreen) { h1.tabIndex = -1; h1.focus({ preventScroll: true }); }
+  firstScreen = false;
 }
 // Images fade in as they arrive instead of popping in.
 document.addEventListener('load', (e) => { const t = e.target; if (t.tagName === 'IMG') t.classList.add('ld'); }, true);
