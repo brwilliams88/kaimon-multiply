@@ -8,6 +8,7 @@ import { renderKaidex } from './ui/kaidex.js';
 import { renderGrownups } from './ui/grownups.js';
 import { renderBattle } from './ui/battle.js';
 import { renderTrainer } from './ui/trainer.js';
+import { renderLightning } from './ui/lightning.js'; // [systems] Lightning Round
 import { VERSION } from './data/changelog.js';
 import { startAutoSync, completeLinkSignIn, syncNow } from './core/sync.js';
 import { autoSendReports, flushMailOutbox } from './core/mailer.js';
@@ -32,9 +33,10 @@ const SCREENS = {
   grownups: renderGrownups,
   battle: renderBattle,
   trainer: renderTrainer,
+  lightning: renderLightning, // [systems] Lightning Round
 };
 
-const NEEDS_PROFILE = new Set(['home', 'play', 'kaidex', 'grownups', 'meetPartner', 'battle', 'trainer']);
+const NEEDS_PROFILE = new Set(['home', 'play', 'kaidex', 'grownups', 'meetPartner', 'battle', 'trainer', 'lightning']); // [systems] + lightning
 
 function go(name, params = {}) {
   stopVoice();
@@ -128,7 +130,7 @@ document.addEventListener('click', (e) => {
 // Offline support and updates. Updates install by themselves between rounds;
 // during a round, a bar offers to update.
 startUpdates({
-  isBusy: () => ['play', 'battle'].includes(document.getElementById('app')?.dataset.screen),
+  isBusy: () => ['play', 'battle', 'lightning'].includes(document.getElementById('app')?.dataset.screen), // [systems] + lightning
   showBar: (apply) => {
     if (document.querySelector('.update-bar')) return;
     const bar = document.createElement('div');

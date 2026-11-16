@@ -18,6 +18,7 @@ import { trainerLook, trainerImg } from './avatars.js';
 import { ballSrc, sceneSrc, cssUrl, sceneKey, uiImg, itemImg, fxSrc, typeIcon, trainerFace, CARD_BACK } from '../core/assets.js';
 import { quick } from '../core/prefs.js';
 import { $, on, esc, sheet, wait, toast, soundButton, reducedMotion, setFlame } from './dom.js';
+import { secondChance, lanternGlow } from './items.js'; import { afterRound } from './quests.js'; // [systems] items and quests
 
 export function renderPlay(root, go, { table }) {
   const p = active();
@@ -175,6 +176,7 @@ export function renderPlay(root, go, { table }) {
     S.mic?.ready();
     el.pips.forEach((pip, i) => pip.className = i < S.n ? (S.results?.[i] ? 'done ok' : 'done') : i === S.n ? 'now' : '');
     maybeMythic();
+    lanternGlow(p, root); // [systems] Lucky Lantern
   }
 
   // Power meter: full for a quick answer, drains slowly, never runs out.
@@ -215,6 +217,7 @@ export function renderPlay(root, go, { table }) {
     const ms = performance.now() - S.shownAt;
     const ans = answerOf(S.fact);
     const ok = parseInt(S.input, 10) === ans;
+    if (!ok && await secondChance(p, S)) { answer(p, S.fact, false, ms, via); save(); S.phase = 'ask'; setInput(''); S.shownAt = performance.now(); runPower(); S.mic?.ready(); return; } // [systems] Second Chance Charm: the miss counts, the streak and the Kaimon stay
     const [a, b] = parseFact(S.fact);
     const region = regionOf(a);
     const xp0 = p.xp || 0, pl0 = partnerOf(p);
@@ -433,6 +436,7 @@ export function renderPlay(root, go, { table }) {
           <button class="btn-chunky btn-xl" data-home>Home</button>
         </div>
       </section>`;
+    afterRound(p, root); // [systems] quest and milestone rewards
     on(root, 'click', '[data-again]', () => go(limitReached(p) ? 'home' : 'play', { table }));
     on(root, 'click', '[data-home]', () => go('home'));
     on(root, 'click', '[data-ambush]', () => go('battle', { kind: 'grunt', grunt }));

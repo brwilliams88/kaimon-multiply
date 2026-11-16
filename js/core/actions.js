@@ -6,6 +6,7 @@ import { applyAnswer, levelOf, levelRank, parseFact } from './facts.js';
 import { dayRec } from './playtime.js';
 import { answerXP, XP } from './xp.js';
 import { today } from './store.js';
+import { applySystems, onSeen, shinyChance } from './items.js'; // [systems] items, quests, Lightning Round
 
 let counter = 0;
 const newId = () => deviceId() + '-' + Date.now().toString(36) + '-' + (counter++).toString(36) + Math.random().toString(36).slice(2, 5);
@@ -37,6 +38,7 @@ export function apply(p, ev) {
       const e = dexEntry(p, d.n);
       e.seen++;
       if (!e.firstSeen) e.firstSeen = ev.t;
+      onSeen(p); // [systems] Lucky Lantern counts wild Kaimon
       break;
     }
     case 'esc':
@@ -94,6 +96,7 @@ export function apply(p, ev) {
       }
       break;
     }
+    default: applySystems(p, ev); // [systems] 'use', 'got', 'bolt' events
   }
 }
 
@@ -116,7 +119,7 @@ export const seen = (p, speciesId) => emit(p, 'seen', { n: speciesId });
 
 export function caught(p, speciesId) {
   const isNew = !(p.dex[speciesId] && p.dex[speciesId].caught);
-  const shiny = Math.random() < 1 / 32;
+  const shiny = Math.random() < shinyChance(p); // [systems] 1 in 32, better with a Lucky Lantern
   emit(p, 'catch', { n: speciesId, s: shiny ? 1 : 0 });
   return { isNew, shiny };
 }

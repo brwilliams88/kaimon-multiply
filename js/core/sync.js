@@ -2,6 +2,7 @@
 // Any grown-up's email can start a family. Each family only sees its own rows; guests stay on the device.
 import { allProfiles, profileById, putProfile, newProfile, save, deviceId, syncState, setSyncState, deleteProfile, hiddenProfiles, unhideProfile } from './store.js';
 import { apply, emit } from './actions.js';
+import { systemsSnap, mergeSystems } from './items.js'; // [systems] items, quests, Lightning Round
 
 const URL = 'https://qabevoqmalqjvesqzuse.supabase.co';
 const KEY = 'sb_publishable_6VwJkmR4SMSCs7WXQKjbnA_R0hK8OUW';
@@ -160,7 +161,7 @@ export function joinFamily(p) {
   p.family = true;
   p.updatedAt = Date.now();
   p.outbox = [];
-  emit(p, 'snap', { facts: p.facts, dex: p.dex, balls: p.balls, items: p.items, stats: p.stats, mythic: p.mythic, battles: p.battles, play: p.play, xp: p.xp });
+  emit(p, 'snap', { facts: p.facts, dex: p.dex, balls: p.balls, items: p.items, stats: p.stats, mythic: p.mythic, battles: p.battles, play: p.play, xp: p.xp, ...systemsSnap(p) }); // [systems] items, rewards, Lightning best
   save();
   syncNow();
 }
@@ -210,6 +211,7 @@ export function applySnapshot(p, d) {
     for (const k of ['m', 'kn']) for (const [id, n] of Object.entries(r[k] || {})) { const o = cur[k] = cur[k] || {}; o[id] = (o[id] || 0) + n; }
     for (const [id, lv] of Object.entries(r.up || {})) { const o = cur.up = cur.up || {}; o[id] = Math.max(o[id] || 0, lv); }
   }
+  mergeSystems(p, d); // [systems] rewards claimed, Lucky Lantern, Evolve Crystal, Lightning Round
 }
 
 function applyRemote(p, ev) {

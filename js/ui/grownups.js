@@ -19,6 +19,7 @@ import { esc, on, sheet, toast, $, busy, cleanCode, codeOk } from './dom.js';
 import { reportPanelHTML, bindReportPanel } from './reportPanel.js';
 import { offlineChipHTML, offlinePanelHTML, bindOfflinePanel, pendingNote } from './offline.js';
 import { isOnline, onOfflineChange } from '../core/offline.js';
+import { calmModeRow } from './lightning.js'; // [systems] Calm mode
 
 const mins = (ms) => Math.round(ms / 60000);
 
@@ -168,6 +169,7 @@ function renderMain(root, go) {
           <div class="row"><span class="note" data-soundmsg>No sound on an iPhone? Turn the volume up with the side buttons, then tap Test sound.</span><button class="btn-chunky btn-sm" data-soundtest>Test sound</button></div>
           <label class="row"><span>Battle music<small class="row-note">Plays during battles only, never during practice cards.</small></span><input type="checkbox" class="switch" data-set="music" ${s.music !== false ? 'checked' : ''}></label>
           <label class="row"><span>Voice answers <span class="beta-tag">Beta</span><small class="row-note">Kids turn on Mic mode with the mic button and say the answer. The phone asks to use the microphone the first time each day. On iPhone, the mic has its own volume: if sounds seem quiet after using it, press volume up while a sound plays.</small></span><input type="checkbox" class="switch" data-set="voice" ${s.voice ? 'checked' : ''}></label>
+          ${calmModeRow(s) /* [systems] Calm mode: hides the Lightning Round timer */}
           <p class="note">${voiceSupported() ? 'Voice works on this device. Kids tap the mic button to turn Mic mode on, then say each answer.' : 'Voice isn’t available here. On iPad and iPhone it may work in Safari but not from the home screen icon; the number pad always works.'}</p>
           <p class="note"><b>Mic privacy.</b> Mic mode only listens while a card is waiting for an answer, and stops as soon as it hears a number. It turns off by itself after 2 minutes without a spoken answer, when the app is closed or hidden, and when your child leaves practice or a battle. Speech goes to the device's own speech service (Apple on iPhone and iPad, Google in Chrome) to turn it into a number. Kaimon never records or saves audio.</p>
         </div>

@@ -17,6 +17,7 @@ import { avatarSVG, trainerLook } from './avatars.js';
 import { esc, on, $, sheet, soundIcon, toast } from './dom.js';
 import { sfx, unlock } from '../core/sound.js';
 import { shareGame, shareIcon } from './share.js';
+import { questsCard, bindQuests } from './quests.js'; // [systems] daily quests, items, Lightning Round
 
 export const medal = (tier) => tier
   ? `<span class="medal medal-${tier}" title="${LEVEL_LABEL[tier]} medal">${itemImg('medal-' + tier)}</span>`
@@ -59,6 +60,7 @@ export function renderHome(root, go, params = {}) {
           <span class="kdx-text"><strong>Kaidex</strong><small>Your Kaimon collection. ${dex.caught} of ${dex.total} caught${dex.seen > dex.caught ? `, ${dex.seen - dex.caught} more spotted` : ''}.</small></span>
           <span class="kdx-go" aria-hidden="true">›</span>
         </button>
+        ${questsCard(p) /* [systems] daily quests, items, Lightning Round */}
 
         <h2 class="section-title">Regions</h2>
         <p class="section-sub">Each region is a times table. Pick a region, catch the Kaimon that live there, and earn its medal: Bronze, Silver, Gold, then Star.</p>
@@ -165,6 +167,7 @@ export function renderHome(root, go, params = {}) {
   on(root, 'click', '[data-dex]', () => { sfx.tap(); go('kaidex'); });
   on(root, 'click', '[data-quiz]', () => { unlock(); sfx.tap(); if (timesUp()) return; keepPlace(); go('battle', { kind: 'quiz' }); });
   on(root, 'click', '[data-trainer]', () => { sfx.tap(); go('trainer'); });
+  bindQuests(root, go); // [systems] daily quests, items, Lightning Round
 
   try {
     const place = JSON.parse(sessionStorage.getItem('kaimon.homePlace') || 'null');
