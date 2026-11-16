@@ -1,7 +1,20 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '0.5.33';
+export const VERSION = '0.5.34';
 
 export const CHANGELOG = [
+  {
+    version: '0.5.34',
+    date: '2026-11-15',
+    title: "A smarter Home",
+    items: [
+      "New Home: Next up now suggests what to play based on how you are doing. Tables that keep getting away get a Power up card, ready gyms come before Pop Quiz, and suggestions take turns so Home stays fresh.",
+      "Quick practice (mixed times tables) is one tap from Home, with the Kaidex and Pop Quiz right under it.",
+      "A gentle daily goal of 3 rounds, shown as a ring that fills in three parts. No pressure: playing more or less is fine.",
+      "Gyms open once their table has a Bronze medal. Tap a locked gym to see how to open it, or practice that table right away.",
+      "Pick a region is easier: every region and gym is listed with clear Battle labels.",
+      "Long Kaimon names now fit on the results screen.",
+    ],
+  },
   {
     version: '0.5.33',
     date: '2026-11-15',
