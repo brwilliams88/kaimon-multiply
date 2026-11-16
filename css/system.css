@@ -104,7 +104,7 @@ a:focus-visible, .link-btn:focus-visible { border-radius: 6px; }
 .hd-kicker { color: var(--grass-ink) !important; }
 .tp2 .tp-help.ready { color: var(--grass-ink); }
 .tt.on { font-size: 19px; }
-.rg-ready, .tp-slot.lead .tp-num, .sl-lv.sl-bud { background: var(--coral-deep); }
+.rg-ready, .tp-slot.lead .tp-num, .sl-lv.sl-bud, .qx-go { background: var(--coral-deep); }
 /* White words on a type color get a navy outline, like the game titles, so they read on light colors too. */
 .type-tag, .chips > .chip.on:not([data-f="all"]):not([data-f="special"]) { -webkit-text-stroke: 3px var(--ink); paint-order: stroke fill; font-weight: 700; }
 .title-copy { text-shadow: 0 1px 3px rgba(20, 33, 61, .9), 0 0 2px rgba(20, 33, 61, .9); }
@@ -113,3 +113,10 @@ a:focus-visible, .link-btn:focus-visible { border-radius: 6px; }
 .tf-locked .tw-fname, .mt-unknown .mt-name, .mt-unknown .mt-tag { color: var(--muted); }
 .tw-floor .btn-primary, .bolt-panel .btn-primary { font-size: max(19px, 1em); }
 .bolt-panel > h2 { color: #FFFFFF; -webkit-text-stroke: 5px var(--ink); paint-order: stroke fill; text-shadow: 0 3px 0 var(--ink); letter-spacing: .01em; }
+
+/* Home Buddy card: name, level and Switch wrap onto a second line when the row is
+   short, and a single very long name shrinks (fitText in home.js), so Switch never
+   covers the Today ring. */
+.buddy-name { flex-wrap: wrap; row-gap: 4px; min-width: 0; }
+.buddy-nm { flex: 0 1 auto; min-width: 0; max-width: 100%; overflow: hidden; white-space: nowrap; }
+.buddy-name .buddy-switch { flex: none; margin-left: auto; }
