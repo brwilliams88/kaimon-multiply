@@ -27,7 +27,7 @@ Times tables flashcard game for Kai (8, Blair's son), shared with his friends. I
 ## Versioning
 - `1.0.0` = public launch. `0.MINOR.0` = a roadmap phase milestone (v0.4 art direction, v0.5 art production, v0.6 polish and share).
 - `0.x.PATCH` = every shipped change a player or parent could notice, even a one-line text change. Ship each request as its own patch when practical instead of batching.
-- Every release: bump `VERSION`, add entries to `js/data/changelog.js` and `CHANGELOG.md`, run gen-sw, commit, push, publish a GitHub release tagged `vX.Y.Z`, and add a line to the roadmap doc's progress tracker log.
+- Every release: bump `VERSION`, add entries to `js/data/changelog.js` and `CHANGELOG.md`, run gen-sw, commit, push, publish a GitHub release tagged `vX.Y.Z`, add a line to the roadmap doc's progress tracker log, and refresh the Kaimon Multiply build stats dashboard (Claude artifact).
 
 ## Workflow
 - Bump `VERSION` and add an entry in `js/data/changelog.js` and `CHANGELOG.md` for every release.
