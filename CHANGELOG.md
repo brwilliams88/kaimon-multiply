@@ -4,6 +4,12 @@ All notable changes. Versioning: `0.MINOR.0` marks a roadmap phase, `0.x.PATCH` 
 
 ## v1.1.3 (2026-11-16) Small fixes behind the scenes
 
+A quiet release: no "Updated" message in the app, and What's new shows only the title.
+
+- Support for one-time family surprises. A grown-up in a family can send one trainer a custom comic scene with Boss Papa or Kairo, take back gym badges or hats, give a prize for the next Boss Papa win, and turn on a gym rule (Bronze medal first). Only that trainer sees it, once across all their devices. How to send one: docs/family-surprises.md.
+- Quiet releases: a release marked quiet updates without the "Updated" message.
+- Gym and Boss Papa wins now keep the time they happened, so family sync stays correct when a surprise takes badges back.
+
 ## v1.1.2 (2026-11-16) Trophy case
 
 - Your badges, medals, patches and Item Bag now live together in one Trophy case on your trainer page.
