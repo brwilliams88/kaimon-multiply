@@ -320,7 +320,8 @@ function bindProgress(panel, p, go) {
   });
 }
 
-const clHTML = (c) => `<div class="cl"><p class="cl-head"><strong>v${c.version}</strong> ${esc(c.title)}<span>${c.date}</span></p><ul>${c.items.map((i) => `<li>${esc(i)}</li>`).join('')}</ul></div>`;
+// A quiet entry (quiet: true) shows its plain title only.
+const clHTML = (c) => `<div class="cl"><p class="cl-head"><strong>v${c.version}</strong> ${esc(c.title)}<span>${c.date}</span></p>${c.quiet ? '' : `<ul>${(c.items || []).map((i) => `<li>${esc(i)}</li>`).join('')}</ul>`}</div>`;
 const GU_TABS = [['progress', 'Progress'], ['settings', 'Settings'], ['family', 'Family'], ['help', 'Help']];
 // The Maker tab only shows when the family sync email is on the admin list (Blair).
 const MAKER_IC = '<svg class="gu-maker-ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="12" width="4" height="8" rx="1.2" fill="currentColor"/><rect x="10" y="7" width="4" height="13" rx="1.2" fill="currentColor"/><rect x="17" y="3" width="4" height="17" rx="1.2" fill="currentColor"/></svg>';

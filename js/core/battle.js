@@ -1,11 +1,12 @@
 // Kaimon core battle rules. Every move is an answer: a right answer attacks,
 // a wrong answer lets the other side hit back. Subject packs only supply the cards.
-import { SPECIES, byId, REGIONS } from '../data/creatures.js';
+import { SPECIES, byId, REGIONS, MYTHIC_ID } from '../data/creatures.js';
 import { tableTier, levelRank, levelOf, factsForTables } from './facts.js';
 import { roster, buddyOf, current, ownedList, hpForLevel, powerForLevel } from './levels.js';
 import { towerOpponent, towerReward } from './tower.js'; // Hundred Tower hook
 import { megaForm, MEGA_HP, MEGA_POWER } from './megas.js'; // Mega hook
 import { matchup } from '../data/types.js'; // type matchups
+import { gymNeedsBronze } from './surprise.js'; // a surprise's gym rule
 
 export const MY_HP = 40;      // a Lv 5 Kaimon (HP grows with level: levels.js)
 export const HIT_BACK = 12;   // damage you take on a wrong answer
@@ -184,12 +185,13 @@ export function nextGym(profile) {
 }
 
 // A gym opens once its table has a Bronze medal (and stays open once its badge is won).
-export const gymOpen = (profile, table) => !!profile.battles.champs[table] || champReady(profile, table);
+// A surprise's rule (gymNeeds 'bronze') takes away the "stays open" part, so every battle needs Bronze.
+export const gymOpen = (profile, table) => (!gymNeedsBronze(profile) && !!profile.battles.champs[table]) || champReady(profile, table);
 
 // Rewards for a win, given before the win is recorded.
 export function rewardFor(profile, kind, table) {
   if (kind === 'tower') return towerReward(profile, table); // Hundred Tower hook
-  if (kind === 'boss') return profile.battles.boss ? { ball: 'mega', n: 1 } : { ball: 'legend', n: 1, mythic: true };
+  if (kind === 'boss') return profile.battles.boss ? { ball: 'mega', n: 1 } : { ball: 'legend', n: 1, mythic: !profile.dex?.[MYTHIC_ID]?.caught };
   if (kind === 'champ') return profile.battles.champs[table] ? { ball: 'super', n: 1 } : { ball: 'mega', n: 1 };
   if (kind === 'quiz') return { ball: 'mega', n: 1 };
   return { ball: 'super', n: 1 };

@@ -19,7 +19,7 @@ import { save, touch, setSetting } from '../core/store.js';
 import { syncNow } from '../core/sync.js';
 import { byId, MYTHIC_ID, FUTURE_ID } from '../data/creatures.js';
 import { avatarSVG, trainerLook } from './avatars.js';
-import { esc, on, $, sheet, soundIcon, toast, fitText } from './dom.js';
+import { esc, on, $, sheet, soundIcon, toast, fitText, reducedMotion } from './dom.js';
 import { sfx, unlock } from '../core/sound.js';
 import { shareGame, shareIcon } from './share.js';
 import { openPlayElsewhere, deviceIcon } from './playElsewhere.js';
@@ -33,6 +33,10 @@ import { homeTour } from './firstGame.js';
 import { howToPlay } from './howToPlay.js';
 import { typesGuide } from './typesGuide.js'; // [types]
 import { typeIcon } from '../core/assets.js'; // [types]
+import { sceneToShow, gymNeedsBronze } from '../core/surprise.js'; // one-time surprises
+import { showSurprise } from './surprise.js';
+import { hatCheck } from '../core/wardrobe.js';
+import { onSyncChange } from '../core/sync.js';
 
 // Daily boost: the first right answers each day give triple XP. Say how many are
 // left, so the extra XP is never a surprise (and its end isn't either).
@@ -140,22 +144,23 @@ function todayRing(p) {
   </div>`;
 }
 
-function regionRow(p, r, nu) {
+function regionRow(p, r, nu, glow = false) {
   const t = TYPES[r.type];
   const tier = tableTier(p, r.table);
   const prog = tableProgress(p, r.table);
   const enabled = p.settings.tables.includes(r.table);
   const won = p.battles.champs[r.table];
-  const ready = !won && champReady(p, r.table);
   const now = nu.table === r.table && ['region', 'shine', 'gym', 'weak'].includes(nu.kind);
-  const gymState = won ? 'won' : ready ? 'ready' : 'locked';
-  const gymLabel = gymState === 'locked' ? `${r.champion}'s gym is locked. Get a Bronze medal on the ${r.table}s to open it.` : `Battle ${r.champion} at the ${r.table}s gym${won ? '. Badge earned' : '. Ready!'}`;
+  const gymState = !gymOpen(p, r.table) ? 'locked' : won ? 'won' : 'ready';
+  const rule = gymNeedsBronze(p); // a surprise's rule: every gym battle needs Bronze
+  const gymLabel = gymState === 'locked' ? (rule ? `${r.champion}'s gym is locked. Get a Bronze medal in the ${r.table}s to battle this gym.` : `${r.champion}'s gym is locked. Get a Bronze medal on the ${r.table}s to open it.`) : `Battle ${r.champion} at the ${r.table}s gym${won ? '. Badge earned' : '. Ready!'}`;
+  const lock = rule ? `<span class="rg-lock rg-bronze" aria-hidden="true">${itemImg('medal-bronze')}</span>` : LOCK;
   return `<div class="rg-row${enabled ? '' : ' off'}${now ? ' now' : ''}" style="--rc:${t.color};--rl:${t.light};--ri:${t.ink}">
     <button class="rg" data-play="${r.table}" ${enabled ? '' : 'aria-disabled="true"'} aria-label="${esc(r.name)}, the ${r.table}s${tier ? `, ${LEVEL_LABEL[tier]} medal` : ''}">
       <span class="rg-thumb" style="--scene:${esc(cssUrl(sceneSrc(String(r.table), true)))}" aria-hidden="true"><b>${r.table}<small>s</small></b></span>
       <span class="rg-text"><strong>${esc(r.name)}</strong><span class="rg-prog"><span class="bar mini"><span style="width:${Math.round(prog * 100)}%"></span></span>${medal(tier)}</span></span>
     </button>
-    ${enabled ? `<button class="rg-gym ${gymState}" data-champ="${r.table}" aria-label="${esc(gymLabel)}">${gymImg(r.table)}${won ? badgeImg(r.table, 'rg-badge') : ready ? '<span class="rg-ready">Battle!</span>' : `${LOCK}<span class="rg-gym-tag">Get Bronze</span>`}</button>` : ''}
+    ${enabled ? `<button class="rg-gym ${gymState}${glow && gymState === 'ready' ? ' sup-glow' : ''}" data-champ="${r.table}" aria-label="${esc(gymLabel)}">${gymImg(r.table)}${gymState === 'won' ? badgeImg(r.table, 'rg-badge') : gymState === 'ready' ? '<span class="rg-ready">Battle!</span>' : `${lock}<span class="rg-gym-tag">Get Bronze</span>`}</button>` : ''}
   </div>`;
 }
 
@@ -163,6 +168,7 @@ export function renderHome(root, go, params = {}) {
   const p = active();
   // Record any Kaimon that is ready to evolve (an old save's starter, Kairo after a year).
   if (evolveReady(p).length) { save(); syncNow(); }
+  if (hatCheck(p)) { touch(p); syncNow(); } // a hat a surprise took back comes off
   const partner = buddyOf(p);
   const dex = dexCounts(p);
   const nu = nextUp(p);
@@ -221,7 +227,7 @@ export function renderHome(root, go, params = {}) {
           <div class="rg-head"><h2 class="section-title">Pick a region</h2><span class="rg-count">${ribbon()}${beaten} of ${total} badges</span></div>
           <p class="section-sub">Tap a region to practice its times table. Tap a gym to battle.</p>
           <div class="rg-list">
-            ${REGIONS.map((r) => regionRow(p, r, nu)).join('')}
+            ${REGIONS.map((r) => regionRow(p, r, nu, !!params.glow)).join('')}
             <button class="rg-boss${open ? ' open' : ''}" data-boss ${open ? '' : 'aria-disabled="true"'}>
               <span class="rg-thumb rg-thumb-gym" aria-hidden="true">${gymImg('papa')}</span>
               <span class="rg-text"><strong>Papa's Gym</strong>
@@ -302,11 +308,21 @@ export function renderHome(root, go, params = {}) {
   on(root, 'click', '[data-menu]', () => { unlock(); sfx.tap(); homeMenu(p, go); });
   on(root, 'click', '[data-balls]', () => { unlock(); sfx.tap(); ballsHelp(p); });
   // Evolution moments: each evolution is shown once on this device, for any Kaimon.
-  evolutionMoments(p);
+  // A one-time surprise for this trainer: its scene first, everything else after it.
+  const sup = params.guide ? null : sceneToShow(p);
+  if (sup) showSurprise(p, sup, () => go('home', { glow: true }));
+  else evolutionMoments(p);
+  // A surprise that arrives by family sync while Home is open shows right away.
+  const offSync = onSyncChange((st) => {
+    if (!root.isConnected) return offSync();
+    if (st.busy || document.querySelector('.sheet-wrap, .sup-scene, .overlay') || !sceneToShow(p)) return;
+    offSync(); go('home');
+  });
+  if (params.glow) setTimeout(() => { const g = root.querySelector('.sup-glow'); if (g && root.isConnected) g.scrollIntoView({ block: 'center', behavior: reducedMotion() ? 'auto' : 'smooth' }); }, 350);
   on(root, 'click', '[data-buddyteam]', () => { unlock(); sfx.tap(); teamSheet(p, () => { keepPlace(); go('home'); }, { mode: 'buddy' }); });
   // Beat Boss Papa but never caught Kairo (the app closed, or the result was skipped):
   // Kairo waits on the home screen until it's caught. It can never be missed.
-  if (p.battles.boss > 0 && !p.dex[MYTHIC_ID]?.caught) setTimeout(() => kairoWaiting(p, go), 600);
+  if (!sup && p.battles.boss > 0 && !p.dex[MYTHIC_ID]?.caught) setTimeout(() => kairoWaiting(p, go), 600);
   on(root, 'click', '[data-dex]', () => { sfx.tap(); go('kaidex'); });
   on(root, 'click', '[data-tower]', () => { unlock(); sfx.tap(); keepPlace(); go('tower'); }); // Hundred Tower hook
   on(root, 'click', '[data-quiz]', () => { unlock(); sfx.tap(); if (timesUp()) return; keepPlace(); go('battle', { kind: 'quiz' }); });
@@ -363,7 +379,7 @@ function gymLocked(p, table, go, timesUp) {
   const sh = sheet(`<div class="gym-locked" style="--rc:${T.color};--rl:${T.light};--ri:${T.ink}">
     <div class="gym-locked-art" aria-hidden="true">${gymImg(table)}${LOCK}</div>
     <h2>${esc(R.champion)}'s gym is locked</h2>
-    <p>Get a Bronze medal on the ${table}s to open this gym.</p>
+    ${gymNeedsBronze(p) ? `<p>Get a Bronze medal in the ${table}s to battle this gym.</p><p class="note">The Gym Leaders got stronger. Now every gym battle needs that table's Bronze medal, even a rematch.</p>` : `<p>Get a Bronze medal on the ${table}s to open this gym.</p>`}
     <p class="note">${medal('bronze')}Bronze: every ${table}s fact right on 2 different days.</p>
     <div class="sheet-actions"><button class="btn-chunky" data-close>Okay</button><button class="btn-chunky btn-primary" data-practice>Practice the ${table}s</button></div>
   </div>`);

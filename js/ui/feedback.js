@@ -446,7 +446,7 @@ export function maybeAskRating({ delay = 1600 } = {}) {
   if (!shouldAskRating()) return false;
   setTimeout(() => {
     const screen = document.getElementById('app')?.dataset.screen;
-    if (screen !== 'home' || document.querySelector('.sheet-wrap') || !shouldAskRating()) return;
+    if (screen !== 'home' || document.querySelector('.sheet-wrap, .sup-scene') || !shouldAskRating()) return;
     try { noteAsked(); } catch { return; }
     open('rate', { prompt: true, place: 'prompt' });
   }, delay);

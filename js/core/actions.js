@@ -9,6 +9,7 @@ import { byId as SPECIES_BY } from '../data/creatures.js';
 import { today } from './store.js';
 import { applyTowerBattle } from './tower.js'; import { applyMega } from './megas.js'; // Hundred Tower and Mega hooks
 import { applySystems, onSeen, shinyChance } from './items.js'; // [systems] items, quests, Lightning Round
+import { SUP, applySurprise, noteWin, gotCounts } from './surprise.js'; // one-time surprises from a grown-up
 import { giveXP, applyCatch, applyEvo, applyBud, roster, buddyOf, nextGen, arrivalLevel, readyToEvolve, BOOST } from './levels.js';
 
 let counter = 0;
@@ -97,8 +98,10 @@ export function apply(p, ev) {
       break;
     case 'got': {
       // d.w: a Wardrobe color or hat this trainer earned (d.o: kept from before the Wardrobe).
+      if (!gotCounts(p, d.w, ev.t)) break; // a hat taken back after this (surprise.js)
       const w = p.wardrobe || (p.wardrobe = {});
       if (!w[d.w] || ev.t < w[d.w]) w[d.w] = ev.t;
+      if (ev.t > w[d.w]) { const L = p.wearLast || (p.wearLast = {}); L[d.w] = Math.max(L[d.w] || 0, ev.t); } // a later 'got' too (surprise.js)
       break;
     }
     case 'stamp':
@@ -113,8 +116,7 @@ export function apply(p, ev) {
         const x = d.x != null ? d.x : (XP[d.o] || 0);
         p.xp = (p.xp || 0) + x;
         giveXP(p, d, x);
-        if (d.o === 'champ') b.champs[d.tb] = (b.champs[d.tb] || 0) + 1;
-        if (d.o === 'boss') b.boss++;
+        if (d.o === 'champ' || d.o === 'boss') noteWin(p, d, ev.t); // badges keep their win time (surprise.js)
         if (d.o === 'grunt') b.grunts++;
         if (d.o === 'quiz') b.quiz = Math.max(b.quiz || 0, ev.t);
       }
@@ -122,6 +124,7 @@ export function apply(p, ev) {
       if (d.o === 'tower') applyTowerBattle(p, d, ev.t); // Hundred Tower hook
       break;
     }
+    case SUP: applySurprise(p, ev); break; // a one-time surprise from a grown-up (surprise.js)
     default: applySystems(p, ev); // [systems] 'use', 'prize', 'bolt' events
   }
 }

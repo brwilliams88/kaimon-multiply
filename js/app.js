@@ -10,7 +10,7 @@ import { renderBattle } from './ui/battle.js';
 import { renderTrainer } from './ui/trainer.js';
 import { renderTower } from './ui/tower.js'; // Hundred Tower hook
 import { renderLightning } from './ui/lightning.js'; // [systems] Lightning Round
-import { VERSION } from './data/changelog.js';
+import { VERSION, CHANGELOG } from './data/changelog.js';
 import { startAutoSync, completeLinkSignIn, syncNow } from './core/sync.js';
 import { autoSendReports } from './core/mailer.js';
 import { startOutbox } from './core/outbox.js';
@@ -187,7 +187,8 @@ startUpdates({
   },
 });
 const prevVersion = justUpdated();
-if (prevVersion) setTimeout(() => toast('Updated to v' + VERSION + '. See What\u2019s new in Grown-ups.', 3600), 600);
+// A quiet release (quiet: true in the changelog) updates without the toast.
+if (prevVersion && !CHANGELOG.find((c) => c.version === VERSION)?.quiet) setTimeout(() => toast('Updated to v' + VERSION + '. See What\u2019s new in Grown-ups.', 3600), 600);
 
 // Time in the app for the grown-ups' Play time panel. Counted only while the app
 // is on screen and a trainer is active. Flushed about once a minute.

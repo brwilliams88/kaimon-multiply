@@ -5,6 +5,7 @@ import { apply, emit, evolveReady } from './actions.js';
 import { mergeMonsSnap, monsSnap } from './levels.js';
 import { mergeTowerSnap } from './tower.js'; import { mergeMegaSnap } from './megas.js'; // Hundred Tower and Mega hooks
 import { systemsSnap, mergeSystems } from './items.js'; // [systems] items, quests, Lightning Round
+import { SUP, surpriseSnap, mergeSurprises, mergeWins, gotCounts } from './surprise.js'; // one-time surprises
 
 const URL = 'https://qabevoqmalqjvesqzuse.supabase.co';
 const KEY = 'sb_publishable_6VwJkmR4SMSCs7WXQKjbnA_R0hK8OUW';
@@ -180,7 +181,7 @@ export function joinFamily(p) {
   p.family = true;
   p.updatedAt = Date.now();
   p.outbox = [];
-  emit(p, 'snap', { facts: p.facts, dex: p.dex, balls: p.balls, items: p.items, stats: p.stats, mythic: p.mythic, battles: p.battles, play: p.play, xp: p.xp, tips: p.tips, ...monsSnap(p), wardrobe: p.wardrobe || {}, tower: p.tower, megas: p.megas, ...systemsSnap(p) }); // tower, megas: Hundred Tower and Mega hooks; [systems] items, rewards, Lightning best
+  emit(p, 'snap', { facts: p.facts, dex: p.dex, balls: p.balls, items: p.items, stats: p.stats, mythic: p.mythic, battles: p.battles, play: p.play, xp: p.xp, tips: p.tips, ...monsSnap(p), wardrobe: p.wardrobe || {}, tower: p.tower, megas: p.megas, ...systemsSnap(p), ...surpriseSnap(p) }); // tower, megas: Hundred Tower and Mega hooks; [systems] items, rewards, Lightning best
   save();
   syncNow();
 }
@@ -193,11 +194,12 @@ export function leaveFamily(p) {
 
 // Snapshot from another device: merge into this trainer.
 export function applySnapshot(p, d) {
+  mergeSurprises(p, d); // first, so older badges and hats in this snapshot can't come back
   mergeMonsSnap(p, d); // Kaimon levels (before dex counts change below)
   mergeTowerSnap(p, d.tower); mergeMegaSnap(p, d.megas); // Hundred Tower and Mega hooks
   p.xp = Math.max(p.xp || 0, d.xp || 0);
   for (const [n, t] of Object.entries(d.tips || {})) { p.tips = p.tips || {}; if (!p.tips[n] || t < p.tips[n]) p.tips[n] = t; }
-  for (const [n, t] of Object.entries(d.wardrobe || {})) { p.wardrobe = p.wardrobe || {}; if (!p.wardrobe[n] || t < p.wardrobe[n]) p.wardrobe[n] = t; }
+  for (let [n, t] of Object.entries(d.wardrobe || {})) { if (!gotCounts(p, n, t)) { t = d.wearLast?.[n] || 0; if (!gotCounts(p, n, t)) continue; } p.wardrobe = p.wardrobe || {}; if (!p.wardrobe[n] || t < p.wardrobe[n]) p.wardrobe[n] = t; }
   for (const [id, r] of Object.entries(d.facts || {})) {
     const cur = p.facts[id] || (p.facts[id] = { a: 0, c: 0, ms: 0, days: [], fastDays: [], lastMiss: 0 });
     cur.a += r.a || 0; cur.c += r.c || 0; cur.ms += r.ms || 0;
@@ -219,8 +221,8 @@ export function applySnapshot(p, d) {
   p.mythic.lastSeen = Math.max(p.mythic.lastSeen || 0, d.mythic?.lastSeen || 0);
   const b = d.battles;
   if (b) {
-    for (const k of ['played', 'wins', 'grunts', 'boss']) p.battles[k] = (p.battles[k] || 0) + (b[k] || 0);
-    for (const [t, n] of Object.entries(b.champs || {})) p.battles.champs[t] = (p.battles.champs[t] || 0) + n;
+    for (const k of ['played', 'wins', 'grunts']) p.battles[k] = (p.battles[k] || 0) + (b[k] || 0);
+    mergeWins(p, b); // Gym badges and Boss Papa wins (surprise.js)
     if (b.quiz) p.battles.quiz = Math.max(p.battles.quiz || 0, b.quiz);
   }
   for (const [day, r] of Object.entries(d.play || {})) {
@@ -305,7 +307,14 @@ export function syncNow() {
         save();
         if (rows.length < 1000) break;
       }
-      setSyncState({ ...syncState(), lastSeq, lastSync: Date.now(), error: null });
+      // 4. Once per device: look again for surprises (k = 'sup'). A version of the game
+      // from before surprises read past them without using them. Using one twice is safe.
+      if (!syncState().supScan) {
+        const sups = await api('/rest/v1/events?select=id,seq,profile_id,device,t,k,d&k=eq.' + SUP + '&order=seq.asc&limit=200', { token: t });
+        for (const r of sups) { const p = profileById(r.profile_id); if (p && p.family) applyRemote(p, r); }
+        save();
+      }
+      setSyncState({ ...syncState(), lastSeq, lastSync: Date.now(), error: null, supScan: 1 });
       return true;
     } catch (e) {
       console.warn('Sync failed', e);

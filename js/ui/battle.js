@@ -24,7 +24,8 @@ import { limitReached } from '../core/playtime.js';
 import { startMusic, stopMusic, setPinch } from '../core/music.js';
 import { $, on, esc, sheet, reducedMotion, soundButton, setFlame, fitText, say, wirePad } from './dom.js';
 import { vsHint, matchType } from '../data/types.js'; import { typesGuide } from './typesGuide.js'; // [types] type matchups
-import { canSnack, useSnack, itemCount } from '../core/items.js'; import { towerCrystal } from '../core/tower.js'; import { itemIcon } from './items.js'; // [systems] Power Snack
+import { pendingPrize } from '../core/surprise.js'; import { byId as wearItem } from '../core/wardrobe.js'; import { hatPic } from './wardrobe.js'; import { trainerLook as lookFor, charLook } from './avatars.js'; // a surprise's Boss Papa prize
+import { canSnack, useSnack, itemCount, claimSurprisePrize } from '../core/items.js'; import { towerCrystal } from '../core/tower.js'; import { itemIcon } from './items.js'; // [systems] Power Snack
 
 // Special hit-back moves for the big opponents. Papazilla lifts.
 const FOE_MOVES = { papa: 'Dumbbell Drop', legend: 'Hundred Blast', mythic: 'Dream Burst' };
@@ -853,13 +854,16 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt, wild 
     stopMusic(0.25);
     $('.b-joke', root)?.remove();
     const firstBadge = won && kind === 'champ' && !p.battles.champs[opp.table];
-    const reward = won ? rewardFor(p, kind, opp.table) : null;
+    // A surprise's Boss Papa prize takes the place of the usual reward (surprise.js).
+    const prize = won && kind === 'boss' ? pendingPrize(p) : null;
+    const reward = won && !prize ? rewardFor(p, kind, opp.table) : null;
     const xpBefore = p.xp || 0;
     const bev = recordBattle(p, kind, opp.table, won, crew.slice(1).map((m) => m.key));
     if (bev.evolved?.length) S.evolved = [...(S.evolved || []), ...bev.evolved];
     if (bev.d.x) S.teamXP = (S.teamXP || 0) + Math.round(bev.d.x * SHARE);
     const bonusXP = (p.xp || 0) - xpBefore;
     if (reward) giveBall(p, reward.ball, reward.n);
+    if (prize) claimSurprisePrize(p, prize);
     if (won && kind === 'tower') towerCrystal(p, opp.table); // Hundred Tower: a floor's first win gives a Mega Crystal, once ever
     endTime();
     save();
@@ -895,6 +899,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt, wild 
           ${bonusXP ? `<span class="br-stat xp"><strong>+${bonusXP}</strong><small>win bonus XP</small></span>` : ''}
         </div>
         ${reward ? `<p class="result-reward br-prize"><span class="br-ball">${glowBall(reward.ball) ? fxImg('shiny-ring', 'br-aura') : ''}${ballIcon(reward.ball)}</span><span>You got a <strong>${BALLS[reward.ball].name}</strong>!</span></p>` : ''}
+        ${prize ? prizeHTML(prize) : ''}
         ${teamLine()}
         ${won ? '' : '<p class="br-kind">Every answer still counts as practice.</p>'}
         <div class="sheet-actions">
@@ -905,6 +910,17 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt, wild 
     el.arena.appendChild(ov);
     on(ov, 'click', '[data-again]', () => go(limitReached(p) ? 'home' : 'battle', { kind, table: opp.table }));
     on(ov, 'click', '[data-home]', () => reward?.mythic ? mythicMoment(ov) : go('home'));
+  }
+
+  // A surprise's prize: what came back, with Kairo flying in to cheer.
+  function prizeHTML(pr) {
+    const balls = Object.entries(pr.balls).filter(([k, n]) => n > 0 && BALLS[k]);
+    const hats = pr.hats.map(wearItem).filter(Boolean);
+    const parts = [...balls.map(([k, n]) => `${n > 1 ? n + ' ' : 'a '}<strong>${BALLS[k].name}${n > 1 ? 's' : ''}</strong>`), ...hats.map((h) => `your <strong>${esc(h.name)}</strong> back`)];
+    if (!parts.length) return '';
+    const words = parts.length > 1 ? parts.slice(0, -1).join(', ') + ' and ' + parts[parts.length - 1] : parts[0];
+    const L = charLook(lookFor(p));
+    return `<p class="result-reward br-prize sup-prize"><span class="sup-prize-art">${balls.map(([k]) => `<span class="br-ball">${glowBall(k) ? fxImg('shiny-ring', 'br-aura') : ''}${ballIcon(k)}</span>`).join('')}${hats.map((h) => `<span class="sup-prize-hat">${hatPic(L, h.id)}</span>`).join('')}</span><span>You got ${words}!</span>${p.dex[MYTHIC_ID]?.caught ? `<span class="sup-cheer" aria-hidden="true">${creatureArt(byId(MYTHIC_ID))}</span>` : ''}</p>`;
   }
 
   // After Boss Papa falls for the first time, Kai's mythic comes down to meet the trainer.

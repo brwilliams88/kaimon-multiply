@@ -11,7 +11,8 @@
 // Names, art and kid lines come from ITEM_INFO in extras.js (one source of truth).
 // Saved item keys: snack (Power Snack), scroll (Teacher K Hint), charm, lantern,
 // evolve (Evolve Crystal) and megaCrystal (the Tower's Mega Crystal).
-import { emit, evolveReady } from './actions.js';
+import { emit, evolveReady, gotWear } from './actions.js';
+import { prizeKey } from './surprise.js';
 import { buddyOf, nextForm, giveXP } from './levels.js';
 import { MYTHIC_ID } from '../data/creatures.js';
 import { dayRec } from './playtime.js';
@@ -145,6 +146,16 @@ export function grant(p, key, gives) {
   const ev = emit(p, 'prize', d);
   if (xp) ev.evolved = evolveReady(p);
   return ev;
+}
+
+// A surprise's Boss Papa prize (surprise.js pendingPrize): its balls once (a 'prize'
+// event, so two devices can't both give it) and its hats back.
+export function claimSurprisePrize(p, pr) {
+  if (!pr || claimed(p, prizeKey(pr.id))) return false;
+  const g = Object.entries(pr.balls || {}).filter(([, n]) => n > 0).map(([k, n]) => ['b', k, n | 0]);
+  grant(p, prizeKey(pr.id), g);
+  for (const h of pr.hats || []) if (!p.wardrobe?.[h]) gotWear(p, h);
+  return true;
 }
 
 // The Tower and Mega agent's way to hand out Mega Crystals.
