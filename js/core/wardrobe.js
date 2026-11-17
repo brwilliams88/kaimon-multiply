@@ -7,6 +7,7 @@ import { UNLOCKS, STARTER_COLORS, COLOR_NAME, HAT_IDS } from '../data/wardrobe.j
 import { countAtLeast, LEVEL_LABEL } from './facts.js';
 import { tableMedals, papaWon } from './extras.js';
 import { gotWear } from './actions.js';
+import { hatResetAt } from './surprise.js';
 
 export const byId = (id) => UNLOCKS.find((u) => u.id === id) || null;
 export const colorItems = () => UNLOCKS.filter((u) => u.kind === 'color');
@@ -24,13 +25,16 @@ export function progress(p, item) {
 }
 const done = (p, item) => { const g = progress(p, item); return g.have >= g.need; };
 const recorded = (p, id) => !!p.wardrobe?.[id];
+// A hat a surprise took back (surprise.js) only comes back by winning it again: the
+// Papa Cap by beating Boss Papa again, any other hat from a surprise's prize.
+const takenBack = (p, item) => item.kind === 'hat' && !!hatResetAt(p, item.id) && !item.need?.papa;
 
 // Owned: free from the start, recorded (earned, or kept from before), or earned now.
 export function owns(p, id) {
   if (STARTER_COLORS.includes(id)) return true;
   if (recorded(p, id)) return true;
   const it = byId(id);
-  return !!it && it.ready !== false && done(p, it);
+  return !!it && it.ready !== false && !takenBack(p, it) && done(p, it);
 }
 export const ownsColor = (p, c) => !!COLOR_NAME[c] && owns(p, c);
 export const ownsHat = (p, h) => HAT_IDS.includes(h) && owns(p, h);
@@ -47,6 +51,7 @@ export function howTo(item) {
   return 'Keep answering';
 }
 export function moreText(p, item) {
+  if (takenBack(p, item)) return 'Beat Boss Papa';
   const { have, need } = progress(p, item);
   const left = need - have, n = item.need || {};
   if (n.right != null) return `${left.toLocaleString()} more right answer${left === 1 ? '' : 's'}`;
@@ -60,7 +65,7 @@ export function moreText(p, item) {
 export function nextUp(p) {
   let best = null, bestF = -1;
   for (const it of UNLOCKS) {
-    if (it.ready === false || owns(p, it.id)) continue;
+    if (it.ready === false || owns(p, it.id) || takenBack(p, it)) continue;
     const g = progress(p, it), f = g.have / g.need;
     if (f > bestF) { best = it; bestF = f; }
   }
@@ -81,7 +86,17 @@ export function keepCurrent(p, look) {
 }
 
 // Earned but not celebrated yet (on any family device). Hats that aren't ready never show.
-export const fresh = (p) => UNLOCKS.filter((it) => it.ready !== false && !recorded(p, it.id) && done(p, it));
+export const fresh = (p) => UNLOCKS.filter((it) => it.ready !== false && !recorded(p, it.id) && !takenBack(p, it) && done(p, it));
+
+// A hat taken back by a surprise but still worn (a look picked on a device that hadn't
+// heard yet): take it off. Returns true when the look changed (the caller saves).
+export function hatCheck(p) {
+  const h = p.look && typeof p.look === 'object' ? p.look.hat : null;
+  if (!h || !hatResetAt(p, h) || owns(p, h)) return false;
+  const n = { ...p.look }; delete n.hat;
+  p.look = n; p.lookAt = Date.now();
+  return true;
+}
 
 // Celebrated now: record each one once.
 export function markSeen(p, items) {

@@ -8,6 +8,7 @@ import { creatureArt } from '../core/art.js';
 import { sceneSrc, cssUrl, ballImg, fxSrc, ballSrc, uiImg } from '../core/assets.js';
 import { dexState } from '../core/game.js';
 import { towerState, pendingCatch, floorOf, needsCatch, floorUnlocked, towerRelevant, towerLockedLine } from '../core/tower.js';
+import { papaEverWon } from '../core/surprise.js';
 import { megaReady, crystals } from '../core/megas.js';
 import { seen, caught as catchIt, ball as giveBall } from '../core/actions.js';
 import { syncNow } from '../core/sync.js';
@@ -26,7 +27,7 @@ const CHECK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5 L10 
 export function towerTile(p) {
   if (!towerRelevant(p)) return '';
   const st = towerState(p);
-  const sub = !st.open ? ((p.battles?.boss || 0) > 0 ? 'Catch the mythic Kaimon to open it.' : 'Opens after Boss Papa and the mythic Kaimon.')
+  const sub = !st.open ? (papaEverWon(p) ? 'Catch the mythic Kaimon to open it.' : 'Opens after Boss Papa and the mythic Kaimon.')
     : st.pending ? `${byId(floorOf(st.pending).id).name} is waiting to be caught!`
     : st.next ? (st.next === 1 ? 'Open! Three legendaries are waiting.' : `Floor ${st.next} is open. ${st.caught} of 3 legendaries caught.`)
     : 'All 3 legendaries caught. Battle them again any time.';

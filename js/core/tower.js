@@ -13,6 +13,7 @@ import { creatureArt } from './art.js';
 import { ballImg } from './assets.js';
 import { grantMegaCrystal } from './items.js';
 import { XP } from './xp.js';
+import { papaEverWon } from './surprise.js';
 import { arrivalLevel } from './levels.js';
 
 // Bottom floor first. hp: the guardian's HP (a Gym Leader's Kaimon has about 60).
@@ -37,12 +38,12 @@ const floorRec = (p, n) => p.tower?.floors?.[n] || null;
 // The Tower is the post-game. It opens once Kairo is caught (Kairo lands after Boss Papa
 // falls), so Kai's mythic stays the climax of the adventure. Before that it can be
 // looked at, but not climbed.
-export const towerOpen = (p) => (p.battles?.boss || 0) > 0 && !!p.dex?.[MYTHIC_ID]?.caught;
+export const towerOpen = (p) => papaEverWon(p) && !!p.dex?.[MYTHIC_ID]?.caught;
 // Worth showing on Home: once Papa's Gym is open, or anything after.
-export const towerRelevant = (p) => towerOpen(p) || (p.battles?.boss || 0) > 0 || bossUnlocked(p);
+export const towerRelevant = (p) => towerOpen(p) || papaEverWon(p) || bossUnlocked(p);
 // What still stands between the trainer and the Tower, in kid words. The mythic
 // Kaimon's name stays secret until it is caught, so it isn't named here.
-export const towerLockedLine = (p) => (p.battles?.boss || 0) > 0
+export const towerLockedLine = (p) => papaEverWon(p)
   ? 'Catch the mythic Kaimon to open the Hundred Tower.'
   : 'Beat Boss Papa, then catch the mythic Kaimon, to open the Hundred Tower.';
 export const floorCleared = (p, n) => (floorRec(p, n)?.w || 0) > 0;
