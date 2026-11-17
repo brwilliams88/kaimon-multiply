@@ -2,6 +2,8 @@
 
 All notable changes. Versioning: `0.MINOR.0` marks a roadmap phase, `0.x.PATCH` is any shipped change a player or parent can notice, and `1.0.0` is the public launch. See "Versioning" in CLAUDE.md. The in-app version history (Grown-ups > What's new) reads from `js/data/changelog.js`; keep both in sync. Each release is tagged in git as `vX.Y.Z`.
 
+## v1.1.3 (2026-11-16) Small fixes behind the scenes
+
 ## v1.1.2 (2026-11-16) Trophy case
 
 - Your badges, medals, patches and Item Bag now live together in one Trophy case on your trainer page.
