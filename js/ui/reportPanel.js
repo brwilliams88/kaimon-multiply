@@ -57,7 +57,7 @@ export function reportCardHTML(p, r) {
         <div class="wr-stat"><strong>${r.daysPlayed}<small>/7</small></strong><span>days played</span></div>
       </div>
       <div class="wr-days" role="img" aria-label="Minutes each day: ${r.daily.map((d) => `${d.name} ${d.minutes}`).join(', ')}">
-        ${r.daily.map((d, i) => `<div class="wr-day${i > todayIdx ? ' later' : ''}${i === todayIdx && r.partial ? ' today' : ''}"><span class="wr-dmin">${d.minutes || ''}</span><span class="wr-dbar"><i style="height:${d.minutes ? Math.max(8, Math.round((d.minutes / maxMin) * 100)) : 0}%"></i></span><b>${d.name[0]}</b></div>`).join('')}
+        ${r.daily.map((d, i) => `<div class="wr-day${i > todayIdx ? ' later' : ''}${i === todayIdx && r.partial ? ' wr-today' : ''}"><span class="wr-dmin">${d.minutes || ''}</span><span class="wr-dbar"><i style="height:${d.minutes ? Math.max(8, Math.round((d.minutes / maxMin) * 100)) : 0}%"></i></span><b>${d.name[0]}</b></div>`).join('')}
       </div>
       ${wins.length ? `<div class="wr-wins">${wins.join('')}</div>` : ''}
       ${mons.length ? `<div class="wr-mons">${mons.map((s) => `<figure class="wr-mon"><img src="${kaimonSrc(s.num)}" alt="" decoding="async"><figcaption>${esc(s.name)}${s.n > 1 ? ` <small>×${s.n}</small>` : ''}</figcaption>${isNew.has(s.id) ? '<span class="wr-new">New</span>' : ''}</figure>`).join('')}</div>` : ''}
