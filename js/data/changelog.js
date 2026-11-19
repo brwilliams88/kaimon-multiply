@@ -1,7 +1,16 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '1.1.6';
+export const VERSION = '1.1.7';
 
 export const CHANGELOG = [
+  {
+    version: '1.1.7',
+    date: '2026-11-19',
+    title: "Small fixes",
+    quiet: true,
+    items: [
+      "Behind-the-scenes work on something new. Nothing changes in the game yet.",
+    ],
+  },
   {
     version: '1.1.6',
     date: '2026-11-19',
