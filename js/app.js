@@ -10,6 +10,7 @@ import { renderBattle } from './ui/battle.js';
 import { renderTrainer } from './ui/trainer.js';
 import { renderTower } from './ui/tower.js'; // Hundred Tower hook
 import { renderLightning } from './ui/lightning.js'; // [systems] Lightning Round
+import { renderCoop } from './ui/coop.js'; import { renderCoopCatch } from './ui/coopCatch.js'; import { renderCoopRush } from './ui/coopRush.js'; // Times Two
 import { VERSION, CHANGELOG } from './data/changelog.js';
 import { startAutoSync, completeLinkSignIn, syncNow } from './core/sync.js';
 import { autoSendReports } from './core/mailer.js';
@@ -41,9 +42,10 @@ const SCREENS = {
   trainer: renderTrainer,
   tower: renderTower, // Hundred Tower hook
   lightning: renderLightning, // [systems] Lightning Round
+  coop: renderCoop, coopCatch: renderCoopCatch, coopRush: renderCoopRush, // Times Two
 };
 
-const NEEDS_PROFILE = new Set(['home', 'play', 'kaidex', 'grownups', 'meetPartner', 'battle', 'trainer', 'lightning', 'tower']); // [systems] + lightning, tower
+const NEEDS_PROFILE = new Set(['home', 'play', 'kaidex', 'grownups', 'meetPartner', 'battle', 'trainer', 'lightning', 'tower', 'coop', 'coopCatch', 'coopRush']); // [systems] + lightning, tower; Times Two
 
 let navCount = 0;
 // Back from a screen opened from Home lands on the same spot of Home, not the top.
@@ -83,7 +85,7 @@ function go(name, params = {}) {
   document.documentElement.classList.toggle('lock-screen', name === 'welcome');
 }
 // Each screen has a name: in the browser tab, and as a heading screen readers land on.
-const SCREEN_NAMES = { welcome: '', newTrainer: 'New trainer', meetPartner: 'Meet your Buddy', home: 'Home', play: 'Practice', kaidex: 'Kaidex', grownups: 'Grown-ups', battle: 'Battle', trainer: 'Trainer', lightning: 'Lightning Round', tower: 'The Hundred Tower' };
+const SCREEN_NAMES = { welcome: '', newTrainer: 'New trainer', meetPartner: 'Meet your Buddy', home: 'Home', play: 'Practice', kaidex: 'Kaidex', grownups: 'Grown-ups', battle: 'Battle', trainer: 'Trainer', lightning: 'Lightning Round', tower: 'The Hundred Tower', coop: 'Times Two', coopCatch: 'Catch Party', coopRush: 'Gym Rush' };
 let firstScreen = true;
 function nameScreen(root, name) {
   const label = SCREEN_NAMES[name] || '';
@@ -176,7 +178,7 @@ document.addEventListener('click', (e) => {
 // Offline support and updates. Updates install by themselves between rounds;
 // during a round, a bar offers to update.
 startUpdates({
-  isBusy: () => ['play', 'battle', 'lightning'].includes(document.getElementById('app')?.dataset.screen), // [systems] + lightning
+  isBusy: () => ['play', 'battle', 'lightning', 'coopCatch', 'coopRush'].includes(document.getElementById('app')?.dataset.screen), // [systems] + lightning
   showBar: (apply) => {
     if (document.querySelector('.update-bar')) return;
     const bar = document.createElement('div');

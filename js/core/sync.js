@@ -1,5 +1,6 @@
 // Family sync with Supabase, using plain fetch (no library, works offline-first).
 // Any grown-up's email can start a family. Each family only sees its own rows; guests stay on the device.
+import { coopSnap, mergeCoopSnap } from './coop.js'; // Times Two
 import { allProfiles, profileById, putProfile, newProfile, save, deviceId, syncState, setSyncState, deleteProfile, hiddenProfiles, unhideProfile } from './store.js';
 import { apply, emit, evolveReady } from './actions.js';
 import { mergeMonsSnap, monsSnap } from './levels.js';
@@ -181,7 +182,7 @@ export function joinFamily(p) {
   p.family = true;
   p.updatedAt = Date.now();
   p.outbox = [];
-  emit(p, 'snap', { facts: p.facts, dex: p.dex, balls: p.balls, items: p.items, stats: p.stats, mythic: p.mythic, battles: p.battles, play: p.play, xp: p.xp, tips: p.tips, ...monsSnap(p), wardrobe: p.wardrobe || {}, tower: p.tower, megas: p.megas, ...systemsSnap(p), ...surpriseSnap(p) }); // tower, megas: Hundred Tower and Mega hooks; [systems] items, rewards, Lightning best
+  emit(p, 'snap', { facts: p.facts, dex: p.dex, balls: p.balls, items: p.items, stats: p.stats, mythic: p.mythic, battles: p.battles, play: p.play, xp: p.xp, tips: p.tips, ...monsSnap(p), wardrobe: p.wardrobe || {}, tower: p.tower, megas: p.megas, ...systemsSnap(p), ...surpriseSnap(p), ...coopSnap(p) }); // tower, megas: Hundred Tower and Mega hooks; [systems] items, rewards, Lightning best
   save();
   syncNow();
 }
@@ -237,6 +238,7 @@ export function applySnapshot(p, d) {
     for (const [id, lv] of Object.entries(r.up || {})) { const o = cur.up = cur.up || {}; o[id] = Math.max(o[id] || 0, lv); }
   }
   mergeSystems(p, d); // [systems] rewards claimed, Lucky Lantern, Evolve Crystal, Lightning Round
+  mergeCoopSnap(p, d); // Times Two friends, team records and a saved Gym Rush
 }
 
 function applyRemote(p, ev) {
