@@ -26,6 +26,7 @@ import { openPlayElsewhere, deviceIcon } from './playElsewhere.js';
 import { openFeedback, openRate, myRating, rateIcon } from './feedback.js';
 import { trainerChipSheet } from './onboarding.js';
 import { towerTile } from './tower.js'; // Hundred Tower hook
+import { coopTileHTML, maybeTimesTwoIntro } from './coop.js'; // Times Two
 import { questsCard, bindQuests, boltLockedNote } from './quests.js'; // [systems] daily quests, Lightning Round
 import { boltUnlocked, boltBest, calmMode } from '../core/lightning.js'; // [systems] Lightning Round in the Menu
 import { offlineBadgeHTML } from './offline.js';
@@ -199,6 +200,7 @@ export function renderHome(root, go, params = {}) {
             <span class="quick-go" aria-hidden="true">${ARROW}</span>
           </button>
 
+            ${coopTileHTML(p) /* Times Two (preview) */}
             <button class="tile tile-dex" data-dex aria-label="Kaidex. ${dex.caught} of ${dex.total} caught."><span class="tile-ic" aria-hidden="true">${kaidexIcon()}</span><span class="tile-text"><strong>Kaidex</strong><small>${dex.caught} of ${dex.total}</small></span></button>
             <button class="tile tile-quiz${qReady ? ' ready' : ''}" data-quiz><span class="tile-ic tile-face" aria-hidden="true">${trainerFace('teacher-k')}</span><span class="tile-text"><strong>Pop Quiz</strong><small>${qReady ? 'Ready!' : !quizUseful(p) ? 'Opens soon' : `In ${qNext} day${qNext === 1 ? '' : 's'}`}</small></span></button>
           </div>
@@ -311,7 +313,7 @@ export function renderHome(root, go, params = {}) {
   // A one-time surprise for this trainer: its scene first, everything else after it.
   const sup = params.guide ? null : sceneToShow(p);
   if (sup) showSurprise(p, sup, () => go('home', { glow: true }));
-  else evolutionMoments(p);
+  else { evolutionMoments(p); setTimeout(() => { if (root.isConnected && !params.guide) maybeTimesTwoIntro(p, go); }, 900); } // Times Two: Teacher K's story, once
   // A surprise that arrives by family sync while Home is open shows right away.
   const offSync = onSyncChange((st) => {
     if (!root.isConnected) return offSync();
@@ -324,6 +326,7 @@ export function renderHome(root, go, params = {}) {
   // Kairo waits on the home screen until it's caught. It can never be missed.
   if (!sup && p.battles.boss > 0 && !p.dex[MYTHIC_ID]?.caught) setTimeout(() => kairoWaiting(p, go), 600);
   on(root, 'click', '[data-dex]', () => { sfx.tap(); go('kaidex'); });
+  on(root, 'click', '[data-coop]', () => { unlock(); sfx.tap(); if (timesUp()) return; keepPlace(); go('coop'); }); // Times Two
   on(root, 'click', '[data-tower]', () => { unlock(); sfx.tap(); keepPlace(); go('tower'); }); // Hundred Tower hook
   on(root, 'click', '[data-quiz]', () => { unlock(); sfx.tap(); if (timesUp()) return; keepPlace(); go('battle', { kind: 'quiz' }); });
   on(root, 'click', '[data-trainer]', () => { sfx.tap(); trainerChipSheet(go); }); // trainer page or Switch trainer

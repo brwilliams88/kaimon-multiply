@@ -10,6 +10,7 @@ import { today } from './store.js';
 import { applyTowerBattle } from './tower.js'; import { applyMega } from './megas.js'; // Hundred Tower and Mega hooks
 import { applySystems, onSeen, shinyChance } from './items.js'; // [systems] items, quests, Lightning Round
 import { SUP, applySurprise, noteWin, gotCounts } from './surprise.js'; // one-time surprises from a grown-up
+import { applyCoop } from './coop.js'; // Times Two: friends, team records, a saved Gym Rush
 import { giveXP, applyCatch, applyEvo, applyBud, roster, buddyOf, nextGen, arrivalLevel, readyToEvolve, BOOST } from './levels.js';
 
 let counter = 0;
@@ -125,6 +126,7 @@ export function apply(p, ev) {
       break;
     }
     case SUP: applySurprise(p, ev); break; // a one-time surprise from a grown-up (surprise.js)
+    case 'pal': case 'pa': case 'pc': case 'team': case 'rsv': applyCoop(p, ev); break; // Times Two (coop.js)
     default: applySystems(p, ev); // [systems] 'use', 'prize', 'bolt' events
   }
 }

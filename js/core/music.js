@@ -326,7 +326,7 @@ export function stopMusic(fade = 0.4) {
 }
 
 // Which music a screen gets. Called on every screen change.
-const MENU_SCREENS = new Set(['welcome', 'newTrainer', 'meetPartner', 'home', 'kaidex', 'trainer']);
+const MENU_SCREENS = new Set(['welcome', 'newTrainer', 'meetPartner', 'home', 'kaidex', 'trainer', 'coop']); // coop: Times Two setup
 export function musicFor(screen, allowed = true) {
   if (!allowed) return stopMusic(0.3);
   if (MENU_SCREENS.has(screen)) return play('menu');
