@@ -78,6 +78,8 @@ export function habitatSrc(region) {
 // Gym buildings: one per table, plus 'papa' (Papa's Gym). Same sizes as scenes.
 export const gymSrc = (key, thumb = false) => `assets/scenes/gyms/${thumb ? 'thumb/' : ''}${key}.webp`;
 export const gymImg = (key, cls = '') => img(gymSrc(key, true), `gym-img ${cls}`);
+// Inside each gym: the battle hall (Times Two's Gym Rush). Papa's Gym uses its own scene.
+export const gymInsideSrc = (key) => (key === 'papa' ? sceneSrc('papa') : `assets/scenes/gyms/inside/${key}.webp`);
 
 export const LOGO = 'assets/brand/logo.webp';
 export const CARD_BACK = 'assets/brand/card-back.webp';

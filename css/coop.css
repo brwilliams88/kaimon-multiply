@@ -322,3 +322,73 @@
 .tt-intro-card .btn-xl { width: 100%; }
 @media (min-height: 700px) and (min-width: 700px) { .tt-intro { place-items: center; } }
 @media (prefers-reduced-motion: reduce) { .tt-intro { transition: none; } }
+
+/* ---------- Gym Rush arrival scene: outside the gym, then inside with the Leader ---------- */
+.tt-cut { position: fixed; inset: 0; z-index: 40; max-width: 1180px; margin: 0 auto; overflow: hidden; background: var(--ink); cursor: pointer; transition: opacity .3s; }
+.tt-cut.out { opacity: 0; }
+.tt-cut-bg { position: absolute; inset: 0; background-position: center; background-size: cover; transition: opacity .7s ease, transform 1.2s ease; }
+.tt-cut-bg.in { opacity: 0; transform: scale(1.06); }
+.tt-cut.at-in .tt-cut-bg.out { opacity: 0; transform: scale(1.12); }
+.tt-cut.at-in .tt-cut-bg.in { opacity: 1; transform: none; }
+.tt-cut-top { position: absolute; left: 12px; right: 12px; top: calc(10px + var(--safe-t)); z-index: 4; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.tt-cut-top .tt-vs-gym { position: static; }
+.tt-cut-skip { padding: 6px 14px; border: 2.5px solid var(--ink); border-radius: 99px; background: rgba(255, 255, 255, .92); font-weight: 700; font-size: 15px; box-shadow: 0 3px 0 var(--ink); }
+.tt-cut-strip { position: absolute; left: 0; right: 0; top: calc(56px + var(--safe-t)); z-index: 3; transition: opacity .4s; }
+.tt-cut.at-in .tt-cut-strip { opacity: 0; }
+/* The kids: outside they stand side by side; inside they step to the left and the
+   Gym Leader is waiting on the right. Sized by screen width so a phone fits both. */
+.tt-cut-kids { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
+.tt-cut-kid { position: absolute; bottom: 24%; width: 54%; aspect-ratio: 1; transition: left .6s cubic-bezier(.3, 1, .4, 1), width .6s cubic-bezier(.3, 1, .4, 1), transform .25s, filter .25s; }
+.tt-cut-kid img { width: 100%; height: 100%; object-fit: contain; object-position: center bottom; display: block; filter: drop-shadow(0 6px 0 rgba(20, 33, 61, .3)); }
+.tt-cut-kid.l { left: -3%; }
+.tt-cut-kid.r { left: 49%; }
+.tt-cut-kid.r img { transform: scaleX(-1); }
+.tt-cut:not(.calm) .tt-cut-kid.l { animation: tt-walk-l .9s cubic-bezier(.25, 1, .4, 1) both; }
+.tt-cut:not(.calm) .tt-cut-kid.r { animation: tt-walk-r .9s .1s cubic-bezier(.25, 1, .4, 1) both; }
+@keyframes tt-walk-l { from { transform: translateX(-120vw); } 60% { transform: translateX(3vw) translateY(-2%); } }
+@keyframes tt-walk-r { from { transform: translateX(120vw); } 60% { transform: translateX(-3vw) translateY(-2%); } }
+.tt-cut.at-in .tt-cut-kid { width: 44%; }
+.tt-cut.at-in .tt-cut-kid.l { left: -7%; }
+.tt-cut.at-in .tt-cut-kid.r { left: 20%; }
+.tt-cut [data-who] { transition: transform .25s, filter .25s, left .6s cubic-bezier(.3, 1, .4, 1), width .6s cubic-bezier(.3, 1, .4, 1), opacity .5s; }
+.tt-cut [data-who].speaking { transform: translateY(-3%) scale(1.04); }
+.tt-cut.at-in [data-who]:not(.speaking) { filter: brightness(.9) saturate(.9); }
+/* The Gym Leader waits inside, on the right. */
+.tt-cut-leader { position: absolute; right: -6%; bottom: 40%; width: 62%; aspect-ratio: 1; z-index: 1; opacity: 0; transform: translateX(30%); pointer-events: none; }
+.tt-cut-leader img { width: 100%; height: 100%; object-fit: contain; object-position: center bottom; filter: drop-shadow(0 6px 0 rgba(20, 33, 61, .3)); }
+.tt-cut.at-in .tt-cut-leader { opacity: 1; transform: none; transition: opacity .5s .35s, transform .6s .35s cubic-bezier(.3, 1.2, .4, 1); }
+.tt-cut.at-in .tt-cut-leader.speaking { transform: translateY(-2%) scale(1.04); transition: transform .25s; }
+.tt-cut-name { position: absolute; right: 12%; bottom: 0; padding: 2px 12px; border: 2.5px solid var(--ink); border-radius: 99px; background: var(--sun); font-weight: 700; font-size: 15px; white-space: nowrap; box-shadow: 0 2px 0 var(--ink); }
+@media (min-aspect-ratio: 1/1) {
+  .tt-cut-kid { width: 27%; bottom: 20%; }
+  .tt-cut-kid.l { left: 22%; }
+  .tt-cut-kid.r { left: 49%; }
+  .tt-cut.at-in .tt-cut-kid { width: 25%; }
+  .tt-cut.at-in .tt-cut-kid.l { left: 4%; }
+  .tt-cut.at-in .tt-cut-kid.r { left: 22%; }
+  .tt-cut-leader { width: 32%; right: 10%; bottom: 22%; }
+}
+@media (min-width: 700px) and (max-aspect-ratio: 1/1) {
+  .tt-cut-kid { width: 46%; bottom: 22%; }
+  .tt-cut-kid.l { left: 4%; }
+  .tt-cut-kid.r { left: 48%; }
+  .tt-cut.at-in .tt-cut-kid { width: 40%; }
+  .tt-cut.at-in .tt-cut-kid.l { left: 0; }
+  .tt-cut.at-in .tt-cut-kid.r { left: 24%; }
+  .tt-cut-leader { width: 52%; right: 2%; bottom: 36%; }
+}
+/* The dialogue box. */
+.tt-cut-box { position: absolute; left: 12px; right: 12px; bottom: calc(14px + var(--safe-b)); z-index: 5; display: flex; flex-direction: column; gap: 6px; padding: 18px 16px 12px; background: var(--paper); border: 4px solid var(--ink); border-radius: 24px; box-shadow: 0 6px 0 var(--ink); max-width: 720px; margin: 0 auto; cursor: pointer; }
+.tt-cut-who { position: absolute; left: 16px; top: -16px; padding: 3px 14px; border: 3px solid var(--ink); border-radius: 99px; background: var(--tc, #2D7FF9); color: #fff; font-weight: 700; font-size: 16px; text-shadow: 0 1px 0 rgba(20, 33, 61, .4); }
+.tt-cut-text { margin: 0; min-height: 2.7em; font-size: 20px; line-height: 1.35; font-weight: 600; }
+.tt-cut-text.pop { animation: tt-line .3s ease-out both; }
+@keyframes tt-line { from { opacity: 0; transform: translateY(6px); } }
+.tt-cut-next { align-self: flex-end; font-size: 14px; font-weight: 700; color: var(--ink-2); animation: tt-blink 1.2s ease-in-out infinite; }
+@keyframes tt-blink { 50% { opacity: .35; } }
+.tt-cut-go { width: 100%; margin-top: 4px; }
+.tt-cut.ready { cursor: default; }
+.tt-cut-vs { position: absolute; left: -10%; right: -10%; top: 42%; z-index: 6; height: 64px; display: grid; place-items: center; background: var(--coral); border-top: 5px solid #fff; border-bottom: 5px solid #fff; box-shadow: 0 0 0 3px var(--ink); transform: skewY(-6deg) scaleX(0); transition: transform .35s cubic-bezier(.2, 1.3, .4, 1); pointer-events: none; }
+.tt-cut-vs span { transform: skewY(6deg); font-size: 44px; font-weight: 700; color: #fff; -webkit-text-stroke: 2px var(--ink); paint-order: stroke fill; }
+.tt-cut.vs .tt-cut-vs { transform: skewY(-6deg) scaleX(1); }
+.tt-cut.calm .tt-cut-bg, .tt-cut.calm .tt-cut-kid, .tt-cut.calm .tt-cut-leader, .tt-cut.calm .tt-cut-vs { transition-duration: .01s; animation: none; }
+@media (prefers-reduced-motion: reduce) { .tt-cut-next { animation: none; } .tt-cut-text.pop { animation: none; } }
