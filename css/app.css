@@ -1968,8 +1968,8 @@ body[data-screen="play"] #toast.show, body[data-screen="battle"] #toast.show { t
 .wr-dbar i { display: block; width: 100%; background: var(--grass); border-top: 2.5px solid var(--ink); border-radius: 8px 8px 0 0; }
 .wr-dbar i[style*="height:0%"] { border: 0; }
 .wr-day b { font-size: 14px; font-weight: 600; color: var(--ink-2); }
-.wr-day.today b { color: var(--ink); font-weight: 700; }
-.wr-day.today .wr-dbar { box-shadow: inset 0 0 0 2px #2D7FF9; }
+.wr-day.wr-today b { color: var(--ink); font-weight: 700; }
+.wr-day.wr-today .wr-dbar { box-shadow: inset 0 0 0 2px #2D7FF9; }
 .wr-day.later .wr-dbar { background: repeating-linear-gradient(135deg, #F3F6FA 0 5px, #E9EEF5 5px 10px); }
 .wr-day.later b { opacity: .55; }
 .wr-h { margin: 2px 0 0; font-size: 17px; font-weight: 700; }
