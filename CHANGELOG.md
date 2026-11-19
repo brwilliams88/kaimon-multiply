@@ -2,6 +2,11 @@
 
 All notable changes. Versioning: `0.MINOR.0` marks a roadmap phase, `0.x.PATCH` is any shipped change a player or parent can notice, and `1.0.0` is the public launch. See "Versioning" in CLAUDE.md. The in-app version history (Grown-ups > What's new) reads from `js/data/changelog.js`; keep both in sync. Each release is tagged in git as `vX.Y.Z`.
 
+## v1.1.4 (2026-11-19) Small fixes
+
+- Fixed: in Grown-ups, the weekly chart keeps today's bar in line with the other days.
+- Behind-the-scenes work on something new. Nothing changes in the game yet.
+
 ## v1.1.3 (2026-11-16) Small fixes behind the scenes
 
 A quiet release: no "Updated" message in the app, and What's new shows only the title.
