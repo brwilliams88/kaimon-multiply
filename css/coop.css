@@ -115,11 +115,11 @@
 .tt-handoff.open { opacity: 1; }
 .tt-handoff.closing { opacity: 0; }
 .tt-ho-card { position: relative; width: min(100%, 460px); max-height: 100%; overflow: auto; display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 14px 16px 16px; background: #FFF6EA; border: 4px solid var(--ink); border-radius: 30px; box-shadow: 0 8px 0 var(--ink); text-align: center; }
-.tt-ho-stage { position: relative; width: 100%; height: clamp(150px, 30vh, 250px); }
-.tt-ho-who { position: absolute; bottom: 0; width: 56%; height: 100%; }
+.tt-ho-stage { position: relative; width: calc(100% + 32px); margin: -14px -16px 0; height: clamp(190px, 36vh, 320px); overflow: hidden; border-radius: 26px 26px 0 0; background: radial-gradient(ellipse at 50% 110%, #FFE7B8 0 45%, transparent 46%), linear-gradient(180deg, #CFE8FF, #FFF6EA); border-bottom: 3px solid var(--ink); }
+.tt-ho-who { position: absolute; bottom: -16%; width: 66%; height: 112%; }
 .tt-ho-who img { width: 100%; height: 100%; object-fit: contain; object-position: center bottom; display: block; }
-.tt-ho-l { left: -6%; }
-.tt-ho-r { right: -6%; }
+.tt-ho-l { left: -10%; }
+.tt-ho-r { right: -10%; }
 .tt-ho-r img { transform: scaleX(-1); }
 .tt-ho-burst { position: absolute; left: 50%; top: 4%; width: 46%; aspect-ratio: 1; margin-left: -23%; opacity: .9; }
 .tt-ho-burst img { width: 100%; height: 100%; object-fit: contain; animation: tt-spin 6s linear infinite; }
@@ -190,7 +190,7 @@
 .coop-play.tt-r.v2 .catch-zone .throw-ball { transform: translate(min(22vw, 170px), 30px) rotate(0deg) scale(.7); }
 .coop-play.tt-r.v2 .catch-zone.thrown .throw-ball { transform: translate(0, -6px) rotate(var(--spin, 360deg)); }
 /* Team Throw: the partner pops in right beside the thrower, on the same side. */
-.tt-buddy { position: absolute; bottom: -2%; left: 14%; height: min(70%, 270px); aspect-ratio: 1; z-index: 2; pointer-events: none; transform: translateX(-140%); transition: transform .34s .05s cubic-bezier(.2, 1.15, .4, 1); }
+.tt-buddy { position: absolute; bottom: -2%; left: 14%; height: min(82%, 310px); aspect-ratio: 1; z-index: 2; pointer-events: none; transform: translateX(-140%); transition: transform .34s .05s cubic-bezier(.2, 1.15, .4, 1); }
 .tt-buddy img { width: 100%; height: 100%; object-fit: contain; object-position: left bottom; display: block; filter: drop-shadow(0 6px 0 rgba(20, 33, 61, .25)); }
 .catch-zone.trainer-in .tt-buddy { transform: none; }
 .tt-r .tt-buddy { left: auto; right: 14%; transform: translateX(140%); }
@@ -279,11 +279,12 @@
 .tt-pack-me { display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: #EAF4FF; border: 2.5px solid var(--ink); border-radius: 16px; font-size: 15px; }
 .tt-check { align-items: center; text-align: center; justify-content: center; }
 .tt-check .screen-title { font-size: 28px; }
-.tt-check-art { position: relative; width: min(100%, 420px); height: clamp(180px, 30vh, 280px); }
-.tt-check-art .tt-vs-kid.l { left: 0; }
-.tt-check-art .tt-vs-kid.r { left: auto; right: 0; }
+.tt-check-art { position: relative; width: min(100%, 520px); height: clamp(210px, 34vh, 330px); overflow: hidden; border: 4px solid var(--ink); border-radius: 28px; box-shadow: 0 6px 0 var(--ink); background: var(--sky) var(--hall, none) center 70% / cover no-repeat; }
+.tt-check-art .tt-vs-kid { height: 118%; bottom: -22%; }
+.tt-check-art .tt-vs-kid.l { left: -8%; }
+.tt-check-art .tt-vs-kid.r { left: auto; right: -8%; }
 .tt-check-burst { position: absolute; left: 50%; top: 0; width: 60%; margin-left: -30%; opacity: .8; animation: tt-spin 8s linear infinite; }
-.tt-vs-papa { position: absolute; left: 50%; bottom: 0; height: 80%; aspect-ratio: 1; transform: translateX(-50%); }
+.tt-vs-papa { position: absolute; left: 50%; bottom: -14%; height: 100%; aspect-ratio: 1; transform: translateX(-50%); }
 .tt-vs-papa img { width: 100%; height: 100%; object-fit: contain; object-position: center bottom; }
 .tt-check-card { display: flex; align-items: center; gap: 16px; width: min(100%, 520px); padding: 12px 16px; text-align: left; background: var(--paper); border: 3px solid var(--ink); border-radius: 24px; box-shadow: 0 5px 0 var(--ink); }
 .tt-check-card strong { font-size: 22px; }
@@ -299,7 +300,7 @@
 .tt-intro.open { opacity: 1; }
 .tt-intro.out { opacity: 0; }
 .tt-intro-in { position: relative; width: min(100%, 480px); display: flex; flex-direction: column; align-items: center; }
-.tt-intro-k { width: min(62vw, 250px); aspect-ratio: 1; margin-bottom: -26px; z-index: 1; }
+.tt-intro-k { width: min(84vw, 340px); aspect-ratio: 1; margin-bottom: -18%; z-index: 1; }
 .tt-intro-k img { width: 100%; height: 100%; object-fit: contain; object-position: center bottom; filter: drop-shadow(0 6px 0 rgba(20, 33, 61, .25)); }
 .tt-intro:not(.calm).open .tt-intro-k { animation: tt-pop .5s cubic-bezier(.2, 1.4, .4, 1) both; }
 @keyframes tt-pop { from { transform: translateY(40px) scale(.9); opacity: 0; } }
@@ -309,9 +310,9 @@
 .tt-intro-pic { position: relative; width: 100%; aspect-ratio: 16 / 9; border: 3px solid var(--ink); border-radius: 20px; overflow: hidden; background: var(--sky); }
 .tt-intro-pic > img { width: 100%; height: 100%; object-fit: contain; display: block; }
 .tt-intro-pic.kids > img { object-fit: cover; }
-.tt-intro-kid { position: absolute; bottom: -4%; height: 78%; aspect-ratio: 1; }
+.tt-intro-kid { position: absolute; bottom: -22%; height: 112%; aspect-ratio: 1; }
 .tt-intro-kid img { width: 100%; height: 100%; object-fit: contain; object-position: center bottom; }
-.tt-intro-kid.l { left: 4%; }
+.tt-intro-kid.l { left: -4%; }
 .tt-intro-kid.r { left: 30%; }
 .tt-intro-kid.r img { transform: scaleX(-1); }
 .tt-intro-text { margin: 0; font-size: 20px; line-height: 1.35; font-weight: 600; }
@@ -335,47 +336,50 @@
 .tt-cut-skip { padding: 6px 14px; border: 2.5px solid var(--ink); border-radius: 99px; background: rgba(255, 255, 255, .92); font-weight: 700; font-size: 15px; box-shadow: 0 3px 0 var(--ink); }
 .tt-cut-strip { position: absolute; left: 0; right: 0; top: calc(56px + var(--safe-t)); z-index: 3; transition: opacity .4s; }
 .tt-cut.at-in .tt-cut-strip { opacity: 0; }
-/* The kids: outside they stand side by side; inside they step to the left and the
-   Gym Leader is waiting on the right. Sized by screen width so a phone fits both. */
+/* The kids: big and close, like a game cutscene. Their feet sit behind the dialogue
+   box (or off the bottom edge), so they always look planted, never floating.
+   Outside they stand side by side; inside they step left and the Gym Leader waits
+   on the right. Sized by screen width so a phone fits both. */
 .tt-cut-kids { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
-.tt-cut-kid { position: absolute; bottom: 24%; width: 54%; aspect-ratio: 1; transition: left .6s cubic-bezier(.3, 1, .4, 1), width .6s cubic-bezier(.3, 1, .4, 1), transform .25s, filter .25s; }
+.tt-cut-kid { position: absolute; bottom: 7%; width: 74%; aspect-ratio: 1; transition: left .6s cubic-bezier(.3, 1, .4, 1), width .6s cubic-bezier(.3, 1, .4, 1), bottom .6s cubic-bezier(.3, 1, .4, 1), transform .25s, filter .25s; }
 .tt-cut-kid img { width: 100%; height: 100%; object-fit: contain; object-position: center bottom; display: block; filter: drop-shadow(0 6px 0 rgba(20, 33, 61, .3)); }
-.tt-cut-kid.l { left: -3%; }
-.tt-cut-kid.r { left: 49%; }
+.tt-cut-kid.l { left: -17%; }
+.tt-cut-kid.r { left: 42%; z-index: 1; }
 .tt-cut-kid.r img { transform: scaleX(-1); }
 .tt-cut:not(.calm) .tt-cut-kid.l { animation: tt-walk-l .9s cubic-bezier(.25, 1, .4, 1) both; }
 .tt-cut:not(.calm) .tt-cut-kid.r { animation: tt-walk-r .9s .1s cubic-bezier(.25, 1, .4, 1) both; }
 @keyframes tt-walk-l { from { transform: translateX(-120vw); } 60% { transform: translateX(3vw) translateY(-2%); } }
 @keyframes tt-walk-r { from { transform: translateX(120vw); } 60% { transform: translateX(-3vw) translateY(-2%); } }
-.tt-cut.at-in .tt-cut-kid { width: 44%; }
-.tt-cut.at-in .tt-cut-kid.l { left: -7%; }
-.tt-cut.at-in .tt-cut-kid.r { left: 20%; }
-.tt-cut [data-who] { transition: transform .25s, filter .25s, left .6s cubic-bezier(.3, 1, .4, 1), width .6s cubic-bezier(.3, 1, .4, 1), opacity .5s; }
-.tt-cut [data-who].speaking { transform: translateY(-3%) scale(1.04); }
+.tt-cut.at-in .tt-cut-kid { width: 74%; bottom: 8%; }
+.tt-cut.at-in .tt-cut-kid.l { left: -26%; }
+.tt-cut.at-in .tt-cut-kid.r { left: 12%; }
+.tt-cut [data-who] { transition: transform .25s, filter .25s, left .6s cubic-bezier(.3, 1, .4, 1), width .6s cubic-bezier(.3, 1, .4, 1), bottom .6s cubic-bezier(.3, 1, .4, 1), opacity .5s; }
+.tt-cut [data-who].speaking { transform: translateY(-2%) scale(1.04); }
 .tt-cut.at-in [data-who]:not(.speaking) { filter: brightness(.9) saturate(.9); }
-/* The Gym Leader waits inside, on the right. */
-.tt-cut-leader { position: absolute; right: -6%; bottom: 40%; width: 62%; aspect-ratio: 1; z-index: 1; opacity: 0; transform: translateX(30%); pointer-events: none; }
+/* The Gym Leader waits inside, on the right, a step back (a little higher up). */
+.tt-cut-leader { position: absolute; right: -12%; bottom: 29%; width: 68%; aspect-ratio: 1; z-index: 1; opacity: 0; transform: translateX(30%); pointer-events: none; }
 .tt-cut-leader img { width: 100%; height: 100%; object-fit: contain; object-position: center bottom; filter: drop-shadow(0 6px 0 rgba(20, 33, 61, .3)); }
 .tt-cut.at-in .tt-cut-leader { opacity: 1; transform: none; transition: opacity .5s .35s, transform .6s .35s cubic-bezier(.3, 1.2, .4, 1); }
 .tt-cut.at-in .tt-cut-leader.speaking { transform: translateY(-2%) scale(1.04); transition: transform .25s; }
-.tt-cut-name { position: absolute; right: 12%; bottom: 0; padding: 2px 12px; border: 2.5px solid var(--ink); border-radius: 99px; background: var(--sun); font-weight: 700; font-size: 15px; white-space: nowrap; box-shadow: 0 2px 0 var(--ink); }
+.tt-cut-name { position: absolute; right: 18%; top: 4%; padding: 2px 12px; border: 2.5px solid var(--ink); border-radius: 99px; background: var(--sun); font-weight: 700; font-size: 15px; white-space: nowrap; box-shadow: 0 2px 0 var(--ink); }
 @media (min-aspect-ratio: 1/1) {
-  .tt-cut-kid { width: 27%; bottom: 20%; }
-  .tt-cut-kid.l { left: 22%; }
-  .tt-cut-kid.r { left: 49%; }
-  .tt-cut.at-in .tt-cut-kid { width: 25%; }
-  .tt-cut.at-in .tt-cut-kid.l { left: 4%; }
-  .tt-cut.at-in .tt-cut-kid.r { left: 22%; }
-  .tt-cut-leader { width: 32%; right: 10%; bottom: 22%; }
+  .tt-cut-kid { width: 42%; bottom: 0; }
+  .tt-cut-kid.l { left: 10%; }
+  .tt-cut-kid.r { left: 44%; }
+  .tt-cut.at-in .tt-cut-kid { width: 38%; bottom: -2%; }
+  .tt-cut.at-in .tt-cut-kid.l { left: -6%; }
+  .tt-cut.at-in .tt-cut-kid.r { left: 17%; }
+  .tt-cut-leader { width: 44%; right: 0; bottom: 6%; }
+  .tt-cut-name { right: 30%; top: 22%; }
 }
 @media (min-width: 700px) and (max-aspect-ratio: 1/1) {
-  .tt-cut-kid { width: 46%; bottom: 22%; }
-  .tt-cut-kid.l { left: 4%; }
-  .tt-cut-kid.r { left: 48%; }
-  .tt-cut.at-in .tt-cut-kid { width: 40%; }
-  .tt-cut.at-in .tt-cut-kid.l { left: 0; }
-  .tt-cut.at-in .tt-cut-kid.r { left: 24%; }
-  .tt-cut-leader { width: 52%; right: 2%; bottom: 36%; }
+  .tt-cut-kid { width: 64%; bottom: 8%; }
+  .tt-cut-kid.l { left: -8%; }
+  .tt-cut-kid.r { left: 42%; }
+  .tt-cut.at-in .tt-cut-kid { width: 56%; bottom: 7%; }
+  .tt-cut.at-in .tt-cut-kid.l { left: -12%; }
+  .tt-cut.at-in .tt-cut-kid.r { left: 18%; }
+  .tt-cut-leader { width: 66%; right: -8%; bottom: 20%; }
 }
 /* The dialogue box. */
 .tt-cut-box { position: absolute; left: 12px; right: 12px; bottom: calc(14px + var(--safe-b)); z-index: 5; display: flex; flex-direction: column; gap: 6px; padding: 18px 16px 12px; background: var(--paper); border: 4px solid var(--ink); border-radius: 24px; box-shadow: 0 6px 0 var(--ink); max-width: 720px; margin: 0 auto; cursor: pointer; }

@@ -127,7 +127,7 @@ export function renderCoopRush(root, go, { partner, len = 'normal', fresh = fals
           <div class="tt-cut-bg out" style='background-image:${cssUrl(gymSrc(g === 'papa' ? 'papa' : String(g)))}'></div>
           <div class="tt-cut-bg in" style='background-image:${cssUrl(gymInsideSrc(g === 'papa' ? 'papa' : String(g)))}'></div>
           <div class="tt-cut-top"><span class="tt-vs-gym">Gym ${run.step + 1} of ${RUSH_ORDER.length} · ${esc(scene.gym)}</span><button class="tt-cut-skip" data-cut-skip>Skip</button></div>
-          <div class="tt-cut-leader" data-who="L">${g === 'papa' ? trainerBody('boss-papa', 'talking') : champBody(g)}<span class="tt-cut-name">${esc(opp.name)}</span></div>
+          <div class="tt-cut-leader" data-who="L">${g === 'papa' ? trainerBody('boss-papa', 'talking') : champBody(g)}</div>
           <div class="tt-cut-kids"><span class="tt-cut-kid l" data-who="A">${trainerImg(A.look || null, 'won')}</span><span class="tt-cut-kid r" data-who="B">${trainerImg(B.look || null, 'won')}</span></div>
           <div class="tt-strip tt-cut-strip" aria-label="Gyms">${RUSH_ORDER.map((x, i) => `<span class="${i < run.step ? 'done' : i === run.step ? 'now' : ''}${x === 'papa' ? ' papa' : ''}">${x === 'papa' ? 'P' : x}</span>`).join('')}</div>
           <div class="tt-cut-box" aria-live="polite"><span class="tt-cut-who"></span><p class="tt-cut-text"></p><span class="tt-cut-next" aria-hidden="true">Tap to keep going ▸</span>
@@ -438,7 +438,7 @@ export function renderCoopRush(root, go, { partner, len = 'normal', fresh = fals
     const rest = run.sit >= lenG;
     const nextG = RUSH_ORDER[run.step];
     root.innerHTML = `<section class="screen coop tt-check">
-      <div class="tt-check-art" aria-hidden="true">
+      <div class="tt-check-art" aria-hidden="true" style='--hall:${cssUrl(gymInsideSrc(beaten === 'papa' ? 'papa' : String(beaten)))}'>
         <img class="tt-check-burst" src="${fxSrc('badge-burst')}" alt="" draggable="false">
         <span class="tt-vs-kid l">${trainerImg(A.look || null, 'won')}</span>
         <span class="tt-vs-kid r">${trainerImg(B.look || null, 'won')}</span>
@@ -466,7 +466,7 @@ export function renderCoopRush(root, go, { partner, len = 'normal', fresh = fals
   function winScreen() {
     endSession();
     root.innerHTML = `<section class="screen coop tt-check tt-win">
-      <div class="tt-check-art" aria-hidden="true">
+      <div class="tt-check-art" aria-hidden="true" style='--hall:${cssUrl(gymInsideSrc('papa'))}'>
         <img class="tt-check-burst" src="${fxSrc('badge-burst')}" alt="" draggable="false">
         <span class="tt-vs-kid l">${trainerImg(A.look || null, 'won')}</span>
         <span class="tt-vs-papa">${trainerBody('boss-papa', 'lost')}</span>
@@ -485,7 +485,7 @@ export function renderCoopRush(root, go, { partner, len = 'normal', fresh = fals
     endSession();
     const far = run.step;
     root.innerHTML = `<section class="screen coop tt-check tt-over">
-      <div class="tt-check-art" aria-hidden="true">
+      <div class="tt-check-art" aria-hidden="true" style='--hall:${cssUrl(gymInsideSrc(String(RUSH_ORDER[run.step] ?? 1)))}'>
         <span class="tt-vs-kid l">${trainerImg(A.look || null, 'lost')}</span>
         <span class="tt-vs-kid r">${trainerImg(B.look || null, 'lost')}</span>
       </div>
