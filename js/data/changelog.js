@@ -1,7 +1,18 @@
 // Version history shown in the app (Grown-ups > What's new). Keep in sync with CHANGELOG.md.
-export const VERSION = '1.2.0';
+export const VERSION = '1.2.1';
 
 export const CHANGELOG = [
+  {
+    version: '1.2.1',
+    date: '2026-11-22',
+    title: "Gym Rush and sideways fixes",
+    items: [
+      "Gym Rush: every card is now from that gym's times table. A card you missed in the last gym could sneak in before.",
+      "Attacks now fly from the Kaimon using them to the one getting hit, so it's clear who used which move.",
+      "Times Two's welcome cards fit on an iPad turned sideways. The button used to end up below the screen.",
+      "Phones turned sideways: the card and the keypad sit side by side, and the Times Two scenes, tag team and intro fit the screen.",
+    ],
+  },
   {
     version: '1.2.0',
     date: '2026-11-22',

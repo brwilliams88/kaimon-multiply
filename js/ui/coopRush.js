@@ -18,6 +18,7 @@ import { gymSrc, gymInsideSrc, cssUrl, fxSrc, trainerFace, trainerBody, itemImg,
 import { ballIcon } from './home.js';
 import { quick } from '../core/prefs.js';
 import { $, on, esc, sheet, reducedMotion, soundButton, setFlame, fitText, say, wirePad, guideKeys } from './dom.js';
+import { shootFx } from './shot.js';
 import {
   playerFor, poolFor, PACKS, packTeam, teamOf, avgLevel, rushFoe, hitBack, gymLabel, allOut, snackBreak, supportRight, SUPPORT,
   RUSH_ORDER, RUSH_LENGTHS, TURN_CARDS, TAG_STRIKE, savedRun, saveRun, clearRun, unpackRun, savePal, recordGame, records, crateDue,
@@ -81,6 +82,9 @@ export function renderCoopRush(root, go, { partner, len = 'normal', fresh = fals
 
   // ---------- the battle ----------
   function battleScreen() {
+    // A fresh card picker for each gym, so a missed card from the last gym never
+    // comes back here (each gym only asks its own times table).
+    for (const pl of players) pl.sc = { recent: [], requeue: [], n: 0 };
     S = { phase: 'intro', streak: 0, cards: 0, input: '', skip: false, fact: null, foe: 0 };
     opp = rushFoe(host, run.step, run.lv);
     foe = opp.team.map((m) => ({ ...m }));
@@ -276,6 +280,7 @@ export function renderCoopRush(root, go, { partner, len = 'normal', fresh = fals
   function next() {
     const pl = cur();
     const pool = poolNow(pl);
+    for (let i = pl.sc.requeue.length - 1; i >= 0; i--) if (!pool.includes(pl.sc.requeue[i].id)) pl.sc.requeue.splice(i, 1);
     const id = pickNext(pl.prof, pool, pl.sc.recent, pl.sc.requeue, pl.sc.n);
     pl.sc.recent.push(id); if (pl.sc.recent.length > 3) pl.sc.recent.shift();
     S.fact = id;
@@ -359,8 +364,11 @@ export function renderCoopRush(root, go, { partner, len = 'normal', fresh = fals
       el.msg.textContent = strike ? `Tag Strike! ${me.species.name} used ${move}!` : hit.special ? `${powerLabel(pw)}! ${me.species.name} used ${move}!` : `${powerLabel(pw)}! ${me.species.name} attacks!`;
       if (strike) sfx.special();
       if (hit.special) sfx.special();
-      await lunge(el.meMon, 'lunge', q ? 200 : 260);
+      const lg = lunge(el.meMon, 'lunge', q ? 200 : 260);
+      await nap(q ? 40 : 60);
+      await shootFx(el.fx, el.arena, el.meMon, el.foeMon, me.species.type, { quick: q });
       hitFx(el.foeMon, me.species.type, hit.special || hit.crit);
+      await lg;
       hit.crit ? sfx.crit() : sfx.hit();
       f.hp -= hit.dmg;
       run.pts = (run.pts || 0) + hit.dmg;
@@ -391,8 +399,11 @@ export function renderCoopRush(root, go, { partner, len = 'normal', fresh = fals
     if (!support) {
       const me = myMon(), f = foe[S.foe];
       el.msg.textContent = `${f.species.name} hits back!`;
-      await lunge(el.foeMon, 'lunge-foe', q ? 200 : 260);
+      const lg = lunge(el.foeMon, 'lunge-foe', q ? 200 : 260);
+      await nap(q ? 40 : 60);
+      await shootFx(el.fx, el.arena, el.foeMon, el.meMon, f.species.type, { quick: q });
       hitFx(el.meMon, f.species.type, false);
+      await lg;
       sfx.ouch();
       const hurt = hitBack(run.step);
       me.hp -= hurt;

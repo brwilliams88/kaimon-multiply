@@ -23,6 +23,7 @@ import { quick } from '../core/prefs.js';
 import { limitReached } from '../core/playtime.js';
 import { startMusic, stopMusic, setPinch } from '../core/music.js';
 import { $, on, esc, sheet, reducedMotion, soundButton, setFlame, fitText, say, wirePad, guideKeys } from './dom.js';
+import { shootFx } from './shot.js';
 import { vsHint, matchType } from '../data/types.js'; import { typesGuide } from './typesGuide.js'; // [types] type matchups
 import { pendingPrize } from '../core/surprise.js'; import { byId as wearItem } from '../core/wardrobe.js'; import { hatPic } from './wardrobe.js'; import { trainerLook as lookFor, charLook } from './avatars.js'; // a surprise's Boss Papa prize
 import { canSnack, useSnack, itemCount, claimSurprisePrize } from '../core/items.js'; import { towerCrystal } from '../core/tower.js'; import { itemIcon } from './items.js'; // [systems] Power Snack
@@ -503,7 +504,8 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt, wild 
       if (hit.special) callout(`${move}!`, { type: me.species.type, crit: hit.crit, sub: hit.crit ? 'Critical!' : '', eff: hit.eff, effType });
       else if (hit.crit) callout('Critical!', { crit: true, eff: hit.eff, effType });
       const lunge = anim(el.meMon, 'lunge', q ? 200 : 260);
-      await nap(q ? 90 : 120);
+      await nap(q ? 40 : 60);
+      await shootFx(el.fx, el.arena, el.meMon, el.foeMon, me.species.type, { quick: q });
       hitFx(el.foeMon, me.species.type, hit.special || hit.crit);
       await lunge;
       hit.crit ? sfx.crit() : sfx.hit();
@@ -544,7 +546,8 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt, wild 
       el.msg.textContent = fm ? `${foe.species.name} used ${fm}!` : `${foe.species.name} hits back!`;
       if (fm) callout(`${fm}!`, { type: foe.species.type, at: 'me' });
       const back = anim(el.foeMon, 'lunge-foe', q ? 200 : 260);
-      await nap(q ? 90 : 120);
+      await nap(q ? 40 : 60);
+      await shootFx(el.fx, el.arena, el.foeMon, el.meMon, foe.species.type, { quick: q });
       hitFx(el.meMon, foe.species.type, foe.species.type === 'papa');
       await back;
       sfx.ouch();

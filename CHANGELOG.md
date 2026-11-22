@@ -2,6 +2,13 @@
 
 All notable changes. Versioning: `0.MINOR.0` marks a roadmap phase, `0.x.PATCH` is any shipped change a player or parent can notice, and `1.0.0` is the public launch. See "Versioning" in CLAUDE.md. The in-app version history (Grown-ups > What's new) reads from `js/data/changelog.js`; keep both in sync. Each release is tagged in git as `vX.Y.Z`.
 
+## v1.2.1 (2026-11-22) Gym Rush and sideways fixes
+
+- Gym Rush: every card is now from that gym's times table. A card you missed in the last gym could sneak in before.
+- Attacks now fly from the Kaimon using them to the one getting hit, so it's clear who used which move.
+- Times Two's welcome cards fit on an iPad turned sideways. The button used to end up below the screen.
+- Phones turned sideways: the card and the keypad sit side by side, and the Times Two scenes, tag team and intro fit the screen.
+
 ## v1.2.0 (2026-11-22) Times Two: play with a friend!
 
 - New: Times Two! Play with a friend on one device. It shows up on Home after your first game.

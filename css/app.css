@@ -3799,3 +3799,19 @@ button.buddy-art:active { transform: translateY(2px); }
 .gu-more-kids { display: flex; align-items: center; gap: 12px; background: #FFF8E1; }
 .gu-more-kids p { flex: 1; margin: 0; }
 @media (max-width: 520px) { .gu-more-kids { flex-direction: column; align-items: stretch; } }
+/* An attack in flight (js/ui/shot.js). */
+.atk-shot { position: absolute; pointer-events: none; z-index: 4; object-fit: contain; filter: drop-shadow(0 0 8px rgba(255, 255, 255, .8)); }
+
+/* Phones turned sideways (short landscape): the card or arena on the left, the
+   keypad on the right, like a tablet, so neither gets squashed to nothing. */
+@media (orientation: landscape) and (max-height: 520px) and (min-width: 560px) {
+  .play-body, .play.v2 .play-body { grid-template-columns: minmax(0, 1fr) minmax(250px, 42%); grid-template-rows: minmax(0, 1fr); gap: 10px; align-items: stretch; }
+  .stage { height: 100%; min-height: 0; }
+  .card3d, .play.v2 .card3d, .play.v2 .deck { height: 100%; width: 100%; max-height: none; }
+  .pad-wrap { align-self: center; gap: 6px; }
+  .key, .play.v2 .key { height: clamp(40px, 12vh, 56px); font-size: 22px; }
+  .answer, .mic { height: 52px; }
+  .battle .arena { height: 100%; }
+  .mon { width: clamp(70px, 24vh, 120px); }
+  .card-wild .kart { width: clamp(80px, 30vh, 140px); height: clamp(80px, 30vh, 140px); }
+}

@@ -378,18 +378,18 @@ html:has(body[data-screen^="coop"]), body[data-screen^="coop"] { background:
 @media (prefers-reduced-motion: reduce) { .tt-check-burst { animation: none; } .tt-vs { transition: none; } }
 
 /* ---------- Teacher K's big-update story ---------- */
-.tt-intro { position: fixed; inset: 0; z-index: 70; display: grid; place-items: end center; padding: calc(10px + var(--safe-t)) 12px calc(12px + var(--safe-b)); background: rgba(20, 33, 61, .5); opacity: 0; transition: opacity .22s; }
+.tt-intro { position: fixed; inset: 0; z-index: 70; display: grid; place-items: end center; overflow-y: auto; overscroll-behavior: contain; padding: calc(10px + var(--safe-t)) 12px calc(12px + var(--safe-b)); background: rgba(20, 33, 61, .5); opacity: 0; transition: opacity .22s; }
 .tt-intro.open { opacity: 1; }
 .tt-intro.out { opacity: 0; }
 .tt-intro-in { position: relative; width: min(100%, 480px); display: flex; flex-direction: column; align-items: center; }
-.tt-intro-k { width: min(84vw, 340px); aspect-ratio: 1; margin-bottom: -18%; z-index: 1; }
+.tt-intro-k { width: min(84vw, 340px, 34vh); aspect-ratio: 1; margin-bottom: -18%; z-index: 1; }
 .tt-intro-k img { width: 100%; height: 100%; object-fit: contain; object-position: center bottom; filter: drop-shadow(0 6px 0 rgba(20, 33, 61, .25)); }
 .tt-intro:not(.calm).open .tt-intro-k { animation: tt-pop .5s cubic-bezier(.2, 1.4, .4, 1) both; }
 @keyframes tt-pop { from { transform: translateY(40px) scale(.9); opacity: 0; } }
 .tt-intro-card { position: relative; z-index: 2; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 16px 16px 14px; background: var(--paper); border: 4px solid var(--ink); border-radius: 30px; box-shadow: 0 8px 0 var(--ink); text-align: center; }
 .tt-intro-tag { padding: 3px 12px; border: 2.5px solid var(--ink); border-radius: 99px; background: var(--sun); font-weight: 700; font-size: 14px; }
-.tt-intro-logo { height: 84px; max-width: 70%; object-fit: contain; }
-.tt-intro-pic { position: relative; width: 100%; aspect-ratio: 16 / 9; border: 3px solid var(--ink); border-radius: 20px; overflow: hidden; background: var(--sky); }
+.tt-intro-logo { height: min(84px, 10vh); max-width: 70%; object-fit: contain; }
+.tt-intro-pic { position: relative; width: 100%; aspect-ratio: 16 / 9; max-height: 28vh; border: 3px solid var(--ink); border-radius: 20px; overflow: hidden; background: var(--sky); }
 .tt-intro-pic > img { width: 100%; height: 100%; object-fit: contain; display: block; }
 .tt-intro-pic.kids > img { object-fit: cover; }
 .tt-intro-kid { position: absolute; bottom: -22%; height: 112%; aspect-ratio: 1; }
@@ -433,6 +433,15 @@ html:has(body[data-screen^="coop"]), body[data-screen^="coop"] { background:
 .tt-intro-later { color: #fff; font-weight: 700; text-shadow: 0 2px 0 var(--ink); }
 .tt-intro:not(.calm) .tt-intro-acts { animation: tt-rise .4s 1.2s cubic-bezier(.2, 1.3, .4, 1) both; }
 @media (min-height: 700px) and (min-width: 700px) { .tt-intro { place-items: center; } }
+/* Landscape (iPad sideways, phones sideways): Teacher K stands beside the card
+   instead of on top of it, so the whole card and its button always fit. */
+@media (orientation: landscape) and (max-height: 960px) {
+  .tt-intro { place-items: center; }
+  .tt-intro-in { flex-direction: row; align-items: flex-end; width: min(100%, 880px); }
+  .tt-intro-k { width: min(36vw, 56vh, 340px); margin: 0 -5% 0 0; }
+  .tt-intro-card { flex: 1; min-width: 0; max-width: 500px; }
+  .tt-intro-pic { max-height: 30vh; }
+}
 @media (prefers-reduced-motion: reduce) { .tt-intro { transition: none; } }
 
 /* ---------- Gym Rush arrival scene: outside the gym, then inside with the Leader ---------- */
@@ -594,3 +603,28 @@ html:has(body[data-screen^="coop"]), body[data-screen^="coop"] { background:
 .tt-cut.calm.vsx::before { opacity: 0; }
 @media (prefers-reduced-motion: reduce) { .tt-cut-next { animation: none; } .tt-cut-text.pop { animation: none; } }
 @keyframes tt-pulse { 50% { scale: 1.035; } }
+
+/* Phones turned sideways: everything Times Two shows over the game gets a short,
+   wide layout so the trainers and the buttons both fit. */
+@media (orientation: landscape) and (max-height: 520px) {
+  .tt-cut { --boxh: 112px; }
+  .tt-cut-box { padding: 14px 14px 6px; left: 50%; right: auto; width: min(720px, calc(100% - 24px)); translate: -50% 0; }
+  .tt-cut-text { font-size: 16px; }
+  .tt-cut-foot { height: 40px; }
+  .tt-cut-go { height: 40px; font-size: 19px; }
+  .tt-tag { --H: 54vh; --base: calc(84px + var(--safe-b)); --hit: 28vh; --hitb: calc(var(--base) + var(--H) * .5); }
+  .tt-tag-k.l { translate: -92% 0; }
+  .tt-tag-k.r { translate: -8% 0; }
+  .tt-tag-say { font-size: 15px; padding: 5px 10px; }
+  .tt-ho-go { min-height: 54px; font-size: 20px; }
+  .tt-intro-splash { flex-direction: row; flex-wrap: wrap; align-content: center; justify-content: center; column-gap: 24px; }
+  .tt-intro-hero { flex: 0 0 48%; height: 82%; }
+  .tt-intro-splash > .tt-intro-biglogo, .tt-intro-splash > .tt-intro-hook, .tt-intro-splash > .tt-intro-acts { flex: 0 0 auto; }
+  .tt-intro-splash { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr auto auto auto 1fr; align-items: center; justify-items: center; }
+  .tt-intro-hero { grid-column: 1; grid-row: 1 / -1; width: 100%; height: 100%; }
+  .tt-intro-biglogo { grid-column: 2; grid-row: 2; max-height: 30cqh; width: min(40cqw, 340px); }
+  .tt-intro-hook { grid-column: 2; grid-row: 3; font-size: 20px; }
+  .tt-intro-acts { grid-column: 2; grid-row: 4; width: min(40cqw, 360px); }
+  .tt-intro-burst { width: min(40cqw, 70cqh); }
+  .tt-intro-sk { width: min(30cqw, 80cqh); }
+}
