@@ -371,6 +371,7 @@ function drawMain(root, go) {
         <div class="panel gu-maker" data-maker><p class="note">Loading the numbers...</p></div>
       </div>` : ''}
       <div class="gu-pane gu-grid gu-pane-progress" role="tabpanel" id="gu-pane-progress" aria-labelledby="gu-tab-progress" data-gu-pane="progress"${guTab === 'progress' ? '' : ' hidden'}>
+        ${allProfiles().length === 1 ? `<div class="panel gu-more-kids"><p><b>More than one kid?</b> Give each one their own trainer. Their progress stays separate, and you can see each one here.</p><button class="btn-chunky btn-sm" data-add-trainer>Add a trainer</button></div>` : ''}
         <div class="panel gu-progress" data-progress>${progressHTML(p)}</div>
 
         <div class="panel">
@@ -451,7 +452,8 @@ function drawMain(root, go) {
       <div class="gu-pane gu-grid gu-pane-family" role="tabpanel" id="gu-pane-family" aria-labelledby="gu-tab-family" data-gu-pane="family"${guTab === 'family' ? '' : ' hidden'}>
         <div class="panel trainers-panel">
           <h2>Trainers on this device</h2>
-          <p class="note">Tap a trainer to see their progress.</p>
+          <p class="note">Each kid gets their own trainer, with their own Kaimon and progress. Tap a trainer to see how they're doing.</p>
+          <button class="btn-chunky btn-primary gu-add-trainer" data-add-trainer><span aria-hidden="true">+</span> Add a trainer for another kid</button>
           <div class="tm-list">${allProfiles().map((x) => `
             <div class="tm${x.id === p.id ? ' on' : ''}">
               <button class="tm-main" data-tm-switch="${x.id}" aria-label="Show ${esc(x.name)}">
@@ -726,6 +728,7 @@ function drawMain(root, go) {
     const x = allProfiles().find((y) => y.id === el.dataset.tmRename);
     renameSheet(x, { onDone: () => renderMain(root, go) });
   });
+  on(root, 'click', '[data-add-trainer]', () => { sfx.tap?.(); go('newTrainer'); });
   on(root, 'click', '[data-pal-remove]', (e, el) => {
     const x = livePals(p).find((y) => y.id === el.dataset.palRemove);
     if (!x) return;
