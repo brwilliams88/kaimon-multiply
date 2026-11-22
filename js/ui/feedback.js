@@ -71,10 +71,31 @@ const offline = () => typeof navigator !== 'undefined' && navigator.onLine === f
 
 const cleanText = (x) => String(x || '').replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, '').trim();
 
+// Screenshots: shrunk on the device to a small JPEG before they're saved or sent.
+const SHOT_MAX = 900000;
+const SHOT_SIDE = 1280;
+export async function shrinkShot(file) {
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = url; });
+    let side = SHOT_SIDE, q = 0.78, out = '';
+    for (let k = 0; k < 4; k++) {
+      const r = Math.min(1, side / Math.max(img.naturalWidth, img.naturalHeight));
+      const c = document.createElement('canvas');
+      c.width = Math.max(1, Math.round(img.naturalWidth * r)); c.height = Math.max(1, Math.round(img.naturalHeight * r));
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      out = c.toDataURL('image/jpeg', q).split(',')[1] || '';
+      if (out.length < SHOT_MAX * 0.6) break;
+      side = Math.round(side * 0.78); q = Math.max(0.55, q - 0.08);
+    }
+    return out.length < SHOT_MAX ? out : '';
+  } finally { URL.revokeObjectURL(url); }
+}
+
 // What goes to the table (one or two rows), and what goes to the mailer (always
 // one email), for one Send. Either { kind, text } for one note (a rating, or the
 // class page), or { love, better } from the two boxes.
-export function buildNote({ kind, stars = 0, text = '', love, better, name = '', email = '', place = '' }) {
+export function buildNote({ kind, stars = 0, text = '', love, better, name = '', email = '', place = '', shot = '' }) {
   const K = OLD[kind];
   if (K?.as) kind = K.as;
   let t = cleanText(text);
@@ -102,6 +123,8 @@ export function buildNote({ kind, stars = 0, text = '', love, better, name = '',
     const mk = lv && bt ? (bk === 'bug' ? 'mixedbug' : 'mixed') : lv ? 'love' : bk;
     const both = lv && bt ? ('What they love:\n' + lv + '\n\nWhat should be better:\n' + bt).slice(0, TEXT_MAX) : lv || bt;
     mail = { type: 'feedback', kind: mk, stars: 0, text: both, love: lv, better: bt, name: n, from: base.reply_email || '', version: VERSION, where, os, browser, place: pl, device: dev, v: 1 };
+    // A screenshot rides along with the email only (never the table).
+    if (/^[A-Za-z0-9+/]+=*$/.test(shot) && shot.length < SHOT_MAX) mail.shot = shot;
   } else {
     rows = [{ ...base, kind, stars: s || null, text: t || null }];
     // The mailer knows love, idea, bug and review (a rating goes as a review).
@@ -239,6 +262,10 @@ function formHTML(mode, prompt, keep = {}, again = false) {
     ${rate ? '' : '<p class="fb-hint">Fill in one box or both.</p>'}
     ${rate ? starsHTML() + `<label class="fb-field"><span>What do you like, or what would make it better? <em>(optional)</em></span>
       <textarea class="fb-text" data-text rows="4" maxlength="${TEXT_MAX}" placeholder="What works? What doesn’t? Both help."></textarea></label>` : boxesHTML()}
+    ${rate ? '' : `<div class="fb-field fb-shot"><span>A screenshot <em>(optional, it helps a lot if something looks wrong)</em></span>
+      <label class="fb-shot-add" data-shot-add><input type="file" accept="image/*" data-shot><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8.5 A2 2 0 0 1 6 6.5 H8 L9.5 4.5 H14.5 L16 6.5 H18 A2 2 0 0 1 20 8.5 V17 A2 2 0 0 1 18 19 H6 A2 2 0 0 1 4 17 Z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><circle cx="12" cy="12.6" r="3.4" fill="none" stroke="currentColor" stroke-width="2.2"/></svg><span>Add a screenshot</span></label>
+      <div class="fb-shot-pre" data-shot-pre hidden><img alt="Your screenshot"><button type="button" class="fb-shot-x" data-shot-x>Remove</button></div>
+    </div>`}
     <label class="fb-field"><span>Your name <em>(if you want us to know)</em></span>
       <input class="fb-input" data-name type="text" maxlength="${NAME_MAX}" autocomplete="off" autocapitalize="words" spellcheck="false" value="${esc(keep.name || '')}"></label>
     ${rate ? '' : `<label class="fb-field"><span>Grown-ups: your email <em>(if you want a reply)</em></span>
@@ -348,6 +375,28 @@ async function open(mode, { place = '', prompt = false, back = null, backLabel }
       });
     }
     boxes.forEach((b) => b.addEventListener('input', ready));
+    // Screenshot: pick one from Photos (or take one), shrink it, show a preview.
+    const shotIn = form.querySelector('[data-shot]');
+    if (shotIn) {
+      const pre = form.querySelector('[data-shot-pre]'), add = form.querySelector('[data-shot-add]');
+      const show = (b64) => {
+        st.shot = b64 || '';
+        pre.hidden = !b64; add.hidden = !!b64;
+        pre.querySelector('img').src = b64 ? 'data:image/jpeg;base64,' + b64 : '';
+      };
+      shotIn.addEventListener('change', async () => {
+        const f = shotIn.files && shotIn.files[0];
+        shotIn.value = '';
+        if (!f) return;
+        add.classList.add('busy');
+        let b64 = '';
+        try { b64 = await shrinkShot(f); } catch { b64 = ''; }
+        add.classList.remove('busy');
+        if (!b64) { err.textContent = 'That picture didn’t work. Try another one.'; err.hidden = false; return; }
+        err.hidden = true; sfx.tap(); show(b64);
+      });
+      form.querySelector('[data-shot-x]').addEventListener('click', () => { sfx.tap(); show(''); });
+    }
     // Put back a note that was typed earlier and not sent.
     if (d) {
       if (text) text.value = d.text || '';
@@ -374,7 +423,7 @@ async function open(mode, { place = '', prompt = false, back = null, backLabel }
       const name = val('[data-name]');
       const note = rate
         ? { kind: 'rating', stars: st.stars, text: text.value }
-        : { love: val('[data-box="love"]'), better: val('[data-box="better"]') };
+        : { love: val('[data-box="love"]'), better: val('[data-box="better"]'), shot: st.shot || '' };
       const count = rate ? 1 : boxes.filter((b) => b.value.trim()).length;
       let state = 'queued';
       try {
