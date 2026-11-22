@@ -26,10 +26,19 @@ if (cur && !have.has(cur) && !todo.some((r) => r.tag === cur)) {
 
 todo.sort((a, b) => cmp(a.tag, b.tag));
 const newest = todo.length ? todo[todo.length - 1].tag : null;
+let failed = 0;
 const latestNow = [...have].filter((t) => /^v\d+\.\d+\.\d+$/.test(t)).sort(cmp).pop();
 for (const r of todo) {
   const latest = r.tag === newest && (!latestNow || cmp(r.tag, latestNow) > 0);
   console.log(`Creating ${r.tag} at ${r.sha.slice(0, 7)}${latest ? ' (latest)' : ''}`);
-  sh('gh', ['release', 'create', r.tag, '--target', r.sha, '--title', r.title, '--notes', r.body || ' ', `--latest=${latest}`], { stdio: ['ignore', 'pipe', 'inherit'] });
+  try {
+    sh('gh', ['release', 'create', r.tag, '--target', r.sha, '--title', r.title, '--notes', r.body || ' ', `--latest=${latest}`], { stdio: ['ignore', 'pipe', 'pipe'] });
+  } catch (e) {
+    // Shown as an annotation on the run, so it can be read without opening the logs.
+    const why = String(e.stderr || e.message).replace(/\s+/g, ' ').trim().slice(0, 300);
+    console.log(`::error title=${r.tag} failed::${why}`);
+    failed++;
+  }
 }
-console.log(todo.length ? `Done: ${todo.length} release(s).` : 'Nothing to do.');
+console.log(todo.length ? `Done: ${todo.length - failed} of ${todo.length} release(s).` : 'Nothing to do.');
+if (failed) process.exit(1);
