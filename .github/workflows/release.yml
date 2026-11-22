@@ -1,0 +1,29 @@
+# Tags each release and publishes its GitHub release, right on GitHub.
+# Runs after every push to main (and by hand from the Actions tab). It reads the
+# version in js/data/changelog.js; if that tag doesn't exist yet, it tags the pushed
+# commit and uses the notes from CHANGELOG.md. It also fills in any older releases
+# listed in tools/releases.json that are still missing.
+name: Tag releases
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: tag-releases
+  cancel-in-progress: false
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Create missing tags and releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node tools/release-tags.mjs

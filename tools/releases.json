@@ -1,0 +1,218 @@
+[
+ {
+  "tag": "v0.5.33",
+  "sha": "a6b8e75cc545cbf0f8cbbcf718457df0f8d65407",
+  "title": "v0.5.33: Kaidex binder and Trainer License",
+  "body": "- The Kaidex is now a binder you can page through: swipe or tap the arrows. Caught Kaimon sit in card sleeves, ones you have seen show as shadows, and empty sleeves show their number.\n- New Trainer License on the trainer page, with your face, rank, Kaidex count, best streak and medals.\n- Earn License extras by playing: a patch for each Gym badge, a frame that gets fancier as more facts reach Bronze, Silver, Gold and Star, and gold trim for all 10 badges.\n- New badge case: tap a badge to see how to win it.\n- Picking your battle team is simpler: your buddy leads, tap two more, and it saves as you go.\n- The Bag now shows every item you have, with a short line about each one.\n- Badges now always mean Gym Leader wins, and medals mean how well you know a times table. Trainer ranks count badges.\n"
+ },
+ {
+  "tag": "v0.5.34",
+  "sha": "158caec5bfe284bafac05aa941195a8ecf7b40ce",
+  "title": "v0.5.34: A smarter Home",
+  "body": "- New Home: Next up now suggests what to play based on how you are doing. Tables that keep getting away get a Power up card, ready gyms come before Pop Quiz, and suggestions take turns so Home stays fresh.\n- Quick practice (mixed times tables) is one tap from Home, with the Kaidex and Pop Quiz right under it.\n- A gentle daily goal of 3 rounds, shown as a ring that fills in three parts. No pressure: playing more or less is fine.\n- Gyms open once their table has a Bronze medal. Tap a locked gym to see how to open it, or practice that table right away.\n- Pick a region is easier: every region and gym is listed with clear Battle labels.\n- Long Kaimon names now fit on the results screen.\n"
+ },
+ {
+  "tag": "v0.5.35",
+  "sha": "c30e4d82ee5350f03e9ac173dbfcf521b967f2b2",
+  "title": "v0.5.35: New sounds and music",
+  "body": "- All new sounds: every number key plays its own note, and correct answers, catches, level ups, evolving, badges and battles have new friendly sounds that go together. A wrong answer is a soft \"uh-oh\".\n- The streak flame makes a sound as it grows, with brighter chimes at 5, 10, 15 and 25 in a row.\n- New music: a cheerful theme on Home and the Kaidex, a longer battle theme, and a stompy march for Papa's Gym. Practice cards stay quiet.\n- With Mic mode on, battle music stays soft the whole battle so the mic can hear you.\n- Grown-ups: the Music switch now covers Home and battle music. Sound effects stay on unless you turn Sound off.\n"
+ },
+ {
+  "tag": "v0.5.36",
+  "sha": "7242c4555e528a6b8cd6ea540c0ea47c2c6ef001",
+  "title": "v0.5.36: Battle polish",
+  "body": "- Battles start with a real send-out: your trainer throws a ball, it pops open, and your Kaimon bursts out. Gym Leaders throw Super Balls and Boss Papa throws a Mega Ball.\n- Big callouts: \"Critical!\" for a perfect answer, and the move name with its type for special moves. Every hit gets a flash in the attacker's type color.\n- Winning a Gym badge for the first time now has its own moment: the badge flies into your badge case, and the Gym Leader says something kind.\n- Papa's Gym feels like a gym: a chalkboard workout sign, dad jokes mid-battle, and a big entrance for Papazilla.\n- New win and lose screens. Losing says \"Good battle!\" and reminds you every answer still counts as practice.\n- Tap anywhere during an attack to skip ahead. With reduced motion on, battles fade instead of flying.\n"
+ },
+ {
+  "tag": "v0.5.37",
+  "sha": "e20f410d7b9d62e54d4f9baaa914dc565b9e62d7",
+  "title": "v0.5.37: Pick a trainer, then Play",
+  "body": "- Who's playing is easier: swipe or tap to pick a trainer, then press the big Play button under the cards.\n- The last trainer who played is picked and centered when the game opens, marked \"Last played\".\n- The cards no longer get cut off on phones, and the New trainer \"+\" sits right in the middle of its circle.\n- Tap your trainer at the top of Home to open your trainer page or switch trainers.\n"
+ },
+ {
+  "tag": "v0.5.38",
+  "sha": "f4aefcd27e2e9df941b33095002957c6bbbecb92",
+  "title": "v0.5.38: Full Kaimon names in battle",
+  "body": "- Fixed: long Kaimon names in battle (like Supernovasaur) were cut off with \"...\" on phones. Names now get the whole top line of the HP box and shrink a little if needed, and the team balls moved under the HP bar.\n"
+ },
+ {
+  "tag": "v0.6.0",
+  "sha": "fffdf45250e9f265bff766a26c80d4062d940806",
+  "title": "v0.6.0: Smarter practice",
+  "body": "- This starts the polish and share phase on the way to the public launch (v1.0).\n- Smarter card picking, based on how kids learn best: a few new or tricky facts are mixed in with ones you already know, and a missed fact comes back a little later, then again a bit later.\n- New facts come in a proven order: the 1s, 2s, 5s and 10s first, then squares like 6 x 6, then the rest.\n- Turnaround facts: if you know 7 x 3, the game reminds you that 3 x 7 is the same answer.\n- Hints after a miss are simpler: one short tip from Teacher K, or the turnaround, under the count-by line.\n"
+ },
+ {
+  "tag": "v0.6.1",
+  "sha": "d4e967e56c9199a6524760eacc3b4d67a8acc0c2",
+  "title": "v0.6.1: A bigger title and a tidier trainer page",
+  "body": "- More of the title art shows: the big \"Family sync is on for...\" box is now a small \"Family sync on\" line, so Kai and all three starters fit on screen.\n- Badge case: every badge has its name underneath, and the last row is centered.\n- The Bag is now an Item Bag that looks like a canvas satchel, with Balls and Items pockets.\n- The Kaidex keeps its secrets: Kaimon you haven't met yet show only their number, with no shape to give them away.\n"
+ },
+ {
+  "tag": "v0.6.2",
+  "sha": "82db56e8a460a7df7dbbc4d1a62692c092207e39",
+  "title": "v0.6.2: A simpler Grown-ups area",
+  "body": "- Grown-ups is organized into four tabs: Progress, Settings, Family and Help.\n- Progress is simpler: one headline, up to two tips (one thing to practice, one piece of good news), the times table grid and a weekly \"Talk about it\" question to try with your child.\n- The times table grid is calmer: each square shows just the answer, colored by medal (bronze, silver, gold, star). Switch to \"By heart\" to see which facts are known by heart, which are still being figured out, and which are still being learned. Tap any square for details.\n- The weekly report email is shorter: totals, minutes each day, what to practice next, a talk-about-it question and the week's wins.\n"
+ },
+ {
+  "tag": "v0.6.3",
+  "sha": "b90a8614d108d59a87343dae3725ef962df0053e",
+  "title": "v0.6.3: Feedback, sharing and usage counts",
+  "body": "- Send feedback from the Menu: tell us what you love, an idea or a bug. Grown-ups can also rate the game and leave an email for a reply.\n- Play on another device: Grown-ups shows a QR code and link to open the game on a phone, tablet or Chromebook.\n- New Install page with steps for iPad, iPhone, Android and Chromebook, and a plain Privacy page.\n- Anonymous usage counts help us see what is working: a random device id, trainer names, device type, rough location and play totals. No emails, real names or photos. Grown-ups shows exactly what is collected and has an off switch.\n- The news email checkbox and off switch now live in the Family tab.\n"
+ },
+ {
+  "tag": "v0.6.4",
+  "sha": "625b15b3332a7dde0131e1c7293ab6e18dab9ef8",
+  "title": "v0.6.4: A guided first game with Teacher K",
+  "body": "- New trainers now play a short first game with Teacher K: four easy cards, a first catch, and a quick look around Home. Skip any time. It only happens once.\n- How to play is now a set of swipeable cards. Swipe, tap the arrows, or use the arrow keys.\n- Grown-ups can open How to play from the Help tab.\n"
+ },
+ {
+  "tag": "v0.6.5",
+  "sha": "f6647ad75fc4d49c2ce54d6233afa6a9cfcc89f5",
+  "title": "v0.6.5: Pick your trainer, then Play",
+  "body": "- Who's playing: tap your trainer, then press the big Play button.\n- Keyboard players: arrow keys pick a trainer and Enter plays. Screen readers read the trainers as a list of choices.\n- The line at the bottom of Who's playing has more room above the edge of the screen on phones.\n- Change your name: tap your name on your Trainer License.\n"
+ },
+ {
+  "tag": "v0.6.6",
+  "sha": "96731f6e444a4ef36b14d1a981115a43ef0ec226",
+  "title": "v0.6.6: Big moments come alive",
+  "body": "- Big moments come alive: Gym Leaders shake off the battle before handing over your badge, Boss Papa drops his dumbbell, and beating him earns a Champion ribbon.\n- Kairo glides down from the sky, and throwing the Legend Ball is a real moment.\n- Evolution flashes and glows as your Kaimon changes into its new form.\n- Your very first catch gets its own banner, and Mega and Legend Balls sparkle when you throw them.\n- Teacher K jumps for joy when you get a Good Work Stamp.\n- Each Kaimon's Kaidex page shows the place where it lives.\n- With reduced motion turned on, each big moment shows its finished picture right away.\n"
+ },
+ {
+  "tag": "v0.6.7",
+  "sha": "618a445293273555ff263ce940728fa09063956a",
+  "title": "v0.6.7: Better offline play",
+  "body": "- A Works offline badge shows in the Menu once every picture is saved.\n- The offline download meter shows progress better. It pauses when the internet drops, starts again by itself, and has a Try again button if some pictures didn't download.\n- New in Grown-ups: Keep my data asks the browser to keep progress safe on this device.\n- Emails and feedback sent with no internet wait on the device and go out by themselves when it is back. Grown-ups shows how many are waiting to send.\n- If a round starts with no internet and Mic mode on, the game says the mic is resting and to use the number pad.\n"
+ },
+ {
+  "tag": "v0.6.8",
+  "sha": "e53f5f2bc1adaab9bce4e54ddd2714927a5cd1cc",
+  "title": "v0.6.8: Every Kaimon levels up",
+  "body": "- Every Kaimon you own now has its own level. Make any of them your Buddy from the Kaidex, or with Switch on Home.\n- Your first 20 right answers each day give Triple XP. Home shows how many are left today.\n- In battles, your other two team Kaimon get half the XP.\n- Catching a Kaimon you already have gives it +50 XP. The Kaidex still counts every catch.\n- How to play has a new card about your Buddy and Triple XP.\n- Old saves keep every Kaimon, and your Buddy keeps its level.\n"
+ },
+ {
+  "tag": "v0.6.9",
+  "sha": "0f94869127f8336c7b88ad7a337e640e803d2731",
+  "title": "v0.6.9: Share with a class",
+  "body": "- New: Share with a class. A page for teachers and families with a QR code, privacy in plain words and a one-page letter to print. Find it in Grown-ups, on the Help tab.\n- Grown-ups can make a class code, so we can see how many players came from a class.\n- Kids who come from a class link see a small Beta note the first time, with a quick way to send feedback.\n"
+ },
+ {
+  "tag": "v0.6.10",
+  "sha": "cfb5567e8b4baa5162c7ffacb3077339bae73681",
+  "title": "v0.6.10: The Wardrobe",
+  "body": "- New: the Wardrobe! Earn new jacket colors by answering: Teal, Orange, Sky, Purple, Pink and Gold.\n- Your Trainer License can wear your colors too. Kai keeps his red jacket, so his colors go on his License.\n- Already playing? Your past right answers count, and you keep the color you wear now.\n- Hats are coming soon, and every right answer you give now counts toward them.\n"
+ },
+ {
+  "tag": "v0.6.11",
+  "sha": "8f669104b93ddf4ad7996d030e2d674321ab22ba",
+  "title": "v0.6.11: Stay where you were",
+  "body": "- Closing a window no longer jumps you back to the top of Home. You stay right where you were.\n- Back from the Kaidex, your trainer page, Grown-ups or practice takes you to the same spot on Home.\n- Taps right after closing a window, or while a message is showing, now work the first time.\n- Grown-ups keeps your place and anything you typed when the page updates.\n- A feedback note you started is still there if you close the window by mistake.\n"
+ },
+ {
+  "tag": "v0.6.12",
+  "sha": "406fdb5093d954b7a7cb1bd9d8b45cf0f6d3e139",
+  "title": "v0.6.12: Lightning Round, Hint Scrolls and battle snacks",
+  "body": "- The Lightning Round opens after one warm-up round. Find it on Home or in the Menu. Grown-ups can play too!\n- New item: the Hint Scroll. Tap it on a card to see Teacher K's trick before you answer.\n- Power Snacks now work in battles: tap one, then get a card right to heal your Kaimon.\n- The Evolve Crystal evolves your Buddy if it is 3 levels or less from evolving. It keeps its level.\n- Shiny Kaimon are rarer now, so each one is special. A Lucky Lantern makes them easier to find.\n- How to play has new cards for quests, items and the Lightning Round.\n"
+ },
+ {
+  "tag": "v0.6.13",
+  "sha": "f59e98529847987b25406baf7d8213fa9f0c3dfa",
+  "title": "v0.6.13: The Hundred Tower and Megas",
+  "body": "- The Hundred Tower: climb floors of legendary Kaimon. Every move is an answer.\n- Beating a new floor gives one Mega Crystal, even if you play on more than one device.\n- Mega forms add 10 more HP on top of your Kaimon's level, and tower guardians show their level.\n- Tower wins give XP to your Buddy and your team.\n"
+ },
+ {
+  "tag": "v0.6.14",
+  "sha": "c4fc55e6c4d994e5b6ea807a71255128a99701c6",
+  "title": "v0.6.14: Polish and accessibility",
+  "body": "- Every screen got a design polish: matching titles on every window, roomier buttons, a clear blue outline for keyboard players, and smoother presses.\n- Easier to read: stronger colors on buttons, stars and small labels.\n- Screen readers now hear each question and whether the answer was right, and every window says its name.\n- Small buttons are easier to tap, and you can pinch to zoom.\n- Long Buddy names now fit on the Home screen.\n- The privacy page now explains Mic mode: it only listens when you tap the mic, and never records or stores audio.\n"
+ },
+ {
+  "tag": "v1.0.0",
+  "sha": "8ac26ef047ad43889744beff7dc767670842a215",
+  "title": "v1.0.0: Kaimon Multiply 1.0",
+  "body": "- Kaimon Multiply 1.0 is here! Times tables practice where every right answer catches, levels up and battles.\n- Everything from the weekend in one place: a guided first game with Teacher K, Kaimon levels and Buddy, gyms and Boss Papa, the Hundred Tower and Megas, the Lightning Round, items and quests, the Wardrobe, offline play, family sync and Grown-ups insights.\n- How to play: the arrows fit on phones, and tapping a dot opens the right card.\n- How to play fits on landscape iPads and Chromebooks without scrolling.\n- Battles: tapping the Power Snack after a miss no longer hides the Type it lesson.\n- Thank you for playing. Send feedback from the Menu any time. Critical feedback helps most.\n"
+ },
+ {
+  "tag": "v1.0.1",
+  "sha": "55c3b683e89728f7120b31ceaeb60f55cec96130",
+  "title": "v1.0.1: Wild battles",
+  "body": "- Wild Kaimon now show their level. Catch one and it joins your team at that level.\n- Strong wild Kaimon want a battle first! Every right answer knocks their HP down, then you throw a ball. The lower their HP, the easier the catch.\n- Pick your ball for the big throw: your free streak ball, or a Super, Mega or Legend Ball.\n- If a wild battle goes badly, the Kaimon just runs off. Every answer still counts as practice.\n- Wild battles give your Buddy bonus XP, and your team gets half.\n- How to play has a new card about wild battles.\n"
+ },
+ {
+  "tag": "v1.0.4",
+  "sha": "cd96ee0c365022d35c82dda437ebf67c1d965838",
+  "title": "v1.0.4: Morning polish",
+  "body": "- Long pop-ups like the Menu now show a \"More below\" hint, so you know to scroll.\n- Send feedback now asks for what you don't like too. Telling us what you don't like helps the most!\n- Boss Papa's picture on the Papa's Gym tile is centered, with his whole P hat in the circle.\n- \"Play on another device\" in the Menu has a new, bigger icon that matches the others.\n- The Wardrobe's License preview shows your Kaidex count, best streak, medals and patches, just like your real Trainer License.\n- Easier taps: the Grown-ups times table grid, the \"Family device? Sign in\" link and the Kaidex page dots.\n- The Mega \"M\" badge in the Kaidex is easier to read.\n"
+ },
+ {
+  "tag": "v1.0.5",
+  "sha": "9401f4e382c0f3cebee76a75c20511c7e3183fb1",
+  "title": "v1.0.5: Fun hats",
+  "body": "- New hats in the Wardrobe: the Kaizo Hood, the Papa Cap and the Kairo Crown!\n- Earn the Kaizo Hood with 750 right answers, the Papa Cap by beating Boss Papa, and the Kairo Crown with 3,000 right answers.\n- Kai and all the ready-made trainers can wear them. Your hat shows on Home, your License and Who's playing. In battles it waits in your bag.\n"
+ },
+ {
+  "tag": "v1.1.0",
+  "sha": "e0d4149c9b564b6710cb047c1f78d0d278a0633f",
+  "title": "v1.1.0: Types and Lightning Round",
+  "body": "- Types now matter in battles! When your Kaimon's type is strong against the other Kaimon, right answers hit harder: Super effective! When it's weak, they hit a bit softer.\n- New Types guide in the Menu shows what each type is strong and weak against, and why. For example, Water puts out fire.\n- The VS screen gives a type tip before each battle. Tap it to open the Types guide.\n- Picking your battle team? Small up and down arrows show which Kaimon are strong or weak against the next gym.\n- Tower legendaries battle as a type too: Multiplix as Rock, Aurorix as Cosmic, Hundragon as Dragon.\n- Lightning Round has a new electric look, and your Buddy cheers you on.\n- Lightning Round now shows your top 5 runs, with a big New record! moment when you beat your best.\n- Every 5 right in a row in Lightning Round lights up a combo and gives your Buddy bonus XP.\n- Lightning Round results list everything you earned and what to aim for next.\n"
+ },
+ {
+  "tag": "v1.1.1",
+  "sha": "ded3de749e8b82fe43dcc805c0e2106c08be60da",
+  "title": "v1.1.1: Smoother play, hats for everyone, easier feedback",
+  "body": "- The number pad is faster: a key counts the moment your finger touches it, and quick double taps both count.\n- Taps are never lost between cards. Digits you type while the next card slides in land on it, and a tap during a throw skips ahead.\n- The Hint Scroll is now a Teacher K Hint, with her face on it. She pops in when a hint could help: on new or tricky facts, or when you're stuck for a few seconds. Never on the first card.\n- The streak flame is simpler. At 5 in a row you'll see \"You throw Super Balls now\", and at 10, Mega Balls. Your streak ball on the belt has a little flame on it.\n- Make-your-own trainers can now wear every hat: the Kaizo Hood, Papa Cap and Kairo Crown. Caps and beanies come off, and long hair and braids flow out of the Kaizo Hood.\n- When you earn a new hat, \"Wear it!\" now works for every trainer.\n- Fixed: lips and cheeks no longer turn blue on some skin tones for make-your-own trainers.\n- Send feedback is simpler: one box for what you love, one for what should be better or is broken. Fill in one or both, then send. Tap Send more to add another note.\n- Rate the game is now in the Menu. You can see your last rating and change it whenever you like.\n- The game only asks for a rating again after a big update, and never more than a few times a year.\n- Fixed: How to play fits on an iPad held sideways again, with no scrolling.\n"
+ },
+ {
+  "tag": "v1.1.2",
+  "sha": "e2523a60c17b76b380cbae48b3fda44c92cac982",
+  "title": "v1.1.2: Trophy case",
+  "body": "- Your badges, medals, patches and Item Bag now live together in one Trophy case on your trainer page.\n- Badges stand on shelves from 1s to 10s, then Papa's Gym. Medals hang on a rail, and Hundred Tower cups wait on the bottom shelf.\n- Tap a medal to see what the next one needs.\n- The Trophy case matches your jacket color!\n- Fixed: on iPhone and iPad, the Trainer page no longer jumps up after you change your team.\n"
+ },
+ {
+  "tag": "v1.1.3",
+  "sha": "572b0f0",
+  "title": "v1.1.3: Small fixes behind the scenes",
+  "body": "A quiet release: no \"Updated\" message in the app.\n\n- Support for one-time family surprises: a grown-up can send one trainer a custom scene, take back gym badges or hats, give a prize for the next Boss Papa win, and turn on a gym rule. See docs/family-surprises.md.\n- Quiet releases that update without the \"Updated\" message.\n- Gym and Boss Papa wins keep the time they happened, so family sync stays correct."
+ },
+ {
+  "tag": "v1.1.4",
+  "sha": "0116659da0c1239b090c14b6b430e9a17d5dd268",
+  "title": "v1.1.4: Small fixes",
+  "body": "- Fixed: in Grown-ups, the weekly chart keeps today's bar in line with the other days.\n- Behind-the-scenes work on something new. Nothing changes in the game yet.\n"
+ },
+ {
+  "tag": "v1.1.5",
+  "sha": "1ef05f50575958c002d3cea7bca4f2b405870c78",
+  "title": "v1.1.5: Small fixes",
+  "body": "- Behind-the-scenes work on something new. Nothing changes in the game yet.\n"
+ },
+ {
+  "tag": "v1.1.6",
+  "sha": "0607356469fe8107b752be8a7513d69f3162adf8",
+  "title": "v1.1.6: Small fixes",
+  "body": "- Behind-the-scenes work on something new. Nothing changes in the game yet.\n"
+ },
+ {
+  "tag": "v1.1.7",
+  "sha": "4d0775eb0ddf9b098447df54b0775fcd5a7ff029",
+  "title": "v1.1.7: Small fixes",
+  "body": "- Behind-the-scenes work on something new. Nothing changes in the game yet.\n"
+ },
+ {
+  "tag": "v1.1.8",
+  "sha": "f0d0ddf4283235775d4d83ad7ca5925293c86cbc",
+  "title": "v1.1.8: Small fixes",
+  "body": "- Behind-the-scenes work on something new. Nothing changes in the game yet.\n"
+ },
+ {
+  "tag": "v1.1.9",
+  "sha": "3f2e6f0480ced659fb5c85abe0576b5adb708cfd",
+  "title": "v1.1.9: Small fixes",
+  "body": "- Behind-the-scenes work on something new. Nothing changes in the game yet.\n"
+ },
+ {
+  "tag": "v1.2.0",
+  "sha": "0d5eb12a736e9447171b69a10c83f2da6953b508",
+  "title": "v1.2.0: Times Two: play with a friend!",
+  "body": "- New: Times Two! Play with a friend on one device. It shows up on Home after your first game.\n- Catch Party: take turns catching Kaimon, tag your partner in after each turn, and fill Team Power to throw a Team Throw together.\n- Gym Rush: team up to beat every Gym Leader, then Boss Papa. Tag your partner in, land a Tag Strike, and every gym you beat is saved.\n- Make a friend in seconds: a first name and a look. Friends save with your trainer and sync with your family. Tap the pencil to rename, restyle or remove one.\n- More than one kid? Grown-ups has a new Add a trainer button. Each kid gets their own trainer and their own progress.\n- Send feedback with a screenshot: tap Add a screenshot in Send feedback, so we can see exactly what you see.\n- Missed one? Teacher K now shows the right answer in a big box, and the key to press glows, so it's easy to type and keep going.\n- New Times Two music, plus big new sounds for tags and VS battles.\n"
+ }
+]
