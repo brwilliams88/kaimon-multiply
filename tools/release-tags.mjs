@@ -12,7 +12,8 @@ const have = new Set(sh('git', ['ls-remote', '--tags', 'origin']).split('\n').ma
 const cmp = (a, b) => { const x = a.slice(1).split('.').map(Number), y = b.slice(1).split('.').map(Number); for (let i = 0; i < 3; i++) if (x[i] !== y[i]) return x[i] - y[i]; return 0; };
 
 const todo = [];
-for (const r of JSON.parse(readFileSync('tools/releases.json', 'utf8'))) if (!have.has(r.tag)) todo.push(r);
+// GitHub wants the full commit id, so short ones are expanded first.
+for (const r of JSON.parse(readFileSync('tools/releases.json', 'utf8'))) if (!have.has(r.tag)) todo.push({ ...r, sha: sh('git', ['rev-parse', r.sha + '^{commit}']) });
 
 const ver = /export const VERSION = '([^']+)'/.exec(readFileSync('js/data/changelog.js', 'utf8'))?.[1];
 const cur = ver && 'v' + ver;

@@ -169,7 +169,7 @@
  },
  {
   "tag": "v1.1.3",
-  "sha": "572b0f0",
+  "sha": "572b0f044f7c6206f83afea6d9a24d2ef2324ced",
   "title": "v1.1.3: Small fixes behind the scenes",
   "body": "A quiet release: no \"Updated\" message in the app.\n\n- Support for one-time family surprises: a grown-up can send one trainer a custom scene, take back gym badges or hats, give a prize for the next Boss Papa win, and turn on a gym rule. See docs/family-surprises.md.\n- Quiet releases that update without the \"Updated\" message.\n- Gym and Boss Papa wins keep the time they happened, so family sync stays correct."
  },
