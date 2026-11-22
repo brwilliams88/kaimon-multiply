@@ -2,6 +2,17 @@
 
 All notable changes. Versioning: `0.MINOR.0` marks a roadmap phase, `0.x.PATCH` is any shipped change a player or parent can notice, and `1.0.0` is the public launch. See "Versioning" in CLAUDE.md. The in-app version history (Grown-ups > What's new) reads from `js/data/changelog.js`; keep both in sync. Each release is tagged in git as `vX.Y.Z`.
 
+## v1.2.0 (2026-11-22) Times Two: play with a friend!
+
+- New: Times Two! Play with a friend on one device. It shows up on Home after your first game.
+- Catch Party: take turns catching Kaimon, tag your partner in after each turn, and fill Team Power to throw a Team Throw together.
+- Gym Rush: team up to beat every Gym Leader, then Boss Papa. Tag your partner in, land a Tag Strike, and every gym you beat is saved.
+- Make a friend in seconds: a first name and a look. Friends save with your trainer and sync with your family. Tap the pencil to rename, restyle or remove one.
+- More than one kid? Grown-ups has a new Add a trainer button. Each kid gets their own trainer and their own progress.
+- Send feedback with a screenshot: tap Add a screenshot in Send feedback, so we can see exactly what you see.
+- Missed one? Teacher K now shows the right answer in a big box, and the key to press glows, so it's easy to type and keep going.
+- New Times Two music, plus big new sounds for tags and VS battles.
+
 ## v1.1.9 (2026-11-22) Small fixes
 
 - Behind-the-scenes work on something new. Nothing changes in the game yet.

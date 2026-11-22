@@ -18,18 +18,9 @@ import { pickEncounter } from './game.js';
 import { myTeam, maxHpFor, opponent, HIT_BACK } from './battle.js';
 import { limitReached } from './playtime.js';
 
-// ---------- preview switch (this device only) ----------
-// Times Two is built but hidden. A grown-up turns it on for one device in Grown-ups.
-const PREVIEW_KEY = 'kaimon.preview.timesTwo';
-export function previewOn() { try { return localStorage.getItem(PREVIEW_KEY) === '1'; } catch { return false; } }
-export function setPreview(on) { try { if (on) localStorage.setItem(PREVIEW_KEY, '1'); else localStorage.removeItem(PREVIEW_KEY); } catch { /* private mode */ } }
-// The switch itself only shows in Grown-ups for the maker, or on a device opened once
-// with ?preview=timestwo in the link (or that already has the preview on).
-const UNLOCK_KEY = 'kaimon.preview.unlock';
-try { if (typeof location !== 'undefined' && /[?&#]preview=timestwo\b/i.test(location.search + location.hash)) localStorage.setItem(UNLOCK_KEY, '1'); } catch { /* private mode */ }
-export function previewUnlocked() { try { return previewOn() || localStorage.getItem(UNLOCK_KEY) === '1'; } catch { return false; } }
-// Shows on Home once the preview is on and the trainer has played a first game.
-export const coopOpen = (p) => !!p && previewOn() && ((p.stats?.answers || 0) > 0 || !!p.tips?.first);
+// ---------- open to everyone (since 1.2.0) ----------
+// Times Two shows on Home once a trainer has played a first game.
+export const coopOpen = (p) => !!p && ((p.stats?.answers || 0) > 0 || !!p.tips?.first);
 
 // ---------- friends ----------
 // 7 ready-made looks (the 8th tile opens the full trainer creator).

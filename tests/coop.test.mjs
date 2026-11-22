@@ -16,15 +16,10 @@ const { SPECIES } = await import('../js/data/creatures.js');
 const fresh = (id = 'pK') => { const p = newProfile('Kai', 0, id); p.starter = 'kaimo'; return p; };
 const ev = (k, d, t = Date.now()) => ({ id: Math.random().toString(36), t, k, d });
 
-test('the preview switch is per device and off by default', () => {
-  assert.equal(C.previewOn(), false);
+test('Times Two opens for everyone after a first game', () => {
   const p = fresh(); p.stats.answers = 3;
-  assert.equal(C.coopOpen(p), false);
-  C.setPreview(true);
   assert.equal(C.coopOpen(p), true);
   assert.equal(C.coopOpen(fresh('pNew')), false, 'not before a first game');
-  C.setPreview(false);
-  assert.equal(C.coopOpen(p), false);
 });
 
 test('friend names: first name only, no symbols, short', () => {

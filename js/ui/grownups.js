@@ -1,4 +1,4 @@
-import { previewOn, setPreview, previewUnlocked, coopOpen, livePals, savePal, savedRun, clearRun } from '../core/coop.js'; // Times Two preview switch (this device only), friends
+import { coopOpen, livePals, savePal, savedRun, clearRun } from '../core/coop.js'; // Times Two friends
 import { touch, setSetting, switchProfile, hideProfile, hiddenProfiles } from '../core/store.js';
 import { renameSheet } from './renameSheet.js';
 import { deleteEverywhere, addBackFromFamily } from '../core/sync.js';
@@ -444,10 +444,6 @@ function drawMain(root, go) {
         </div>
 
         <div class="panel off-panel" data-offpanel>${offlinePanelHTML()}</div>
-        ${amAdminCached() || previewUnlocked() ? `<div class="panel tt-preview-panel">
-          <h2>Try it early</h2>
-          <label class="row"><span>Times Two preview <span class="beta-tag">Beta</span><small class="row-note">Play with a friend on one device: Catch Party and Gym Rush. Still being tested. Turns on for this device only, and shows on Home after a trainer's first game.</small></span><input type="checkbox" class="switch" data-preview ${previewOn() ? 'checked' : ''}></label>
-        </div>` : ''}
       </div>
       <div class="gu-pane gu-grid gu-pane-family" role="tabpanel" id="gu-pane-family" aria-labelledby="gu-tab-family" data-gu-pane="family"${guTab === 'family' ? '' : ' hidden'}>
         <div class="panel trainers-panel">
@@ -543,7 +539,6 @@ function drawMain(root, go) {
     if (bar && bar.getBoundingClientRect().top < 0) window.scrollTo(0, window.scrollY + bar.getBoundingClientRect().top - 8);
   };
   on(root, 'click', '[data-gu-tab]', (e, el) => showTab(el.dataset.guTab));
-  root.querySelector('[data-preview]')?.addEventListener('change', (e) => { setPreview(e.target.checked); toast(e.target.checked ? 'Times Two is on for this device. Find it on Home.' : 'Times Two preview is off on this device.'); });
   root.querySelector('.gu-tabs')?.addEventListener('keydown', (e) => {
     const T = guTabs();
     const i = T.findIndex(([id]) => id === guTab);
