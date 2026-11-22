@@ -24,7 +24,7 @@ import { trickyPool, markTrickyDone } from '../core/nextup.js';
 import { fxImg, glowBall, unlockCardHTML, wireUnlockCard } from './moments.js';
 import { wardrobeCheck } from './wardrobe.js';
 import { quick } from '../core/prefs.js';
-import { $, on, esc, sheet, wait, toast, soundButton, reducedMotion, setFlame, say, wirePad } from './dom.js';
+import { $, on, esc, sheet, wait, toast, soundButton, reducedMotion, setFlame, say, wirePad, guideKeys } from './dom.js';
 import { secondChance, lanternGlow, offerHint, openScroll } from './items.js'; import { hintedMs, hintPlan, hintDue } from '../core/items.js'; import { hintWorthy } from '../core/facts.js'; import { afterRound } from './quests.js'; import { calmMode } from '../core/lightning.js'; // [systems] items, quests, Calm mode
 import { firstGameGuide, finishFirstGame, wantsFirstGame, GUIDE_FACTS } from './firstGame.js';
 
@@ -113,6 +113,7 @@ export function renderPlay(root, go, { table, focus, guide } = {}) {
   function setInput(v) {
     S.input = v;
     root.querySelectorAll('.answer-val').forEach((x) => { x.textContent = v || ''; x.classList.toggle('empty', !v); });
+    guideKeys(root, S.phase === 'learn' ? S.mustType : null, v || '');
   }
 
   // Streak: just a flame and the number of right answers in a row. When a streak
@@ -216,7 +217,7 @@ export function renderPlay(root, go, { table, focus, guide } = {}) {
     el.hint.textContent = '';
     el.val.dataset.ph = '?';
     S.phase = 'ask';
-    S.mustType = null;
+    S.mustType = null; guideKeys(root, null);
     S.shownAt = S.lastKey = performance.now();
     // Teacher K's hint is never on a card when it is dealt. It pops in later, only
     // when it can help: a new fact or one missed lately or often (soon), or after

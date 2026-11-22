@@ -69,3 +69,14 @@
   .sheet .fb-head h2 { font-size: 24px; }
   .fb-kaizo { width: 68px; height: 68px; }
 }
+
+/* Screenshot: an optional picture that rides along with the email. */
+.fb-shot-add { position: relative; display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 52px; padding: 8px 14px; border: 2.5px dashed var(--ink); border-radius: 16px; background: #F4F8FF; font-weight: 700; font-size: 17px; color: var(--ink); cursor: pointer; }
+.fb-shot-add input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.fb-shot-add svg { width: 26px; height: 26px; flex: none; }
+.fb-shot-add.busy { opacity: .6; pointer-events: none; }
+.fb-shot-add:focus-within { outline: 3px solid #2D7FF9; outline-offset: 2px; }
+.fb-shot-add[hidden], .fb-shot-pre[hidden] { display: none; }
+.fb-shot-pre { display: flex; align-items: center; gap: 12px; }
+.fb-shot-pre img { max-width: 50%; max-height: 180px; border: 2.5px solid var(--ink); border-radius: 12px; object-fit: contain; background: #fff; }
+.fb-shot-x { padding: 8px 14px; border: 2.5px solid var(--ink); border-radius: 99px; background: #FFE1D8; color: var(--coral-ink, #B83A1D); font-weight: 700; font-size: 15px; box-shadow: 0 3px 0 var(--ink); }

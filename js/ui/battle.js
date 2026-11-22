@@ -18,11 +18,11 @@ import { ballIcon } from './home.js';
 import { teamSheet } from './teamPicker.js';
 import { trainerArt, trainerFull, playerArt, CHAMP_LINES } from './trainerArt.js';
 import { fxImg, poseSwap, glowBall, kairoArrive, kairoCaught, legendThrow } from './moments.js';
-import { sceneSrc, cssUrl, sceneKey, fxSrc, typeIcon, badgeImg, ballSrc } from '../core/assets.js';
+import { sceneSrc, cssUrl, sceneKey, fxSrc, typeIcon, badgeImg, ballSrc, trainerFace } from '../core/assets.js';
 import { quick } from '../core/prefs.js';
 import { limitReached } from '../core/playtime.js';
 import { startMusic, stopMusic, setPinch } from '../core/music.js';
-import { $, on, esc, sheet, reducedMotion, soundButton, setFlame, fitText, say, wirePad } from './dom.js';
+import { $, on, esc, sheet, reducedMotion, soundButton, setFlame, fitText, say, wirePad, guideKeys } from './dom.js';
 import { vsHint, matchType } from '../data/types.js'; import { typesGuide } from './typesGuide.js'; // [types] type matchups
 import { pendingPrize } from '../core/surprise.js'; import { byId as wearItem } from '../core/wardrobe.js'; import { hatPic } from './wardrobe.js'; import { trainerLook as lookFor, charLook } from './avatars.js'; // a surprise's Boss Papa prize
 import { canSnack, useSnack, itemCount, claimSurprisePrize } from '../core/items.js'; import { towerCrystal } from '../core/tower.js'; import { itemIcon } from './items.js'; // [systems] Power Snack
@@ -187,7 +187,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt, wild 
   };
 
   // ---------- drawing ----------
-  function setInput(v) { S.input = v; root.querySelectorAll('.answer-val').forEach((x) => { x.textContent = v || ''; x.classList.toggle('empty', !v); }); }
+  function setInput(v) { S.input = v; root.querySelectorAll('.answer-val').forEach((x) => { x.textContent = v || ''; x.classList.toggle('empty', !v); }); guideKeys(root, S.phase === 'learn' ? S.mustType : null, v || ''); }
 
   function drawHp(box, team, idx, known) {
     const m = team[idx];
@@ -435,7 +435,7 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt, wild 
     el.val.dataset.ph = '?';
     S.phase = 'ask';
     S.skip = false;
-    S.mustType = null;
+    S.mustType = null; guideKeys(root, null); el.msg.classList.remove('learn');
     drawSnack(); // [systems]
     S.shownAt = performance.now();
     startPower();
@@ -570,7 +570,8 @@ export function renderBattle(root, go, { kind = 'champ', table = 1, grunt, wild 
         }
       }
       // Learn the fact before moving on.
-      el.msg.innerHTML = `<span class="ladder-inline">${hintLadder(S.fact).map((v, i, arr) => `<span class="${i === arr.length - 1 ? 'last' : ''}">${v}</span>`).join('')}</span><span class="retype">Type it <span class="answer-val empty" data-ph="${ans}"></span></span>`;
+      el.msg.innerHTML = `<span class="retype-k">${trainerFace('teacher-k')}</span><span class="retype-body"><span class="ladder-inline">${hintLadder(S.fact).map((v, i, arr) => `<span class="${i === arr.length - 1 ? 'last' : ''}">${v}</span>`).join('')}</span><span class="retype">Type <span class="answer-val empty" data-ph="${ans}"></span> to keep going</span></span>`;
+      el.msg.classList.add('learn');
       S.phase = 'learn';
       S.skip = false;
       S.mustType = ans;

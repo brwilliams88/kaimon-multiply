@@ -150,8 +150,11 @@ function cleanFeedback_(b) {
     where: String(b.where || '').replace(/[^A-Za-z0-9 _-]/g, '').slice(0, 30),
     os: FEEDBACK_OS[b.os] || '', browser: FEEDBACK_BROWSERS[b.browser] || '',
     place: [part(pl.city, 60), part(pl.region, 60), /^[A-Z]{2}$/.test(cc) ? cc : ''].filter(function (x) { return x; }).join(', '),
+    // An optional screenshot: a small JPEG the app already shrank (base64, no prefix).
+    shot: /^[A-Za-z0-9+\/]+=*$/.test(String(b.shot || '')) && String(b.shot).length < SHOT_MAX ? String(b.shot) : '',
   };
 }
+var SHOT_MAX = 900000; // about 650 KB of picture
 
 function feedback_(b) {
   var to = cleanEmail_(props_().getProperty('FEEDBACK_TO') || '');
@@ -180,6 +183,12 @@ function feedbackMail_(f, to, opt) {
   var msg = { to: to, name: 'Kaimon Multiply feedback', subject: ((opt && opt.test) ? '[Test] ' : '') + 'Kaimon Multiply: ' + FEEDBACK_KINDS[f.kind] + (f.stars ? ' ' + new Array(f.stars + 1).join('★') : '') + (f.who ? ' from ' + f.who : ''),
     body: lines.join('\n'), htmlBody: renderFeedbackEmail_(f, opt) };
   if (f.from) msg.replyTo = f.from;
+  if (f.shot) {
+    var blob = Utilities.newBlob(Utilities.base64Decode(f.shot), 'image/jpeg', 'kaimon-screenshot.jpg');
+    msg.inlineImages = { shot: blob };
+    msg.attachments = [blob.copyBlob().setName('kaimon-screenshot.jpg')];
+    msg.body += '\n\nA screenshot is attached.';
+  }
   return msg;
 }
 
@@ -210,6 +219,8 @@ function renderFeedbackEmail_(f, opt) {
     rows.push(card_(f.text ? said('What they said', '#2D7FF9', f.text)
       : '<div style="font-size:16px;color:' + INK2 + ';">No words, just stars.</div>', { bg: '#FFFDF4' }));
   }
+  if (f.shot) rows.push(card_('<div style="font-size:13px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:#2D7FF9;padding-bottom:8px;">Their screenshot</div>'
+    + '<img src="cid:shot" alt="Screenshot" style="display:block;max-width:100%;height:auto;border:2px solid ' + INK + ';border-radius:12px;">', { bg: '#FFFFFF' }));
   rows.push(card_('<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">'
     + row('Name', f.who ? esc_(f.who) : '<span style="color:' + INK2 + ';">Not given</span>')
     + row('Device', esc_([f.os, f.browser].filter(function (x) { return x; }).join(', ') || 'Not known'))
