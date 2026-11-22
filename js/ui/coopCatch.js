@@ -53,7 +53,7 @@ export function renderCoopCatch(root, go, { partner, len = 'normal' } = {}) {
         <button class="icon-btn" data-exit aria-label="Stop playing"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6 L18 18 M18 6 L6 18" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg></button>
         <span class="tt-hud-p tt-hud-l" data-side="l">${faceOf(A.look, 'l')}<span class="tt-pips" aria-hidden="true"></span></span>
         <div class="tt-power" role="img" aria-label="Team Power">
-          <span class="tt-power-top"><b class="tt-pts">0</b><small>team points</small><div class="streak" data-tier="0" aria-live="polite" title="Team streak"><span class="streak-flame" aria-hidden="true"><svg viewBox="0 0 24 24"><path class="fl-out" d="M12 1.8c.9 3.2-1.2 5-2.7 6.8C7.7 10.5 6.6 12.3 6.6 14.6a5.4 5.4 0 0 0 10.8 0c0-2.9-1.5-4.8-2.6-6.2-.3 1.6-1.1 2.5-2.1 3 .5-3.1-.1-6.5-.7-9.6z" stroke="#14213D" stroke-width="1.5" stroke-linejoin="round"/><path class="fl-in" d="M12.1 10.6c.4 1.7-.6 2.6-1.3 3.5-.5.6-.9 1.3-.9 2.1a2.2 2.2 0 0 0 4.4 0c0-1.3-.7-2.1-1.2-2.8-.2.7-.5 1-1 1.2.2-1.4 0-2.7 0-4z"/></svg></span><span class="streak-num">0</span></div></span>
+          <span class="tt-power-top"><b class="tt-pts">0</b><small>team points</small><div class="streak" data-tier="0" aria-live="polite" title="Team streak"><span class="streak-flame" aria-hidden="true"><svg viewBox="0 0 24 24"><path class="fl-out" d="M12 1.8c.9 3.2-1.2 5-2.7 6.8C7.7 10.5 6.6 12.3 6.6 14.6a5.4 5.4 0 0 0 10.8 0c0-2.9-1.5-4.8-2.6-6.2-.3 1.6-1.1 2.5-2.1 3 .5-3.1-.1-6.5-.7-9.6z" stroke="#14213D" stroke-width="1.5" stroke-linejoin="round"/><path class="fl-in" d="M12.1 10.6c.4 1.7-.6 2.6-1.3 3.5-.5.6-.9 1.3-.9 2.1a2.2 2.2 0 0 0 4.4 0c0-1.3-.7-2.1-1.2-2.8-.2.7-.5 1-1 1.2.2-1.4 0-2.7 0-4z"/></svg></span><span class="streak-num">0</span></div><img class="tt-streak-ball" alt="" hidden></span>
           <span class="tt-power-bar"><span class="tt-power-fill"></span></span>
         </div>
         <span class="tt-hud-p tt-hud-r" data-side="r">${faceOf(B.look, 'r')}<span class="tt-pips" aria-hidden="true"></span></span>
@@ -113,6 +113,10 @@ export function renderCoopCatch(root, go, { partner, len = 'normal' } = {}) {
     const box = el.streak.closest('.streak');
     box.classList.toggle('hot', T.streak >= 3);
     setFlame(box, T.streak);
+    // A hot streak throws a better ball (5 in a row: Super, 10: Mega), same as solo play.
+    const sb = root.querySelector('.tt-streak-ball'), kind = ballForStreak(host, T.streak);
+    sb.hidden = kind === 'capture';
+    if (kind !== 'capture') { sb.src = ballSrc(kind, false); sb.title = `${BALLS[kind]?.name || 'Better ball'} for the next throw`; }
   }
 
   // ---------- a card ----------

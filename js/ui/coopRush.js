@@ -21,7 +21,7 @@ import { $, on, esc, sheet, reducedMotion, soundButton, setFlame, fitText, say, 
 import {
   playerFor, poolFor, PACKS, packTeam, teamOf, avgLevel, rushFoe, hitBack, gymLabel, allOut, snackBreak, supportRight, SUPPORT,
   RUSH_ORDER, RUSH_LENGTHS, TURN_CARDS, TAG_STRIKE, savedRun, saveRun, clearRun, unpackRun, savePal, recordGame, records, crateDue,
-  sideColor, LEFT_COLOR, gamesWith, friendLevel,
+  sideColor, LEFT_COLOR, gamesWith, friendLevel, initials,
 } from '../core/coop.js';
 import { handoff, teamPatchHTML, faceOf } from './coop.js';
 import { GYM_SCENES } from '../data/gymScenes.js';
@@ -94,6 +94,7 @@ export function renderCoopRush(root, go, { partner, len = 'normal', fresh = fals
     S.lines = [...scene.out.map(([w, t]) => ({ w, t, at: 'out' })), ...scene.in.map(([w, t]) => ({ w, t, at: 'in' }))];
     S.line = -1;
     const leaderFace = g === 'papa' ? trainerFace('boss-papa') : champFace(g);
+    const teamInitials = initials(A.n, B.n);
     root.innerHTML = `
       <section class="screen play battle v2 coop-rush tt-l">
         <header class="play-top">
@@ -136,8 +137,9 @@ export function renderCoopRush(root, go, { partner, len = 'normal', fresh = fals
             <div class="tt-vx-half us"><span class="tt-vx-kid a">${trainerImg(A.look || null, 'won')}</span><span class="tt-vx-kid b">${trainerImg(B.look || null, 'won')}</span></div>
             <div class="tt-vx-half them"><span class="tt-vx-foe">${g === 'papa' ? trainerBody('boss-papa', 'talking') : champBody(g)}</span></div>
             <span class="tt-vx-seam"></span>
-            <span class="tt-vx-name us">${esc(A.n)} <i>&amp;</i> ${esc(B.n)}</span><span class="tt-vx-name them">${esc(opp.name)}</span>
-            <span class="tt-vx-badge"><img src="${uiSrc('tt-burst')}" alt="" draggable="false"><b>VS</b></span>
+            <span class="tt-vx-name us"><b>${esc(A.n)} <i>&amp;</i> ${esc(B.n)}</b><small>Team ${esc(teamInitials)}</small></span><span class="tt-vx-name them"><b>${esc(opp.name)}</b><small>${esc(scene.gym)} · ${g === 'papa' ? 'every table' : `the ${g}s`}</small></span>
+            <span class="tt-vx-tap">Tap to battle!</span>
+            <span class="tt-vx-badge"><i class="tt-vx-ring"></i><img src="${uiSrc('tt-burst')}" alt="" draggable="false"><b>VS</b></span>
           </div>
         </div>
       </section>`;
@@ -187,25 +189,32 @@ export function renderCoopRush(root, go, { partner, len = 'normal', fresh = fals
     S.line = S.lines.length - 2;
     cutNext();
   }
+  // Battle! opens the VS splash: the team on one side, the Gym Leader on the
+  // other, VS slams in. It waits for a tap, then wipes into the battle.
   function begin() {
     if (S.phase !== 'intro') return;
     S.phase = 'vs';
     unlock(); sfx.tap();
     const cut = root.querySelector('.tt-cut');
     const calm = reducedMotion();
-    // The VS splash: the team on one side, the Gym Leader on the other, VS slams in.
-    // It holds long enough to read both names, then wipes into the battle.
     cut?.classList.add('vs');
-    setTimeout(() => sfx.vs?.(), calm ? 0 : 380);
+    setTimeout(() => sfx.vs?.(), calm ? 0 : 420);
     if (host.settings.music !== false) startMusic();
     drawAll();
-    setTimeout(() => cut?.classList.add('out'), calm ? 700 : 1900);
+    setTimeout(() => { if (S.phase === 'vs') { S.vsReady = true; cut?.classList.add('vs-ready'); } }, calm ? 300 : 1300);
+  }
+  function fight() {
+    if (S.phase !== 'vs' || !S.vsReady) return;
+    S.phase = 'wipe';
+    sfx.tap();
+    const cut = root.querySelector('.tt-cut');
+    cut?.classList.add('out');
     setTimeout(() => {
       cut?.remove();
       S.phase = 'ask';
       el.msg.textContent = `Go, ${myMon()?.species.name || 'team'}!`;
       next();
-    }, calm ? 900 : 2250);
+    }, reducedMotion() ? 0 : 380);
   }
   function champFace(t) { return trainerFace(champKey(t)); }
   function champBody(t) { return trainerBody(champKey(t), 'talking'); }
@@ -273,9 +282,12 @@ export function renderCoopRush(root, go, { partner, len = 'normal', fresh = fals
     const [a, b] = parseFact(id);
     el.q.innerHTML = `<span>${a}</span><span class="times">×</span><span>${b}</span><span class="eq">=</span><span class="answer-val empty" data-ph="?"></span>`;
     el.qcard.className = 'q-card';
+    // Leaving a "type the answer" moment: clear Teacher K's note so it never sits
+    // under the next card.
+    if (el.msg.classList.contains('learn')) { el.msg.classList.remove('learn'); el.msg.textContent = `Go, ${myMon()?.species.name || 'team'}!`; }
     if (inSupport()) el.msg.innerHTML = `<b>Support turn!</b> Right answers heal ${esc(partnerOf().n)}'s Kaimon. ${SUPPORT.revive - (run.sup[run.cur] % SUPPORT.revive)} more brings one of yours back!`;
     setInput('');
-    S.phase = 'ask'; S.skip = false; S.mustType = null; guideKeys(root, null); el.msg.classList.remove('learn');
+    S.phase = 'ask'; S.skip = false; S.mustType = null; guideKeys(root, null);
     S.shownAt = performance.now();
     say(`${pl.n}. What is ${a} times ${b}?`);
     drawAll();
@@ -555,9 +567,9 @@ export function renderCoopRush(root, go, { partner, len = 'normal', fresh = fals
   function wire() {
     if (wired) return;
     wired = true;
-    on(root, 'click', '[data-start]', (e) => { e.stopPropagation(); begin(); });
+    on(root, 'click', '[data-start]', (e) => { e.stopPropagation(); if (S.phase === 'vs') fight(); else begin(); });
     on(root, 'click', '[data-cut-skip]', (e) => { e.stopPropagation(); cutSkip(); });
-    on(root, 'click', '.tt-cut', (e) => { if (!e.target.closest('button')) cutNext(); });
+    on(root, 'click', '.tt-cut', (e) => { if (S.phase === 'vs') return fight(); if (!e.target.closest('button')) cutNext(); });
     on(root, 'click', '[data-next]', () => { sfx.tap(); battleScreen(); });
     on(root, 'click', '[data-break]', () => { sfx.tap(); endSession(); go('home'); });
     on(root, 'click', '[data-home]', () => go('home'));
@@ -583,7 +595,7 @@ export function renderCoopRush(root, go, { partner, len = 'normal', fresh = fals
       if (!root.isConnected || root.dataset.screen !== 'coopRush') { document.removeEventListener('keydown', onKey); return; }
       if (!root.querySelector('.coop-rush')) return;
       if (document.querySelector('.sheet-wrap, .tt-handoff')) return;
-      if (root.querySelector('.tt-cut')) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (S.line >= S.lines.length - 1) begin(); else cutNext(); } return; }
+      if (root.querySelector('.tt-cut')) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (S.phase === 'vs') fight(); else if (S.line >= S.lines.length - 1) begin(); else cutNext(); } return; }
       if (/^[0-9]$/.test(e.key)) $(`[data-k="${e.key}"]`, root)?.click();
       else if (e.key === 'Backspace') $('[data-k="del"]', root)?.click();
       else if (e.key === 'Enter') { e.preventDefault(); submit(); }

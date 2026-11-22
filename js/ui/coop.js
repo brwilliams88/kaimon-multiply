@@ -12,7 +12,7 @@ import { byId } from '../data/creatures.js';
 import { $, on, esc, sheet, toast, reducedMotion, wait } from './dom.js';
 import {
   QUICK_LOOKS, NAME_MAX, cleanName, savePal, pals, partnersFor, playerFor, timeLeft, records, gamesWith, friendLevel, nextFriendLevel,
-  sideColor, LEFT_COLOR, initials, CATCH_LENGTHS, RUSH_LENGTHS, savedRun, RUSH_ORDER, gymLabel, coopOpen, livePals, clearRun,
+  sideColor, LEFT_COLOR, initials, CATCH_LENGTHS, RUSH_LENGTHS, savedRun, RUSH_ORDER, gymLabel, coopOpen, livePals, clearRun, whoNow,
 } from '../core/coop.js';
 
 const BACK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 L8 12 L15 19" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
@@ -40,8 +40,8 @@ export function coopTileHTML(p) {
   if (!coopOpen(p)) return '';
   const run = savedRun(p);
   const last = partnersFor(p)[0];
-  const who = run ? run.with : last;
-  const sub = run ? `Keep going with ${esc(run.with.n)}: ${gymLabel(RUSH_ORDER[run.step])}` : 'Play with a friend';
+  const who = run ? whoNow(p, run.with) : last;
+  const sub = run ? `Keep going with ${esc(who.n)}: ${gymLabel(RUSH_ORDER[run.step])}` : 'Play with a friend';
   return `<button class="tile tile-coop${run ? ' ready' : ''}" data-coop aria-label="Times Two. ${sub}.">
     <span class="tt-tile-faces" aria-hidden="true">${faceOf(p.look, 'l')}${who ? faceOf(who.look, 'r') : '<span class="tt-face r tt-face-q">?</span>'}</span>
     <span class="tile-text"><strong>Times Two</strong><small>${sub}</small></span>
@@ -101,7 +101,7 @@ export function recordsSheet(p, game = 'catch') {
     const list = records(p, game, 10);
     const me = { n: p.name, look: p.look || null };
     const rows = list.map((r, i) => {
-      const w = r.w?.[0] || { n: 'Friend' };
+      const w = whoNow(p, r.w?.[0]);
       const d = new Date(r.t).toLocaleDateString([], { month: 'short', day: 'numeric' });
       const what = game === 'rush' ? (r.won ? 'Beat Boss Papa!' : `${r.gy || 0} gym${r.gy === 1 ? '' : 's'}${r.gy ? `, to ${gymLabel(RUSH_ORDER[Math.max(0, (r.gy || 1) - 1)])}` : ''}`) : `${(r.pts || 0).toLocaleString()} points${r.st ? ` · ${'★'.repeat(r.st)}` : ''}`;
       return `<li class="tt-rec${i === 0 ? ' top' : ''}"><b class="tt-rec-n">${i + 1}</b>${teamPatchHTML(me, w, { size: 'sm', label: false })}<span class="tt-rec-text"><strong>${esc(me.n)} + ${esc(w.n)}</strong><small>${what} · ${d}</small></span></li>`;
@@ -136,7 +136,7 @@ export function renderCoop(root, go, params = {}) {
   const host = { k: 'host', id: p.id, n: p.name, look: p.look || null };
   const run = savedRun(p);
   let step = params.step || (run ? 'game' : 'who');
-  let partner = params.partner || (run ? run.with : null);
+  let partner = params.partner || (run ? whoNow(p, run.with) : null);
   const pick = { game: params.game || lastPick().game || 'catch', len: params.len || lastPick().len || 'normal' };
   if (run && !params.game) pick.game = 'rush';
   let draft = { name: '', look: QUICK_LOOKS[1] };
@@ -238,7 +238,7 @@ export function renderCoop(root, go, params = {}) {
         </div>
       </div>
       <button class="btn-chunky btn-primary btn-xl tt-start" data-start>${pick.game === 'rush' && mine ? 'Keep going' : "Let's go!"}${ARROW}</button>
-      ${pick.game === 'rush' && mine ? '<button class="link-btn tt-restart" data-restart>Start a new run</button>' : ''}
+      ${pick.game === 'rush' && mine ? '<button class="btn-chunky tt-restart" data-restart>Start a new run</button>' : ''}
     </div>`;
   };
 
@@ -317,7 +317,7 @@ export function renderCoop(root, go, params = {}) {
     if (pick.game === 'catch') return go('coopCatch', { partner: who, len: pick.len });
     const r = savedRun(p);
     if (r && !fresh && r.with.id !== pl.id) {
-      const sh = sheet(`<h2>Start a new Gym Rush?</h2><p>Your run with ${esc(r.with.n)} is saved at ${gymLabel(RUSH_ORDER[r.step])}. A new run with ${esc(pl.n)} replaces it.</p>
+      const sh = sheet(`<h2>Start a new Gym Rush?</h2><p>Your run with ${esc(whoNow(p, r.with).n)} is saved at ${gymLabel(RUSH_ORDER[r.step])}. A new run with ${esc(pl.n)} replaces it.</p>
         <div class="sheet-actions"><button class="btn-chunky btn-primary" data-new-run>Start a new run</button><button class="btn-chunky" data-close>Keep it</button></div>`);
       sh.el.querySelector('[data-new-run]').addEventListener('click', () => { sh.close(); go('coopRush', { partner: who, len: pick.len, fresh: true }); });
       return;

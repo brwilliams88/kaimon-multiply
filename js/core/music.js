@@ -36,6 +36,24 @@ const TRACKS = {
     roots: ['C3', 'A2', 'F2', 'G2', 'C3', 'A2', 'D3', 'G2', 'F2', 'G2', 'E2', 'A2', 'F2', 'G2', 'C3', 'C3'],
     stabs: chords('C4 E4 G4 | A3 C4 E4 | F3 A3 C4 | G3 B3 D4 | C4 E4 G4 | A3 C4 E4 | A3 D4 F4 | G3 B3 D4 | F3 A3 C4 | G3 B3 D4 | G3 B3 E4 | A3 C4 E4 | F3 A3 C4 | G3 B3 D4 | C4 E4 G4 | C4 E4 G4'),
   },
+  // Catch Party: the music under the cards. Its own tune, calmer than the menus:
+  // rolling marimba chords that bounce between the left and right speakers (one
+  // player, then the other), a few bells, a soft beat. Leaves room to think.
+  party: {
+    bpm: 104, vol: 0.3,
+    // F C Dm Bb | F C Bb C
+    lead: seq(`
+      - - - - - - - - C6 . . . A5 . . .
+      - - - - - - - - - - - - - - - -
+      - - - - - - - - D6 . . . A5 . . .
+      - - - - - - - - - - - - - - - -
+      - - - - - - - - C6 . . . F6 . . .
+      E6 . . . . . . . - - - - - - - -
+      - - - - - - - - D6 . C6 . A5 . . .
+      G5 . . . . . . . - - - - - - - -`),
+    roots: ['F2', 'C3', 'D3', 'A#2', 'F2', 'C3', 'A#2', 'C3'],
+    stabs: chords('F4 A4 C5 | E4 G4 C5 | D4 F4 A4 | D4 F4 A#4 | F4 A4 C5 | E4 G4 C5 | D4 F4 A#4 | E4 G4 C5'),
+  },
   // Times Two: a call and answer. One voice plays from the left speaker, the other
   // answers from the right (two players, two voices), then they play together.
   duet: {
@@ -125,8 +143,6 @@ const TRACKS = {
     stabs: chords('A3 E4 A4 | A3 E4 A4 | F3 C4 F4 | E3 B3 E4 | A3 E4 A4 | F3 C4 F4 | D3 A3 D4 | E3 B3 E4 | C4 G4 C5 | G3 D4 G4 | A3 E4 A4 | F3 C4 F4 | D3 A3 D4 | A3 E4 A4 | E3 B3 E4 | E3 B3 E4'),
   },
 };
-// In a game the duet plays softer and lighter, under the cards.
-TRACKS.duetSoft = { ...TRACKS.duet, vol: 0.26, soft: true };
 export const MUSIC_TRACKS = Object.keys(TRACKS);
 
 // ---------- the sound of it ----------
@@ -162,7 +178,7 @@ function makePlayer(g, track, at, fadeIn) {
   send.connect(delay).connect(lp).connect(fb).connect(delay);
   lp.connect(out);
   const pan = (v) => { if (!ctx.createStereoPanner) return out; const pn = ctx.createStereoPanner(); pn.pan.value = v; pn.connect(out); return pn; };
-  const sides = T.leadB ? { l: pan(-0.55), r: pan(0.55) } : null;
+  const sides = T.leadB || track === 'party' ? { l: pan(-0.6), r: pan(0.6) } : null;
   return { g, ctx, track, T, out, send, sides, step: 0, next: at, until: Infinity, pinch: false };
 }
 
@@ -226,6 +242,18 @@ function schedule(pl, i, t) {
   const bar = Math.floor(i / 16) % bars, s = i % 16, sl = stepLen(pl);
   const root = hz(T.roots[bar]), stab = T.stabs[bar].map(hz);
   const n = leadNote(pl, i);
+  if (pl.track === 'party') {
+    // Rolling chord notes, alternating speakers every beat.
+    const side = Math.floor(s / 4) % 2 ? pl.sides?.r : pl.sides?.l;
+    const arp = [0, 1, 2, 1][s % 4];
+    if (s % 2 === 0) mallet(pl, stab[arp] * (s % 8 === 6 ? 2 : 1), t, sl * 2.4, 0.07, false, side);
+    if (n) tone(pl, 'sine', n.f, t, Math.min(sl * n.len * 1.4, 1.1), 0.05, { echo: true });
+    if (s === 0 || s === 10) { tone(pl, 'triangle', root, t, sl * 3, 0.12); tone(pl, 'sine', root * 2, t, sl * 2, 0.03); }
+    if (s === 0) drum(pl, 'kick', t, 0.3);
+    if (s === 8) drum(pl, 'clap', t, 0.16);
+    if (s % 4 === 2) drum(pl, 'hat', t, 0.3);
+    return;
+  }
   if (T.leadB) {
     // Left voice: a soft mallet. Right voice: a bright pluck an octave of sparkle up.
     if (n) mallet(pl, n.f, t, Math.min(sl * n.len * 1.6, 0.9), 0.12, true, pl.sides.l);
@@ -391,10 +419,10 @@ const MENU_SCREENS = new Set(['welcome', 'newTrainer', 'meetPartner', 'home', 'k
 export function musicFor(screen, allowed = true) {
   if (!allowed) return stopMusic(0.3);
   if (MENU_SCREENS.has(screen)) return play('menu');
-  // Times Two: its own theme on the setup screens, softer under Catch Party cards,
+  // Times Two: its own theme on the setup screens, a calmer tune under Catch Party cards,
   // and the menu theme under the Gym Rush scenes (the battle theme starts at VS).
   if (screen === 'coop') return play('duet');
-  if (screen === 'coopCatch') return play('duetSoft');
+  if (screen === 'coopCatch') return play('party');
   if (screen === 'coopRush') return play('menu');
   // A battle keeps the menu music through the intro, then crossfades on Start.
   if (screen === 'battle' && live().some((p) => p.track === 'menu')) return;

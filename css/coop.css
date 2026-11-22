@@ -30,12 +30,14 @@
 
 /* ---------- setup screen ---------- */
 .coop { max-width: 760px; gap: 14px; }
-/* Times Two screens sit on their own backdrop: the two players' colors meeting in a
-   sunburst, with confetti. */
-.screen.coop::before, .screen.coop-res::before, .coop-play::after, .coop-rush::after { content: ''; position: fixed; inset: 0; z-index: -1; background: #CFE8FF url('../assets/ui/tt-bg-port.webp') center top / cover no-repeat; pointer-events: none; }
-@media (min-aspect-ratio: 1/1) { .screen.coop::before, .screen.coop-res::before, .coop-play::after, .coop-rush::after { background-image: url('../assets/ui/tt-bg-land.webp'); } }
-/* In a game the backdrop is softer, so the cards stay the star. */
-.coop-play::after, .coop-rush::after { opacity: .55; }
+/* Times Two has its own sky: the two player colors (blue and pink) meeting in a
+   soft warm glow. A gradient on the page itself, so it never shows an edge when
+   the page scrolls or bounces, and stays calm behind the cards. */
+html:has(body[data-screen^="coop"]), body[data-screen^="coop"] { background:
+  radial-gradient(120% 55% at 50% 0%, rgba(255, 244, 196, .7), transparent 62%),
+  linear-gradient(165deg, #C9E2FF 0%, #E2E4FF 48%, #FFDCE8 100%) fixed; background-color: #E2E4FF; }
+@supports (-webkit-touch-callout: none) { html:has(body[data-screen^="coop"]), body[data-screen^="coop"] { background-attachment: scroll; min-height: 100%; } }
+.screen.coop, .screen.coop-res { overflow-x: clip; }
 .tt-top { display: flex; align-items: center; gap: 12px; }
 .tt-logo { flex: 1; min-width: 0; height: 72px; object-fit: contain; object-position: center; filter: drop-shadow(0 4px 0 rgba(20, 33, 61, .25)); animation: tt-bob 3.2s ease-in-out infinite; }
 @keyframes tt-bob { 50% { translate: 0 -4px; rotate: -1.5deg; } }
@@ -131,7 +133,10 @@
 .tt-seg-b.on { background: var(--paper); color: var(--ink); box-shadow: 0 0 0 2.5px var(--ink); }
 .tt-start { display: flex; align-items: center; justify-content: center; gap: 10px; }
 .tt-start svg { width: 26px; height: 26px; }
-.tt-restart { align-self: center; }
+.tt-restart { align-self: center; min-width: 220px; background: #fff; }
+/* The level tag sits inside the card, never on its edge. */
+.coop-play .card-wild .wild-art .wild-lv { bottom: 12px; }
+.coop-play .tt-name-tag { bottom: 12px; }
 .tt-sheet .tt-seg { margin: 4px 0 10px; }
 .tt-recs { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
 .tt-rec { display: flex; align-items: center; gap: 12px; padding: 8px 12px; background: var(--paper); border: 2.5px solid var(--ink); border-radius: 18px; }
@@ -145,18 +150,21 @@
 /* ---------- Tag! handoff ---------- */
 /* Tag team: the game dims, a color wash sweeps from the last player's color to the
    next one's, both trainers pop in from their sides and high-five in the middle. */
-.tt-tag { position: fixed; inset: 0; z-index: 60; max-width: 1180px; margin: 0 auto; container-type: size; overflow: hidden; opacity: 0; transition: opacity .18s; --H: min(54cqh, 82cqw); --base: calc(112px + var(--safe-b)); }
+.tt-tag { position: fixed; inset: 0; z-index: 60; max-width: 1180px; margin: 0 auto; container-type: size; overflow: hidden; opacity: 0; transition: opacity .18s; --H: min(48cqh, 80cqw); --base: calc(112px + var(--safe-b)); --hit: clamp(140px, 40cqmin, 280px); --hitb: calc(var(--base) + var(--H) + 58px); --cy: calc(100% - var(--hitb) - var(--hit) / 2); }
 .tt-tag.open { opacity: 1; }
 .tt-tag.closing { opacity: 0; transition: opacity .25s; }
-.tt-tag-wash { position: absolute; inset: 0; background: rgba(20, 33, 61, .45); }
-.tt-tag-wash::before { content: ''; position: absolute; inset: -40%; background:
-  repeating-conic-gradient(from 0deg at 50% 50%, rgba(255, 255, 255, .16) 0 9deg, transparent 9deg 22deg),
-  linear-gradient(115deg, var(--fc) 0 46%, var(--tc) 54% 100%); background-size: 100% 100%, 260% 100%; background-position: center, 0 0; opacity: .88; }
-.tt-tag:not(.calm) .tt-tag-wash::before { animation: tt-wash .9s .2s cubic-bezier(.3, .8, .3, 1) both, tt-spin 24s linear infinite; }
-@keyframes tt-wash { from { background-position: center, 0 0; } to { background-position: center, 100% 0; } }
-.tt-tag.calm .tt-tag-wash::before { background-position: center, 100% 0; }
+.tt-tag-wash { position: absolute; inset: 0; background: rgba(20, 33, 61, .45); overflow: hidden; }
+/* Two layers: the color split (sweeps from the last player's color to the next
+   one's) and the light rays, a huge square that spins around the TAG! burst, big
+   enough that its corners never show. */
+.tt-tag-wash::before { content: ''; position: absolute; inset: 0; background: linear-gradient(115deg, var(--fc) 0 46%, var(--tc) 54% 100%); background-size: 260% 100%; background-position: 0 0; opacity: .9; }
+.tt-tag:not(.calm) .tt-tag-wash::before { animation: tt-wash .9s .2s cubic-bezier(.3, .8, .3, 1) both; }
+@keyframes tt-wash { from { background-position: 0 0; } to { background-position: 100% 0; } }
+.tt-tag.calm .tt-tag-wash::before { background-position: 100% 0; }
+.tt-tag-wash::after { content: ''; position: absolute; left: 50%; top: var(--cy); width: 320vmax; height: 320vmax; translate: -50% -50%; background: repeating-conic-gradient(from 0deg at 50% 50%, rgba(255, 255, 255, .17) 0 8deg, transparent 8deg 20deg); }
+.tt-tag:not(.calm) .tt-tag-wash::after { animation: tt-spin 30s linear infinite; }
 /* The game intro shows both colors side by side. */
-.tt-tag.intro .tt-tag-wash::before { background-image: repeating-conic-gradient(from 0deg at 50% 50%, rgba(255, 255, 255, .16) 0 9deg, transparent 9deg 22deg), linear-gradient(115deg, var(--tc) 0 49.5%, var(--fc) 50.5% 100%); background-size: 100% 100%, 100% 100%; animation: tt-spin 24s linear infinite; }
+.tt-tag.intro .tt-tag-wash::before { background: linear-gradient(115deg, var(--tc) 0 49.5%, var(--fc) 50.5% 100%); animation: none; }
 .tt-tag.intro .tt-tag-k img { filter: drop-shadow(0 0 14px rgba(255, 255, 255, .9)) drop-shadow(0 6px 0 rgba(20, 33, 61, .35)); }
 .tt-tag-stage { position: absolute; inset: 0; }
 .tt-tag-k { position: absolute; bottom: var(--base); left: 50%; width: var(--H); aspect-ratio: 1; }
@@ -175,7 +183,7 @@
 @keyframes tt-tag-bump-l { 40% { translate: 5% -3%; rotate: 4deg; } }
 @keyframes tt-tag-bump-r { 40% { translate: -5% -3%; rotate: -4deg; } }
 /* The high five: a burst between their raised hands with TAG! slammed on it. */
-.tt-tag-hit { position: absolute; left: 50%; bottom: calc(var(--base) + var(--H) * .62); width: clamp(150px, 44cqmin, 300px); aspect-ratio: 1; translate: -50% 0; display: grid; place-items: center; opacity: 0; scale: .3; }
+.tt-tag-hit { position: absolute; left: 50%; bottom: var(--hitb); width: var(--hit); aspect-ratio: 1; translate: -50% 0; display: grid; place-items: center; opacity: 0; scale: .3; }
 .tt-tag-hit img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
 .tt-tag-hit b { position: relative; font-size: clamp(40px, 13cqmin, 80px); font-weight: 700; color: #fff; -webkit-text-stroke: 3.5px var(--ink); paint-order: stroke fill; text-shadow: 0 5px 0 var(--ink); rotate: -6deg; white-space: nowrap; }
 .tt-tag.intro .tt-tag-hit b { font-size: clamp(30px, 9cqmin, 60px); }
@@ -198,17 +206,19 @@
 .tt-ho-go.awake { animation: tt-pulse 1.4s ease-in-out infinite; }
 .tt-tag:not(.calm) .tt-tag-foot { animation: tt-rise .35s .5s cubic-bezier(.2, 1.3, .4, 1) both; }
 @keyframes tt-rise { from { translate: 0 40px; opacity: 0; } }
-@media (min-aspect-ratio: 1/1) { .tt-tag { --H: min(60vh, 44vw); } }
+@media (min-aspect-ratio: 1/1) { .tt-tag { --H: min(46vh, 40vw); --hit: clamp(130px, 30vh, 240px); } }
 @media (prefers-reduced-motion: reduce) { .tt-ho-go.awake { animation: none; } }
 
 /* ---------- Catch Party ---------- */
 .coop-play .play-top.tt-hud { gap: 8px; }
 .tt-hud-p { position: relative; display: flex; flex-direction: column; align-items: center; gap: 3px; min-width: 0; opacity: .5; transition: opacity .2s, transform .2s; }
 /* Turn dots under the face of whoever is playing: one per card. */
-.tt-pips { display: flex; gap: 2px; height: 7px; }
+.tt-pips { display: flex; gap: 2px; height: 7px; margin-top: 5px; }
 .tt-pips i { width: 7px; height: 7px; border-radius: 50%; border: 1.5px solid var(--ink); background: #fff; box-sizing: border-box; }
 .tt-pips i.done { background: var(--tc, #2D7FF9); }
 .tt-pips i.now { background: var(--sun); }
+.tt-streak-ball { width: 22px; height: 22px; object-fit: contain; animation: tt-pulse 1.2s ease-in-out infinite; }
+.tt-streak-ball[hidden] { display: none; }
 .tt-power-top .streak { margin-left: 4px; min-width: 0; font-size: 18px; }
 .tt-power-top .streak .streak-flame svg { width: 18px; height: 18px; }
 .tt-hud-p.on { opacity: 1; }
@@ -263,8 +273,11 @@
 .tt-res-kid.r { left: 50%; translate: -12% 0; }
 .tt-res-kid.r img { transform: scaleX(-1); }
 .tt-res-hero .tt-patch { position: absolute; left: 50%; bottom: -12px; translate: -50% 0; z-index: 2; }
-.screen.coop-res:not(.calm) .tt-res-kid.l { animation: tt-tag-l .5s .1s cubic-bezier(.2, 1.15, .4, 1) both; }
-.screen.coop-res:not(.calm) .tt-res-kid.r { animation: tt-tag-r .5s .1s cubic-bezier(.2, 1.15, .4, 1) both; }
+.screen.coop-res .tt-res-kid.l { animation: tt-res-l .5s .1s cubic-bezier(.2, 1.15, .4, 1) both; }
+.screen.coop-res .tt-res-kid.r { animation: tt-res-r .5s .1s cubic-bezier(.2, 1.15, .4, 1) both; }
+@keyframes tt-res-l { from { transform: translateX(-40%); opacity: 0; } }
+@keyframes tt-res-r { from { transform: translateX(40%); opacity: 0; } }
+.tt-res-hero { overflow: hidden; }
 @media (prefers-reduced-motion: reduce) { .tt-res-burst, .tt-res-kid { animation: none !important; } }
 .tt-res-top > div { display: flex; flex-direction: column; align-items: center; gap: 6px; }
 @media (max-width: 520px) { .tt-res-top { flex-direction: column; gap: 8px; } }
@@ -412,39 +425,35 @@
    proportion. Outside: the kids side by side in the middle. Inside: the kids step
    left and the Leader waits on the right, a step back. Speaking = a glow and a hop,
    never a size change. */
-.tt-cut { container-type: size; --boxh: 168px; --floor: calc(var(--boxh) + 14px + var(--safe-b) - 10px); --stage: calc(100cqh - var(--floor) - 64px - var(--safe-t));
-  --H: min(94cqw, calc(var(--stage) * .82)); --Hin: min(74cqw, calc(var(--stage) * .66)); }
+.tt-cut { container-type: size; --boxh: 168px; --floor: calc(var(--boxh) + 14px + var(--safe-b) - 18px); --stage: calc(100cqh - var(--floor) - 64px - var(--safe-t));
+  --H: min(68cqw, calc(var(--stage) * .56)); }
 .tt-cut-kids { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
-.tt-cut-kid, .tt-cut-leader { position: absolute; bottom: var(--floor); aspect-ratio: 1; pointer-events: none; }
-.tt-cut-kid { width: var(--H); transition: left .6s cubic-bezier(.3, 1, .4, 1), width .6s cubic-bezier(.3, 1, .4, 1), filter .25s; }
+/* One size for everyone, outside and in: the kids only walk, they never grow or shrink. */
+.tt-cut-kid, .tt-cut-leader { position: absolute; bottom: var(--floor); width: var(--H); aspect-ratio: 1; pointer-events: none; }
+.tt-cut-kid { transition: left .7s cubic-bezier(.3, 1, .4, 1), filter .25s; }
 .tt-cut-kid img, .tt-cut-leader img { width: 100%; height: 100%; object-fit: contain; object-position: center bottom; display: block; filter: drop-shadow(0 6px 0 rgba(20, 33, 61, .28)); transition: filter .25s; }
-.tt-cut-kid.l { left: calc(31% - var(--H) / 2); }
-.tt-cut-kid.r { left: calc(69% - var(--H) / 2); z-index: 1; }
+.tt-cut-kid.l { left: calc(50% - var(--H) * .7); }
+.tt-cut-kid.r { left: calc(50% - var(--H) * .3); z-index: 1; }
 .tt-cut-kid.r img { transform: scaleX(-1); }
 .tt-cut:not(.calm) .tt-cut-kid.l { animation: tt-walk-l .9s cubic-bezier(.25, 1, .4, 1) both; }
 .tt-cut:not(.calm) .tt-cut-kid.r { animation: tt-walk-r .9s .1s cubic-bezier(.25, 1, .4, 1) both; }
 @keyframes tt-walk-l { from { transform: translateX(-120cqw); } 60% { transform: translateX(3cqw) translateY(-2%); } }
 @keyframes tt-walk-r { from { transform: translateX(120cqw); } 60% { transform: translateX(-3cqw) translateY(-2%); } }
-.tt-cut.at-in .tt-cut-kid { width: var(--Hin); }
-.tt-cut.at-in .tt-cut-kid.l { left: calc(21% - var(--Hin) / 2); }
-.tt-cut.at-in .tt-cut-kid.r { left: calc(45% - var(--Hin) / 2); }
-/* The Gym Leader: same height as the kids, a step back (a touch smaller, standing a
-   little higher on the floor). */
-.tt-cut-leader { width: calc(var(--Hin) * .94); left: calc(78% - var(--Hin) * .47); bottom: calc(var(--floor) + var(--stage) * .05); z-index: 1; opacity: 0; transform: translateX(30%); }
+/* Inside, the kids step to the left; the Gym Leader waits on the right, a step back. */
+.tt-cut.at-in .tt-cut-kid.l { left: calc(19% - var(--H) * .5); }
+.tt-cut.at-in .tt-cut-kid.r { left: calc(19% - var(--H) * .1); }
+.tt-cut-leader { width: calc(var(--H) * .86); left: calc(80% - var(--H) * .43); bottom: calc(var(--floor) + var(--stage) * .07); z-index: 1; opacity: 0; transform: translateX(30%); }
 .tt-cut.at-in .tt-cut-leader { opacity: 1; transform: none; transition: opacity .5s .35s, transform .6s .35s cubic-bezier(.3, 1.2, .4, 1); }
 .tt-cut.at-in [data-who]:not(.speaking) img { filter: drop-shadow(0 6px 0 rgba(20, 33, 61, .28)) brightness(.86) saturate(.9); }
 .tt-cut [data-who].speaking img { filter: drop-shadow(0 0 10px rgba(255, 255, 255, .95)) drop-shadow(0 6px 0 rgba(20, 33, 61, .28)); }
 .tt-cut:not(.calm) [data-who].hop { animation: tt-hop .32s ease-out; }
-.tt-cut:not(.calm) .tt-cut-kid.l.hop, .tt-cut:not(.calm) .tt-cut-kid.r.hop { animation: tt-hop .32s ease-out; }
 @keyframes tt-hop { 40% { translate: 0 -3%; } }
-/* Landscape: plenty of width, so everyone can be taller and spread out. */
+/* Landscape: room for everyone a bit taller, spread out. */
 @container (min-aspect-ratio: 1/1) {
-  .tt-cut { --H: calc(var(--stage) * .9); --Hin: calc(var(--stage) * .86); }
-  .tt-cut-kid.l { left: calc(37% - var(--H) / 2); }
-  .tt-cut-kid.r { left: calc(63% - var(--H) / 2); }
-  .tt-cut.at-in .tt-cut-kid.l { left: calc(19% - var(--Hin) / 2); }
-  .tt-cut.at-in .tt-cut-kid.r { left: calc(39% - var(--Hin) / 2); }
-  .tt-cut-leader { left: calc(76% - var(--Hin) * .47); }
+  .tt-cut { --H: calc(var(--stage) * .8); }
+  .tt-cut.at-in .tt-cut-kid.l { left: calc(22% - var(--H) * .5); }
+  .tt-cut.at-in .tt-cut-kid.r { left: calc(22% - var(--H) * .1); }
+  .tt-cut-leader { width: calc(var(--H) * .92); left: calc(74% - var(--H) * .46); bottom: calc(var(--floor) + var(--stage) * .04); }
 }
 /* The dialogue box: a fixed height so the stage never moves. The last line swaps
    "Tap to keep going" for the Battle! button in the same spot. */
@@ -466,67 +475,93 @@
 /* ---------- VS splash: the team on one side, the Gym Leader on the other ---------- */
 .tt-vx { position: absolute; inset: 0; z-index: 8; pointer-events: none; visibility: hidden; overflow: hidden; }
 .tt-cut.vs .tt-vx { visibility: visible; }
-/* Portrait: the team on top, the Leader below, split by a tilted seam. Landscape:
-   team on the left, Leader on the right. */
-.tt-vx { --vk: min(42cqh, 60cqw); --vf: min(38cqh, 72cqw); }
+/* Like a fighting game: big, close-up fighters (head and shoulders, not the
+   whole body), speed lines racing across each side, a flash and a VS slam with a
+   shockwave. Portrait: the team on top, the Leader below. Landscape: side by side.
+   It waits for a tap. */
+.tt-vx { --vk: min(122cqw, 60cqh); --vf: min(132cqw, 66cqh); }
+.tt-cut.vs .tt-vx { pointer-events: none; }
 .tt-vx-half { position: absolute; inset: 0; display: block; overflow: hidden; }
 .tt-vx-half.us { clip-path: polygon(0 0, 100% 0, 100% 45%, 0 57%); background:
-  repeating-linear-gradient(-35deg, rgba(255, 255, 255, .13) 0 14px, transparent 14px 46px),
-  linear-gradient(160deg, var(--lc) 0%, color-mix(in srgb, var(--lc) 45%, var(--rc2)) 100%); transform: translateX(-105%); }
+  repeating-linear-gradient(-35deg, rgba(255, 255, 255, .16) 0 10px, transparent 10px 54px),
+  linear-gradient(160deg, var(--lc) 0%, color-mix(in srgb, var(--lc) 45%, var(--rc2)) 100%); background-size: 200% 200%, 100% 100%; transform: translateX(-105%); }
 .tt-vx-half.them { clip-path: polygon(0 57%, 100% 45%, 100% 100%, 0 100%); background:
-  repeating-linear-gradient(-35deg, rgba(255, 255, 255, .12) 0 14px, transparent 14px 46px),
-  linear-gradient(160deg, var(--fc) 0%, var(--fi) 100%); transform: translateX(105%); }
+  repeating-linear-gradient(-35deg, rgba(255, 255, 255, .14) 0 10px, transparent 10px 54px),
+  linear-gradient(160deg, var(--fc) 0%, var(--fi) 100%); background-size: 200% 200%, 100% 100%; transform: translateX(105%); }
 .tt-cut.vs .tt-vx-half { transform: none; transition: transform .38s cubic-bezier(.2, 1, .3, 1); }
 .tt-cut.vs .tt-vx-half.them { transition-delay: .06s; }
-.tt-vx-seam { position: absolute; left: -10%; right: -10%; top: calc(51cqh - 5px); height: 10px; background: #fff; box-shadow: 0 0 0 3px var(--ink); rotate: calc(-1 * atan2(12cqh, 100cqw)); transform: scaleX(0); transition: transform .3s .32s cubic-bezier(.2, 1, .3, 1); }
+.tt-cut.vs:not(.calm) .tt-vx-half.us { animation: tt-vx-lines-a .7s linear infinite; }
+.tt-cut.vs:not(.calm) .tt-vx-half.them { animation: tt-vx-lines-b .7s linear infinite; }
+@keyframes tt-vx-lines-a { to { background-position: 76px 0, 0 0; } }
+@keyframes tt-vx-lines-b { to { background-position: -76px 0, 0 0; } }
+.tt-vx-seam { position: absolute; left: -10%; right: -10%; top: calc(51cqh - 6px); height: 12px; background: #fff; box-shadow: 0 0 0 3px var(--ink), 0 0 18px 4px rgba(255, 255, 255, .8); rotate: calc(-1 * atan2(12cqh, 100cqw)); transform: scaleX(0); transition: transform .3s .32s cubic-bezier(.2, 1, .3, 1); }
 .tt-cut.vs .tt-vx-seam { transform: scaleX(1); }
+/* The fighters: drawn big and cropped by their side, so faces and shoulders fill it. */
 .tt-vx-kid, .tt-vx-foe { position: absolute; aspect-ratio: 1; }
-.tt-vx-kid { width: var(--vk); bottom: calc(100cqh - 52cqh); }
-.tt-vx-kid.a { left: calc(31cqw - var(--vk) / 2); }
-.tt-vx-kid.b { left: calc(69cqw - var(--vk) / 2); }
-.tt-vx-foe { width: var(--vf); bottom: calc(11cqh + var(--safe-b)); left: calc(62cqw - var(--vf) / 2); }
-.tt-vx-kid img, .tt-vx-foe img { width: 100%; height: 100%; object-fit: contain; object-position: center bottom; filter: drop-shadow(0 6px 0 rgba(20, 33, 61, .35)); }
+.tt-vx-kid { width: var(--vk); top: calc(12cqh + var(--safe-t)); }
+.tt-vx-kid.a { left: calc(27cqw - var(--vk) / 2); z-index: 1; }
+.tt-vx-kid.b { left: calc(73cqw - var(--vk) / 2); top: calc(15cqh + var(--safe-t)); }
+.tt-vx-foe { width: var(--vf); top: 50cqh; left: calc(52cqw - var(--vf) / 2); }
+.tt-vx-kid img, .tt-vx-foe img { width: 100%; height: 100%; object-fit: contain; object-position: center top; filter: drop-shadow(0 8px 0 rgba(20, 33, 61, .35)); }
 .tt-vx-kid.b img { transform: scaleX(-1); }
-.tt-vx-name { position: absolute; z-index: 2; padding: 4px 16px; border: 3.5px solid var(--ink); border-radius: 14px; background: #fff; color: var(--ink); font-weight: 700; font-size: clamp(20px, 6.2cqw, 36px); line-height: 1.1; white-space: nowrap; box-shadow: 0 5px 0 var(--ink); max-width: 88cqw; overflow: hidden; text-overflow: ellipsis; rotate: -4deg; }
-.tt-vx-name i { font-style: normal; color: var(--coral); }
-.tt-vx-name.us { left: 50%; top: calc(3.5cqh + var(--safe-t)); translate: -50% 0; }
-.tt-vx-name.them { left: 50%; bottom: calc(3.5cqh + var(--safe-b)); translate: -50% 0; }
+/* Name plates: a slanted bar in the side's color, with a little line under it. */
+.tt-vx-name { position: absolute; z-index: 3; display: flex; flex-direction: column; padding: 6px 18px 7px; border: 3.5px solid var(--ink); border-radius: 10px; background: #fff; color: var(--ink); line-height: 1.05; white-space: nowrap; box-shadow: 0 6px 0 var(--ink); max-width: 86cqw; transform: skewX(-10deg); }
+.tt-vx-name b { font-weight: 700; font-size: clamp(22px, 6.6cqw, 40px); overflow: hidden; text-overflow: ellipsis; }
+.tt-vx-name b i { font-style: normal; color: var(--coral); }
+.tt-vx-name small { font-size: clamp(13px, 3.4cqw, 18px); font-weight: 700; color: var(--ink-2); }
+.tt-vx-name.us { left: 50%; top: calc(3cqh + var(--safe-t)); translate: -50% 0; border-left: 12px solid var(--lc); }
+.tt-vx-name.them { left: 50%; bottom: calc(80px + var(--safe-b)); translate: -50% 0; border-right: 12px solid var(--fc); text-align: right; align-items: flex-end; }
+.tt-vx-tap { position: absolute; left: 50%; bottom: calc(18px + var(--safe-b)); z-index: 4; translate: -50% 0; padding: 12px 30px; border: 3.5px solid var(--ink); border-radius: 99px; background: var(--sun); color: var(--ink); font-weight: 700; font-size: 22px; white-space: nowrap; box-shadow: 0 5px 0 var(--ink); opacity: 0; scale: .6; }
+.tt-cut.vs-ready .tt-vx-tap { opacity: 1; scale: 1; transition: scale .35s cubic-bezier(.2, 1.6, .4, 1), opacity .2s; animation: tt-pulse 1.2s .4s ease-in-out infinite; }
 @container (min-aspect-ratio: 1/1) {
-  .tt-vx { --vk: min(72cqh, 36cqw); --vf: min(84cqh, 46cqw); }
+  .tt-vx { --vk: min(124cqh, 60cqw); --vf: min(134cqh, 70cqw); }
   .tt-vx-half.us { clip-path: polygon(0 0, 56% 0, 44% 100%, 0 100%); }
   .tt-vx-half.them { clip-path: polygon(56% 0, 100% 0, 100% 100%, 44% 100%); }
-  .tt-vx-seam { left: calc(50% - 5px); right: auto; top: -10%; bottom: -10%; width: 10px; height: auto; rotate: atan2(12cqw, 100cqh); transform: scaleY(0); }
+  .tt-vx-seam { left: calc(50% - 6px); right: auto; top: -10%; bottom: -10%; width: 12px; height: auto; rotate: atan2(12cqw, 100cqh); transform: scaleY(0); }
   .tt-cut.vs .tt-vx-seam { transform: scaleY(1); }
-  .tt-vx-kid { bottom: 0; }
-  .tt-vx-foe { bottom: 0; }
-  .tt-vx-kid.a { left: calc(14cqw - var(--vk) / 2); }
-  .tt-vx-kid.b { left: calc(34cqw - var(--vk) / 2); }
-  .tt-vx-foe { left: calc(76cqw - var(--vf) / 2); }
-  .tt-vx-name.us { left: 4cqw; top: calc(5cqh + var(--safe-t)); translate: none; }
-  .tt-vx-name.them { left: auto; right: 4cqw; bottom: auto; top: calc(5cqh + var(--safe-t)); translate: none; }
+  .tt-vx-kid { top: calc(8cqh + var(--safe-t)); }
+  .tt-vx-kid.a { left: calc(15cqw - var(--vk) / 2); }
+  .tt-vx-kid.b { left: calc(36cqw - var(--vk) / 2); top: calc(13cqh + var(--safe-t)); }
+  .tt-vx-foe { top: calc(6cqh + var(--safe-t)); left: calc(77cqw - var(--vf) / 2); }
+  .tt-vx-name.us { left: 3cqw; top: auto; translate: none; bottom: calc(14cqh + var(--safe-b)); }
+  .tt-vx-name.them { left: auto; right: 3cqw; translate: none; bottom: calc(14cqh + var(--safe-b)); }
+  .tt-vx-name b { font-size: clamp(24px, 3.6cqw, 42px); }
+  .tt-vx-name small { font-size: clamp(14px, 1.8cqw, 19px); }
 }
 .tt-vx-kid, .tt-vx-foe, .tt-vx-name { opacity: 0; }
-.tt-cut.vs .tt-vx-kid { opacity: 1; animation: tt-vx-in-l .5s .18s cubic-bezier(.2, 1.2, .4, 1) both; }
-.tt-cut.vs .tt-vx-kid.b { animation-delay: .26s; }
-.tt-cut.vs .tt-vx-foe { opacity: 1; animation: tt-vx-in-r .5s .24s cubic-bezier(.2, 1.2, .4, 1) both; }
-.tt-cut.vs .tt-vx-name { opacity: 1; animation: tt-vx-tag .4s .5s cubic-bezier(.2, 1.5, .4, 1) both; }
-@keyframes tt-vx-in-l { from { translate: -60cqw 0; opacity: 0; } }
-@keyframes tt-vx-in-r { from { translate: 60cqw 0; opacity: 0; } }
-@keyframes tt-vx-tag { from { scale: .4; opacity: 0; } }
-.tt-vx-badge { position: absolute; left: 50%; top: 50%; width: clamp(150px, 42cqmin, 260px); aspect-ratio: 1; translate: -50% -50%; display: grid; place-items: center; opacity: 0; }
+.tt-cut.vs .tt-vx-kid, .tt-cut.vs .tt-vx-foe, .tt-cut.vs .tt-vx-name { opacity: 1; }
+.tt-cut.vs:not(.calm) .tt-vx-kid.a { animation: tt-vx-in-l .55s .16s cubic-bezier(.2, 1.2, .4, 1) both, tt-vx-breathe 2.4s 1s ease-in-out infinite; }
+.tt-cut.vs:not(.calm) .tt-vx-kid.b { animation: tt-vx-in-l .55s .26s cubic-bezier(.2, 1.2, .4, 1) both, tt-vx-breathe 2.4s 1.3s ease-in-out infinite; }
+.tt-cut.vs:not(.calm) .tt-vx-foe { animation: tt-vx-in-r .55s .22s cubic-bezier(.2, 1.2, .4, 1) both, tt-vx-breathe 2.6s 1.1s ease-in-out infinite; }
+.tt-cut.vs:not(.calm) .tt-vx-kid img, .tt-cut.vs:not(.calm) .tt-vx-foe img { animation: tt-vx-flash .5s .2s ease-out both; }
+.tt-cut.vs:not(.calm) .tt-vx-name.us { animation: tt-vx-tag-l .4s .55s cubic-bezier(.2, 1.4, .4, 1) both; }
+.tt-cut.vs:not(.calm) .tt-vx-name.them { animation: tt-vx-tag-r .4s .62s cubic-bezier(.2, 1.4, .4, 1) both; }
+@keyframes tt-vx-in-l { from { translate: -70cqw 0; scale: 1.15; } }
+@keyframes tt-vx-in-r { from { translate: 70cqw 0; scale: 1.15; } }
+@keyframes tt-vx-breathe { 50% { scale: 1.025; } }
+@keyframes tt-vx-flash { from { filter: brightness(4) drop-shadow(0 8px 0 rgba(20, 33, 61, .35)); } }
+@keyframes tt-vx-tag-l { from { margin-left: -60cqw; opacity: 0; } }
+@keyframes tt-vx-tag-r { from { margin-left: 60cqw; opacity: 0; } }
+/* VS: a spinning burst, the letters slam in, a shockwave ring, a white flash, a shake. */
+.tt-vx-badge { position: absolute; left: 50%; top: 51%; z-index: 2; width: clamp(160px, 44cqmin, 290px); aspect-ratio: 1; translate: -50% -50%; display: grid; place-items: center; opacity: 0; }
+@container (min-aspect-ratio: 1/1) { .tt-vx-badge { top: 46%; } }
 .tt-vx-badge img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
-.tt-vx-badge b { position: relative; font-size: clamp(56px, 17cqmin, 104px); font-weight: 700; color: #fff; -webkit-text-stroke: 4px var(--ink); paint-order: stroke fill; text-shadow: 0 6px 0 var(--ink); letter-spacing: -2px; }
+.tt-vx-badge b { position: relative; font-size: clamp(60px, 18cqmin, 112px); font-weight: 700; color: #fff; -webkit-text-stroke: 4px var(--ink); paint-order: stroke fill; text-shadow: 0 6px 0 var(--ink); letter-spacing: -2px; }
+.tt-vx-ring { position: absolute; left: 50%; top: 50%; width: 100%; aspect-ratio: 1; translate: -50% -50%; border-radius: 50%; border: 6px solid #fff; opacity: 0; }
 .tt-cut.vs .tt-vx-badge { opacity: 1; animation: tt-vx-slam .5s .36s cubic-bezier(.2, 1.6, .4, 1) both, tt-vx-pulse 1s .9s ease-in-out infinite; }
 .tt-cut.vs .tt-vx-badge img { animation: tt-spin 6s linear infinite; }
+.tt-cut.vs:not(.calm) .tt-vx-ring { animation: tt-vx-ring .7s .5s ease-out both; }
 @keyframes tt-vx-slam { from { scale: 3; opacity: 0; rotate: -20deg; } 60% { opacity: 1; } }
 @keyframes tt-vx-pulse { 50% { scale: 1.06; } }
+@keyframes tt-vx-ring { from { opacity: .9; scale: .4; } to { opacity: 0; scale: 3.2; } }
 @keyframes tt-spin { to { transform: rotate(360deg); } }
-.tt-cut.vs:not(.calm) { animation: tt-jolt .3s .38s linear; }
+.tt-cut.vs:not(.calm) { animation: tt-jolt .3s .4s linear; }
 @keyframes tt-jolt { 20% { translate: -8px 4px; } 40% { translate: 7px -5px; } 60% { translate: -5px 3px; } 80% { translate: 3px -2px; } }
-.tt-cut.vs::before { content: ''; position: absolute; inset: 0; z-index: 9; background: #fff; opacity: 0; pointer-events: none; animation: tt-flash .35s .38s ease-out; }
+.tt-cut.vs::before { content: ''; position: absolute; inset: 0; z-index: 9; background: #fff; opacity: 0; pointer-events: none; animation: tt-flash .35s .4s ease-out; }
 @keyframes tt-flash { 15% { opacity: .85; } }
 .tt-cut.out { opacity: 0; transition: opacity .35s; }
-.tt-cut.calm .tt-cut-bg, .tt-cut.calm .tt-cut-kid, .tt-cut.calm .tt-cut-leader, .tt-cut.calm .tt-vx-half, .tt-cut.calm .tt-cut.calm .tt-vx *, .tt-cut.calm.vs::before { animation: none !important; opacity: 1; }
+.tt-cut.calm .tt-cut-bg, .tt-cut.calm .tt-cut-kid, .tt-cut.calm .tt-cut-leader, .tt-cut.calm .tt-vx-half, .tt-cut.calm .tt-vx-seam { transition-duration: .01s; animation: none; }
+.tt-cut.calm .tt-vx *, .tt-cut.calm.vs::before { animation: none !important; }
 .tt-cut.calm.vs::before { opacity: 0; }
 @media (prefers-reduced-motion: reduce) { .tt-cut-next { animation: none; } .tt-cut-text.pop { animation: none; } }
 @keyframes tt-pulse { 50% { scale: 1.035; } }

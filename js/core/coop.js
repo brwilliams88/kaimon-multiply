@@ -41,6 +41,16 @@ export const NAME_MAX = 12;
 export const cleanName = (s) => String(s || '').replace(/[^\p{L}\p{M}' -]/gu, '').replace(/\s+/g, ' ').trim().split(' ')[0].slice(0, NAME_MAX);
 
 export const pals = (p) => p.pals || (p.pals = {});
+// Someone saved in a record or a run, as they are now: a renamed friend or a
+// trainer with a new look shows up with the new name and look everywhere.
+export function whoNow(p, w) {
+  if (!w) return { n: 'Friend', look: null };
+  const pal = w.id && pals(p)[w.id];
+  if (pal) return { ...w, n: pal.n, look: pal.look || w.look || null };
+  const q = w.id && profileById(w.id);
+  if (q) return { ...w, n: q.name, look: q.look || null };
+  return w;
+}
 // Saved friends still on the list (not removed).
 export const livePals = (p) => Object.values(pals(p)).filter((x) => !x.gone);
 const newPal = (id, t) => ({ id, n: 'Friend', look: QUICK_LOOKS[0], t, facts: {}, dex: {}, pk: null, games: 0, last: 0 });
