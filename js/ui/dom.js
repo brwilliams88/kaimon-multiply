@@ -266,6 +266,16 @@ export function fitText(el, min = 11) {
 //   screen readers, and the screens' own key.click() for typed digits). The click a
 //   phone sends after a handled pointerdown is skipped, so a tap never counts twice,
 //   while two fast taps of the same digit still count as two.
+// After a miss, the keys to press glow one at a time, so the right answer is easy to
+// type even for a kid who missed the prompt. guideKeys(root, null) clears it.
+export function guideKeys(root, ans, typed = '') {
+  root.querySelectorAll('.key.guide').forEach((k) => k.classList.remove('guide'));
+  if (ans == null) return;
+  const want = String(ans);
+  if (!want.startsWith(typed) || typed.length >= want.length) return;
+  root.querySelector(`.key[data-k="${want[typed.length]}"]`)?.classList.add('guide');
+}
+
 export function wirePad(root, press) {
   const owed = new WeakMap(); // key -> clicks still to skip, and when the last tap was
   const keyOf = (e) => { const k = e.target.closest?.('[data-k]'); return k && root.contains(k) && !k.disabled ? k : null; };

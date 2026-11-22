@@ -110,7 +110,7 @@ test('Gym Rush: easiest to hardest, then Boss Papa; ready teams at the host’s 
   assert.equal(papa.team.length, 2);
   assert.equal(papa.team[1].species.id, 'papazilla');
   const right = g1.team[0].hp / ((8 + 6 + 2) * 1.15);
-  assert.ok(right > 8 && right < 12, `about 10 right answers per gym (${right.toFixed(1)})`);
+  assert.ok(right > 16 && right < 20, `about 18 right answers per gym (${right.toFixed(1)})`);
   assert.ok(C.hitBack(10) > C.hitBack(0));
 });
 
@@ -173,4 +173,20 @@ test('family sync: friends, records and a saved run go up in the first snapshot 
   assert.equal(C.pals(b)[f.id].n, 'Maya');
   assert.equal(C.pals(b)[f.id].facts['2x3'].c, 1);
   assert.equal(C.records(b, 'catch').length, 1);
+});
+
+test('a friend can be renamed and removed; removal syncs and Team Records stay', () => {
+  const p = fresh('pR');
+  const x = C.savePal(p, { name: 'Maya', look: C.QUICK_LOOKS[2] });
+  C.savePal(p, { id: x.id, name: 'Mia' });
+  assert.equal(C.pals(p)[x.id].n, 'Mia');
+  assert.equal(C.livePals(p).length, 1);
+  C.savePal(p, { id: x.id, gone: 1 });
+  assert.equal(C.livePals(p).length, 0);
+  assert.equal(C.pals(p)[x.id].n, 'Mia', 'the record keeps the name');
+  // Another device that still has the friend learns about the removal from a snapshot.
+  const q = fresh('pR2');
+  q.pals = { [x.id]: { ...JSON.parse(JSON.stringify(C.pals(p)[x.id])), gone: 0, at: { n: 1, look: 1, gone: 1 } } };
+  C.mergeCoopSnap(q, C.coopSnap(p));
+  assert.equal(C.livePals(q).length, 0);
 });

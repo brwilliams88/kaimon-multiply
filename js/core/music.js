@@ -36,6 +36,48 @@ const TRACKS = {
     roots: ['C3', 'A2', 'F2', 'G2', 'C3', 'A2', 'D3', 'G2', 'F2', 'G2', 'E2', 'A2', 'F2', 'G2', 'C3', 'C3'],
     stabs: chords('C4 E4 G4 | A3 C4 E4 | F3 A3 C4 | G3 B3 D4 | C4 E4 G4 | A3 C4 E4 | A3 D4 F4 | G3 B3 D4 | F3 A3 C4 | G3 B3 D4 | G3 B3 E4 | A3 C4 E4 | F3 A3 C4 | G3 B3 D4 | C4 E4 G4 | C4 E4 G4'),
   },
+  // Times Two: a call and answer. One voice plays from the left speaker, the other
+  // answers from the right (two players, two voices), then they play together.
+  duet: {
+    bpm: 120, vol: 0.44,
+    // C G Am F C G F G | Am F C G F G C C
+    lead: seq(`
+      C5 . E5 . G5 . . . E5 . G5 . C6 . . .
+      B4 . D5 . G5 . . . F5 . E5 . D5 . . .
+      - - - - - - - - - - - - - - - -
+      - - - - - - - - - - - - - - - -
+      E5 . G5 . C6 . G5 . E5 . . . C5 . . .
+      D5 . G5 . B5 . . . A5 . G5 . D5 . . .
+      - - - - - - - - - - - - - - - -
+      - - - - - - - - - - - - - - - -
+      A4 . C5 . E5 . A5 . . . . . - - - -
+      - - - - - - - - - - - - - - - -
+      E5 . G5 . C6 . G5 . . . . . - - - -
+      - - - - - - - - - - - - - - - -
+      A5 . . . C6 . A5 . F5 . . . A5 . . .
+      B5 . . . D6 . B5 . G5 . . . B5 . . .
+      C6 . . . G5 . E5 . G5 . . . E5 . D5 .
+      C5 . . . E5 . G5 . C6 . . . - - - -`),
+    leadB: seq(`
+      - - - - - - - - - - - - - - - -
+      - - - - - - - - - - - - - - - -
+      A5 . . . G5 . E5 . C6 . . . A5 . . .
+      F5 . A5 . C6 . . . A5 . G5 . F5 . . .
+      - - - - - - - - - - - - - - - -
+      - - - - - - - - - - - - - - - -
+      C6 . A5 . F5 . A5 . C6 . . . . . . .
+      B5 . . . A5 . G5 . D6 . . . . . - -
+      - - - - - - - - - - - - - - - -
+      F5 . A5 . C6 . A5 . . . . . - - - -
+      - - - - - - - - - - - - - - - -
+      D6 . B5 . G5 . B5 . D6 . . . . . . .
+      F5 . . . A5 . F5 . C5 . . . F5 . . .
+      G5 . . . B5 . G5 . D5 . . . G5 . . .
+      E5 . . . E5 . C5 . E5 . . . C5 . B4 .
+      E4 . . . G4 . C5 . E5 . . . - - - -`),
+    roots: ['C3', 'G2', 'A2', 'F2', 'C3', 'G2', 'F2', 'G2', 'A2', 'F2', 'C3', 'G2', 'F2', 'G2', 'C3', 'C3'],
+    stabs: chords('C4 E4 G4 | G3 B3 D4 | A3 C4 E4 | F3 A3 C4 | C4 E4 G4 | G3 B3 D4 | F3 A3 C4 | G3 B3 D4 | A3 C4 E4 | F3 A3 C4 | C4 E4 G4 | G3 B3 D4 | F3 A3 C4 | G3 B3 D4 | C4 E4 G4 | C4 E4 G4'),
+  },
   battle: {
     bpm: 156, pinchBpm: 172, vol: 0.42,
     // Am F G E Am F D E | F G Em Am F G E E
@@ -83,6 +125,8 @@ const TRACKS = {
     stabs: chords('A3 E4 A4 | A3 E4 A4 | F3 C4 F4 | E3 B3 E4 | A3 E4 A4 | F3 C4 F4 | D3 A3 D4 | E3 B3 E4 | C4 G4 C5 | G3 D4 G4 | A3 E4 A4 | F3 C4 F4 | D3 A3 D4 | A3 E4 A4 | E3 B3 E4 | E3 B3 E4'),
   },
 };
+// In a game the duet plays softer and lighter, under the cards.
+TRACKS.duetSoft = { ...TRACKS.duet, vol: 0.26, soft: true };
 export const MUSIC_TRACKS = Object.keys(TRACKS);
 
 // ---------- the sound of it ----------
@@ -117,7 +161,9 @@ function makePlayer(g, track, at, fadeIn) {
   const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 2600;
   send.connect(delay).connect(lp).connect(fb).connect(delay);
   lp.connect(out);
-  return { g, ctx, track, T, out, send, step: 0, next: at, until: Infinity, pinch: false };
+  const pan = (v) => { if (!ctx.createStereoPanner) return out; const pn = ctx.createStereoPanner(); pn.pan.value = v; pn.connect(out); return pn; };
+  const sides = T.leadB ? { l: pan(-0.55), r: pan(0.55) } : null;
+  return { g, ctx, track, T, out, send, sides, step: 0, next: at, until: Infinity, pinch: false };
 }
 
 function tone(pl, type, f, t, dur, vol, o = {}) {
@@ -134,14 +180,14 @@ function tone(pl, type, f, t, dur, vol, o = {}) {
   let head = osc;
   if (o.cut) { const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = o.cut; lp.Q.value = o.q || 0.7; head = osc.connect(lp); }
   head.connect(gn);
-  gn.connect(pl.out);
+  gn.connect(o.to || pl.out);
   if (o.echo) gn.connect(pl.send);
   osc.start(t); osc.stop(t + dur + 0.05);
 }
 // A soft mallet: a sine with a quick bright "tick" four times higher.
-function mallet(pl, f, t, dur, vol, echo) {
-  tone(pl, 'sine', f, t, dur, vol, { echo });
-  tone(pl, 'sine', f * 4, t, Math.min(dur, 0.06), vol * 0.25, { a: 0.002 });
+function mallet(pl, f, t, dur, vol, echo, to) {
+  tone(pl, 'sine', f, t, dur, vol, { echo, to });
+  tone(pl, 'sine', f * 4, t, Math.min(dur, 0.06), vol * 0.25, { a: 0.002, to });
 }
 function drum(pl, kind, t, vol = 1) {
   const { ctx, g } = pl;
@@ -167,8 +213,8 @@ function drum(pl, kind, t, vol = 1) {
 }
 
 const stepLen = (pl) => 60 / (pl.pinch && pl.T.pinchBpm ? pl.T.pinchBpm : pl.T.bpm) / 4;
-function leadNote(pl, i) {
-  const L = pl.T.lead, tok = L[i % L.length];
+function leadNote(pl, i, L = pl.T.lead) {
+  const tok = L[i % L.length];
   if (tok === '.' || tok === '-') return null;
   let len = 1;
   while (L[(i + len) % L.length] === '.' && len < 8) len++;
@@ -180,6 +226,21 @@ function schedule(pl, i, t) {
   const bar = Math.floor(i / 16) % bars, s = i % 16, sl = stepLen(pl);
   const root = hz(T.roots[bar]), stab = T.stabs[bar].map(hz);
   const n = leadNote(pl, i);
+  if (T.leadB) {
+    // Left voice: a soft mallet. Right voice: a bright pluck an octave of sparkle up.
+    if (n) mallet(pl, n.f, t, Math.min(sl * n.len * 1.6, 0.9), 0.12, true, pl.sides.l);
+    const m = leadNote(pl, i, T.leadB);
+    if (m) { tone(pl, 'triangle', m.f, t, Math.min(sl * m.len * 1.3, 0.8), 0.07, { echo: true, to: pl.sides.r }); tone(pl, 'sine', m.f * 2, t, Math.min(sl * m.len, 0.4), 0.02, { to: pl.sides.r }); }
+    // Bouncy bass on a skip beat, off-beat chords in the middle.
+    const bass = { 0: 1, 6: 1, 8: 1.5, 14: 2 }[s];
+    if (bass) { tone(pl, 'triangle', root * bass, t, sl * 1.8, T.soft ? 0.11 : 0.15); tone(pl, 'sine', root * bass * 2, t, sl * 1.5, 0.035); }
+    if (s % 4 === 2) stab.forEach((f) => tone(pl, 'triangle', f, t, sl * 0.9, T.soft ? 0.014 : 0.022));
+    if (T.soft) { if (s % 4 === 2) drum(pl, 'hat', t, 0.35); if (s === 0) drum(pl, 'kick', t, 0.3); return; }
+    if (s === 0 || s === 8 || s === 10) drum(pl, 'kick', t, 0.45);
+    if (s === 4 || s === 12) drum(pl, 'clap', t, 0.35);
+    if (s % 2 === 0) drum(pl, 'hat', t, s % 4 === 2 ? 0.5 : 0.3);
+    return;
+  }
   if (pl.track === 'menu') {
     if (n) mallet(pl, n.f, t, Math.min(sl * n.len * 1.6, 0.9), 0.12, true);
     // Oom-pah bass with a little pickup, plus a quiet octave so phone speakers hear it.
@@ -326,10 +387,15 @@ export function stopMusic(fade = 0.4) {
 }
 
 // Which music a screen gets. Called on every screen change.
-const MENU_SCREENS = new Set(['welcome', 'newTrainer', 'meetPartner', 'home', 'kaidex', 'trainer', 'coop']); // coop: Times Two setup
+const MENU_SCREENS = new Set(['welcome', 'newTrainer', 'meetPartner', 'home', 'kaidex', 'trainer']);
 export function musicFor(screen, allowed = true) {
   if (!allowed) return stopMusic(0.3);
   if (MENU_SCREENS.has(screen)) return play('menu');
+  // Times Two: its own theme on the setup screens, softer under Catch Party cards,
+  // and the menu theme under the Gym Rush scenes (the battle theme starts at VS).
+  if (screen === 'coop') return play('duet');
+  if (screen === 'coopCatch') return play('duetSoft');
+  if (screen === 'coopRush') return play('menu');
   // A battle keeps the menu music through the intro, then crossfades on Start.
   if (screen === 'battle' && live().some((p) => p.track === 'menu')) return;
   stopMusic(screen === 'play' ? 0.8 : 0.4);

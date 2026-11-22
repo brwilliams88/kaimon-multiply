@@ -200,6 +200,13 @@ const RECIPES = {
     ...['A3', 'C4', 'E4'].map((n) => sn(n, 0, 0.7, 0.25, { env: 'hold', a: 0.08, r: 0.2 })), ...['F3', 'A3', 'C4'].map((n) => sn(n, 0.7, 0.35, 0.25, { env: 'hold', a: 0.05, r: 0.12 })),
     ...['C4', 'E4', 'G4'].map((n) => sn(n, 1.0, 0.8, 0.25, { env: 'hold', a: 0.05, r: 0.4 })), sn('A2', 0, 0.7, 0.5, { env: 'hold', r: 0.2 }), sn('F2', 0.7, 0.3, 0.5, { env: 'hold', r: 0.1 }), sn('C3', 1.0, 0.8, 0.5, { env: 'hold', r: 0.4 })],
     { time: 0.14, fb: 0.25, mix: 0.2 }],
+  // Times Two. vs: the VS slam before a Gym Leader battle (a big hit, a crash and a
+  // horn chord in the battle key). tag: the tag-team high five (a whoosh, a clap,
+  // then a bright climb).
+  vs: [0.5, [kick(0, 1), ...thump, nz(0, 0.5, 0.7, 'hp', 5000, 2500, { a: 0.002 }), ...['A3', 'C4', 'E4', 'A4'].map((n) => br(n, 0.02, 0.45, 0.45, { env: 'hold', r: 0.25 })),
+    tr('A2', 0.02, 0.5, 0.8, { env: 'hold', r: 0.25 }), bl('E6', 0.06, 0.6, 0.35), bl('A6', 0.06, 0.6, 0.3)], { time: 0.13, fb: 0.3, mix: 0.25 }],
+  tag: [0.4, [swish(0, 0.22, 0.8, 600, 3800), nz(0.2, 0.04, 1, 'bp', 1800, 1800, { q: 0.9, a: 0.001 }), nz(0.2, 0.08, 0.6, 'hp', 3500, 2000, { a: 0.001 }), kick(0.2, 0.5),
+    ...['C6', 'E6', 'G6', 'C7'].flatMap((n, i) => [bl(n, 0.24 + i * 0.05, 0.5, 0.7), pl(n, 0.24 + i * 0.05, 0.12, 0.3)])], ECHO],
   mythic: [0.3, [...['E6', 'G6', 'A6', 'C7', 'A6'].map((n, i) => bl(n, i * 0.12, 0.7, 0.7)), sn('C5', 0, 1.1, 0.3, { env: 'hold', a: 0.3, r: 0.4, vib: 0.006, vr: 5 }), sn('G5', 0, 1.1, 0.25, { env: 'hold', a: 0.3, r: 0.4 }),
     nz(0, 1.0, 0.12, 'bp', 3000, 3000, { q: 2, env: 'hold', a: 0.3, r: 0.4 })], { time: 0.16, fb: 0.45, mix: 0.4 }],
 };

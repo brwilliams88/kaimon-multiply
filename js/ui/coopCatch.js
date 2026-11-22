@@ -6,30 +6,27 @@
 import { active, save } from '../core/store.js';
 import { regionOf, TYPES, byId } from '../data/creatures.js';
 import { creatureArt, shinyStar } from '../core/art.js';
-import { pickNext, onAnswer, answerOf, parseFact, hintLadder, levelRank, LEVEL_LABEL, trickFor } from '../core/facts.js';
+import { pickNext, onAnswer, answerOf, parseFact, hintLadder, levelRank, LEVEL_LABEL } from '../core/facts.js';
 import { answer, seen, caught as catchIt, escaped, ball as giveBall, item as giveItem, session, emit } from '../core/actions.js';
 import { syncNow } from '../core/sync.js';
 import { ballForStreak, rollCatch, BALLS, dexState, partnerOf } from '../core/game.js';
 import { powerFor, powerLabel } from '../core/battle.js';
 import { arrivalLevel } from '../core/levels.js';
-import { hintedMs } from '../core/items.js';
 import { sfx, setSound, unlock } from '../core/sound.js';
 import { trainerImg } from './avatars.js';
+import { startMusic } from '../core/music.js';
 import { trickHTML } from './trickArt.js';
 import { ballIcon } from './home.js';
-import { ballSrc, sceneSrc, cssUrl, sceneKey, fxSrc, typeIcon, itemImg, trainerFace, trainerBody } from '../core/assets.js';
+import { ballSrc, sceneSrc, cssUrl, sceneKey, fxSrc, typeIcon, itemImg, trainerFace, trainerBody, uiSrc } from '../core/assets.js';
 import { fxImg, glowBall } from './moments.js';
 import { quick } from '../core/prefs.js';
-import { $, on, esc, sheet, wait, toast, soundButton, reducedMotion, setFlame, say, wirePad } from './dom.js';
+import { $, on, esc, sheet, wait, toast, soundButton, reducedMotion, setFlame, say, wirePad, guideKeys } from './dom.js';
 import {
   playerFor, poolFor, isStretch, coopEncounter, CATCH_LENGTHS, totalCards, powerFull, catchPoints, catchStars,
   recordGame, bestRecord, crateDue, gamesWith, friendLevel, nextFriendLevel, sideColor, LEFT_COLOR,
 } from '../core/coop.js';
 import { handoff, teamPatchHTML, faceOf } from './coop.js';
 
-const CHEERS = ['Nice one!', 'You got this!', 'Great job!', 'Your turn!', 'Go go go!', 'Show them!'];
-const TAG_IN = ['Tag! I’m in!', 'My turn!', 'Watch this!', 'Let’s go!'];
-const pickOf = (a) => a[Math.floor(Math.random() * a.length)];
 const DEL = '<svg viewBox="0 0 32 24" aria-hidden="true"><path d="M11 3h15.5A3.5 3.5 0 0 1 30 6.5v11a3.5 3.5 0 0 1-3.5 3.5H11a2.4 2.4 0 0 1-1.9-.9L2.6 12l6.5-8.1A2.4 2.4 0 0 1 11 3z" fill="currentColor"/><path d="M15.5 8.2l7.6 7.6m0-7.6l-7.6 7.6" stroke="#fff" stroke-width="2.9" stroke-linecap="round"/></svg>';
 const GO = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5 L10 17.5 L19 7" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
@@ -44,7 +41,7 @@ export function renderCoopCatch(root, go, { partner, len = 'normal' } = {}) {
   const FULL = powerFull(len);
   const players = [A, B];
   for (const pl of players) Object.assign(pl, { sc: { recent: [], requeue: [], n: 0 }, extra: 0, run: 0, right: 0, answered: 0, catches: [], firsts: [], rares: [], best: 0, misses: [], xp: 0, stretch: 0 });
-  const T = { cur: 0, turn: 0, card: 0, streak: 0, best: 0, power: 0, throws: 0, pts: 0, catches: [], startedAt: Date.now(), phase: 'ask', input: '', huddled: -1, huddleTurn: -1 };
+  const T = { cur: 0, turn: 0, card: 0, streak: 0, best: 0, power: 0, throws: 0, pts: 0, catches: [], startedAt: Date.now(), phase: 'ask', input: '' };
   const id = 'c' + Date.now().toString(36);
   const before = bestRecord(host, 'catch');
   const buddyBefore = partnerOf(host);
@@ -54,15 +51,14 @@ export function renderCoopCatch(root, go, { partner, len = 'normal' } = {}) {
     <section class="screen play v2 coop-play tt-l">
       <header class="play-top tt-hud">
         <button class="icon-btn" data-exit aria-label="Stop playing"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6 L18 18 M18 6 L6 18" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg></button>
-        <span class="tt-hud-p tt-hud-l" data-side="l">${faceOf(A.look, 'l')}<span class="tt-hud-name">${esc(A.n)}</span></span>
+        <span class="tt-hud-p tt-hud-l" data-side="l">${faceOf(A.look, 'l')}<span class="tt-pips" aria-hidden="true"></span></span>
         <div class="tt-power" role="img" aria-label="Team Power">
-          <span class="tt-power-top"><b class="tt-pts">0</b><small>team points</small></span>
+          <span class="tt-power-top"><b class="tt-pts">0</b><small>team points</small><div class="streak" data-tier="0" aria-live="polite" title="Team streak"><span class="streak-flame" aria-hidden="true"><svg viewBox="0 0 24 24"><path class="fl-out" d="M12 1.8c.9 3.2-1.2 5-2.7 6.8C7.7 10.5 6.6 12.3 6.6 14.6a5.4 5.4 0 0 0 10.8 0c0-2.9-1.5-4.8-2.6-6.2-.3 1.6-1.1 2.5-2.1 3 .5-3.1-.1-6.5-.7-9.6z" stroke="#14213D" stroke-width="1.5" stroke-linejoin="round"/><path class="fl-in" d="M12.1 10.6c.4 1.7-.6 2.6-1.3 3.5-.5.6-.9 1.3-.9 2.1a2.2 2.2 0 0 0 4.4 0c0-1.3-.7-2.1-1.2-2.8-.2.7-.5 1-1 1.2.2-1.4 0-2.7 0-4z"/></svg></span><span class="streak-num">0</span></div></span>
           <span class="tt-power-bar"><span class="tt-power-fill"></span></span>
         </div>
-        <span class="tt-hud-p tt-hud-r" data-side="r"><span class="tt-hud-name">${esc(B.n)}</span>${faceOf(B.look, 'r')}</span>
+        <span class="tt-hud-p tt-hud-r" data-side="r">${faceOf(B.look, 'r')}<span class="tt-pips" aria-hidden="true"></span></span>
         ${soundButton(host.settings.sound)}
       </header>
-      <div class="tt-turnline"><span class="tt-turn-chip"></span><button class="tt-huddle" data-huddle type="button"></button><div class="streak" data-tier="0" aria-live="polite" title="Team streak"><span class="streak-flame" aria-hidden="true"><svg viewBox="0 0 24 24"><path class="fl-out" d="M12 1.8c.9 3.2-1.2 5-2.7 6.8C7.7 10.5 6.6 12.3 6.6 14.6a5.4 5.4 0 0 0 10.8 0c0-2.9-1.5-4.8-2.6-6.2-.3 1.6-1.1 2.5-2.1 3 .5-3.1-.1-6.5-.7-9.6z" stroke="#14213D" stroke-width="1.5" stroke-linejoin="round"/><path class="fl-in" d="M12.1 10.6c.4 1.7-.6 2.6-1.3 3.5-.5.6-.9 1.3-.9 2.1a2.2 2.2 0 0 0 4.4 0c0-1.3-.7-2.1-1.2-2.8-.2.7-.5 1-1 1.2.2-1.4 0-2.7 0-4z"/></svg></span><span class="streak-num">0</span></div></div>
       <div class="play-body">
         <div class="stage">
           <div class="deck" aria-hidden="true"><i></i><i></i></div>
@@ -86,13 +82,12 @@ export function renderCoopCatch(root, go, { partner, len = 'normal' } = {}) {
   const sec = root.querySelector('.coop-play');
   const el = {
     inner: $('.card-inner', root), front: $('.front', root), back: $('.back', root), val: $('.answer-val', root), hint: $('.answer-hint', root),
-    streak: $('.streak-num', root), stage: $('.stage', root), pts: $('.tt-pts', root), fill: $('.tt-power-fill', root), chip: $('.tt-turn-chip', root),
-    huddle: $('[data-huddle]', root), donePile: $('.done-pile', root),
+    streak: $('.streak-num', root), stage: $('.stage', root), pts: $('.tt-pts', root), fill: $('.tt-power-fill', root), donePile: $('.done-pile', root),
   };
   const me = () => players[T.cur];
   const other = () => players[1 - T.cur];
 
-  function setInput(v) { T.input = v; root.querySelectorAll('.answer-val').forEach((x) => { x.textContent = v || ''; x.classList.toggle('empty', !v); }); }
+  function setInput(v) { T.input = v; root.querySelectorAll('.answer-val').forEach((x) => { x.textContent = v || ''; x.classList.toggle('empty', !v); }); guideKeys(root, T.phase === 'learn' ? T.mustType : null, v || ''); }
   let flipTimer = 0;
   function flip(toBack, ...extra) {
     clearTimeout(flipTimer);
@@ -105,8 +100,12 @@ export function renderCoopCatch(root, go, { partner, len = 'normal' } = {}) {
     sec.classList.toggle('tt-r', pl.side === 'r');
     sec.style.setProperty('--tc', pl.side === 'r' ? sideColor(B.look) : LEFT_COLOR);
     root.querySelectorAll('.tt-hud-p').forEach((x) => x.classList.toggle('on', x.dataset.side === pl.side));
-    el.chip.innerHTML = `<b>${esc(pl.n)}</b> ${Math.min(T.card + 1, L.cards)}/${L.cards}`;
-    el.chip.setAttribute('aria-label', `${pl.n}'s turn, card ${Math.min(T.card + 1, L.cards)} of ${L.cards}`);
+    // Turn dots under each face: the one playing fills a dot per card.
+    root.querySelectorAll('.tt-hud-p').forEach((x) => {
+      const mine = x.dataset.side === pl.side;
+      x.querySelector('.tt-pips').innerHTML = mine ? Array.from({ length: L.cards }, (_, i) => `<i class="${i < T.card ? 'done' : i === T.card ? 'now' : ''}"></i>`).join('') : '';
+    });
+    sec.querySelector('.tt-power').setAttribute('aria-label', `${pl.n}'s turn, card ${Math.min(T.card + 1, L.cards)} of ${L.cards}. Team Power.`);
     el.pts.textContent = T.pts.toLocaleString();
     el.fill.style.transform = `scaleX(${Math.min(1, T.power / FULL)})`;
     el.fill.parentElement.classList.toggle('full', T.power >= FULL);
@@ -114,10 +113,6 @@ export function renderCoopCatch(root, go, { partner, len = 'normal' } = {}) {
     const box = el.streak.closest('.streak');
     box.classList.toggle('hot', T.streak >= 3);
     setFlame(box, T.streak);
-    const can = T.huddleTurn !== T.turn * 2 + T.cur;
-    el.huddle.disabled = !can;
-    el.huddle.innerHTML = `<span aria-hidden="true">${faceOf(other().look, other().side + ' sm')}</span><span>${can ? 'Huddle' : 'Used'}</span>`;
-    el.huddle.setAttribute('aria-label', can ? `Huddle: ask ${other().n} for help` : 'Huddle used this turn');
   }
 
   // ---------- a card ----------
@@ -154,7 +149,7 @@ export function renderCoopCatch(root, go, { partner, len = 'normal' } = {}) {
     setInput('');
     el.hint.textContent = '';
     T.phase = 'ask';
-    T.mustType = null;
+    T.mustType = null; guideKeys(root, null);
     T.shownAt = performance.now();
     say(`${pl.n}. What is ${a} times ${b}?`);
     el.stage.dataset.left = Math.max(0, Math.min(2, L.cards - T.card - 1));
@@ -207,8 +202,7 @@ export function renderCoopCatch(root, go, { partner, len = 'normal' } = {}) {
     T.answeredAt = performance.now();
     const pl = me();
     const ms0 = performance.now() - T.shownAt;
-    const huddled = T.huddled === T.card + T.turn * 100 + T.cur * 10000;
-    const ms = huddled ? hintedMs(pl.prof, ms0) : ms0;
+    const ms = ms0;
     const ans = answerOf(T.fact);
     const ok = parseInt(T.input, 10) === ans;
     const [a, b] = parseFact(T.fact);
@@ -362,16 +356,8 @@ export function renderCoopCatch(root, go, { partner, len = 'normal' } = {}) {
     const nextCur = 1 - T.cur;
     const nextTurn = T.cur === 1 ? T.turn + 1 : T.turn;
     const to = players[nextCur];
-    const caughtNow = T.catches.filter((c) => c.by === was.side).length;
-    const missed = was.misses[was.misses.length - 1];
-    const tip = missed ? `<span class="tt-tip-k">${trainerFace('teacher-k')}</span><span><b>Coach's tip for ${esc(was.n)}:</b> ${esc(trickFor(missed))}</span>` : '';
-    await handoff(root, {
-      from: was, to,
-      title: `Turn ${Math.min(L.turns, T.turn + 1)} of ${L.turns} done`,
-      line: `<b>${esc(was.n)}:</b> "${pickOf(CHEERS)}"&nbsp;&nbsp;<b>${esc(to.n)}:</b> "${pickOf(TAG_IN)}"`,
-      stats: [[caughtNow, `${was.n} caught`], [T.catches.length, 'team total'], [T.streak, 'team streak']],
-      tip,
-    });
+    const lastTurn = nextTurn === L.turns - 1 && nextCur === 1;
+    await handoff(root, { from: was, to, sub: lastTurn ? '<b>Last turn!</b> Finish strong!' : '' });
     T.cur = nextCur; T.turn = nextTurn; T.card = 0;
     T.linger = null;
     next();
@@ -406,7 +392,7 @@ export function renderCoopCatch(root, go, { partner, len = 'normal' } = {}) {
     root.innerHTML = `
       <section class="screen coop-res">
         <div class="tt-res-top">
-          ${teamPatchHTML(A, B, { size: 'lg' })}
+          <div class="tt-res-hero" aria-hidden="true"><img class="tt-res-burst" src="${uiSrc('tt-burst')}" alt="" draggable="false"><span class="tt-res-kid l">${trainerImg(A.look || null, 'won')}</span><span class="tt-res-kid r">${trainerImg(B.look || null, 'won')}</span></div>
           <div>
             <h1 class="screen-title">${party ? 'Great teamwork!' : 'Nice teamwork!'}</h1>
             <div class="tt-stars" role="img" aria-label="${stars} of 3 stars">${[0, 1, 2].map((i) => `<span class="${i < stars ? 'on' : ''}" style="--i:${i}">★</span>`).join('')}</div>
@@ -438,6 +424,14 @@ export function renderCoopCatch(root, go, { partner, len = 'normal' } = {}) {
         </div>
       </section>`;
     setTimeout(() => (party ? sfx.win() : sfx.levelUp?.()), 250);
+    if (host.settings.music !== false) setTimeout(() => startMusic('duet'), 1600);
+    // Team points count up.
+    const ptsEl = root.querySelector('.tt-res-pts b');
+    if (ptsEl && !reducedMotion() && T.pts > 0) {
+      const t0 = performance.now(), dur = 1000;
+      const step = (now) => { const k = Math.min(1, (now - t0) / dur); ptsEl.textContent = Math.round(T.pts * (1 - Math.pow(1 - k, 3))).toLocaleString(); if (k < 1 && ptsEl.isConnected) requestAnimationFrame(step); };
+      ptsEl.textContent = '0'; requestAnimationFrame(step);
+    }
     on(root, 'click', '[data-home]', () => go('home'));
     on(root, 'click', '[data-again]', () => go('coop', { step: 'game', partner: { k: B.k, id: B.id, n: B.n, look: B.look }, game: 'catch', len }));
   }
@@ -459,19 +453,6 @@ export function renderCoopCatch(root, go, { partner, len = 'normal' } = {}) {
     typeKey(v);
   });
   on(root, 'click', '.card3d', () => { if (T.phase === 'done') advance(); else if (T.phase === 'result' && !T.skip) { T.skip = true; T.wake?.(); } });
-  // Huddle: once a turn, ask your partner. Their trick shows on the card; the answer
-  // still counts, as practice (it can't be a fast answer).
-  on(root, 'click', '[data-huddle]', () => {
-    if (T.phase !== 'ask' || T.huddleTurn === T.turn * 2 + T.cur) return;
-    sfx.tap();
-    T.huddleTurn = T.turn * 2 + T.cur;
-    T.huddled = T.card + T.turn * 100 + T.cur * 10000;
-    const help = document.createElement('div');
-    help.className = 'tt-huddle-note';
-    help.innerHTML = `${faceOf(other().look, other().side + ' sm')}<span><b>${esc(other().n)}, help out!</b> ${esc(trickFor(T.fact))}</span>`;
-    el.front.appendChild(help);
-    drawHud();
-  });
   on(root, 'click', '[data-exit]', () => {
     const sh = sheet(`<h2>Stop playing?</h2><p>Your catches and progress are saved.</p><div class="sheet-actions"><button class="btn-chunky btn-primary" data-stop>Stop</button><button class="btn-chunky" data-close>Keep going</button></div>`);
     sh.el.querySelector('[data-stop]').addEventListener('click', () => {
@@ -489,5 +470,12 @@ export function renderCoopCatch(root, go, { partner, len = 'normal' } = {}) {
     else if (e.key === 'Enter') { e.preventDefault(); if (T.phase === 'done') advance(); else submit(); }
   };
   document.addEventListener('keydown', onKey);
-  next();
+  // The opening scene: both trainers run in, high-five, one line each, then Start.
+  T.phase = 'intro';
+  drawHud();
+  handoff(root, {
+    from: B, to: A, intro: true, title: 'Catch Party!',
+    said: [[A, 'Let’s catch as many as we can!'], [B, 'Fill the bar for a Team Throw!']],
+    button: `Start, ${esc(A.n)}!`,
+  }).then(() => { T.phase = 'ask'; next(); });
 }

@@ -41,16 +41,20 @@ export const NAME_MAX = 12;
 export const cleanName = (s) => String(s || '').replace(/[^\p{L}\p{M}' -]/gu, '').replace(/\s+/g, ' ').trim().split(' ')[0].slice(0, NAME_MAX);
 
 export const pals = (p) => p.pals || (p.pals = {});
+// Saved friends still on the list (not removed).
+export const livePals = (p) => Object.values(pals(p)).filter((x) => !x.gone);
 const newPal = (id, t) => ({ id, n: 'Friend', look: QUICK_LOOKS[0], t, facts: {}, dex: {}, pk: null, games: 0, last: 0 });
 let counter = 0;
 const palId = () => 'f' + Date.now().toString(36) + (counter++).toString(36) + Math.random().toString(36).slice(2, 5);
 
-// Add a friend, or change a friend's name, look or Gym Rush team.
-export function savePal(p, { id, name, look, pack } = {}) {
+// Add a friend, or change a friend's name, look or Gym Rush team. gone: 1 removes
+// them from the friend list (their Team Records stay).
+export function savePal(p, { id, name, look, pack, gone } = {}) {
   const d = { id: id || palId() };
   if (name != null) d.n = cleanName(name) || 'Friend';
   if (look) d.look = look;
   if (pack !== undefined) d.pk = pack;
+  if (gone !== undefined) d.gone = gone ? 1 : 0;
   emit(p, 'pal', d);
   return pals(p)[d.id];
 }
@@ -86,7 +90,7 @@ export function applyCoop(p, ev) {
       if (ev.t < x.t) x.t = ev.t;
       // Newest change wins for each field.
       const at = x.at || (x.at = {});
-      for (const [k, v] of [['n', d.n], ['look', d.look], ['pk', d.pk]]) {
+      for (const [k, v] of [['n', d.n], ['look', d.look], ['pk', d.pk], ['gone', d.gone]]) {
         if (v === undefined || (at[k] && at[k] > ev.t)) continue;
         x[k] = v; at[k] = ev.t;
       }
@@ -128,6 +132,12 @@ export function mergeCoopSnap(p, d) {
   for (const [id, x] of Object.entries(d.pals || {})) {
     const cur = pals(p)[id];
     if (!cur) { pals(p)[id] = JSON.parse(JSON.stringify(x)); continue; }
+    // Name, look, team and removal: the newer change wins.
+    const at = cur.at || (cur.at = {});
+    for (const k of ['n', 'look', 'pk', 'gone']) {
+      const t = x.at?.[k] || 0;
+      if (t > (at[k] || 0)) { cur[k] = x[k]; at[k] = t; }
+    }
     for (const [fid, r] of Object.entries(x.facts || {})) {
       const c = cur.facts[fid] || (cur.facts[fid] = { a: 0, c: 0, ms: 0, days: [], fastDays: [], lastMiss: 0 });
       c.a += r.a || 0; c.c += r.c || 0; c.ms += r.ms || 0;
@@ -145,7 +155,7 @@ export function mergeCoopSnap(p, d) {
 // then saved friends, most recent first.
 export function partnersFor(host) {
   const pros = allProfiles().filter((x) => x.id !== host.id && x.starter).map((x) => ({ k: 'pro', id: x.id, n: x.name, look: x.look || null }));
-  const fr = Object.values(pals(host)).sort((a, b) => (b.last || b.t) - (a.last || a.t)).map((x) => ({ k: 'pal', id: x.id, n: x.n, look: x.look }));
+  const fr = Object.values(pals(host)).filter((x) => !x.gone).sort((a, b) => (b.last || b.t) - (a.last || a.t)).map((x) => ({ k: 'pal', id: x.id, n: x.n, look: x.look }));
   return [...pros, ...fr];
 }
 // A player in a game: { k, id, n, look, prof (for answers and cards), side }.
@@ -245,7 +255,9 @@ export function catchStars(len, { catches, stretchBy = {}, throws = 0 }, ids) {
 // ---------- Gym Rush ----------
 export const RUSH_ORDER = [1, 10, 2, 5, 3, 4, 9, 6, 7, 8, 'papa'];
 export const RUSH_LENGTHS = { quick: { label: 'Quick', gyms: 2, mins: 6 }, normal: { label: 'Normal', gyms: 3, mins: 9 }, long: { label: 'Long', gyms: 4, mins: 12 } };
-export const TURN_CARDS = 8;
+export const TURN_CARDS = 5;
+// The first right answer after a tag hits this much harder (a reason to switch).
+export const TAG_STRIKE = 1.5;
 export const SUPPORT = { heal: 8, revive: 5, reviveHp: 0.5 };
 export const SNACK_HEAL = 0.25;
 // Ready-made teams for a friend (they have no Kaimon of their own yet).
@@ -269,10 +281,12 @@ export function packTeam(packId, lv) {
   const pk = PACKS.find((x) => x.id === packId) || PACKS[0];
   return pk.lines.map((l) => mon(formAt(l, lv), lv, null));
 }
-// A gym's Kaimon: the Gym Leader's ace, scaled to the team, with about 10 right
-// answers' worth of HP. Boss Papa brings two.
+// A gym's Kaimon: the Gym Leader's ace, scaled to the team, with about 18 right
+// answers' worth of plain HP. Fast answers, specials and Tag Strikes bring that down
+// to about 11 to 13 cards, so with 5-card turns the team tags two or three times
+// per gym. Boss Papa brings two.
 const expectedHit = (lv) => (8 + 10 * 0.6 + Math.floor(lv / 5)) * 1.15;
-export const gymHp = (lv) => Math.round(10 * expectedHit(lv) / 5) * 5;
+export const gymHp = (lv) => Math.round(18 * expectedHit(lv) / 5) * 5;
 export function rushFoe(host, step, teamLv) {
   const g = RUSH_ORDER[step];
   const lv = teamLv + step;

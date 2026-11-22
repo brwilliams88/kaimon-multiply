@@ -1640,6 +1640,19 @@ img.ball-svg, img.ball-img { object-fit: contain; }
 .battle.v2 .b-msg .retype { display: inline-flex; align-items: center; gap: 6px; margin-left: 8px; font-weight: 700; }
 .battle.v2 .b-msg .answer-val { min-width: 2em; padding: 0 .3em; text-align: center; font-size: 1.4em; border-radius: 10px; background: #FFF1EC; box-shadow: inset 0 0 0 2.5px var(--coral); }
 .battle.v2 .b-msg .answer-val.empty::before { content: attr(data-ph); color: rgba(184, 58, 29, .4); }
+/* After a miss: Teacher K pops up with the trick and a big "Type 56" box, so the
+   next step can't be missed. The key to press glows too (.key.guide). */
+.battle.v2 .b-msg.learn { display: flex; align-items: center; gap: 10px; padding: 8px 14px 8px 8px; background: #FFF8F4; border: 3px solid var(--ink); border-radius: 20px; box-shadow: 0 0 0 3px var(--coral), 0 4px 0 3px var(--ink); font-size: clamp(14px, 3.8cqw, 19px); animation: learn-pop .35s cubic-bezier(.2, 1.5, .4, 1) both; }
+@keyframes learn-pop { from { scale: .8; opacity: 0; } }
+.b-msg.learn .retype-k { flex: none; width: clamp(40px, 11cqw, 58px); height: clamp(40px, 11cqw, 58px); border-radius: 50%; border: 2.5px solid var(--ink); overflow: hidden; background: #FFF3D6; }
+.b-msg.learn .retype-k img { width: 100%; height: 100%; object-fit: cover; }
+.b-msg.learn .retype-body { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0; }
+.battle.v2 .b-msg.learn .retype { margin-left: 0; font-size: clamp(16px, 4.4cqw, 22px); }
+.battle.v2 .b-msg.learn .answer-val { font-size: clamp(28px, 8cqw, 44px); min-width: 1.8em; line-height: 1.15; animation: learn-glow 1.2s ease-in-out infinite; }
+@keyframes learn-glow { 50% { box-shadow: inset 0 0 0 3px var(--coral), 0 0 0 4px rgba(242, 97, 74, .35); } }
+.key.guide { position: relative; background: #FFF1EC; box-shadow: 0 0 0 4px var(--coral), 0 4px 0 4px var(--ink); animation: key-guide 1s ease-in-out infinite; z-index: 1; }
+@keyframes key-guide { 50% { box-shadow: 0 0 0 6px var(--coral), 0 0 16px 6px rgba(242, 97, 74, .45), 0 4px 0 6px var(--ink); } }
+@media (prefers-reduced-motion: reduce) { .battle.v2 .b-msg.learn, .battle.v2 .b-msg.learn .answer-val, .key.guide { animation: none; } }
 .battle.v2 .ladder-inline { display: inline-flex; }
 /* Battle result: your trainer beside theirs, so it's clear who won */
 .duel { display: flex; align-items: flex-end; justify-content: center; gap: 6px; width: 100%; margin-top: -4px; }

@@ -1,4 +1,4 @@
-import { previewOn, setPreview, previewUnlocked } from '../core/coop.js'; // Times Two preview switch (this device only)
+import { previewOn, setPreview, previewUnlocked, coopOpen, livePals, savePal, savedRun, clearRun } from '../core/coop.js'; // Times Two preview switch (this device only), friends
 import { touch, setSetting, switchProfile, hideProfile, hiddenProfiles } from '../core/store.js';
 import { renameSheet } from './renameSheet.js';
 import { deleteEverywhere, addBackFromFamily } from '../core/sync.js';
@@ -472,6 +472,14 @@ function drawMain(root, go) {
             <button class="btn-chunky" data-restore>Restore from code</button>
           </div>
         </div>
+        ${coopOpen(p) && livePals(p).length ? `<div class="panel tt-pals-panel">
+          <h2>${esc(p.name)}'s Times Two friends</h2>
+          <p class="note">Friends made for Times Two. They save with ${esc(p.name)}. To change a name or look, tap the pencil next to the friend in Times Two.</p>
+          <div class="tm-list">${livePals(p).map((x) => `
+            <div class="tm"><span class="tm-main"><span class="tm-text"><strong>${esc(x.n)}</strong><small>Times Two friend</small></span></span>
+              <div class="tm-actions"><button class="btn-chunky btn-sm btn-danger-soft" data-pal-remove="${esc(x.id)}">Remove</button></div></div>`).join('')}
+          </div>
+        </div>` : ''}
 
         <div class="panel" data-syncpanel></div>
 
@@ -717,6 +725,17 @@ function drawMain(root, go) {
   on(root, 'click', '[data-tm-rename]', (e, el) => {
     const x = allProfiles().find((y) => y.id === el.dataset.tmRename);
     renameSheet(x, { onDone: () => renderMain(root, go) });
+  });
+  on(root, 'click', '[data-pal-remove]', (e, el) => {
+    const x = livePals(p).find((y) => y.id === el.dataset.palRemove);
+    if (!x) return;
+    const sh = sheet(`<h2>Remove ${esc(x.n)}?</h2><p>${esc(x.n)} comes off ${esc(p.name)}'s Times Two friends, with their levels and catches. Team Records stay.</p><div class="sheet-actions"><button class="btn-chunky btn-danger" data-do>Remove</button><button class="btn-chunky" data-close>Keep</button></div>`);
+    sh.el.querySelector('[data-do]').addEventListener('click', () => {
+      savePal(p, { id: x.id, gone: 1 });
+      const r = savedRun(p);
+      if (r && r.with.id === x.id) clearRun(p, r.id);
+      save(); syncNow(); sh.close(); toast(`${x.n} was removed`); after();
+    });
   });
   on(root, 'click', '[data-tm-delete]', (e, el) => {
     const x = allProfiles().find((y) => y.id === el.dataset.tmDelete);

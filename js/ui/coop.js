@@ -6,16 +6,18 @@ import { sfx, unlock } from '../core/sound.js';
 import { syncNow } from '../core/sync.js';
 import { trainerImg, charLook, JACKETS } from './avatars.js';
 import { lookPickerHTML, wireLookPicker } from './lookPicker.js';
-import { trainerFace, trainerBody, uiImg, uiSrc, fxSrc, gymSrc } from '../core/assets.js';
+import { trainerFace, trainerBody, uiImg, uiSrc, fxSrc, gymSrc, cssUrl, trainerKey } from '../core/assets.js';
 import { creatureArt } from '../core/art.js';
 import { byId } from '../data/creatures.js';
 import { $, on, esc, sheet, toast, reducedMotion, wait } from './dom.js';
 import {
   QUICK_LOOKS, NAME_MAX, cleanName, savePal, pals, partnersFor, playerFor, timeLeft, records, gamesWith, friendLevel, nextFriendLevel,
-  sideColor, LEFT_COLOR, initials, CATCH_LENGTHS, RUSH_LENGTHS, savedRun, RUSH_ORDER, gymLabel, coopOpen,
+  sideColor, LEFT_COLOR, initials, CATCH_LENGTHS, RUSH_LENGTHS, savedRun, RUSH_ORDER, gymLabel, coopOpen, livePals, clearRun,
 } from '../core/coop.js';
 
 const BACK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 L8 12 L15 19" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const PENCIL = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20 L5 15.5 L15.5 5 a2.1 2.1 0 0 1 3 0 l.5 .5 a2.1 2.1 0 0 1 0 3 L8.5 19 Z M13.5 7 L17 10.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/></svg>';
+const champKeyOf = (t) => trainerKey({ kind: 'champ', table: t });
 const ARROW = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12 H18 M13 6.5 L18.5 12 L13 17.5" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 export const LOGO = uiSrc('times-two');
 
@@ -47,38 +49,45 @@ export function coopTileHTML(p) {
   </button>`;
 }
 
-// ---------- Tag! The handoff between turns ----------
-// The player who just played slides in from their side, the next one from theirs,
-// and they meet in the middle. One tap starts the next turn; the button wakes up
-// after a second, so a fast tapper can't skip into their friend's turn.
-export function handoff(host, { from, to, title = 'Tag!', line = '', stats = [], tip = '', button = '' } = {}) {
+// ---------- Tag team: the switch between turns (and the game intros) ----------
+// No menu: the game dims, both trainers pop in from their own sides, meet in the
+// middle and high-five, each says one quick line, and one big button starts the
+// next turn. The button wakes up after a second, so a fast tapper can't skip into
+// their friend's turn. Also the opening scene of a game (intro: true).
+const FROM_LINES = ['Your turn!', 'Tag, you’re it!', 'Go get ’em!', 'All yours!', 'You got this!'];
+const TO_LINES = ['I got this!', 'Let’s go!', 'Watch this!', 'My turn!', 'Tag! I’m in!'];
+const pick = (list) => list[Math.floor(Math.random() * list.length)];
+export function handoff(host, { from, to, title = 'TAG!', said = null, sub = '', button = '', intro = false } = {}) {
   return new Promise((resolve) => {
+    const calm = reducedMotion();
     const ov = document.createElement('div');
-    ov.className = 'tt-handoff' + (reducedMotion() ? ' calm' : '');
-    const toColor = to.side === 'r' ? sideColor(to.look) : LEFT_COLOR;
-    ov.innerHTML = `<div class="tt-ho-card" role="dialog" aria-modal="true" aria-labelledby="tt-ho-t">
-      <div class="tt-ho-stage" aria-hidden="true">
-        <span class="tt-ho-burst"><img src="${fxSrc('badge-burst')}" alt="" draggable="false"></span>
-        <span class="tt-ho-who tt-ho-${from.side} out">${trainerImg(from.look || null, 'won')}</span>
-        <span class="tt-ho-who tt-ho-${to.side} in">${trainerImg(to.look || null, 'won')}</span>
+    ov.className = 'tt-handoff tt-tag' + (calm ? ' calm' : '') + (intro ? ' intro' : '');
+    const color = (pl) => (pl.side === 'r' ? sideColor(pl.look) : LEFT_COLOR);
+    const L = from.side === 'l' ? from : to, R = from.side === 'l' ? to : from;
+    const lines = said || [[from, pick(FROM_LINES)], [to, pick(TO_LINES)]];
+    const bubble = (pl, i) => { const ln = lines.find(([w]) => w === pl); return ln ? `<p class="tt-tag-say ${pl.side}" style="--d:${i}">${esc(ln[1])}</p>` : ''; };
+    ov.style.setProperty('--fc', color(from)); ov.style.setProperty('--tc', color(to));
+    ov.innerHTML = `<div class="tt-tag-wash" aria-hidden="true"></div>
+      <div class="tt-tag-stage" role="dialog" aria-modal="true" aria-label="${esc(intro ? title : `${to.n}'s turn`)}">
+        <span class="tt-tag-k l${L === to ? ' next' : ''}">${trainerImg(L.look || null, 'won')}</span>
+        <span class="tt-tag-k r${R === to ? ' next' : ''}">${trainerImg(R.look || null, 'won')}</span>
+        <span class="tt-tag-hit" aria-hidden="true"><img src="${uiSrc('tt-burst')}" alt="" draggable="false"><b>${esc(title)}</b></span>
+        ${bubble(lines[0][0], 0)}${bubble(lines[1]?.[0], 1)}
       </div>
-      <h2 class="tt-ho-title" id="tt-ho-t">${esc(title)}</h2>
-      ${line ? `<p class="tt-ho-line">${line}</p>` : ''}
-      ${stats.length ? `<div class="tt-ho-stats">${stats.map(([n, l]) => `<span><b>${n}</b><small>${esc(l)}</small></span>`).join('')}</div>` : ''}
-      ${tip ? `<div class="tt-ho-tip">${tip}</div>` : ''}
-      <p class="tt-ho-pass">Pass it to <b>${esc(to.n)}</b></p>
-      <button class="btn-chunky btn-xl tt-ho-go" style="--tc:${toColor}" disabled data-ho-go>${faceOf(to.look, 'b')}<span>${button || `I'm ${esc(to.n)}! Tap to start`}</span></button>
-    </div>`;
+      <div class="tt-tag-foot">
+        ${sub ? `<p class="tt-tag-sub">${sub}</p>` : ''}
+        <button class="btn-chunky btn-xl tt-ho-go" style="--tc:${color(to)}" disabled data-ho-go>${faceOf(to.look, 'b')}<span>${button || `Go, ${esc(to.n)}!`}</span></button>
+      </div>`;
     host.appendChild(ov);
     requestAnimationFrame(() => ov.classList.add('open'));
-    sfx.special?.();
+    setTimeout(() => { ov.classList.add('hi5'); sfx.tag?.(); }, calm ? 0 : 430);
     const btn = ov.querySelector('[data-ho-go]');
-    setTimeout(() => { btn.disabled = false; btn.classList.add('awake'); }, reducedMotion() ? 400 : 1000);
+    setTimeout(() => { btn.disabled = false; btn.classList.add('awake'); }, calm ? 400 : 1100);
     const go = () => {
       if (btn.disabled) return;
       sfx.tap();
       ov.classList.add('closing');
-      setTimeout(() => { ov.remove(); resolve(); }, reducedMotion() ? 0 : 220);
+      setTimeout(() => { ov.remove(); resolve(); }, calm ? 0 : 260);
     };
     btn.addEventListener('click', go);
     const onKey = (e) => { if (!ov.isConnected) return document.removeEventListener('keydown', onKey); if (e.key === 'Enter' && !btn.disabled) { e.preventDefault(); document.removeEventListener('keydown', onKey); go(); } };
@@ -133,36 +142,42 @@ export function renderCoop(root, go, params = {}) {
   let draft = { name: '', look: QUICK_LOOKS[1] };
 
   const draw = () => {
-    root.innerHTML = `<section class="screen coop tt-step-${step}">
+    root.innerHTML = `<section class="screen coop tt-step-${step === 'edit' ? 'new' : step}">
       <header class="tt-top">
         <button class="icon-btn back" data-back aria-label="Back">${BACK}</button>
         <img class="tt-logo" src="${LOGO}" alt="Times Two" draggable="false">
         <button class="pill tt-rec-btn" data-records aria-label="Team Records">${trophy()}<span>Records</span></button>
       </header>
       <p class="tt-sub">Play with a friend</p>
-      ${step === 'who' ? whoHTML() : step === 'new' ? newHTML() : gameHTML()}
+      ${step === 'who' ? whoHTML() : step === 'new' || step === 'edit' ? newHTML() : gameHTML()}
     </section>`;
-    if (step === 'new') {
+    if (step === 'new' || step === 'edit') {
       const nm = $('#tt-name', root);
       nm.value = draft.name;
       setTimeout(() => { if (nm.isConnected && !draft.name) nm.focus(); }, 60);
     }
   };
 
-  // 1. Who's playing with you?
+  // 1. Who's playing with you? Saved friends get a pencil: rename, new look or remove.
   const whoHTML = () => {
     const list = partnersFor(p);
     const row = (x) => {
       const n = gamesWith(p, x.id);
       const lvl = friendLevel(n);
-      return `<button class="tt-partner" data-partner="${esc(x.k)}:${esc(x.id)}">
-        ${faceOf(x.look, 'r')}
-        <span class="tt-partner-text"><strong>${esc(x.n)}</strong><small>${x.k === 'pro' ? 'Family trainer' : lvl ? lvl : 'Friend'}${n ? ` · ${n} game${n === 1 ? '' : 's'} together` : ''}</small></span>
-        <span class="quick-go" aria-hidden="true">${ARROW}</span>
-      </button>`;
+      return `<div class="tt-partner-row">
+        <button class="tt-partner" data-partner="${esc(x.k)}:${esc(x.id)}">
+          ${faceOf(x.look, 'r')}
+          <span class="tt-partner-text"><strong>${esc(x.n)}</strong><small>${x.k === 'pro' ? 'Family trainer' : lvl ? lvl : 'Friend'}${n ? ` · ${n} game${n === 1 ? '' : 's'} together` : ''}</small></span>
+          <span class="quick-go" aria-hidden="true">${ARROW}</span>
+        </button>
+        ${x.k === 'pal' ? `<button class="tt-edit" data-edit="${esc(x.id)}" aria-label="Edit ${esc(x.n)}">${PENCIL}</button>` : ''}
+      </div>`;
     };
     return `<div class="tt-who">
-      <div class="tt-me">${faceOf(host.look, 'l big')}<span><small>Playing now</small><strong>${esc(host.n)}</strong></span></div>
+      <div class="tt-me">
+        <span class="tt-me-pair">${faceOf(host.look, 'l big')}<span class="tt-me-x" aria-hidden="true">×</span><span class="tt-face r big tt-face-q" aria-hidden="true">?</span></span>
+        <span class="tt-me-text"><small>Playing now</small><strong>${esc(host.n)}</strong></span>
+      </div>
       <h1 class="tt-h">Who's playing with you?</h1>
       <div class="tt-partners">
         <button class="tt-partner tt-new" data-new><span class="tt-face r tt-face-plus" aria-hidden="true">+</span><span class="tt-partner-text"><strong>New friend</strong><small>Ready in a few seconds</small></span><span class="quick-go" aria-hidden="true">${ARROW}</span></button>
@@ -173,7 +188,7 @@ export function renderCoop(root, go, params = {}) {
 
   // 2. A new friend: a name and a look, fast. One look is already picked, so Ready works right away.
   const newHTML = () => `<form class="tt-new-form" autocomplete="off">
-      <h1 class="tt-h">New friend</h1>
+      <h1 class="tt-h">${draft.id ? `Edit ${esc(draft.was)}` : 'New friend'}</h1>
       <div class="tt-new-grid">
         <div class="tt-new-preview">${trainerImg(draft.look, 'base')}</div>
         <div class="tt-new-side">
@@ -184,7 +199,8 @@ export function renderCoop(root, go, params = {}) {
             ${QUICK_LOOKS.map((L, i) => { const onL = draft.look.char === L.char && draft.look.color === L.color; return `<button type="button" class="tt-look${onL ? ' on' : ''}" data-look="${i}" role="radio" aria-checked="${onL}" aria-label="Look ${i + 1}">${trainerImg(L, 'face')}</button>`; }).join('')}
             <button type="button" class="tt-look tt-look-make${draft.look.char === 'm' ? ' on' : ''}" data-make aria-label="Make my own look">${draft.look.char === 'm' ? trainerImg(draft.look, 'face') : '<span class="tt-sil" aria-hidden="true"><i></i><i></i></span>'}<span class="tt-plus" aria-hidden="true">+</span></button>
           </div>
-          <button class="btn-chunky btn-primary btn-xl tt-ready" type="submit">Ready!</button>
+          <button class="btn-chunky btn-primary btn-xl tt-ready" type="submit">${draft.id ? 'Save' : 'Ready!'}</button>
+          ${draft.id ? `<button type="button" class="link-btn tt-remove" data-remove>Remove ${esc(draft.was)} from Times Two</button>` : ''}
         </div>
       </div>
     </form>`;
@@ -207,11 +223,11 @@ export function renderCoop(root, go, params = {}) {
       </div>
       <div class="tt-modes" role="radiogroup" aria-label="Pick a game">
         <button class="tt-mode${pick.game === 'catch' ? ' on' : ''}" data-game="catch" role="radio" aria-checked="${pick.game === 'catch'}">
-          <span class="tt-mode-art" aria-hidden="true">${creatureArt(byId('triblaze'))}</span>
+          <span class="tt-mode-art tt-art-catch" aria-hidden="true"><img src="${uiSrc('tt-throw')}" alt="" draggable="false"></span>
           <span class="tt-mode-text"><strong>Catch Party</strong><small>Take turns catching Kaimon. Fill Team Power for a Team Throw!</small></span>
         </button>
         <button class="tt-mode${pick.game === 'rush' ? ' on' : ''}" data-game="rush" role="radio" aria-checked="${pick.game === 'rush'}">
-          <span class="tt-mode-art tt-mode-face" aria-hidden="true">${trainerFace('nozomi')}</span>
+          <span class="tt-mode-art tt-art-rush" aria-hidden="true" style='background-image:${cssUrl(gymSrc(mine ? String(RUSH_ORDER[r.step]) : '1'))}'><span class="tt-mode-badge">${mine ? trainerFace(RUSH_ORDER[r.step] === 'papa' ? 'boss-papa' : champKeyOf(RUSH_ORDER[r.step])) : trainerFace('nozomi')}</span></span>
           <span class="tt-mode-text"><strong>Gym Rush</strong><small>${mine ? `Keep going: next up ${gymLabel(RUSH_ORDER[r.step])}!` : 'Tag-team every Gym Leader, then Boss Papa.'}</small></span>
         </button>
       </div>
@@ -227,9 +243,32 @@ export function renderCoop(root, go, params = {}) {
   };
 
   draw();
-  on(root, 'click', '[data-back]', () => { sfx.tap(); if (step === 'game' && !run) { step = 'who'; return draw(); } if (step === 'new') { step = 'who'; return draw(); } go('home'); });
+  on(root, 'click', '[data-back]', () => { sfx.tap(); if (step === 'game' && !run) { step = 'who'; return draw(); } if (step === 'new' || step === 'edit') { step = 'who'; return draw(); } go('home'); });
   on(root, 'click', '[data-records]', () => { sfx.tap(); recordsSheet(p, pick.game); });
-  on(root, 'click', '[data-new]', () => { sfx.tap(); draft = { name: '', look: QUICK_LOOKS[Object.keys(pals(p)).length % QUICK_LOOKS.length] }; step = 'new'; draw(); });
+  on(root, 'click', '[data-new]', () => { sfx.tap(); draft = { name: '', look: QUICK_LOOKS[livePals(p).length % QUICK_LOOKS.length] }; step = 'new'; draw(); });
+  on(root, 'click', '[data-edit]', (e, el) => {
+    sfx.tap();
+    const x = pals(p)[el.dataset.edit];
+    if (!x) return;
+    draft = { id: x.id, was: x.n, name: x.n, look: x.look || QUICK_LOOKS[0] };
+    step = 'edit'; draw();
+  });
+  on(root, 'click', '[data-remove]', () => {
+    sfx.tap();
+    const x = pals(p)[draft.id];
+    if (!x) return;
+    const sh = sheet(`<h2>Remove ${esc(x.n)}?</h2><p>${esc(x.n)} comes off your Times Two friends, with their levels and catches. Your Team Records stay.</p>
+      <div class="sheet-actions"><button class="btn-chunky btn-danger" data-yes>Remove</button><button class="btn-chunky" data-close>Keep ${esc(x.n)}</button></div>`);
+    sh.el.querySelector('[data-yes]').addEventListener('click', () => {
+      savePal(p, { id: x.id, gone: 1 });
+      const r = savedRun(p);
+      if (r && r.with.id === x.id) clearRun(p, r.id);
+      if (partner?.id === x.id) partner = null;
+      save(); syncNow(); sh.close();
+      toast(`${x.n} was removed`);
+      step = 'who'; draw();
+    });
+  });
   on(root, 'click', '[data-partner]', (e, el) => { sfx.tap(); const [k, id] = el.dataset.partner.split(':'); const x = partnersFor(p).find((y) => y.k === k && y.id === id); if (!x) return; partner = x; step = 'game'; draw(); });
   on(root, 'click', '[data-swap]', () => { sfx.tap(); step = 'who'; draw(); });
   on(root, 'click', '[data-look]', (e, el) => { sfx.tap(); draft.name = $('#tt-name', root)?.value || draft.name; draft.look = QUICK_LOOKS[+el.dataset.look]; draw(); });
@@ -246,8 +285,15 @@ export function renderCoop(root, go, params = {}) {
     e.preventDefault();
     const nm = cleanName($('#tt-name', root)?.value);
     if (!nm) { const f = $('#tt-name', root); f?.focus(); f?.classList.add('shake'); setTimeout(() => f?.classList.remove('shake'), 400); toast('Type your friend’s first name'); return; }
-    // Same name and look as a saved friend: that's them again.
-    const same = Object.values(pals(p)).find((x) => x.n.toLowerCase() === nm.toLowerCase());
+    // Editing a friend: save the new name and look, back to the list.
+    if (step === 'edit') {
+      savePal(p, { id: draft.id, name: nm, look: draft.look });
+      save(); syncNow(); sfx.correct();
+      if (partner?.id === draft.id) partner = { ...partner, n: nm, look: draft.look };
+      step = 'who'; draw(); return;
+    }
+    // Same name as a saved friend: that's them again.
+    const same = livePals(p).find((x) => x.n.toLowerCase() === nm.toLowerCase());
     const x = same || savePal(p, { name: nm, look: draft.look });
     if (same && JSON.stringify(same.look) !== JSON.stringify(draft.look)) savePal(p, { id: same.id, look: draft.look });
     save(); syncNow();

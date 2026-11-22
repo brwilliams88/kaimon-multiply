@@ -14,13 +14,13 @@ import { matchType } from '../data/types.js';
 import { sfx, setSound, unlock } from '../core/sound.js';
 import { startMusic, stopMusic, setPinch } from '../core/music.js';
 import { trainerImg } from './avatars.js';
-import { gymSrc, gymInsideSrc, cssUrl, fxSrc, trainerFace, trainerBody, itemImg, trainerKey } from '../core/assets.js';
+import { gymSrc, gymInsideSrc, cssUrl, fxSrc, trainerFace, trainerBody, itemImg, trainerKey, uiSrc } from '../core/assets.js';
 import { ballIcon } from './home.js';
 import { quick } from '../core/prefs.js';
-import { $, on, esc, sheet, reducedMotion, soundButton, setFlame, fitText, say, wirePad } from './dom.js';
+import { $, on, esc, sheet, reducedMotion, soundButton, setFlame, fitText, say, wirePad, guideKeys } from './dom.js';
 import {
   playerFor, poolFor, PACKS, packTeam, teamOf, avgLevel, rushFoe, hitBack, gymLabel, allOut, snackBreak, supportRight, SUPPORT,
-  RUSH_ORDER, RUSH_LENGTHS, TURN_CARDS, savedRun, saveRun, clearRun, unpackRun, savePal, recordGame, records, crateDue,
+  RUSH_ORDER, RUSH_LENGTHS, TURN_CARDS, TAG_STRIKE, savedRun, saveRun, clearRun, unpackRun, savePal, recordGame, records, crateDue,
   sideColor, LEFT_COLOR, gamesWith, friendLevel,
 } from '../core/coop.js';
 import { handoff, teamPatchHTML, faceOf } from './coop.js';
@@ -130,9 +130,15 @@ export function renderCoopRush(root, go, { partner, len = 'normal', fresh = fals
           <div class="tt-cut-leader" data-who="L">${g === 'papa' ? trainerBody('boss-papa', 'talking') : champBody(g)}</div>
           <div class="tt-cut-kids"><span class="tt-cut-kid l" data-who="A">${trainerImg(A.look || null, 'won')}</span><span class="tt-cut-kid r" data-who="B">${trainerImg(B.look || null, 'won')}</span></div>
           <div class="tt-strip tt-cut-strip" aria-label="Gyms">${RUSH_ORDER.map((x, i) => `<span class="${i < run.step ? 'done' : i === run.step ? 'now' : ''}${x === 'papa' ? ' papa' : ''}">${x === 'papa' ? 'P' : x}</span>`).join('')}</div>
-          <div class="tt-cut-box" aria-live="polite"><span class="tt-cut-who"></span><p class="tt-cut-text"></p><span class="tt-cut-next" aria-hidden="true">Tap to keep going ▸</span>
-            <button class="btn-chunky btn-primary btn-xl tt-cut-go" data-start hidden>Battle!</button></div>
-          <div class="tt-cut-vs" aria-hidden="true"><span>VS</span></div>
+          <div class="tt-cut-box" aria-live="polite"><span class="tt-cut-who"></span><p class="tt-cut-text"></p>
+            <div class="tt-cut-foot"><span class="tt-cut-next" aria-hidden="true">Tap to keep going ▸</span><button class="btn-chunky btn-primary tt-cut-go" data-start hidden>Battle!</button></div></div>
+          <div class="tt-vx" aria-hidden="true" style="--lc:${LEFT_COLOR};--rc2:${sideColor(B.look)};--fc:${region?.color || '#E8492A'};--fi:${region?.ink || '#7A1E0C'}">
+            <div class="tt-vx-half us"><span class="tt-vx-kid a">${trainerImg(A.look || null, 'won')}</span><span class="tt-vx-kid b">${trainerImg(B.look || null, 'won')}</span></div>
+            <div class="tt-vx-half them"><span class="tt-vx-foe">${g === 'papa' ? trainerBody('boss-papa', 'talking') : champBody(g)}</span></div>
+            <span class="tt-vx-seam"></span>
+            <span class="tt-vx-name us">${esc(A.n)} <i>&amp;</i> ${esc(B.n)}</span><span class="tt-vx-name them">${esc(opp.name)}</span>
+            <span class="tt-vx-badge"><img src="${uiSrc('tt-burst')}" alt="" draggable="false"><b>VS</b></span>
+          </div>
         </div>
       </section>`;
     el = {
@@ -140,7 +146,7 @@ export function renderCoopRush(root, go, { partner, len = 'normal', fresh = fals
       foeHp: $('.hp-foe', root), meHp: $('.hp-me', root), fx: $('.fx', root), val: $('.answer-val', root), hint: $('.answer-hint', root),
       streak: $('.streak-num', root), arena: $('.arena', root), powerFill: $('.q-card .power-fill', root), power: $('.q-card .power-strip', root),
     };
-    stopMusic(0.3);
+    if (host.settings.music !== false) startMusic('menu'); // the menu theme under the scene; battle at VS
     wire();
     if (reducedMotion()) el.sec.querySelector('.tt-cut').classList.add('calm');
     cutNext();
@@ -156,7 +162,12 @@ export function renderCoopRush(root, go, { partner, len = 'normal', fresh = fals
     const inside = ln.at === 'in';
     if (inside && !cut.classList.contains('at-in')) { cut.classList.remove('at-out'); cut.classList.add('at-in'); sfx.open?.(); }
     const who = ln.w === 'L' ? { n: opp.name, c: '#14213D' } : ln.w === 'A' ? { n: A.n, c: LEFT_COLOR } : { n: B.n, c: sideColor(B.look) };
-    cut.querySelectorAll('[data-who]').forEach((x) => x.classList.toggle('speaking', x.dataset.who === ln.w));
+    cut.querySelectorAll('[data-who]').forEach((x) => {
+      const on = x.dataset.who === ln.w;
+      x.classList.toggle('speaking', on);
+      x.classList.remove('hop');
+      if (on) { void x.offsetWidth; x.classList.add('hop'); }
+    });
     const box = cut.querySelector('.tt-cut-box');
     box.style.setProperty('--tc', who.c);
     box.querySelector('.tt-cut-who').textContent = who.n;
@@ -178,16 +189,23 @@ export function renderCoopRush(root, go, { partner, len = 'normal', fresh = fals
   }
   function begin() {
     if (S.phase !== 'intro') return;
+    S.phase = 'vs';
     unlock(); sfx.tap();
     const cut = root.querySelector('.tt-cut');
+    const calm = reducedMotion();
+    // The VS splash: the team on one side, the Gym Leader on the other, VS slams in.
+    // It holds long enough to read both names, then wipes into the battle.
     cut?.classList.add('vs');
-    setTimeout(() => cut?.classList.add('out'), reducedMotion() ? 0 : 520);
-    setTimeout(() => cut?.remove(), reducedMotion() ? 0 : 820);
-    if (host.settings.music !== false && host.settings.sound) startMusic();
-    S.phase = 'ask';
+    setTimeout(() => sfx.vs?.(), calm ? 0 : 380);
+    if (host.settings.music !== false) startMusic();
     drawAll();
-    el.msg.textContent = `Go, ${myMon()?.species.name || 'team'}!`;
-    next();
+    setTimeout(() => cut?.classList.add('out'), calm ? 700 : 1900);
+    setTimeout(() => {
+      cut?.remove();
+      S.phase = 'ask';
+      el.msg.textContent = `Go, ${myMon()?.species.name || 'team'}!`;
+      next();
+    }, calm ? 900 : 2250);
   }
   function champFace(t) { return trainerFace(champKey(t)); }
   function champBody(t) { return trainerBody(champKey(t), 'talking'); }
@@ -257,7 +275,7 @@ export function renderCoopRush(root, go, { partner, len = 'normal', fresh = fals
     el.qcard.className = 'q-card';
     if (inSupport()) el.msg.innerHTML = `<b>Support turn!</b> Right answers heal ${esc(partnerOf().n)}'s Kaimon. ${SUPPORT.revive - (run.sup[run.cur] % SUPPORT.revive)} more brings one of yours back!`;
     setInput('');
-    S.phase = 'ask'; S.skip = false; S.mustType = null;
+    S.phase = 'ask'; S.skip = false; S.mustType = null; guideKeys(root, null); el.msg.classList.remove('learn');
     S.shownAt = performance.now();
     say(`${pl.n}. What is ${a} times ${b}?`);
     drawAll();
@@ -276,7 +294,7 @@ export function renderCoopRush(root, go, { partner, len = 'normal', fresh = fals
     };
     tick();
   }
-  function setInput(v) { S.input = v; root.querySelectorAll('.answer-val').forEach((x) => { x.textContent = v || ''; x.classList.toggle('empty', !v); }); }
+  function setInput(v) { S.input = v; root.querySelectorAll('.answer-val').forEach((x) => { x.textContent = v || ''; x.classList.toggle('empty', !v); }); guideKeys(root, S.phase === 'learn' ? S.mustType : null, v || ''); }
 
   function record(pl, ok, ms) {
     pl.answered++;
@@ -322,8 +340,12 @@ export function renderCoopRush(root, go, { partner, len = 'normal', fresh = fals
       }
       const me = myMon(), f = foe[S.foe];
       const hit = attack(me, pw, S.streak, f);
+      // Tag Strike: the first right answer after a tag hits extra hard.
+      const strike = S.tagStrike; S.tagStrike = false;
+      if (strike) { hit.dmg = Math.round(hit.dmg * TAG_STRIKE); hit.crit = true; }
       const move = moveName(me.species), effType = matchType(me.species);
-      el.msg.textContent = hit.special ? `${powerLabel(pw)}! ${me.species.name} used ${move}!` : `${powerLabel(pw)}! ${me.species.name} attacks!`;
+      el.msg.textContent = strike ? `Tag Strike! ${me.species.name} used ${move}!` : hit.special ? `${powerLabel(pw)}! ${me.species.name} used ${move}!` : `${powerLabel(pw)}! ${me.species.name} attacks!`;
+      if (strike) sfx.special();
       if (hit.special) sfx.special();
       await lunge(el.meMon, 'lunge', q ? 200 : 260);
       hitFx(el.foeMon, me.species.type, hit.special || hit.crit);
@@ -377,7 +399,8 @@ export function renderCoopRush(root, go, { partner, len = 'normal', fresh = fals
         drawAll();
       }
     }
-    el.msg.innerHTML = `<span class="ladder-inline">${hintLadder(S.fact).map((v, i, arr) => `<span class="${i === arr.length - 1 ? 'last' : ''}">${v}</span>`).join('')}</span><span class="retype">Type it <span class="answer-val empty" data-ph="${ans}"></span></span>`;
+    el.msg.innerHTML = `<span class="retype-k">${trainerFace('teacher-k')}</span><span class="retype-body"><span class="ladder-inline">${hintLadder(S.fact).map((v, i, arr) => `<span class="${i === arr.length - 1 ? 'last' : ''}">${v}</span>`).join('')}</span><span class="retype">Type <span class="answer-val empty" data-ph="${ans}"></span> to keep going</span></span>`;
+      el.msg.classList.add('learn');
     S.phase = 'learn';
     S.mustType = ans;
     setInput('');
@@ -395,16 +418,16 @@ export function renderCoopRush(root, go, { partner, len = 'normal', fresh = fals
     if (S.cards >= TURN_CARDS) return tag();
     next();
   }
-  async function tag(line = '') {
+  async function tag() {
     S.phase = 'handoff';
     const was = cur(), to = partnerOf();
     const toSupport = allOut(teamOfPl(1 - run.cur));
     await handoff(root, {
-      from: was, to, title: 'Tag!',
-      line: line || `<b>${esc(was.n)}:</b> "Your turn!"&nbsp;&nbsp;<b>${esc(to.n)}:</b> "${toSupport ? 'I’ll heal you up!' : 'Tag! I’m in!'}"`,
-      stats: [[Math.max(0, foe[S.foe].hp), `${foe[S.foe].species.name} HP left`], [S.streak, 'team streak']],
-      tip: toSupport ? `<span>${faceOf(to.look, to.side + ' sm')}</span><span><b>${esc(to.n)}'s Support turn:</b> right answers heal ${esc(was.n)}'s Kaimon. ${SUPPORT.revive} right brings one of yours back!</span>` : '',
+      from: was, to,
+      said: toSupport ? [[was, 'Your turn!'], [to, 'I’ll heal you up!']] : null,
+      sub: toSupport ? `<b>${esc(to.n)}'s Support turn:</b> right answers heal ${esc(was.n)}'s Kaimon. ${SUPPORT.revive} right brings one of yours back!` : 'Your first right answer is a <b>Tag Strike</b>: extra power!',
     });
+    S.tagStrike = !toSupport;
     run.cur = 1 - run.cur;
     S.cards = 0;
     drawAll();
@@ -433,7 +456,7 @@ export function renderCoopRush(root, go, { partner, len = 'normal', fresh = fals
     checkpoint(g);
   }
   function checkpoint(beaten) {
-    stopMusic(0.4);
+    if (host.settings.music !== false) startMusic('duet'); else stopMusic(0.4);
     const lenG = RUSH_LENGTHS[run.len]?.gyms || 3;
     const rest = run.sit >= lenG;
     const nextG = RUSH_ORDER[run.step];
