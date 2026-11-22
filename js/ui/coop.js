@@ -349,7 +349,8 @@ export function maybeTimesTwoIntro(p, go) {
 }
 export function timesTwoIntro(p, go) {
   const steps = [
-    { pose: 'cheer', head: 'New in Times Two', text: `${esc(p.name)}, guess what? Now you can play with a friend!`, btn: 'Tell me!', later: true },
+    { splash: true, btn: 'What is it?', later: true },
+    { pose: 'cheer', head: 'New: Times Two', text: `${esc(p.name)}, guess what? Now you can play with a friend, on one device!`, btn: 'Tell me!' },
     { pose: 'point', pic: uiSrc('tt-throw'), text: '<b>Catch Party!</b> Take turns with a friend. Every right answer fills your Team Power, and then you throw together!', btn: 'Next' },
     { pose: 'point', pic: gymSrc('1'), kids: true, text: '<b>Gym Rush!</b> Team up and beat every Gym Leader, all the way to Boss Papa.', btn: 'Next' },
     { pose: 'won', pic: uiSrc('tt-highfive'), logo: true, text: '<b>Teamwork makes the dream work!</b> Find Times Two on your Home screen.', btn: 'Try Times Two', last: true },
@@ -360,6 +361,24 @@ export function timesTwoIntro(p, go) {
   document.body.appendChild(ov);
   const draw = () => {
     const s = steps[i];
+    ov.classList.toggle('splash', !!s.splash);
+    // The opening splash: rays, a burst, the logo slams in and two trainers jump in
+    // from the sides. Then Teacher K explains it, one card at a time.
+    if (s.splash) {
+      ov.innerHTML = `<div class="tt-intro-splash" role="dialog" aria-modal="true" aria-label="New in Kaimon Multiply: Times Two">
+        <div class="tt-intro-rays" aria-hidden="true"></div>
+        <span class="tt-intro-ver">New in version 1.2</span>
+        <div class="tt-intro-hero" aria-hidden="true">
+          <img class="tt-intro-burst" src="${uiSrc('tt-burst')}" alt="" draggable="false">
+          <span class="tt-intro-sk l">${trainerImg(p.look || null, 'won')}</span>
+          <span class="tt-intro-sk r">${trainerImg(QUICK_LOOKS[1], 'won')}</span>
+        </div>
+        <img class="tt-intro-biglogo" src="${LOGO}" alt="Times Two" draggable="false">
+        <p class="tt-intro-hook">Play with a friend!</p>
+        <div class="tt-intro-acts"><button class="btn-chunky btn-primary btn-xl" data-in-go>${esc(s.btn)}</button><button class="link-btn tt-intro-later" data-in-later>Later</button></div>
+      </div>`;
+      return;
+    }
     ov.innerHTML = `<div class="tt-intro-in" role="dialog" aria-modal="true" aria-label="Times Two">
       <div class="tt-intro-k" aria-hidden="true">${trainerBodyK(s.pose)}</div>
       <div class="tt-intro-card">
@@ -375,7 +394,7 @@ export function timesTwoIntro(p, go) {
   };
   const close = (seen) => { if (seen) markIntro(); ov.classList.add('out'); setTimeout(() => ov.remove(), reducedMotion() ? 0 : 240); };
   ov.addEventListener('click', (e) => {
-    if (e.target.closest('[data-in-later]')) { sfx.tap(); return close(i > 0); }
+    if (e.target.closest('[data-in-later]')) { sfx.tap(); return close(i > 1); }
     if (!e.target.closest('[data-in-go]')) return;
     sfx.tap();
     if (steps[i].last) { close(true); return go('coop'); }
@@ -384,5 +403,6 @@ export function timesTwoIntro(p, go) {
   draw();
   requestAnimationFrame(() => ov.classList.add('open'));
   sfx.special?.();
+  setTimeout(() => sfx.tag?.(), reducedMotion() ? 0 : 650);
 }
 const trainerBodyK = (pose) => trainerBody('teacher-k', pose);

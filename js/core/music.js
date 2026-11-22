@@ -419,11 +419,11 @@ const MENU_SCREENS = new Set(['welcome', 'newTrainer', 'meetPartner', 'home', 'k
 export function musicFor(screen, allowed = true) {
   if (!allowed) return stopMusic(0.3);
   if (MENU_SCREENS.has(screen)) return play('menu');
-  // Times Two: its own theme on the setup screens, a calmer tune under Catch Party cards,
-  // and the menu theme under the Gym Rush scenes (the battle theme starts at VS).
-  if (screen === 'coop') return play('duet');
+  // Times Two: the menu tune on its setup screens, a calmer tune under Catch Party
+  // cards, and the Times Two theme under the Gym Rush scenes (battle starts at VS).
+  if (screen === 'coop') return play('menu'); // the same tune as Home, so going in feels seamless
   if (screen === 'coopCatch') return play('party');
-  if (screen === 'coopRush') return play('menu');
+  if (screen === 'coopRush') return play('duet'); // the Times Two theme under the gym scenes; battle at VS
   // A battle keeps the menu music through the intro, then crossfades on Start.
   if (screen === 'battle' && live().some((p) => p.track === 'menu')) return;
   stopMusic(screen === 'play' ? 0.8 : 0.4);

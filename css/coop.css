@@ -403,6 +403,35 @@ html:has(body[data-screen^="coop"]), body[data-screen^="coop"] { background:
 .tt-intro-dots i { width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--ink); background: var(--paper); }
 .tt-intro-dots i.on { background: var(--ink); }
 .tt-intro-card .btn-xl { width: 100%; }
+/* The 1.2 splash: the Times Two colors with spinning rays, a burst, two trainers
+   jumping in from the sides, and the logo slamming down. */
+.tt-intro.splash { place-items: stretch; padding: 0; background: linear-gradient(115deg, #2D7FF9 0 49.5%, #E5487A 50.5% 100%); overflow: hidden; }
+.tt-intro-splash { position: relative; container-type: size; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 10px; padding: calc(16px + var(--safe-t)) 16px calc(20px + var(--safe-b)); box-sizing: border-box; overflow: hidden; }
+.tt-intro-rays { position: absolute; left: 50%; top: 36%; width: 320vmax; height: 320vmax; translate: -50% -50%; background: repeating-conic-gradient(from 0deg at 50% 50%, rgba(255, 255, 255, .17) 0 8deg, transparent 8deg 20deg); }
+.tt-intro:not(.calm) .tt-intro-rays { animation: tt-spin 30s linear infinite; }
+.tt-intro-ver { position: absolute; top: calc(16px + var(--safe-t)); left: 50%; translate: -50% 0; z-index: 3; padding: 5px 16px; border: 3px solid var(--ink); border-radius: 99px; background: var(--sun); font-weight: 700; font-size: 17px; box-shadow: 0 4px 0 var(--ink); white-space: nowrap; }
+.tt-intro-hero { position: relative; z-index: 1; flex: 1; width: 100%; max-width: 620px; min-height: 0; }
+.tt-intro-burst { position: absolute; left: 50%; top: 42%; width: min(70cqw, 46cqh); aspect-ratio: 1; translate: -50% -50%; object-fit: contain; }
+.tt-intro:not(.calm) .tt-intro-burst { animation: tt-intro-burst .6s .5s cubic-bezier(.2, 1.6, .4, 1) both, tt-spin 9s 1.1s linear infinite; }
+@keyframes tt-intro-burst { from { scale: 0; } }
+.tt-intro-sk { position: absolute; bottom: -4%; width: min(62cqw, 46cqh); aspect-ratio: 1; }
+.tt-intro-sk img { width: 100%; height: 100%; object-fit: contain; object-position: center bottom; filter: drop-shadow(0 8px 0 rgba(20, 33, 61, .35)); }
+.tt-intro-sk.l { left: 50%; translate: -86% 0; }
+.tt-intro-sk.r { left: 50%; translate: -14% 0; }
+.tt-intro-sk.r img { transform: scaleX(-1); }
+.tt-intro:not(.calm) .tt-intro-sk.l { animation: tt-intro-in-l .55s .15s cubic-bezier(.2, 1.2, .4, 1) both; }
+.tt-intro:not(.calm) .tt-intro-sk.r { animation: tt-intro-in-r .55s .25s cubic-bezier(.2, 1.2, .4, 1) both; }
+@keyframes tt-intro-in-l { from { transform: translateX(-80cqw); } }
+@keyframes tt-intro-in-r { from { transform: translateX(80cqw); } }
+.tt-intro-biglogo { position: relative; z-index: 2; width: min(86cqw, 440px); max-height: 22cqh; object-fit: contain; filter: drop-shadow(0 6px 0 rgba(20, 33, 61, .35)); }
+.tt-intro:not(.calm) .tt-intro-biglogo { animation: tt-intro-slam .5s .7s cubic-bezier(.2, 1.6, .4, 1) both; }
+@keyframes tt-intro-slam { from { scale: 2.6; opacity: 0; rotate: -8deg; } }
+.tt-intro-hook { position: relative; z-index: 2; margin: -4px 0 2px; padding: 6px 18px; border: 3px solid var(--ink); border-radius: 14px; background: #fff; font-weight: 700; font-size: clamp(20px, 6cqw, 28px); box-shadow: 0 5px 0 var(--ink); rotate: -2deg; }
+.tt-intro:not(.calm) .tt-intro-hook { animation: tt-intro-slam .45s 1s cubic-bezier(.2, 1.6, .4, 1) both; }
+.tt-intro-acts { position: relative; z-index: 2; width: min(100%, 440px); display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.tt-intro-acts .btn-xl { width: 100%; }
+.tt-intro-later { color: #fff; font-weight: 700; text-shadow: 0 2px 0 var(--ink); }
+.tt-intro:not(.calm) .tt-intro-acts { animation: tt-rise .4s 1.2s cubic-bezier(.2, 1.3, .4, 1) both; }
 @media (min-height: 700px) and (min-width: 700px) { .tt-intro { place-items: center; } }
 @media (prefers-reduced-motion: reduce) { .tt-intro { transition: none; } }
 
@@ -470,17 +499,17 @@ html:has(body[data-screen^="coop"]), body[data-screen^="coop"] { background:
 .tt-cut.ready { cursor: default; }
 .tt-cut.ready:not(.calm) .tt-cut-go { animation: tt-go-in .35s cubic-bezier(.2, 1.4, .4, 1) both; }
 @keyframes tt-go-in { from { transform: scale(.85); opacity: 0; } }
-.tt-cut.vs .tt-cut-box, .tt-cut.vs .tt-cut-top { opacity: 0; transition: opacity .2s; }
+.tt-cut.vsx .tt-cut-box, .tt-cut.vsx .tt-cut-top { opacity: 0; transition: opacity .2s; }
 
 /* ---------- VS splash: the team on one side, the Gym Leader on the other ---------- */
 .tt-vx { position: absolute; inset: 0; z-index: 8; pointer-events: none; visibility: hidden; overflow: hidden; }
-.tt-cut.vs .tt-vx { visibility: visible; }
+.tt-cut.vsx .tt-vx { visibility: visible; }
 /* Like a fighting game: big, close-up fighters (head and shoulders, not the
    whole body), speed lines racing across each side, a flash and a VS slam with a
    shockwave. Portrait: the team on top, the Leader below. Landscape: side by side.
    It waits for a tap. */
 .tt-vx { --vk: min(122cqw, 60cqh); --vf: min(132cqw, 66cqh); }
-.tt-cut.vs .tt-vx { pointer-events: none; }
+.tt-cut.vsx .tt-vx { pointer-events: none; }
 .tt-vx-half { position: absolute; inset: 0; display: block; overflow: hidden; }
 .tt-vx-half.us { clip-path: polygon(0 0, 100% 0, 100% 45%, 0 57%); background:
   repeating-linear-gradient(-35deg, rgba(255, 255, 255, .16) 0 10px, transparent 10px 54px),
@@ -488,14 +517,14 @@ html:has(body[data-screen^="coop"]), body[data-screen^="coop"] { background:
 .tt-vx-half.them { clip-path: polygon(0 57%, 100% 45%, 100% 100%, 0 100%); background:
   repeating-linear-gradient(-35deg, rgba(255, 255, 255, .14) 0 10px, transparent 10px 54px),
   linear-gradient(160deg, var(--fc) 0%, var(--fi) 100%); background-size: 200% 200%, 100% 100%; transform: translateX(105%); }
-.tt-cut.vs .tt-vx-half { transform: none; transition: transform .38s cubic-bezier(.2, 1, .3, 1); }
-.tt-cut.vs .tt-vx-half.them { transition-delay: .06s; }
-.tt-cut.vs:not(.calm) .tt-vx-half.us { animation: tt-vx-lines-a .7s linear infinite; }
-.tt-cut.vs:not(.calm) .tt-vx-half.them { animation: tt-vx-lines-b .7s linear infinite; }
+.tt-cut.vsx .tt-vx-half { transform: none; transition: transform .38s cubic-bezier(.2, 1, .3, 1); }
+.tt-cut.vsx .tt-vx-half.them { transition-delay: .06s; }
+.tt-cut.vsx:not(.calm) .tt-vx-half.us { animation: tt-vx-lines-a .7s linear infinite; }
+.tt-cut.vsx:not(.calm) .tt-vx-half.them { animation: tt-vx-lines-b .7s linear infinite; }
 @keyframes tt-vx-lines-a { to { background-position: 76px 0, 0 0; } }
 @keyframes tt-vx-lines-b { to { background-position: -76px 0, 0 0; } }
 .tt-vx-seam { position: absolute; left: -10%; right: -10%; top: calc(51cqh - 6px); height: 12px; background: #fff; box-shadow: 0 0 0 3px var(--ink), 0 0 18px 4px rgba(255, 255, 255, .8); rotate: calc(-1 * atan2(12cqh, 100cqw)); transform: scaleX(0); transition: transform .3s .32s cubic-bezier(.2, 1, .3, 1); }
-.tt-cut.vs .tt-vx-seam { transform: scaleX(1); }
+.tt-cut.vsx .tt-vx-seam { transform: scaleX(1); }
 /* The fighters: drawn big and cropped by their side, so faces and shoulders fill it. */
 .tt-vx-kid, .tt-vx-foe { position: absolute; aspect-ratio: 1; }
 .tt-vx-kid { width: var(--vk); top: calc(12cqh + var(--safe-t)); }
@@ -518,7 +547,7 @@ html:has(body[data-screen^="coop"]), body[data-screen^="coop"] { background:
   .tt-vx-half.us { clip-path: polygon(0 0, 56% 0, 44% 100%, 0 100%); }
   .tt-vx-half.them { clip-path: polygon(56% 0, 100% 0, 100% 100%, 44% 100%); }
   .tt-vx-seam { left: calc(50% - 6px); right: auto; top: -10%; bottom: -10%; width: 12px; height: auto; rotate: atan2(12cqw, 100cqh); transform: scaleY(0); }
-  .tt-cut.vs .tt-vx-seam { transform: scaleY(1); }
+  .tt-cut.vsx .tt-vx-seam { transform: scaleY(1); }
   .tt-vx-kid { top: calc(8cqh + var(--safe-t)); }
   .tt-vx-kid.a { left: calc(15cqw - var(--vk) / 2); }
   .tt-vx-kid.b { left: calc(36cqw - var(--vk) / 2); top: calc(13cqh + var(--safe-t)); }
@@ -529,13 +558,13 @@ html:has(body[data-screen^="coop"]), body[data-screen^="coop"] { background:
   .tt-vx-name small { font-size: clamp(14px, 1.8cqw, 19px); }
 }
 .tt-vx-kid, .tt-vx-foe, .tt-vx-name { opacity: 0; }
-.tt-cut.vs .tt-vx-kid, .tt-cut.vs .tt-vx-foe, .tt-cut.vs .tt-vx-name { opacity: 1; }
-.tt-cut.vs:not(.calm) .tt-vx-kid.a { animation: tt-vx-in-l .55s .16s cubic-bezier(.2, 1.2, .4, 1) both, tt-vx-breathe 2.4s 1s ease-in-out infinite; }
-.tt-cut.vs:not(.calm) .tt-vx-kid.b { animation: tt-vx-in-l .55s .26s cubic-bezier(.2, 1.2, .4, 1) both, tt-vx-breathe 2.4s 1.3s ease-in-out infinite; }
-.tt-cut.vs:not(.calm) .tt-vx-foe { animation: tt-vx-in-r .55s .22s cubic-bezier(.2, 1.2, .4, 1) both, tt-vx-breathe 2.6s 1.1s ease-in-out infinite; }
-.tt-cut.vs:not(.calm) .tt-vx-kid img, .tt-cut.vs:not(.calm) .tt-vx-foe img { animation: tt-vx-flash .5s .2s ease-out both; }
-.tt-cut.vs:not(.calm) .tt-vx-name.us { animation: tt-vx-tag-l .4s .55s cubic-bezier(.2, 1.4, .4, 1) both; }
-.tt-cut.vs:not(.calm) .tt-vx-name.them { animation: tt-vx-tag-r .4s .62s cubic-bezier(.2, 1.4, .4, 1) both; }
+.tt-cut.vsx .tt-vx-kid, .tt-cut.vsx .tt-vx-foe, .tt-cut.vsx .tt-vx-name { opacity: 1; }
+.tt-cut.vsx:not(.calm) .tt-vx-kid.a { animation: tt-vx-in-l .55s .16s cubic-bezier(.2, 1.2, .4, 1) both, tt-vx-breathe 2.4s 1s ease-in-out infinite; }
+.tt-cut.vsx:not(.calm) .tt-vx-kid.b { animation: tt-vx-in-l .55s .26s cubic-bezier(.2, 1.2, .4, 1) both, tt-vx-breathe 2.4s 1.3s ease-in-out infinite; }
+.tt-cut.vsx:not(.calm) .tt-vx-foe { animation: tt-vx-in-r .55s .22s cubic-bezier(.2, 1.2, .4, 1) both, tt-vx-breathe 2.6s 1.1s ease-in-out infinite; }
+.tt-cut.vsx:not(.calm) .tt-vx-kid img, .tt-cut.vsx:not(.calm) .tt-vx-foe img { animation: tt-vx-flash .5s .2s ease-out both; }
+.tt-cut.vsx:not(.calm) .tt-vx-name.us { animation: tt-vx-tag-l .4s .55s cubic-bezier(.2, 1.4, .4, 1) both; }
+.tt-cut.vsx:not(.calm) .tt-vx-name.them { animation: tt-vx-tag-r .4s .62s cubic-bezier(.2, 1.4, .4, 1) both; }
 @keyframes tt-vx-in-l { from { translate: -70cqw 0; scale: 1.15; } }
 @keyframes tt-vx-in-r { from { translate: 70cqw 0; scale: 1.15; } }
 @keyframes tt-vx-breathe { 50% { scale: 1.025; } }
@@ -548,20 +577,20 @@ html:has(body[data-screen^="coop"]), body[data-screen^="coop"] { background:
 .tt-vx-badge img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
 .tt-vx-badge b { position: relative; font-size: clamp(60px, 18cqmin, 112px); font-weight: 700; color: #fff; -webkit-text-stroke: 4px var(--ink); paint-order: stroke fill; text-shadow: 0 6px 0 var(--ink); letter-spacing: -2px; }
 .tt-vx-ring { position: absolute; left: 50%; top: 50%; width: 100%; aspect-ratio: 1; translate: -50% -50%; border-radius: 50%; border: 6px solid #fff; opacity: 0; }
-.tt-cut.vs .tt-vx-badge { opacity: 1; animation: tt-vx-slam .5s .36s cubic-bezier(.2, 1.6, .4, 1) both, tt-vx-pulse 1s .9s ease-in-out infinite; }
-.tt-cut.vs .tt-vx-badge img { animation: tt-spin 6s linear infinite; }
-.tt-cut.vs:not(.calm) .tt-vx-ring { animation: tt-vx-ring .7s .5s ease-out both; }
+.tt-cut.vsx .tt-vx-badge { opacity: 1; animation: tt-vx-slam .5s .36s cubic-bezier(.2, 1.6, .4, 1) both, tt-vx-pulse 1s .9s ease-in-out infinite; }
+.tt-cut.vsx .tt-vx-badge img { animation: tt-spin 6s linear infinite; }
+.tt-cut.vsx:not(.calm) .tt-vx-ring { animation: tt-vx-ring .7s .5s ease-out both; }
 @keyframes tt-vx-slam { from { scale: 3; opacity: 0; rotate: -20deg; } 60% { opacity: 1; } }
 @keyframes tt-vx-pulse { 50% { scale: 1.06; } }
 @keyframes tt-vx-ring { from { opacity: .9; scale: .4; } to { opacity: 0; scale: 3.2; } }
 @keyframes tt-spin { to { transform: rotate(360deg); } }
-.tt-cut.vs:not(.calm) { animation: tt-jolt .3s .4s linear; }
+.tt-cut.vsx:not(.calm) { animation: tt-jolt .3s .4s linear; }
 @keyframes tt-jolt { 20% { translate: -8px 4px; } 40% { translate: 7px -5px; } 60% { translate: -5px 3px; } 80% { translate: 3px -2px; } }
-.tt-cut.vs::before { content: ''; position: absolute; inset: 0; z-index: 9; background: #fff; opacity: 0; pointer-events: none; animation: tt-flash .35s .4s ease-out; }
+.tt-cut.vsx::before { content: ''; position: absolute; inset: 0; z-index: 9; background: #fff; opacity: 0; pointer-events: none; animation: tt-flash .35s .4s ease-out; }
 @keyframes tt-flash { 15% { opacity: .85; } }
 .tt-cut.out { opacity: 0; transition: opacity .35s; }
 .tt-cut.calm .tt-cut-bg, .tt-cut.calm .tt-cut-kid, .tt-cut.calm .tt-cut-leader, .tt-cut.calm .tt-vx-half, .tt-cut.calm .tt-vx-seam { transition-duration: .01s; animation: none; }
-.tt-cut.calm .tt-vx *, .tt-cut.calm.vs::before { animation: none !important; }
-.tt-cut.calm.vs::before { opacity: 0; }
+.tt-cut.calm .tt-vx *, .tt-cut.calm.vsx::before { animation: none !important; }
+.tt-cut.calm.vsx::before { opacity: 0; }
 @media (prefers-reduced-motion: reduce) { .tt-cut-next { animation: none; } .tt-cut-text.pop { animation: none; } }
 @keyframes tt-pulse { 50% { scale: 1.035; } }

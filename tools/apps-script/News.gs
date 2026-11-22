@@ -247,8 +247,9 @@ function newsParseChangelog_(src) {
   var i = src.indexOf('[', at);
   var out = newsReadValue_(src, i);
   if (!Array.isArray(out.value)) throw new Error('CHANGELOG is not a list');
+  // Quiet releases (behind-the-scenes work, "quiet: true") never go in a news email.
   return out.value.filter(function (e) {
-    return e && /^\d+\.\d+\.\d+$/.test(e.version) && typeof e.title === 'string';
+    return e && /^\d+\.\d+\.\d+$/.test(e.version) && typeof e.title === 'string' && !e.quiet;
   }).map(function (e) {
     return { version: e.version, date: String(e.date || ''), title: String(e.title), items: (Array.isArray(e.items) ? e.items : []).filter(function (x) { return typeof x === 'string'; }) };
   }).sort(function (a, b) { return newsCmp_(b.version, a.version); });

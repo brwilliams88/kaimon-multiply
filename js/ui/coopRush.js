@@ -148,7 +148,7 @@ export function renderCoopRush(root, go, { partner, len = 'normal', fresh = fals
       foeHp: $('.hp-foe', root), meHp: $('.hp-me', root), fx: $('.fx', root), val: $('.answer-val', root), hint: $('.answer-hint', root),
       streak: $('.streak-num', root), arena: $('.arena', root), powerFill: $('.q-card .power-fill', root), power: $('.q-card .power-strip', root),
     };
-    if (host.settings.music !== false) startMusic('menu'); // the menu theme under the scene; battle at VS
+    if (host.settings.music !== false) startMusic('duet'); // the Times Two theme under the scene; battle at VS
     wire();
     if (reducedMotion()) el.sec.querySelector('.tt-cut').classList.add('calm');
     cutNext();
@@ -197,7 +197,7 @@ export function renderCoopRush(root, go, { partner, len = 'normal', fresh = fals
     unlock(); sfx.tap();
     const cut = root.querySelector('.tt-cut');
     const calm = reducedMotion();
-    cut?.classList.add('vs');
+    cut?.classList.add('vsx');
     setTimeout(() => sfx.vs?.(), calm ? 0 : 420);
     if (host.settings.music !== false) startMusic();
     drawAll();
@@ -509,7 +509,7 @@ export function renderCoopRush(root, go, { partner, len = 'normal', fresh = fals
       </div>
       <h1 class="screen-title">You beat Boss Papa together!</h1>
       <div class="tt-check-card">${teamPatchHTML(A, B, { size: 'md' })}<div><strong>All 11 gyms!</strong><p>Every Gym Leader and Boss Papa. That's the whole Gym Rush. Amazing teamwork!</p></div></div>
-      <div class="tt-check-actions"><button class="btn-chunky btn-primary btn-xl" data-home>Home</button></div>
+      <div class="tt-check-actions"><button class="btn-chunky btn-primary btn-xl" data-home>Done</button></div>
     </section>`;
   }
   function runOver() {
@@ -528,7 +528,7 @@ export function renderCoopRush(root, go, { partner, len = 'normal', fresh = fals
       <div class="tt-check-card">${teamPatchHTML(A, B, { size: 'md' })}<div><strong>${far} gym${far === 1 ? '' : 's'} beaten</strong><p>${far ? `You made it to ${gymLabel(RUSH_ORDER[far])}. ` : ''}Every Kaimon gave it their all. Try again and go even further!</p></div></div>
       <div class="tt-check-actions">
         <button class="btn-chunky btn-primary btn-xl" data-again>New run</button>
-        <button class="btn-chunky" data-home>Home</button>
+        <button class="btn-chunky" data-home>Done</button>
       </div>
     </section>`;
   }
@@ -571,8 +571,10 @@ export function renderCoopRush(root, go, { partner, len = 'normal', fresh = fals
     on(root, 'click', '[data-cut-skip]', (e) => { e.stopPropagation(); cutSkip(); });
     on(root, 'click', '.tt-cut', (e) => { if (S.phase === 'vs') return fight(); if (!e.target.closest('button')) cutNext(); });
     on(root, 'click', '[data-next]', () => { sfx.tap(); battleScreen(); });
-    on(root, 'click', '[data-break]', () => { sfx.tap(); endSession(); go('home'); });
-    on(root, 'click', '[data-home]', () => go('home'));
+    // Leaving Gym Rush goes back to the Times Two screen, not all the way Home.
+    const toCoop = () => go('coop', { step: 'game', partner: { k: B.k, id: B.id, n: B.n, look: B.look }, game: 'rush', len: run?.len || len });
+    on(root, 'click', '[data-break]', () => { sfx.tap(); endSession(); toCoop(); });
+    on(root, 'click', '[data-home]', () => toCoop());
     on(root, 'click', '[data-again]', () => go('coop', { step: 'game', partner: run.with, game: 'rush', len: run.len }));
     wirePad(root, (v) => {
       if (S.phase === 'result') { if (!S.skip) { S.skip = true; [...wakers].forEach((w) => w()); } return; }
@@ -588,7 +590,7 @@ export function renderCoopRush(root, go, { partner, len = 'normal', fresh = fals
       sh.el.querySelector('[data-stop]').addEventListener('click', () => {
         sh.close();
         // Back to the checkpoint before this gym: HP as it was saved, this gym starts fresh.
-        endSession(); stopMusic(0.3); go('home');
+        endSession(); toCoop();
       });
     });
     const onKey = (e) => {

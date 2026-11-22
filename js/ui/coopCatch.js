@@ -423,7 +423,7 @@ export function renderCoopCatch(root, go, { partner, len = 'normal' } = {}) {
           </div>
         </div>
         <div class="res-actions">
-          <button class="btn-chunky res-home" data-home>Home</button>
+          <button class="btn-chunky res-home" data-home>Done</button>
           <button class="btn-chunky btn-primary btn-xl res-again" data-again>Play again</button>
         </div>
       </section>`;
@@ -436,7 +436,7 @@ export function renderCoopCatch(root, go, { partner, len = 'normal' } = {}) {
       const step = (now) => { const k = Math.min(1, (now - t0) / dur); ptsEl.textContent = Math.round(T.pts * (1 - Math.pow(1 - k, 3))).toLocaleString(); if (k < 1 && ptsEl.isConnected) requestAnimationFrame(step); };
       ptsEl.textContent = '0'; requestAnimationFrame(step);
     }
-    on(root, 'click', '[data-home]', () => go('home'));
+    on(root, 'click', '[data-home]', () => go('coop', { step: 'game', partner: { k: B.k, id: B.id, n: B.n, look: B.look }, game: 'catch', len }));
     on(root, 'click', '[data-again]', () => go('coop', { step: 'game', partner: { k: B.k, id: B.id, n: B.n, look: B.look }, game: 'catch', len }));
   }
 
